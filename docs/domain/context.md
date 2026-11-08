@@ -22,7 +22,7 @@ Infinity AI é a camada independente que acrescenta mundo narrativo persistente,
 3. Valor desconhecido nunca equivale a ausência/negativa demonstrada.
 4. PC ausente mantém agency; alterações sensíveis exigem titular + host.
 5. A cronologia parte do recorte 1369 DR e mapas observáveis BG2:EE, ampliável por versionamento.
-6. Primeira demonstração: host + 2 clientes, read-only, NPC com memória, save/load e auditoria, sem efeitos não autorizados.
+6. Primeira demonstração (etapa 1, ADR-0113): single player, read-only, NPC com memória, save/load e auditoria, sem efeitos não autorizados. Host + 2 clientes na etapa 2.
 
 ## Fora do MVP
 Mundo público massivo, reescrita universal de quests, GemRB como motor obrigatório, todas as regiões FR, geração procedural ao vivo, economia granular global, escrow mecânico sem capability, combate por turnos sem prova.

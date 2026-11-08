@@ -11,13 +11,13 @@ Projeto público independente do motor original Infinity Engine. Repositório ca
 - `.github/`, `CONTRIBUTING.md`, `SECURITY.md` — contribuições públicas via forks/PRs.
 
 ## Status técnico
-Arquitetura aprovada e código sintético; nenhuma bridge real Windows+EEex+2 clientes provada. Voz push-to-talk com STT/TTS é requisito aprovado **para fase posterior à UI texto funcional**.
+Arquitetura aprovada; bridge read-only real provada em single player no laboratório ARM64 (P0–P2); nenhuma sessão com 2 clientes provada. Voz push-to-talk com STT/TTS é requisito aprovado **para fase posterior à UI texto funcional**.
 
 ## Não distribuir
 Conteúdo protegido da Beamdog/Wizards, saves e mods de terceiros sem licença, credenciais, microfone/vozes privados. O software e a documentação originais elegíveis são licenciados sob **Apache-2.0**; consulte [`LICENSE`](LICENSE), [`NOTICE`](NOTICE) e [`docs/architecture/licensing.md`](docs/architecture/licensing.md). Direitos de terceiros permanecem excluídos.
 
 ## Primeiro ciclo
-Read-only bridge e manifesto → host e dois clientes → SQLite/event memory → NPC dialogue texto → voz opcional. Leia `docs/architecture/roadmap.md`.
+Etapa 1 (single player, ADR-0113): read-only bridge e manifesto → SQLite/event memory → NPC dialogue texto → voz opcional. Etapa 2: host e dois clientes. Leia `docs/architecture/roadmap.md`.
 
 ## Publicação
 

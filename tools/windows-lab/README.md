@@ -41,6 +41,21 @@ Ele instala em `System32`/`SysWOW64`, fora da pasta do jogo, então o `build_fin
 2. Salve num slot com nome `INFINITY-P0-DESCARTAVEL`, feche e recarregue o save.
 3. Registre: data, SHA do commit, `build_fingerprint`, `modpack_hash`, ambiente e resultado.
 
-## 5. Onde guardar a evidência
+## 5. Gate P1 — loader EEex (cópia separada)
+
+Nunca instale o EEex na cópia P0: crie outra cópia a partir da instalação limpa (ex.: `C:\InfinityLab\BG2EE-P1`).
+
+1. Baixe o zip do release oficial (`https://github.com/Bubb13/EEex/releases`) e confira o sha256 com o digest publicado no release.
+2. Extraia e copie `EEex\` e `Setup-EEex.exe` para a raiz da cópia P1 (os arquivos de macOS do zip não são necessários).
+3. Instale o preset "Minimal" sem interação, na raiz da cópia. **Passe `--use-lang`** com o idioma do jogo (veja `Language` em `Documentos\Baldur's Gate II - Enhanced Edition\Baldur.lua`); sem `weidu.conf` o WeiDU repete a pergunta do idioma para sempre:
+
+   ```powershell
+   .\Setup-EEex.exe --use-lang pt_BR --language 0 --force-install-list 0 1 --no-exit-pause --skip-at-view --log setup-EEex.debug
+   ```
+
+4. Abra sempre pelo `InfinityLoader.exe` (abrir pelo `Baldur.exe` com EEex instalado trava o jogo). Se não abrir, atualize o Visual C++ Redistributable x64.
+5. Confirme que `EEex.dll` e `InfinityLoaderDLL.dll` estão carregados no processo `Baldur.exe` e que não surgiu `InfinityLoader_Crash\`. Saves feitos com EEex vão em slot próprio (`INFINITY-P1-DESCARTAVEL`), nunca por cima do save P0.
+
+## 6. Onde guardar a evidência
 
 O manifesto bruto fica fora do repositório (contém hashes da sua instalação, nada sensível, mas também nada que precise ser público). No relatório da PR, cite apenas fingerprint, modpack hash, versões, ambiente e resultado. **Nunca** suba saves, `chitin.key`, `.tlk`, `.bif` ou capturas com conteúdo do jogo.

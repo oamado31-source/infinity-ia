@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/infinity-ai/dec107/mediation_v1.candidate.schema.json",
+  "description": "DEC-107/C synthetic-only fixture. Production authority must be outside request. Never host-executing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_kind",
+    "context",
+    "request",
+    "trusted_policy",
+    "trusted_case_registry",
+    "trusted_party_registry",
+    "trusted_evidence_ledger",
+    "trusted_notice_ledger",
+    "trusted_facilitator_registry",
+    "trusted_mediation_ledger"
+  ],
+  "properties": {
+    "source_kind": {
+      "const": "SYNTHETIC_TEST"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "fixture_only",
+        "host_mode",
+        "world_tick",
+        "clock_mode",
+        "authenticated_principal"
+      ],
+      "properties": {
+        "world_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "campaign_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "branch_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "lineage_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "modpack_hash": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "authenticated_principal": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "clock_mode": {
+          "enum": [
+            "FROZEN",
+            "PARTIAL",
+            "REALTIME"
+          ]
+        },
+        "fixture_only": {
+          "const": true
+        },
+        "host_mode": {
+          "const": "SYNTHETIC_HOST_FIXTURE"
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_ref",
+        "party_ref",
+        "audience",
+        "purpose",
+        "expected_revision"
+      ],
+      "properties": {
+        "case_ref": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "party_ref": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "audience": {
+          "enum": [
+            "PARTIES",
+            "PUBLIC"
+          ]
+        },
+        "purpose": {
+          "enum": [
+            "RIGHT_OF_REPLY",
+            "MEDIATION"
+          ]
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trace_ref": {
+          "type": "string"
+        }
+      }
+    },
+    "trusted_policy": {
+      "type": "object",
+      "required": [
+        "trusted_kind"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_SIGNED_POLICY"
+        }
+      },
+      "additionalProperties": true
+    },
+    "trusted_case_registry": {
+      "type": "object",
+      "required": [
+        "trusted_kind"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_DISPUTE_CASE"
+        }
+      },
+      "additionalProperties": true
+    },
+    "trusted_party_registry": {
+      "type": "object",
+      "required": [
+        "trusted_kind"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_PARTY_REGISTRY"
+        }
+      },
+      "additionalProperties": true
+    },
+    "trusted_evidence_ledger": {
+      "type": "object",
+      "required": [
+        "trusted_kind"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_EVIDENCE_LEDGER"
+        }
+      },
+      "additionalProperties": true
+    },
+    "trusted_notice_ledger": {
+      "type": "object",
+      "required": [
+        "trusted_kind"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_NOTICE_LEDGER"
+        }
+      },
+      "additionalProperties": true
+    },
+    "trusted_facilitator_registry": {
+      "type": "object",
+      "required": [
+        "trusted_kind"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_FACILITATOR_REGISTRY"
+        }
+      },
+      "additionalProperties": true
+    },
+    "trusted_mediation_ledger": {
+      "type": "object",
+      "required": [
+        "trusted_kind"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_MEDIATION_LEDGER"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

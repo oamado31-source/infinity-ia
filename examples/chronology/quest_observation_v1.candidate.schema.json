@@ -1,0 +1,313 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/infinity-ai/quest-observation-v1.candidate.schema.json",
+  "title": "DEC-100/C — Observation preflight synthetic fixture only; NOT an EEex API",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_kind",
+    "context",
+    "manifest",
+    "observations",
+    "requests"
+  ],
+  "properties": {
+    "source_kind": {
+      "const": "SYNTHETIC_TEST"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixture_only",
+        "host_mode",
+        "campaign_id",
+        "branch_id",
+        "session_id",
+        "host_epoch",
+        "checkpoint_epoch",
+        "build_fingerprint",
+        "modpack_hash",
+        "adapter_revision",
+        "policy_revision",
+        "snapshot_tick"
+      ],
+      "properties": {
+        "fixture_only": {
+          "const": true
+        },
+        "host_mode": {
+          "const": "SYNTHETIC_HOST_FIXTURE"
+        },
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modpack_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adapter_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "snapshot_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coverage": {
+          "enum": [
+            "FULL_SYNTHETIC",
+            "PARTIAL",
+            "UNKNOWN"
+          ]
+        }
+      }
+    },
+    "manifest": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "probe_id",
+          "semantic_key",
+          "purpose",
+          "audiences",
+          "sensitivity",
+          "build_fingerprint",
+          "modpack_hash",
+          "adapter_revision",
+          "validation",
+          "max_age_ticks",
+          "semantic_mapping_revision"
+        ],
+        "properties": {
+          "probe_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "semantic_key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1
+          },
+          "build_fingerprint": {
+            "type": "string",
+            "minLength": 1
+          },
+          "modpack_hash": {
+            "type": "string",
+            "minLength": 1
+          },
+          "adapter_revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "semantic_mapping_revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "audiences": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "sensitivity": {
+            "enum": [
+              "PUBLIC_PROGRESS",
+              "PARTY_PRIVATE",
+              "QUEST_SECRET",
+              "FUTURE_BRANCH",
+              "HIDDEN_IDENTITY",
+              "ROMANCE_PRIVATE"
+            ]
+          },
+          "validation": {
+            "enum": [
+              "SYNTHETIC_VERIFIED",
+              "UNVERIFIED"
+            ]
+          },
+          "max_age_ticks": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "probe_id",
+          "coverage",
+          "read_state",
+          "observed_tick",
+          "host_epoch",
+          "checkpoint_epoch",
+          "semantic_value"
+        ],
+        "properties": {
+          "probe_id": {
+            "type": "string"
+          },
+          "coverage": {
+            "enum": [
+              "FULL_SYNTHETIC",
+              "PARTIAL",
+              "UNKNOWN"
+            ]
+          },
+          "read_state": {
+            "enum": [
+              "AVAILABLE",
+              "UNAVAILABLE",
+              "STALE",
+              "UNKNOWN"
+            ]
+          },
+          "observed_tick": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "host_epoch": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "checkpoint_epoch": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "semantic_value": {
+            "enum": [
+              "COMPLETED",
+              "NOT_COMPLETED",
+              "UNKNOWN"
+            ]
+          },
+          "raw_internal_flag_value": {
+            "type": "string",
+            "description": "Intentionally never released by the preflight"
+          }
+        }
+      }
+    },
+    "requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "request_id",
+          "probe_id",
+          "purpose",
+          "audience",
+          "campaign_id",
+          "branch_id",
+          "session_id",
+          "host_epoch",
+          "checkpoint_epoch",
+          "build_fingerprint",
+          "modpack_hash",
+          "adapter_revision",
+          "policy_revision",
+          "knowledge_entitled",
+          "release_authorized"
+        ],
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "probe_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1
+          },
+          "audience": {
+            "type": "string",
+            "minLength": 1
+          },
+          "campaign_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "branch_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "session_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "build_fingerprint": {
+            "type": "string",
+            "minLength": 1
+          },
+          "modpack_hash": {
+            "type": "string",
+            "minLength": 1
+          },
+          "adapter_revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "policy_revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "host_epoch": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "checkpoint_epoch": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "knowledge_entitled": {
+            "type": "boolean"
+          },
+          "release_authorized": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

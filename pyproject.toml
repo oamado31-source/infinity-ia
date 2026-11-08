@@ -1,0 +1,9 @@
+[project]
+name = "infinity-ai"
+version = "0.0.1"
+description = "SDD-first host-safe narrative overlay for BG2:EE (prototype)"
+requires-python = ">=3.11"
+# License pending explicit approval. No game binaries or assets shipped.
+
+[tool.ruff]
+line-length = 100

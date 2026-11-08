@@ -1,0 +1,401 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DEC-098/C Synthetic Materialization Plan Input (candidate; NO EEex API)",
+  "description": "STRICTLY SYNTHETIC fixture contract; no host source or real receipts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_kind",
+    "context",
+    "snapshot",
+    "observation",
+    "desired",
+    "pending_actions"
+  ],
+  "properties": {
+    "source_kind": {
+      "const": "SYNTHETIC_TEST"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixture_only",
+        "campaign_id",
+        "branch_id",
+        "region_id",
+        "host_epoch",
+        "checkpoint_epoch",
+        "build_fingerprint",
+        "pack_hash",
+        "ruleset_revision",
+        "world_tick",
+        "time_mode",
+        "region_mode",
+        "max_catchup_ticks",
+        "max_new_entities",
+        "capabilities"
+      ],
+      "properties": {
+        "fixture_only": {
+          "const": true
+        },
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "region_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pack_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ruleset_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "world_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "time_mode": {
+          "enum": [
+            "FROZEN",
+            "PARTIAL",
+            "REALTIME"
+          ]
+        },
+        "region_mode": {
+          "enum": [
+            "ACTIVE",
+            "NEAR",
+            "DISTANT",
+            "DORMANT"
+          ]
+        },
+        "max_catchup_ticks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "max_new_entities": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "PROPOSE_CREATE",
+              "PROPOSE_PATCH"
+            ]
+          }
+        }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "region_id",
+        "host_epoch",
+        "checkpoint_epoch",
+        "build_fingerprint",
+        "pack_hash",
+        "ruleset_revision",
+        "last_confirmed_world_tick",
+        "entities"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "region_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pack_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ruleset_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "last_confirmed_world_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "persistent_id"
+            ],
+            "properties": {
+              "persistent_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "instance_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "owner_kind": {
+                "enum": [
+                  "INFINITY_AI",
+                  "NATIVE_OR_MOD",
+                  "PLAYER",
+                  "TRANSFERRED",
+                  "UNKNOWN",
+                  "CONTESTED"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "region_id",
+        "host_epoch",
+        "checkpoint_epoch",
+        "build_fingerprint",
+        "pack_hash",
+        "ruleset_revision",
+        "coverage",
+        "entities"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "region_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pack_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ruleset_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "coverage": {
+          "enum": [
+            "COMPLETE_SYNTHETIC",
+            "PARTIAL",
+            "UNKNOWN"
+          ]
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "persistent_id"
+            ],
+            "properties": {
+              "persistent_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "instance_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "owner_kind": {
+                "enum": [
+                  "INFINITY_AI",
+                  "NATIVE_OR_MOD",
+                  "PLAYER",
+                  "TRANSFERRED",
+                  "UNKNOWN",
+                  "CONTESTED"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "desired": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "region_id",
+        "host_epoch",
+        "checkpoint_epoch",
+        "build_fingerprint",
+        "pack_hash",
+        "ruleset_revision",
+        "world_tick",
+        "entities"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "region_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pack_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ruleset_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "world_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "persistent_id"
+            ],
+            "properties": {
+              "persistent_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "instance_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "owner_kind": {
+                "enum": [
+                  "INFINITY_AI",
+                  "NATIVE_OR_MOD",
+                  "PLAYER",
+                  "TRANSFERRED",
+                  "UNKNOWN",
+                  "CONTESTED"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "pending_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "persistent_id"
+        ],
+        "properties": {
+          "persistent_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "instance_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "owner_kind": {
+            "enum": [
+              "INFINITY_AI",
+              "NATIVE_OR_MOD",
+              "PLAYER",
+              "TRANSFERRED",
+              "UNKNOWN",
+              "CONTESTED"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

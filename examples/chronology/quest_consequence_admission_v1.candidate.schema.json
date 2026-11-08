@@ -1,0 +1,414 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/infinity-ai/dec103/quest_consequence_admission_v1.candidate.schema.json",
+  "title": "DEC-103/C — synthetic-only candidate contract for quest milestone admission",
+  "description": "Illustrative schema, not EEex API. Trusted sections MUST be loaded independently of request in production.",
+  "type": "object",
+  "required": [
+    "source_kind",
+    "context",
+    "request",
+    "policy",
+    "proof_registry",
+    "catalog",
+    "ledger"
+  ],
+  "properties": {
+    "source_kind": {
+      "const": "SYNTHETIC_TEST"
+    },
+    "context": {
+      "type": "object",
+      "required": [
+        "fixture_only",
+        "host_mode",
+        "campaign_id",
+        "branch_id",
+        "quest_key",
+        "build_fingerprint",
+        "modpack_hash",
+        "mapping_revision",
+        "lineage_id",
+        "host_epoch",
+        "checkpoint_epoch",
+        "world_tick",
+        "dr_year",
+        "dr_month",
+        "region_id"
+      ],
+      "properties": {
+        "fixture_only": {
+          "const": true
+        },
+        "host_mode": {
+          "const": "SYNTHETIC_HOST_FIXTURE"
+        },
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "quest_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modpack_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mapping_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lineage_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "region_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "world_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dr_year": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dr_month": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "operation_id",
+        "proof_ref",
+        "purpose",
+        "audience",
+        "scope",
+        "expected_ledger_revision"
+      ],
+      "description": "UNTRUSTED — never include a grant or host attestation; extra request data ignored by evaluator.",
+      "properties": {
+        "operation_id": {
+          "type": "string"
+        },
+        "proof_ref": {
+          "type": "string"
+        },
+        "purpose": {
+          "const": "ADMIT_QUEST_MILESTONE"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "expected_ledger_revision": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "object"
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "description": "TRUSTED STORE fixture only; never sourced from request.",
+      "required": [
+        "trusted_kind",
+        "revision",
+        "purposes",
+        "audiences",
+        "max_age_ticks"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_POLICY_STORE"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "purposes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "audiences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "max_age_ticks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "can_process_protected": {
+          "type": "boolean"
+        },
+        "can_propose_high_risk": {
+          "type": "boolean"
+        }
+      }
+    },
+    "proof_registry": {
+      "type": "object",
+      "description": "Certified from independent proof registry; never untrusted payload in production.",
+      "required": [
+        "trusted_kind",
+        "authenticated_fixture",
+        "proof_id",
+        "source",
+        "semantic_status",
+        "coverage",
+        "mapping_status",
+        "reconciliation",
+        "milestone_id",
+        "occurrence_id",
+        "host_epoch",
+        "checkpoint_epoch",
+        "observed_tick",
+        "classification"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_RECONCILED_PROOF_STORE"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "proof_id": {
+          "type": "string"
+        },
+        "source": {
+          "const": "DEC100_DEC101_DEC102"
+        },
+        "semantic_status": {
+          "enum": [
+            "MAPPED_MINIMAL",
+            "UNKNOWN",
+            "AMBIGUOUS",
+            "QUARANTINED"
+          ]
+        },
+        "coverage": {
+          "type": "string"
+        },
+        "mapping_status": {
+          "type": "string"
+        },
+        "reconciliation": {
+          "enum": [
+            "CONSISTENT_WITH_PROOF",
+            "APPROVED_AND_COMMITTED_REBASE",
+            "PROPOSE_DERIVED_VIEW_REBASE",
+            "RESTORE_REVIEW_REQUIRED",
+            "UNKNOWN",
+            "QUARANTINED"
+          ]
+        },
+        "milestone_id": {
+          "type": "string"
+        },
+        "occurrence_id": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observed_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "classification": {
+          "enum": [
+            "PUBLIC",
+            "PROTECTED"
+          ]
+        }
+      }
+    },
+    "catalog": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "curation_status",
+        "revision",
+        "quest_key",
+        "mapping_revision",
+        "build_fingerprint",
+        "modpack_hash",
+        "rules"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_CURATED_RULESET"
+        },
+        "curation_status": {
+          "const": "CURATED_SYNTHETIC"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "quest_key": {
+          "type": "string"
+        },
+        "mapping_revision": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "rules": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/rule"
+          }
+        }
+      }
+    },
+    "ledger": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "revision",
+        "host_epoch",
+        "checkpoint_epoch",
+        "actions",
+        "admitted_keys",
+        "pending_keys",
+        "confirmed_facts"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_ADMISSION_LEDGER"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "admitted_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pending_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "confirmed_facts": {
+          "type": "object"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "required": [
+        "rule_id",
+        "milestone_id",
+        "region_id",
+        "dr_start",
+        "dr_end",
+        "month_start",
+        "month_end",
+        "classification",
+        "risk",
+        "requires",
+        "kind"
+      ],
+      "properties": {
+        "rule_id": {
+          "type": "string"
+        },
+        "milestone_id": {
+          "type": "string"
+        },
+        "region_id": {
+          "type": "string"
+        },
+        "dr_start": {
+          "type": "integer"
+        },
+        "dr_end": {
+          "type": "integer"
+        },
+        "month_start": {
+          "type": "integer"
+        },
+        "month_end": {
+          "type": "integer"
+        },
+        "classification": {
+          "enum": [
+            "PUBLIC",
+            "PRIVATE"
+          ]
+        },
+        "risk": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH"
+          ]
+        },
+        "requires": {
+          "type": "object"
+        },
+        "kind": {
+          "enum": [
+            "RUMOR_PROPOSAL",
+            "FACTION_REACTION_PROPOSAL",
+            "LOCAL_EFFECT_PROPOSAL"
+          ]
+        }
+      }
+    }
+  }
+}

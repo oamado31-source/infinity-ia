@@ -1,0 +1,55 @@
+# ADR-0081 — Contraespionagem contextual, iscas e desinformação rastreável
+
+- **DEC:** **DEC-086**, **opção C**, escolhida explicitamente em **2026-11-07**.
+- **Estado:** **APROVADA APENAS COMO ARQUITETURA** no Discovery **v8.2**; **NÃO IMPLEMENTADA**.
+- **Documento técnico:** `docs/86-contraespionagem-isca-desinformacao-autoria-controle-e-revisao-causal.md` — **76 testes candidatos T086-01..T086-76, todos NÃO EXECUTADOS**.
+- **Preservação integral:** decisões **DEC-060 a DEC-085** e todos os **80 ADRs anteriores (ADR-0001..ADR-0080)** permanecem **byte a byte idênticos** ao Discovery v8.1. Nenhuma decisão histórica é substituída ou reescrita.
+
+## Contexto
+
+DEC-076/C separou identidade privada e personas públicas; DEC-077/C governa pistas e investigação; DEC-083/C protege fontes; DEC-084/C governa proteção ativa; DEC-085/C permite descoberta causal e parcial de rotas, abrigos e planos, mas **explicitamente reservou** operações deliberadas de engano para decisão posterior. Na ficção, um grupo pode desejar distrair adversários com uma rota falsa, disfarce narrativo ou isca. Isso requer separar a verdade do jogo, aquilo que um ator **pretende fazer outros acreditarem**, a cadeia de distribuição, os recursos realmente consumidos e o que os observadores concluem. O mero texto da LLM nunca altera acontecimentos confirmados nem cria física de espionagem no BG2:EE/EEex.
+
+## Alternativas
+
+- **A — Proibir operações deliberadas de engano:** rejeitada; limita agência, contraespionagem e histórias de infiltração.
+- **B — Autorizar LLM a plantar livremente boatos/provas/falsidades:** rejeitada; pode falsificar fatos, atribuir ações a PCs, forjar recibos do host, desencadear dano ou revelar segredos.
+- **C — Operação autorizada, causalmente rastreável, com autoria, recursos, divulgação limitada e risco:** **APROVADA**.
+
+## Invariantes vinculantes da decisão
+
+1. **Camadas separadas:** `WorldFact` (verdade privada host-confirmed ou narrativamente verificada), `DeceptionProposal` (intenção de disseminar informação falsa), `DeceptionAuthorization`, `DecoyAsset` (isca/artefato narrativo), `PlantedClaim` (alegação explicitamente plantada), `DisseminationEvent`, `RecipientBelief`, `DeceptionAssessment` (comprometimento/detecção), `CountermeasureProposal` e `OutcomeReceipt` não são intercambiáveis. **Um engano deliberado pode ser conhecido como fato sobre o ato de enganar; seu conteúdo continua falso ou não confirmado.**
+2. **Escopos estáveis:** `campaign_id`, `branch_id`, `operation_id`, `actor_identity_id`, `owner_id?`, `claim_id`, `cover_persona_id?`, `target_audience_scope`, `world_time_dr`, `knowledge_pack_revision`, `plan_revision`, `checkpoint_epoch`, `rule_revision` e respectivos ACL. Proibido cruzar campanhas/branches por similaridade de nomes.
+3. **Proponente e autoria:** PC age apenas mediante proposta e autorização do titular ou de sua delegação específica DEC-019/041/045/046; NPC pode propor com autonomia limitada, recursos e motivação contextual DEC-047/048/068/074. A IA **não inventa intenção, traição, confissão, autoria ou consentimento do PC**.
+4. **Catálogo curado, não scripts livres:** formas candidatas — rumor de rota alternativa, mensagem de horário enganoso, isca visível, apresentação de persona, deslocamento demonstrativo — só mediante regras/recursos e capabilities comprovadas. Criar um token narrativo de mensagem **não significa criar um item CRE, spawn, invisibilidade, máscara ou interceptor nativo**.
+5. **Verificação de objetivos e danos:** declarar finalidade e benefício defensivo plausíveis, alvo, possíveis terceiros atingidos, limite temporal, danos antecipados, consentimentos relevantes, saída segura e classificação de risco agregada. Estratégias que pretendam falsamente incriminar PCs, gerar prisão, hostilidade automática, morte ou violação grave de segredo exigem gate HIGH e podem ser negadas por padrão; engano defensivo não confere imunidade para outras ações.
+6. **Fato não mutável:** nenhuma isca pode modificar retroativamente `WorldFact`, `HostReceipt`, `IdentityLinkAssessment` confirmado, cânone, quest/nativo, tempo DR ou autoria factual DEC-075. Um documento fabricado pode **existir como documento falso** com proveniência; não constitui prova da alegação que contém. Falas de NPCs podem ser falsas e devem ser tratadas como alegações.
+7. **Compromissos de recursos:** reservar e confirmar agentes, meios, oportunidades, tempo, local, custo e disponibilidade antes de publicação. Idempotência de `resource_reservation_id` e proibição de gastos duplicados após retry/restore DEC-056/071. Sem geração ilimitada de cúmplices, rotas, itens ou mensageiros via texto.
+8. **Difusão causal:** distribuir claims por canais legítimos e observáveis conforme DEC-022/029/068–070/074/079, com atraso, alcance, audiência e horário plausíveis. A existência da isca no ledger privado não torna o inimigo informado; não existe rumor global, envio instantâneo ou NPC onisciente.
+9. **Engano compartimentalizado:** compartilhar com o emissor/protetor o necessário sobre o plano real; com destinatário, no máximo a mensagem plantada e o que seu canal alcançou; com auditor host, prova protegida de autoria e autorizações. Diferenças DEC-083/085 por campo, inferências indiretas, caches, logs, RAG, embeddings, LAN, screenshots e UI entram no modelo de risco.
+10. **Crenças falíveis e adversário racional:** receptor pode acreditar, duvidar, ignorar, contrastar fontes ou descobrir o engano segundo suas capacidades/memória, crenças, recursos, cronologia e evidências DEC-064/065/077. O sucesso não é garantido nem decidido livremente pela LLM. Uma isca parcialmente descoberta não revela automaticamente o plano original.
+11. **Proveniência e anticolusão:** cada claim plantado preserva origem privada e cadeia de reenvio; dez retransmissões não são dez fontes independentes. Falsos documentos, falsas assinaturas e testemunhos encenados são candidatos de **ficção** sujeitos a política e risco, não artefatos host-autenticados; proibir forja de `receipt_id` real.
+12. **Associação e falsa acusação:** nunca identificar PC como autor de crime confirmado só porque a isca o sugere. `Allegation`, `Rumor` e `VerifiedWorldFact` permanecem separados; procedimentos DEC-078–082 e proteções DEC-041/042/083 impedem sanções automáticas, PVP forçado e punições por falsidades não corroboradas.
+13. **Revelação controlada do próprio engano:** descobertas e refutações causam correção de crenças por audiência, sem reescrever falas, memórias e efeitos passados. Contramedidas, resposta da guilda, confiança perdida ou eventual responsabilização necessitam prova, canal, autoria adequada e gates DEC-074/077/082; não há reputação global instantânea.
+14. **Sinais de risco e abort:** estados candidatos `DRAFT`, `VALIDATED`, `AUTHORIZED`, `RESOURCES_RESERVED`, `STAGED`, `DISSEMINATED`, `SUSPECTED_COMPROMISED`, `CONFIRMED_EXPOSED`, `CANCELLED`, `EXPIRED`, `UNCERTAIN`, `RECONCILED`. Transições sem comprovação não são inventadas. Após `DISSEMINATED` não é possível fingir que informação já recebida não foi vista.
+15. **Separação de autoridade:** um plano aprovado pelo sistema não aplica efeitos mecânicos; intervenção em motor exige gateway tipado DEC-012, permissão host DEC-011, capability demonstrada por build/mod e confirmação/receipt pós-execução. Sem ação de client unilateral. Resultados `UNCERTAIN` bloqueiam retries cegos.
+16. **Cânone anual preservado:** conhecimento canônico permanece fisicamente em `knowledge/periods/<ANO>-DR/` conforme DEC-060/061/062; Knowledge Pack pinado DEC-063. Planos falsos, sua origem e refutações só no **overlay privado por campanha e branch**, nunca no diretório canônico. Um rumor deliberado não altera lore.
+17. **Cronologia e checkpoints:** planos têm validade e causalidade, dependem de status de proteção DEC-084/085, período DR e branch. Save anterior não adquire rumor futuro; revisão de rota ou revogação impede novo envio obsoleto, mas não apaga crenças já formadas DEC-053/080.
+18. **Proteção de participantes e terceiros:** não expor testemunha real por descrição de isca, metadados, rotas correlacionáveis ou conteúdo de fallback. Não impor fala, mudança de rota, risco, captura ou sacrifício a PC sem agência e autorização; risco acumulado sobre proteção de NPC também é avaliado.
+19. **Antiabuso e limites:** quotas, custos, janela temporal, dedup e limitação de campanhas simultâneas. Reuso de alias ou envio repetido não gera credibilidade, XP, loot, reputação ou novos efeitos por multiplicação de claims. Contabilizar tentativas falhas.
+20. **Auditoria mínima e não vazante:** guardar evidências e motivos de aceitação/rejeição, hash/IDs e política, mas logs destinados a cliente ou worker não revelam estratégia, testemunha ou roteiro verdadeiro. A consulta de diagnóstico também possui ACL.
+21. **Futuras SPECS:** definir modelos de confiança por classe de fonte, critérios de autoria/prova, limites de risco, política de terceiros e templates de isca. Esses valores **não** são escolhidos nesta DEC. Primeiro fixtures sintéticas determinísticas; depois POCs read-only e host+2 clientes por build para capacidades reais; nenhum teste de engine executado.
+
+## Exemplo hipotético
+
+Um protetor propõe divulgar a uma guilda uma janela falsa de saída de escolta. O sistema registra que **a mensagem falsa foi deliberadamente plantada** sem alterar a verdadeira rota privada, verifica que um mensageiro realmente pode transmiti-la e que seus recursos estão disponíveis, e controla destinatários e risco. A guilda pode ignorar, desconfiar ou seguir o rumor, mas isso dependerá de evidências e canais; a resposta não produz emboscada automática. O engano pode ser desmentido com consequências de confiança verificáveis. Este exemplo não comprova implantação de scripts de stealth/mensagens/itens em BG2:EE.
+
+## Consequências e riscos
+
+- **Benefícios:** contraespionagem como gameplay, agência cooperativa, crenças falíveis e espionagem com evidência causal.
+- **Riscos:** falsos crimes atribuídos a PC, extorsão de segredo, automação de sanção, confusão entre dado falso e fato, quebra de ACL, overfarming de rumores, uso de capacidades de engine inexistentes.
+- **Controles:** política antes do LLM, autoria/consentimento, separação de tipos, dedup, auditoria protegida, gatilhos de risco e confirmação do host.
+- **Status técnico:** **76 testes candidatos T086-01..T086-76 NÃO EXECUTADOS**; não há POC de documento falsificado em engine, isca dinâmica, espionagem, interceptação, perseguição ou sincronização multiplayer.
+
+## Próxima DEC-087 — Em aberto
+
+**Agentes duplos, fontes comprometidas e conflitos de lealdade.** Alternativas: A) lealdade invariável e nenhum agente duplo; B) LLM altera fidelidades e cria traições livremente; **C (recomendada)**) vínculos de lealdade e confiança por evidências/relacionamentos, identidades/segredos compartimentados, consentimento e autonomia legítima de NPCs, conflitos graduais e gates de risco, sem inventar traição de PC nem missão mecânica inexistente.

@@ -1,0 +1,801 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/infinity-ai/dec106/reputation_rehabilitation_v1.candidate.schema.json",
+  "title": "DEC-106/C — synthetic-only reputation rehabilitation fixture",
+  "description": "Candidate schema for deterministic unit fixtures. Not a production ACL/host authority. No real BG2:EE writes.",
+  "type": "object",
+  "properties": {
+    "source_kind": {
+      "const": "SYNTHETIC_TEST"
+    },
+    "context": {
+      "type": "object",
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "fixture_only",
+        "host_mode",
+        "world_tick",
+        "clock_mode",
+        "authenticated_principal"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "branch_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "lineage_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "modpack_hash": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "world_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "clock_mode": {
+          "enum": [
+            "FROZEN",
+            "PARTIAL",
+            "REALTIME"
+          ]
+        },
+        "fixture_only": {
+          "const": true
+        },
+        "host_mode": {
+          "const": "SYNTHETIC_HOST_FIXTURE"
+        },
+        "authenticated_principal": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "case_ref",
+        "subject_ref",
+        "audience",
+        "purpose",
+        "expected_revision"
+      ],
+      "properties": {
+        "case_ref": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "subject_ref": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trace_ref": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "trusted_policy": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "revision",
+        "authorized_principals",
+        "allowed_audiences",
+        "allowed_purposes",
+        "allowed_dimensions"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_SIGNED_POLICY"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "authorized_principals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_audiences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_purposes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_dimensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "trusted_correction_registry": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "authenticated_fixture",
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "correction_id",
+        "revision",
+        "claim_ref",
+        "subject_id",
+        "status",
+        "source",
+        "source_family",
+        "grade",
+        "classification",
+        "committed_at_tick"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_CORRECTION_PROOF"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "correction_id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "claim_ref": {
+          "type": "string"
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "source_family": {
+          "type": "string"
+        },
+        "grade": {
+          "type": "string"
+        },
+        "classification": {
+          "type": "string"
+        },
+        "committed_at_tick": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "trusted_subject_registry": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "authenticated_fixture",
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "subject_id",
+        "kind",
+        "owner_attested",
+        "clearance",
+        "allowed_audiences",
+        "allowed_purposes"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_SUBJECT_REGISTRY"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "owner_attested": {
+          "type": "boolean"
+        },
+        "clearance": {
+          "type": "integer"
+        },
+        "allowed_audiences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_purposes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "trusted_case_registry": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "authenticated_fixture",
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "case_id",
+        "subject_id",
+        "correction_ref",
+        "status",
+        "consent_status",
+        "authorized_principal",
+        "authorized_audiences",
+        "purpose",
+        "reputation_context_id",
+        "pc_owner_consent",
+        "high_risk_unresolved"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_REHABILITATION_CASE"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "case_id": {
+          "type": "string"
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "correction_ref": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "consent_status": {
+          "type": "string"
+        },
+        "authorized_principal": {
+          "type": "string"
+        },
+        "authorized_audiences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "reputation_context_id": {
+          "type": "string"
+        },
+        "pc_owner_consent": {
+          "type": "boolean"
+        },
+        "high_risk_unresolved": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "trusted_exposure_ledger": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "authenticated_fixture",
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "subject_id",
+        "claim_ref",
+        "state",
+        "heard_at_tick"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_EXPOSURE_LEDGER"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "claim_ref": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "heard_at_tick": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "trusted_correction_delivery": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "authenticated_fixture",
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "correction_id",
+        "revision",
+        "audience",
+        "state",
+        "arrived_at_tick",
+        "perception"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_CORRECTION_DELIVERY"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "correction_id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "arrived_at_tick": {
+          "type": "integer"
+        },
+        "perception": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "trusted_belief_ledger": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "authenticated_fixture",
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "subject_context_id",
+        "state",
+        "trust_state"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_BELIEF_LEDGER"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "subject_context_id": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "trust_state": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "trusted_reputation_context": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "authenticated_fixture",
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "context_id",
+        "subject_id",
+        "dimension",
+        "audience",
+        "revision",
+        "owner_attested",
+        "high_risk_unresolved"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_REPUTATION_CONTEXT"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "context_id": {
+          "type": "string"
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "dimension": {
+          "type": "string"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer"
+        },
+        "owner_attested": {
+          "type": "boolean"
+        },
+        "high_risk_unresolved": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "trusted_harm_ledger": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "authenticated_fixture",
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "subject_id",
+        "claim_ref",
+        "state",
+        "host_receipt_ref"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_HARM_LEDGER"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "claim_ref": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "host_receipt_ref": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "trusted_rehabilitation_ledger": {
+      "type": "object",
+      "required": [
+        "trusted_kind",
+        "authenticated_fixture",
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "revision",
+        "committed_case_keys",
+        "pending_case_keys"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_REHABILITATION_LEDGER"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "revision": {
+          "type": "integer"
+        },
+        "committed_case_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pending_case_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "source_kind",
+    "context",
+    "request",
+    "trusted_policy",
+    "trusted_correction_registry",
+    "trusted_subject_registry",
+    "trusted_case_registry",
+    "trusted_exposure_ledger",
+    "trusted_correction_delivery",
+    "trusted_belief_ledger",
+    "trusted_reputation_context",
+    "trusted_harm_ledger",
+    "trusted_rehabilitation_ledger"
+  ],
+  "additionalProperties": false
+}

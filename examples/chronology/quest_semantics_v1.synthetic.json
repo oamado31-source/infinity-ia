@@ -1,0 +1,104 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "fixture_only": true,
+    "campaign_id": "SYN-CAMP-1",
+    "branch_id": "SYN-BRANCH-A",
+    "session_id": "SYN-SESSION",
+    "build_fingerprint": "SYN-BUILD-1",
+    "modpack_hash": "SYN-MODPACK-1",
+    "adapter_revision": "SYN-ADAPTER-1",
+    "mapping_revision": "SYN-CATALOG-1",
+    "host_epoch": 7,
+    "checkpoint_epoch": 4,
+    "snapshot_tick": 30,
+    "host_mode": "SYNTHETIC_HOST_FIXTURE"
+  },
+  "catalog": [
+    {
+      "mapping_id": "SYN-MAP-1",
+      "quest_key": "SYN-QST-01",
+      "build_fingerprint": "SYN-BUILD-1",
+      "modpack_hash": "SYN-MODPACK-1",
+      "mapping_revision": "SYN-CATALOG-1",
+      "review_status": "CURATED_SYNTHETIC",
+      "curation_evidence": "SYN-REVIEW-01",
+      "milestones": [
+        {
+          "semantic_id": "SYN-QUEST-OBJECTIVE-DONE",
+          "exclusive_group": "SYN-PHASE",
+          "allowed_previous": [
+            "SYN-QUEST-STARTED"
+          ],
+          "classification": "PUBLIC_PROGRESS",
+          "predicates": [
+            {
+              "probe_id": "SYN-PROBE-STAGE",
+              "op": "eq",
+              "value": 4
+            },
+            {
+              "probe_id": "SYN-PROBE-DIALOGUE",
+              "op": "eq",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "probe_id": "SYN-PROBE-STAGE",
+      "semantic_value": 4,
+      "coverage": "FULL_SYNTHETIC",
+      "read_state": "AVAILABLE",
+      "observed_tick": 29
+    },
+    {
+      "probe_id": "SYN-PROBE-DIALOGUE",
+      "semantic_value": 1,
+      "coverage": "FULL_SYNTHETIC",
+      "read_state": "AVAILABLE",
+      "observed_tick": 29
+    }
+  ],
+  "policy": {
+    "trusted_kind": "SYNTHETIC_POLICY_FIXTURE",
+    "grant_revision": "SYN-GRANT-01",
+    "audiences": [
+      "PARTY"
+    ],
+    "purposes": [
+      "NARRATIVE_PROGRESS"
+    ],
+    "allowed_semantic_ids": [
+      "SYN-QUEST-OBJECTIVE-DONE"
+    ],
+    "knowledge_granted": true,
+    "max_age_ticks": 3
+  },
+  "history": {
+    "trusted_kind": "SYNTHETIC_HISTORY_FIXTURE",
+    "prior_milestone": "SYN-QUEST-STARTED",
+    "host_epoch": 7,
+    "checkpoint_epoch": 4
+  },
+  "request": {
+    "request_id": "SYN-REQ-01",
+    "mapping_id": "SYN-MAP-1",
+    "audience": "PARTY",
+    "purpose": "NARRATIVE_PROGRESS",
+    "scope": {
+      "campaign_id": "SYN-CAMP-1",
+      "branch_id": "SYN-BRANCH-A",
+      "session_id": "SYN-SESSION",
+      "build_fingerprint": "SYN-BUILD-1",
+      "modpack_hash": "SYN-MODPACK-1",
+      "adapter_revision": "SYN-ADAPTER-1",
+      "mapping_revision": "SYN-CATALOG-1",
+      "host_epoch": 7,
+      "checkpoint_epoch": 4
+    }
+  }
+}

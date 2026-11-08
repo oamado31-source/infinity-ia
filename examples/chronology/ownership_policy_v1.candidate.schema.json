@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/infinity-ai/ownership-policy-v1.candidate.schema.json",
+  "title": "Infinity AI DEC-099 Ownership Preflight synthetic-only candidate",
+  "description": "TEST FIXTURE ONLY. Not an EEex or engine API and not permission to mutate game state.",
+  "type": "object",
+  "required": ["source_kind", "context", "claims", "intents", "capabilities", "pending_actions"],
+  "properties": {
+    "source_kind": {"const": "SYNTHETIC_TEST"},
+    "context": {
+      "type": "object",
+      "required": ["fixture_only", "host_mode", "campaign_id", "branch_id", "region_id", "host_epoch", "checkpoint_epoch", "build_fingerprint", "modpack_hash", "adapter_revision", "rule_revision", "observation_coverage"],
+      "properties": {
+        "fixture_only": {"const": true}, "host_mode": {"const": "SYNTHETIC_HOST_FIXTURE"},
+        "campaign_id": {"type": "string", "minLength": 1}, "branch_id": {"type": "string", "minLength": 1}, "region_id": {"type": "string", "minLength": 1},
+        "host_epoch": {"type": "integer", "minimum": 0}, "checkpoint_epoch": {"type": "integer", "minimum": 0},
+        "build_fingerprint": {"type": "string", "pattern": "^SYN-"}, "modpack_hash": {"type": "string", "pattern": "^SYN-"},
+        "adapter_revision": {"type": "string", "minLength": 1}, "rule_revision": {"type": "string", "minLength": 1},
+        "observation_coverage": {"enum": ["FULL_SYNTHETIC", "PARTIAL", "UNKNOWN"]}
+      }, "additionalProperties": false
+    },
+    "claims": {"type": "array", "items": {"type": "object", "required": ["persistent_id", "owner_kind", "runtime_custodian"], "properties": {
+      "persistent_id": {"type": "string", "minLength": 1},
+      "owner_kind": {"enum": ["ENGINE_NATIVE", "QUEST_SCRIPT", "THIRD_PARTY_MOD", "PLAYER", "INFINITY_AI", "UNKNOWN"]},
+      "runtime_custodian": {"type": "string"}, "instance_id": {"type": "string"},
+      "instance_generation": {"type": "integer", "minimum": 0}, "owner_revision": {"type": "string"}, "owner_receipt_id": {"type": "string"},
+      "allowed_fields": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+      "host_confirmed_state": {"type": "string"}, "retire_eligible": {"type": "boolean"}
+    }, "additionalProperties": false}},
+    "intents": {"type": "array", "items": {"type": "object", "required": ["intent_id", "persistent_id", "action_type", "field_id", "authorized", "risk", "campaign_id", "branch_id", "region_id", "host_epoch", "checkpoint_epoch", "build_fingerprint", "modpack_hash", "adapter_revision", "rule_revision"],
+      "properties": {
+        "intent_id": {"type": "string", "minLength": 1}, "persistent_id": {"type": "string", "minLength": 1},
+        "action_type": {"enum": ["PATCH", "CREATE", "RETIRE"]}, "field_id": {"type": "string", "minLength": 1},
+        "instance_id": {"type": "string"}, "expected_owner_revision": {"type": "string"}, "desired_state": {"type": "string"},
+        "authorized": {"type": "boolean"}, "risk": {"enum": ["LOW", "MEDIUM", "HIGH"]},
+        "owner_kind": {"type": "string"}, "template_id": {"type": "string"},
+        "campaign_id": {"type": "string"}, "branch_id": {"type": "string"}, "region_id": {"type": "string"},
+        "host_epoch": {"type": "integer"}, "checkpoint_epoch": {"type": "integer"},
+        "build_fingerprint": {"type": "string"}, "modpack_hash": {"type": "string"},
+        "adapter_revision": {"type": "string"}, "rule_revision": {"type": "string"}
+      }, "additionalProperties": false}},
+    "capabilities": {"type": "array", "items": {"type": "object", "required": ["action_type", "field_id", "validation", "build_fingerprint", "modpack_hash", "adapter_revision"],
+      "properties": {
+        "action_type": {"enum": ["PATCH", "CREATE", "RETIRE"]}, "field_id": {"type": "string"},
+        "validation": {"enum": ["SYNTHETIC_VERIFIED", "UNTESTED"]},
+        "build_fingerprint": {"type": "string", "pattern": "^SYN-"},
+        "modpack_hash": {"type": "string", "pattern": "^SYN-"},
+        "adapter_revision": {"type": "string"}
+      }, "additionalProperties": false}},
+    "pending_actions": {"type": "array", "items": {"type": "object", "required": ["persistent_id", "state"],
+      "properties": {"persistent_id": {"type": "string"}, "state": {"enum": ["PREPARED", "DISPATCHED", "UNCERTAIN", "CONFIRMED", "REJECTED"]}}, "additionalProperties": false}}
+  },
+  "additionalProperties": false
+}

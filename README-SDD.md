@@ -1,19 +1,24 @@
 # Infinity AI — Spec-Driven Development (SDD)
 
-Projeto independente e público, integrado ao BG2:EE/EEex mediante adaptadores. Repositório oficial: https://github.com/oamado31-source/infinity-ia
+Projeto público independente do motor original Infinity Engine. Repositório canônico: https://github.com/oamado31-source/infinity-ia. Integração via adaptadores BG2:EE/EEex; forks de motores podem ser usados apenas em provas separadas.
 
 ## Navegação
-- `docs/domain/context.md`, `docs/domain/glossary.md` — regras de negócio e vocabulário.
-- `docs/architecture/constitution.md`, `security.md`, `coding_style.md`, `testing.md` — guardrails.
-- `docs/decisions/ADR-*.md` — histórico de decisões aprovado, append-only.
-- `specs/*/{spec,plan,tasks}.md` — funcionalidades incrementais por requisitos e testes.
-- `templates/`, `skills/`, `features/` — modelos e roadmap.
-- `.github/`, `CONTRIBUTING.md`, `SECURITY.md` — PRs de forks, revisão obrigatória.
+- `docs/domain/context.md`, `docs/domain/glossary.md` — regras de produto e termos.
+- `docs/architecture/constitution.md`, `context.md`, `security.md`, `coding_style.md`, `testing.md` — guardrails.
+- `docs/decisions/ADR-*.md` — 105 ADRs históricos imutáveis, mais ADRs novos do questionário.
+- `specs/*/{spec,plan,tasks}.md` — features incrementais.
+- `templates/`, `skills/`, `features/` — autoria, agentes de revisão e roadmap.
+- `.github/`, `CONTRIBUTING.md`, `SECURITY.md` — contribuições públicas via forks/PRs.
 
-## Status
-O pacote completo v11.0 contém 356 arquivos e 111 ADRs. Esta branch contém inicialmente apenas a estrutura essencial; a importação completa dos 356 arquivos ainda é necessária antes do merge.
+## Status técnico
+Arquitetura aprovada e código sintético; nenhuma bridge real Windows+EEex+2 clientes provada. Voz push-to-talk com STT/TTS é requisito aprovado **para fase posterior à UI texto funcional**.
 
-Nenhuma integração Windows+EEex+dois clientes foi comprovada. Voz push-to-talk com STT/TTS é requisito de fase posterior à UI texto funcional.
+## Não distribuir
+Conteúdo protegido da Beamdog/Wizards, saves e mods de terceiros sem licença, credenciais, microfone/vozes privados. O projeto **ainda precisa escolher licença para ser open-source jurídico**.
 
-## Licenciamento
-O código próprio ainda exige decisão de licença; assets de Beamdog/Wizards, saves e mods sem licença de redistribuição são proibidos.
+## Primeiro ciclo
+Read-only bridge e manifesto → host e dois clientes → SQLite/event memory → NPC dialogue texto → voz opcional. Leia `docs/architecture/roadmap.md`.
+
+## Publicação
+
+Leia [`docs/architecture/publishing.md`](docs/architecture/publishing.md). O repositório público https://github.com/oamado31-source/infinity-ia já foi criado. O ruleset `protect-main` está ativo; o status check `tests` será exigido somente após executar com êxito o CI da importação.

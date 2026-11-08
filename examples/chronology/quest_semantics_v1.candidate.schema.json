@@ -1,0 +1,354 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://infinity-ai.local/specs/quest_semantics_v1.candidate.schema.json",
+  "title": "DEC-101/C — SYNTHETIC ONLY quest semantic mapping fixture (candidate)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_kind",
+    "context",
+    "catalog",
+    "observations",
+    "policy",
+    "history",
+    "request"
+  ],
+  "properties": {
+    "source_kind": {
+      "const": "SYNTHETIC_TEST"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixture_only",
+        "campaign_id",
+        "branch_id",
+        "session_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "adapter_revision",
+        "mapping_revision",
+        "host_epoch",
+        "checkpoint_epoch",
+        "snapshot_tick",
+        "host_mode"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modpack_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adapter_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mapping_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host_mode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "snapshot_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fixture_only": {
+          "const": true
+        }
+      }
+    },
+    "catalog": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mapping_id",
+          "quest_key",
+          "build_fingerprint",
+          "modpack_hash",
+          "mapping_revision",
+          "review_status",
+          "curation_evidence",
+          "milestones"
+        ],
+        "properties": {
+          "mapping_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "quest_key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "build_fingerprint": {
+            "type": "string",
+            "minLength": 1
+          },
+          "modpack_hash": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mapping_revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "review_status": {
+            "type": "string",
+            "minLength": 1
+          },
+          "curation_evidence": {
+            "type": "string",
+            "minLength": 1
+          },
+          "milestones": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "semantic_id",
+                "exclusive_group",
+                "allowed_previous",
+                "classification",
+                "predicates"
+              ],
+              "properties": {
+                "semantic_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "exclusive_group": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "classification": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "allowed_previous": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "predicates": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "probe_id",
+                      "op",
+                      "value"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "probe_id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "op": {
+                        "enum": [
+                          "eq",
+                          "in"
+                        ]
+                      },
+                      "value": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "probe_id",
+          "semantic_value",
+          "coverage",
+          "read_state",
+          "observed_tick"
+        ],
+        "properties": {
+          "probe_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "semantic_value": {
+            "type": [
+              "string",
+              "integer",
+              "boolean",
+              "null"
+            ]
+          },
+          "coverage": {
+            "enum": [
+              "FULL_SYNTHETIC",
+              "PARTIAL",
+              "UNKNOWN"
+            ]
+          },
+          "read_state": {
+            "enum": [
+              "AVAILABLE",
+              "UNAVAILABLE",
+              "STALE",
+              "UNKNOWN"
+            ]
+          },
+          "observed_tick": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trusted_kind",
+        "grant_revision",
+        "audiences",
+        "purposes",
+        "allowed_semantic_ids",
+        "knowledge_granted",
+        "max_age_ticks"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_POLICY_FIXTURE"
+        },
+        "grant_revision": {
+          "type": "string"
+        },
+        "audiences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "purposes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_semantic_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "knowledge_granted": {
+          "type": "boolean"
+        },
+        "max_age_ticks": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trusted_kind",
+        "prior_milestone",
+        "host_epoch",
+        "checkpoint_epoch"
+      ],
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_HISTORY_FIXTURE"
+        },
+        "prior_milestone": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request_id",
+        "mapping_id",
+        "audience",
+        "purpose",
+        "scope"
+      ],
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mapping_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "audience": {
+          "type": "string",
+          "minLength": 1
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "integer"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

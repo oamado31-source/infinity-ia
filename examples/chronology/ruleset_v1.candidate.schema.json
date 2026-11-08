@@ -1,0 +1,408 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Infinity AI DEC-096/C candidate HistoricalRuleSet v1 (synthetic fixture only)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_only",
+    "ruleset_id",
+    "ruleset_revision",
+    "knowledge_pack_hash",
+    "rules"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0-candidate"
+    },
+    "fixture_only": {
+      "const": true
+    },
+    "ruleset_id": {
+      "type": "string",
+      "pattern": "^SYN-[A-Z0-9-]+$"
+    },
+    "ruleset_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "knowledge_pack_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    }
+  },
+  "$defs": {
+    "temporal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "precision",
+        "year_dr_start",
+        "year_dr_end"
+      ],
+      "properties": {
+        "precision": {
+          "enum": [
+            "EXACT_DAY",
+            "MONTH",
+            "YEAR_ONLY",
+            "INTERVAL",
+            "DISPUTED",
+            "UNKNOWN"
+          ]
+        },
+        "year_dr_start": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "year_dr_end": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "month_start": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "month_end": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "day_start": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "day_end": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "festival_start": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "festival_end": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "precision": {
+                "const": "MONTH"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "month_start",
+              "month_end"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "precision": {
+                "const": "EXACT_DAY"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "month_start",
+              "month_end",
+              "day_start",
+              "day_end"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "precision": {
+                "enum": [
+                  "YEAR_ONLY",
+                  "UNKNOWN"
+                ]
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "month_start"
+                  ]
+                },
+                {
+                  "required": [
+                    "month_end"
+                  ]
+                },
+                {
+                  "required": [
+                    "day_start"
+                  ]
+                },
+                {
+                  "required": [
+                    "day_end"
+                  ]
+                },
+                {
+                  "required": [
+                    "festival_start"
+                  ]
+                },
+                {
+                  "required": [
+                    "festival_end"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "regions",
+        "location_tags"
+      ],
+      "properties": {
+        "level": {
+          "enum": [
+            "GLOBAL",
+            "REGIONAL",
+            "LOCAL"
+          ]
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "maxItems": 128
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "maxItems": 128
+        },
+        "location_tags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "tavern",
+              "palace",
+              "dungeon",
+              "forest",
+              "road",
+              "temple",
+              "market",
+              "port",
+              "gate",
+              "settlement",
+              "wilderness",
+              "camp",
+              "fortress"
+            ]
+          }
+        }
+      }
+    },
+    "predicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "op",
+        "value"
+      ],
+      "properties": {
+        "field": {
+          "enum": [
+            "campaign.flags.regional_alert",
+            "campaign.flags.canon_divergence",
+            "region.flags.patrol_alert",
+            "region.flags.route_open"
+          ]
+        },
+        "op": {
+          "enum": [
+            "EQ",
+            "IN",
+            "NEQ",
+            "GTE",
+            "LTE"
+          ]
+        },
+        "value": {
+          "type": [
+            "string",
+            "boolean",
+            "number",
+            "array",
+            "null"
+          ]
+        }
+      }
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effect_id",
+        "kind",
+        "template",
+        "risk",
+        "metric",
+        "delta",
+        "cap"
+      ],
+      "properties": {
+        "effect_id": {
+          "type": "string",
+          "pattern": "^SYN-[A-Z0-9-]+$"
+        },
+        "kind": {
+          "enum": [
+            "DIRECT",
+            "INDIRECT"
+          ]
+        },
+        "template": {
+          "const": "PROPOSE_MODIFIER"
+        },
+        "risk": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH"
+          ]
+        },
+        "metric": {
+          "enum": [
+            "patrol_intensity",
+            "robbery_risk",
+            "rumor_coverage"
+          ]
+        },
+        "delta": {
+          "type": "integer",
+          "minimum": -3,
+          "maximum": 3
+        },
+        "cap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "requires_applied_effect": {
+          "type": "string",
+          "pattern": "^SYN-[A-Z0-9-]+$"
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_id",
+        "revision",
+        "canon_event_ref",
+        "source_kind",
+        "phase",
+        "time",
+        "scope",
+        "all_conditions",
+        "effect",
+        "branch_policy",
+        "idempotency_scope"
+      ],
+      "properties": {
+        "rule_id": {
+          "type": "string",
+          "pattern": "^SYN-[A-Z0-9-]+$"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "canon_event_ref": {
+          "type": "string",
+          "pattern": "^SYN-[A-Z0-9-]+$"
+        },
+        "source_kind": {
+          "const": "SYNTHETIC_TEST"
+        },
+        "phase": {
+          "enum": [
+            "PRE",
+            "OCCURRENCE",
+            "AFTERMATH",
+            "LEGACY"
+          ]
+        },
+        "time": {
+          "$ref": "#/$defs/temporal"
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "all_conditions": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/predicate"
+          }
+        },
+        "required_applied_effect_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "effect": {
+          "$ref": "#/$defs/effect"
+        },
+        "branch_policy": {
+          "const": "OVERLAY_ONLY"
+        },
+        "idempotency_scope": {
+          "const": "CAMPAIGN_BRANCH_EPOCH_KPACK_RULESET_EVENT_RULE_PHASE_SCOPE_EFFECT"
+        }
+      }
+    }
+  }
+}

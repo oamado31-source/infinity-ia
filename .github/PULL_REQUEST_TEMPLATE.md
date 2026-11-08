@@ -1,16 +1,13 @@
-## SPEC / ADR / REQ
-- SPEC:
-- Requisitos associados:
-- ADRs afetados (não editar ADR aprovado):
+## SPEC/ADR/REQ vinculados
 
-## Mudança
-- Problema e proposta:
-- Escopo e fora do escopo:
-- Riscos e possíveis regressões:
-- Migração / rollback:
+## Mudança e motivação
 
-## Testes e evidências
-- [ ] Testes novos e regressão
-- [ ] Nenhum conteúdo proprietário, segredo ou save privado
-- [ ] Efeitos do host somente quando autorizados
-- [ ] Contratos públicos e SPECs atualizados
+## Evidências de teste e status POC real
+
+## Segurança, licenças, dados protegidos e rollback
+
+## Checklist
+- [ ] Nenhum ADR histórico alterado/apagado
+- [ ] Nenhum arquivo de jogo/saves/secret no diff
+- [ ] Testes locais executados; gates reais não presumidos
+- [ ] Autorização do host/titular preservada

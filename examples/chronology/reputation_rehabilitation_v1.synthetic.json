@@ -1,0 +1,200 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "fixture_only": true,
+    "host_mode": "SYNTHETIC_HOST_FIXTURE",
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6,
+    "world_tick": 230,
+    "clock_mode": "PARTIAL",
+    "authenticated_principal": "SYN-CURATOR"
+  },
+  "request": {
+    "case_ref": "SYN-CASE-1",
+    "subject_ref": "SYN-GUILD-1",
+    "audience": "SYN-COMMERCE",
+    "purpose": "REPUTATION_REHABILITATION",
+    "expected_revision": 11,
+    "trace_ref": "SYN-TRACE-1"
+  },
+  "trusted_policy": {
+    "trusted_kind": "SYNTHETIC_SIGNED_POLICY",
+    "revision": "SYN-POLICY-1",
+    "authorized_principals": [
+      "SYN-CURATOR"
+    ],
+    "allowed_audiences": [
+      "SYN-COMMERCE"
+    ],
+    "allowed_purposes": [
+      "REPUTATION_REHABILITATION"
+    ],
+    "allowed_dimensions": [
+      "COMMERCIAL_TRUST"
+    ]
+  },
+  "trusted_correction_registry": {
+    "trusted_kind": "SYNTHETIC_CORRECTION_PROOF",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6,
+    "correction_id": "SYN-CORRECTION-1",
+    "revision": "SYN-REV-2",
+    "claim_ref": "SYN-ACCUSATION-1",
+    "subject_id": "SYN-GUILD-1",
+    "status": "COMMITTED",
+    "source": "DEC104_CURATED_CORRECTION",
+    "source_family": "SYN-SOURCE-FAMILY-1",
+    "grade": "CORROBORATED",
+    "classification": "RESTRICTED",
+    "committed_at_tick": 201
+  },
+  "trusted_subject_registry": {
+    "trusted_kind": "SYNTHETIC_SUBJECT_REGISTRY",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6,
+    "subject_id": "SYN-GUILD-1",
+    "kind": "ORG",
+    "owner_attested": true,
+    "clearance": 1,
+    "allowed_audiences": [
+      "SYN-COMMERCE"
+    ],
+    "allowed_purposes": [
+      "REPUTATION_REHABILITATION"
+    ]
+  },
+  "trusted_case_registry": {
+    "trusted_kind": "SYNTHETIC_REHABILITATION_CASE",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6,
+    "case_id": "SYN-CASE-1",
+    "subject_id": "SYN-GUILD-1",
+    "correction_ref": "SYN-CORRECTION-1",
+    "status": "OPEN",
+    "consent_status": "GRANTED",
+    "authorized_principal": "SYN-CURATOR",
+    "authorized_audiences": [
+      "SYN-COMMERCE"
+    ],
+    "purpose": "REPUTATION_REHABILITATION",
+    "reputation_context_id": "SYN-REP-CONTEXT-1",
+    "pc_owner_consent": false,
+    "high_risk_unresolved": false
+  },
+  "trusted_exposure_ledger": {
+    "trusted_kind": "SYNTHETIC_EXPOSURE_LEDGER",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6,
+    "subject_id": "SYN-GUILD-1",
+    "claim_ref": "SYN-ACCUSATION-1",
+    "state": "PERCEIVED",
+    "heard_at_tick": 190
+  },
+  "trusted_correction_delivery": {
+    "trusted_kind": "SYNTHETIC_CORRECTION_DELIVERY",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6,
+    "correction_id": "SYN-CORRECTION-1",
+    "revision": "SYN-REV-2",
+    "audience": "SYN-COMMERCE",
+    "state": "DELIVERED",
+    "arrived_at_tick": 220,
+    "perception": "CONFIRMED"
+  },
+  "trusted_belief_ledger": {
+    "trusted_kind": "SYNTHETIC_BELIEF_LEDGER",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6,
+    "subject_context_id": "SYN-REP-CONTEXT-1",
+    "state": "REVISED",
+    "trust_state": "BROKEN"
+  },
+  "trusted_reputation_context": {
+    "trusted_kind": "SYNTHETIC_REPUTATION_CONTEXT",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6,
+    "context_id": "SYN-REP-CONTEXT-1",
+    "subject_id": "SYN-GUILD-1",
+    "dimension": "COMMERCIAL_TRUST",
+    "audience": "SYN-COMMERCE",
+    "revision": 7,
+    "owner_attested": true,
+    "high_risk_unresolved": false
+  },
+  "trusted_harm_ledger": {
+    "trusted_kind": "SYNTHETIC_HARM_LEDGER",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6,
+    "subject_id": "SYN-GUILD-1",
+    "claim_ref": "SYN-ACCUSATION-1",
+    "state": "HOST_CONFIRMED",
+    "host_receipt_ref": "SYN-RECEIPT-CONTRACT-CANCEL-1"
+  },
+  "trusted_rehabilitation_ledger": {
+    "trusted_kind": "SYNTHETIC_REHABILITATION_LEDGER",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6,
+    "revision": 11,
+    "committed_case_keys": [],
+    "pending_case_keys": []
+  }
+}

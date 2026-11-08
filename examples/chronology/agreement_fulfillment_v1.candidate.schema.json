@@ -1,0 +1,818 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/infinity-ai/dec108/agreement_fulfillment_v1.candidate.schema.json",
+  "description": "DEC-108/C strict synthetic fixture for pure proposal planner; no actual host authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "source_kind": {
+      "const": "SYNTHETIC_TEST"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "branch_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "lineage_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "modpack_hash": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fixture_only": {
+          "const": true
+        },
+        "host_mode": {
+          "const": "SYNTHETIC_HOST_FIXTURE"
+        },
+        "world_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "clock_mode": {
+          "enum": [
+            "FROZEN",
+            "PARTIAL",
+            "REALTIME"
+          ]
+        },
+        "authenticated_principal": {
+          "type": "string",
+          "pattern": "^SYN-"
+        }
+      },
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "fixture_only",
+        "host_mode",
+        "world_tick",
+        "clock_mode",
+        "authenticated_principal"
+      ]
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "agreement_ref": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "term_ref": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "expected_agreement_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expected_term_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "purpose": {
+          "const": "FULFILLMENT_REVIEW"
+        },
+        "audience": {
+          "enum": [
+            "PARTIES",
+            "PUBLIC"
+          ]
+        },
+        "trace_ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "agreement_ref",
+        "term_ref",
+        "expected_agreement_revision",
+        "expected_term_revision",
+        "purpose",
+        "audience",
+        "trace_ref"
+      ]
+    },
+    "trusted_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_SIGNED_POLICY"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "authorized_principals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^SYN-"
+          }
+        },
+        "allowed_audiences": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "PARTIES",
+              "PUBLIC"
+            ]
+          }
+        },
+        "high_risk_unresolved": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "trusted_kind",
+        "authenticated_fixture",
+        "revision",
+        "authorized_principals",
+        "allowed_audiences",
+        "high_risk_unresolved"
+      ]
+    },
+    "trusted_agreement_registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "branch_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "lineage_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "modpack_hash": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trusted_kind": {
+          "const": "SYNTHETIC_AGREEMENT_REGISTRY"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "agreement_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "commit_state": {
+          "enum": [
+            "DRAFT",
+            "PENDING",
+            "COMMITTED",
+            "REVOKED"
+          ]
+        },
+        "commit_receipt_authenticated": {
+          "type": "boolean"
+        },
+        "mandate_valid": {
+          "type": "boolean"
+        },
+        "party_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^SYN-"
+          }
+        },
+        "authorized_representatives": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^SYN-"
+          }
+        },
+        "policy_revision": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "allowed_audiences": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "PARTIES",
+              "PUBLIC"
+            ]
+          }
+        },
+        "high_risk_unresolved": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "trusted_kind",
+        "authenticated_fixture",
+        "agreement_id",
+        "revision",
+        "commit_state",
+        "commit_receipt_authenticated",
+        "mandate_valid",
+        "party_ids",
+        "authorized_representatives",
+        "policy_revision",
+        "allowed_audiences",
+        "high_risk_unresolved"
+      ]
+    },
+    "trusted_term_registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "branch_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "lineage_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "modpack_hash": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trusted_kind": {
+          "const": "SYNTHETIC_TERM_REGISTRY"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "agreement_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "term_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "enum": [
+            "ACTIVE",
+            "AMENDED",
+            "TERMINATED"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "DELIVER_GOODS",
+            "PAY",
+            "PUBLISH_CORRECTION",
+            "PERFORM_SERVICE"
+          ]
+        },
+        "obligor": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "beneficiary": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "due_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "allowed_audiences": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "PARTIES",
+              "PUBLIC"
+            ]
+          }
+        },
+        "allow_overdelivery": {
+          "type": "boolean"
+        },
+        "high_risk_unresolved": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "trusted_kind",
+        "authenticated_fixture",
+        "agreement_id",
+        "term_id",
+        "revision",
+        "status",
+        "kind",
+        "obligor",
+        "beneficiary",
+        "amount",
+        "unit",
+        "due_tick",
+        "allowed_audiences",
+        "allow_overdelivery",
+        "high_risk_unresolved"
+      ]
+    },
+    "trusted_receipt_ledger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "branch_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "lineage_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "modpack_hash": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trusted_kind": {
+          "const": "SYNTHETIC_RECEIPT_LEDGER"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "term_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "term_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "receipts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "campaign_id": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "branch_id": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "lineage_id": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "build_fingerprint": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "modpack_hash": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "host_epoch": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "checkpoint_epoch": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "receipt_id": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "action_id": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "authenticated_fixture": {
+                "const": true
+              },
+              "term_id": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "term_revision": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "status": {
+                "enum": [
+                  "CONFIRMED",
+                  "FAILED",
+                  "CANCELLED",
+                  "DISPATCHED",
+                  "UNCERTAIN"
+                ]
+              },
+              "amount": {
+                "type": "number",
+                "minimum": 0
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              },
+              "from_party": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "to_party": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "world_tick": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "campaign_id",
+              "branch_id",
+              "lineage_id",
+              "build_fingerprint",
+              "modpack_hash",
+              "host_epoch",
+              "checkpoint_epoch",
+              "receipt_id",
+              "action_id",
+              "authenticated_fixture",
+              "term_id",
+              "term_revision",
+              "status",
+              "amount",
+              "unit",
+              "from_party",
+              "to_party",
+              "world_tick"
+            ]
+          }
+        },
+        "pending_actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^SYN-"
+          }
+        },
+        "dispatched_actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^SYN-"
+          }
+        },
+        "uncertain_actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^SYN-"
+          }
+        }
+      },
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "trusted_kind",
+        "authenticated_fixture",
+        "term_id",
+        "term_revision",
+        "revision",
+        "receipts",
+        "pending_actions",
+        "dispatched_actions",
+        "uncertain_actions"
+      ]
+    },
+    "trusted_claim_ledger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "branch_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "lineage_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "modpack_hash": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trusted_kind": {
+          "const": "SYNTHETIC_CLAIM_LEDGER"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "agreement_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "term_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "term_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "claim_id": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "author": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "alleged_amount": {
+                "type": "number",
+                "minimum": 0
+              },
+              "statement_ref": {
+                "type": "string",
+                "pattern": "^SYN-"
+              }
+            },
+            "required": [
+              "claim_id",
+              "author",
+              "alleged_amount",
+              "statement_ref"
+            ]
+          }
+        },
+        "is_contested": {
+          "type": "boolean"
+        },
+        "force_majeure_alleged": {
+          "type": "boolean"
+        },
+        "high_risk_unresolved": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "trusted_kind",
+        "authenticated_fixture",
+        "agreement_id",
+        "term_id",
+        "term_revision",
+        "claims",
+        "is_contested",
+        "force_majeure_alleged",
+        "high_risk_unresolved"
+      ]
+    },
+    "trusted_outbox_ledger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "branch_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "lineage_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "modpack_hash": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trusted_kind": {
+          "const": "SYNTHETIC_OUTBOX_LEDGER"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "agreement_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "state": {
+          "enum": [
+            "CLEAR",
+            "PENDING",
+            "DISPATCHED",
+            "UNCERTAIN"
+          ]
+        },
+        "pending_actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^SYN-"
+          }
+        },
+        "committed_proposal_keys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "pending_proposal_keys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "trusted_kind",
+        "authenticated_fixture",
+        "agreement_id",
+        "revision",
+        "state",
+        "pending_actions",
+        "committed_proposal_keys",
+        "pending_proposal_keys"
+      ]
+    }
+  },
+  "required": [
+    "source_kind",
+    "context",
+    "request",
+    "trusted_policy",
+    "trusted_agreement_registry",
+    "trusted_term_registry",
+    "trusted_receipt_ledger",
+    "trusted_claim_ledger",
+    "trusted_outbox_ledger"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "fixture_only": true,
+    "host_mode": "SYNTHETIC_HOST_FIXTURE",
+    "campaign_id": "SYN-CAMP-1", "branch_id": "SYN-BRANCH-A", "region_id": "SYN-REGION-1",
+    "host_epoch": 3, "checkpoint_epoch": 7,
+    "build_fingerprint": "SYN-BUILD-ONLY", "modpack_hash": "SYN-MODPACK-ONLY",
+    "adapter_revision": "SYN-ADAPTER-1", "rule_revision": "SYN-RULE-1",
+    "observation_coverage": "FULL_SYNTHETIC"
+  },
+  "capabilities": [
+    {"action_type": "PATCH", "field_id": "overlay_marker", "validation": "SYNTHETIC_VERIFIED", "build_fingerprint": "SYN-BUILD-ONLY", "modpack_hash": "SYN-MODPACK-ONLY", "adapter_revision": "SYN-ADAPTER-1"},
+    {"action_type": "CREATE", "field_id": "overlay_actor", "validation": "SYNTHETIC_VERIFIED", "build_fingerprint": "SYN-BUILD-ONLY", "modpack_hash": "SYN-MODPACK-ONLY", "adapter_revision": "SYN-ADAPTER-1"},
+    {"action_type": "RETIRE", "field_id": "overlay_marker", "validation": "SYNTHETIC_VERIFIED", "build_fingerprint": "SYN-BUILD-ONLY", "modpack_hash": "SYN-MODPACK-ONLY", "adapter_revision": "SYN-ADAPTER-1"}
+  ],
+  "claims": [
+    {"persistent_id": "SYN-NPC-OWNED", "owner_kind": "INFINITY_AI", "runtime_custodian": "INFINITY_AI", "instance_id": "SYN-INSTANCE-99", "instance_generation": 1, "owner_revision": "SYN-REV-1", "owner_receipt_id": "SYN-RECEIPT-99", "allowed_fields": ["overlay_marker"], "host_confirmed_state": "SYN-OLD", "retire_eligible": false},
+    {"persistent_id": "SYN-NPC-QUEST", "owner_kind": "QUEST_SCRIPT", "runtime_custodian": "QUEST_SCRIPT", "instance_id": "SYN-Q-1", "instance_generation": 1, "owner_revision": "SYN-QREV", "owner_receipt_id": "SYN-Q-RECEIPT", "allowed_fields": []},
+    {"persistent_id": "SYN-NPC-MOD", "owner_kind": "THIRD_PARTY_MOD", "runtime_custodian": "THIRD_PARTY_MOD", "instance_id": "SYN-M-1", "instance_generation": 1, "owner_revision": "SYN-MREV", "owner_receipt_id": "SYN-M-RECEIPT", "allowed_fields": []}
+  ],
+  "intents": [
+    {"intent_id": "SYN-1", "persistent_id": "SYN-NPC-OWNED", "instance_id": "SYN-INSTANCE-99", "expected_owner_revision": "SYN-REV-1", "action_type": "PATCH", "field_id": "overlay_marker", "desired_state": "SYN-NEW", "authorized": true, "risk": "LOW", "campaign_id": "SYN-CAMP-1", "branch_id": "SYN-BRANCH-A", "region_id": "SYN-REGION-1", "host_epoch": 3, "checkpoint_epoch": 7, "build_fingerprint": "SYN-BUILD-ONLY", "modpack_hash": "SYN-MODPACK-ONLY", "adapter_revision": "SYN-ADAPTER-1", "rule_revision": "SYN-RULE-1"},
+    {"intent_id": "SYN-2", "persistent_id": "SYN-NPC-QUEST", "instance_id": "SYN-Q-1", "expected_owner_revision": "SYN-QREV", "action_type": "PATCH", "field_id": "overlay_marker", "desired_state": "SYN-NEW", "authorized": true, "risk": "LOW", "campaign_id": "SYN-CAMP-1", "branch_id": "SYN-BRANCH-A", "region_id": "SYN-REGION-1", "host_epoch": 3, "checkpoint_epoch": 7, "build_fingerprint": "SYN-BUILD-ONLY", "modpack_hash": "SYN-MODPACK-ONLY", "adapter_revision": "SYN-ADAPTER-1", "rule_revision": "SYN-RULE-1"},
+    {"intent_id": "SYN-3", "persistent_id": "SYN-NPC-OWNED", "instance_id": "SYN-INSTANCE-99", "expected_owner_revision": "SYN-REV-1", "action_type": "PATCH", "field_id": "quest_flag", "desired_state": "SYN-CHANGE", "authorized": true, "risk": "LOW", "campaign_id": "SYN-CAMP-1", "branch_id": "SYN-BRANCH-A", "region_id": "SYN-REGION-1", "host_epoch": 3, "checkpoint_epoch": 7, "build_fingerprint": "SYN-BUILD-ONLY", "modpack_hash": "SYN-MODPACK-ONLY", "adapter_revision": "SYN-ADAPTER-1", "rule_revision": "SYN-RULE-1"}
+  ],
+  "pending_actions": []
+}

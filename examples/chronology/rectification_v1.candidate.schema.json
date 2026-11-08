@@ -1,0 +1,450 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/infinity-ai/dec104/rectification_v1.candidate.schema.json",
+  "title": "DEC-104/C — Synthetic-only rectification planning fixture (NOT EEex API)",
+  "description": "Illustrative test-only envelope; production trust stores must be separate and authenticated.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_kind",
+    "context",
+    "request",
+    "policy",
+    "rectification_registry",
+    "ledger"
+  ],
+  "properties": {
+    "source_kind": {
+      "const": "SYNTHETIC_TEST"
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "branch_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "lineage_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "modpack_hash": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "fixture_only": {
+          "const": true
+        },
+        "host_mode": {
+          "const": "SYNTHETIC_HOST_FIXTURE"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "world_tick": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "fixture_only",
+        "host_mode",
+        "host_epoch",
+        "checkpoint_epoch",
+        "world_tick"
+      ],
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "audience": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "object",
+          "properties": {
+            "campaign_id": {
+              "type": "string",
+              "pattern": "^SYN-"
+            },
+            "branch_id": {
+              "type": "string",
+              "pattern": "^SYN-"
+            },
+            "lineage_id": {
+              "type": "string",
+              "pattern": "^SYN-"
+            },
+            "build_fingerprint": {
+              "type": "string",
+              "pattern": "^SYN-"
+            },
+            "modpack_hash": {
+              "type": "string",
+              "pattern": "^SYN-"
+            }
+          },
+          "required": [
+            "campaign_id",
+            "branch_id",
+            "lineage_id",
+            "build_fingerprint",
+            "modpack_hash"
+          ],
+          "additionalProperties": false
+        },
+        "rectification_ref": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "expected_ledger_revision": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "operation_id",
+        "purpose",
+        "audience",
+        "scope",
+        "rectification_ref",
+        "expected_ledger_revision"
+      ],
+      "additionalProperties": true
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "trusted_kind": {
+          "const": "SYNTHETIC_POLICY_STORE"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "purposes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "audiences": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "process_protected": {
+          "type": "boolean"
+        },
+        "max_nodes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_descendants": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "trusted_kind",
+        "revision",
+        "purposes",
+        "audiences",
+        "process_protected",
+        "max_nodes",
+        "max_descendants"
+      ],
+      "additionalProperties": false
+    },
+    "rectification_registry": {
+      "type": "object",
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "branch_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "lineage_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "modpack_hash": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "trusted_kind": {
+          "const": "SYNTHETIC_RECTIFICATION_REGISTRY"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "rectification_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "source": {
+          "const": "DEC100_DEC101_DEC102_DEC103"
+        },
+        "state": {
+          "const": "RECTIFICATION_COMMITTED"
+        },
+        "classification": {
+          "enum": [
+            "PUBLIC",
+            "PROTECTED"
+          ]
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "source_revision": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "mapping_revision": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "root_admission_key": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "committed_at_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "trusted_kind",
+        "authenticated_fixture",
+        "rectification_id",
+        "source",
+        "state",
+        "classification",
+        "revision",
+        "source_revision",
+        "mapping_revision",
+        "root_admission_key",
+        "committed_at_tick",
+        "host_epoch",
+        "checkpoint_epoch"
+      ],
+      "additionalProperties": false
+    },
+    "ledger": {
+      "type": "object",
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "branch_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "lineage_id": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "modpack_hash": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "trusted_kind": {
+          "const": "SYNTHETIC_CAUSAL_LEDGER"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mapping_revision": {
+          "type": "string",
+          "pattern": "^SYN-"
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "planned_case_keys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^SYN-"
+          }
+        },
+        "pending_case_keys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^SYN-"
+          }
+        },
+        "open_gateway_actions": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "campaign_id": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "branch_id": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "lineage_id": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "build_fingerprint": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "modpack_hash": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^SYN-"
+              },
+              "kind": {
+                "enum": [
+                  "PROPOSAL",
+                  "HOST_EFFECT",
+                  "NEWS",
+                  "KNOWLEDGE",
+                  "VIEW"
+                ]
+              },
+              "state": {
+                "enum": [
+                  "PROPOSED",
+                  "QUEUED",
+                  "RISK_VALIDATED",
+                  "AUTHORIZED",
+                  "READY",
+                  "DISPATCHED",
+                  "UNCERTAIN",
+                  "ACK_UNKNOWN",
+                  "HOST_CONFIRMED",
+                  "APPLIED",
+                  "DELIVERED",
+                  "KNOWLEDGE_ACQUIRED",
+                  "DERIVED_VIEW",
+                  "PROJECTED",
+                  "MATERIALIZED_VIEW",
+                  "REJECTED",
+                  "EXPIRED",
+                  "REVOKED"
+                ]
+              },
+              "parents": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^SYN-"
+                }
+              }
+            },
+            "required": [
+              "campaign_id",
+              "branch_id",
+              "lineage_id",
+              "build_fingerprint",
+              "modpack_hash",
+              "id",
+              "kind",
+              "state",
+              "parents"
+            ],
+            "additionalProperties": true
+          }
+        }
+      },
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "trusted_kind",
+        "revision",
+        "mapping_revision",
+        "host_epoch",
+        "checkpoint_epoch",
+        "planned_case_keys",
+        "pending_case_keys",
+        "open_gateway_actions",
+        "nodes"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

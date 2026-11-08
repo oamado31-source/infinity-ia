@@ -1,0 +1,133 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "quest_key": "SYN-QUEST",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "mapping_revision": "SYN-MAPPING",
+    "lineage_id": "SYN-LINEAGE",
+    "fixture_only": true,
+    "host_mode": "SYNTHETIC_HOST_FIXTURE",
+    "host_epoch": 8,
+    "checkpoint_epoch": 6,
+    "world_tick": 100,
+    "dr_year": 1369,
+    "dr_month": 7,
+    "region_id": "SYN-REGION"
+  },
+  "request": {
+    "operation_id": "SYN-OP",
+    "proof_ref": "SYN-PROOF",
+    "purpose": "ADMIT_QUEST_MILESTONE",
+    "audience": "HOST_OPERATOR",
+    "scope": {
+      "campaign_id": "SYN-CAMP",
+      "branch_id": "SYN-BRANCH",
+      "quest_key": "SYN-QUEST",
+      "build_fingerprint": "SYN-BUILD",
+      "modpack_hash": "SYN-MODPACK",
+      "mapping_revision": "SYN-MAPPING",
+      "lineage_id": "SYN-LINEAGE"
+    },
+    "expected_ledger_revision": "SYN-LR1"
+  },
+  "policy": {
+    "trusted_kind": "SYNTHETIC_POLICY_STORE",
+    "revision": "SYN-POLICY",
+    "purposes": [
+      "ADMIT_QUEST_MILESTONE"
+    ],
+    "audiences": [
+      "HOST_OPERATOR"
+    ],
+    "max_age_ticks": 10,
+    "can_process_protected": false,
+    "can_propose_high_risk": false
+  },
+  "proof_registry": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "quest_key": "SYN-QUEST",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "mapping_revision": "SYN-MAPPING",
+    "lineage_id": "SYN-LINEAGE",
+    "trusted_kind": "SYNTHETIC_RECONCILED_PROOF_STORE",
+    "authenticated_fixture": true,
+    "proof_id": "SYN-PROOF",
+    "source": "DEC100_DEC101_DEC102",
+    "semantic_status": "MAPPED_MINIMAL",
+    "coverage": "FULL_FOR_MILESTONE",
+    "mapping_status": "CURATED_PINNED",
+    "reconciliation": "CONSISTENT_WITH_PROOF",
+    "host_epoch": 8,
+    "checkpoint_epoch": 6,
+    "observed_tick": 98,
+    "milestone_id": "SYN-MILESTONE",
+    "occurrence_id": "SYN-OCC1",
+    "classification": "PUBLIC",
+    "confidential_spoiler": "SYN-SECRET-DO-NOT-EXPOSE"
+  },
+  "catalog": {
+    "trusted_kind": "SYNTHETIC_CURATED_RULESET",
+    "curation_status": "CURATED_SYNTHETIC",
+    "revision": "SYN-RULESET",
+    "quest_key": "SYN-QUEST",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "mapping_revision": "SYN-MAPPING",
+    "rules": [
+      {
+        "rule_id": "SYN-R1",
+        "milestone_id": "SYN-MILESTONE",
+        "region_id": "SYN-REGION",
+        "dr_start": 1369,
+        "dr_end": 1370,
+        "month_start": 6,
+        "month_end": 8,
+        "classification": "PUBLIC",
+        "risk": "LOW",
+        "requires": {
+          "SYN-EVIDENCE": true
+        },
+        "kind": "RUMOR_PROPOSAL"
+      },
+      {
+        "rule_id": "SYN-R2",
+        "milestone_id": "SYN-MILESTONE",
+        "region_id": "SYN-REGION",
+        "dr_start": 1369,
+        "dr_end": 1370,
+        "month_start": 6,
+        "month_end": 8,
+        "classification": "PRIVATE",
+        "risk": "MEDIUM",
+        "requires": {
+          "SYN-EVIDENCE": true
+        },
+        "kind": "FACTION_REACTION_PROPOSAL"
+      }
+    ]
+  },
+  "ledger": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "quest_key": "SYN-QUEST",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "mapping_revision": "SYN-MAPPING",
+    "lineage_id": "SYN-LINEAGE",
+    "trusted_kind": "SYNTHETIC_ADMISSION_LEDGER",
+    "host_epoch": 8,
+    "checkpoint_epoch": 6,
+    "revision": "SYN-LR1",
+    "actions": [],
+    "admitted_keys": [],
+    "pending_keys": [],
+    "confirmed_facts": {
+      "SYN-EVIDENCE": true
+    }
+  }
+}

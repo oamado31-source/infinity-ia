@@ -1,0 +1,120 @@
+{
+  "schema_version": "0.1-draft",
+  "fixture_only": true,
+  "events": [
+    {
+      "event_id": "SYN-PORT-ALERT-1",
+      "source_kind": "SYNTHETIC_TEST",
+      "time": {
+        "precision": "MONTH",
+        "year_dr": 1369,
+        "month": 7
+      },
+      "scope": {
+        "level": "REGIONAL",
+        "regions": [
+          "region-example"
+        ],
+        "location_tags": [
+          "road",
+          "gate"
+        ]
+      },
+      "conditions": [
+        {
+          "field": "regional_alert",
+          "op": "EQ",
+          "value": true
+        },
+        {
+          "field": "canon_divergence",
+          "op": "EQ",
+          "value": false
+        }
+      ],
+      "verified_prerequisites": [],
+      "effects": [
+        {
+          "effect_id": "SYN-PATROL-PLUS-1",
+          "kind": "DIRECT",
+          "action": "PROPOSE_MODIFIER",
+          "risk": "LOW",
+          "metric": "patrol_intensity",
+          "delta": 1,
+          "cap": 2
+        },
+        {
+          "effect_id": "SYN-ROBBERY-MINUS-1",
+          "kind": "INDIRECT",
+          "action": "PROPOSE_MODIFIER",
+          "risk": "MEDIUM",
+          "metric": "robbery_risk",
+          "delta": -1,
+          "cap": 2,
+          "requires_applied_effect": "SYN-PATROL-PLUS-1"
+        }
+      ]
+    },
+    {
+      "event_id": "SYN-UNSPECIFIED-MONTH",
+      "source_kind": "SYNTHETIC_TEST",
+      "time": {
+        "precision": "YEAR_ONLY",
+        "year_dr": 1369
+      },
+      "scope": {
+        "level": "LOCAL",
+        "regions": [
+          "region-example"
+        ],
+        "location_tags": [
+          "tavern"
+        ]
+      },
+      "conditions": [],
+      "verified_prerequisites": [],
+      "effects": [
+        {
+          "effect_id": "SYN-RUMOR-1",
+          "kind": "DIRECT",
+          "action": "PROPOSE_MODIFIER",
+          "risk": "LOW",
+          "metric": "rumor_coverage",
+          "delta": 1,
+          "cap": 1
+        }
+      ]
+    },
+    {
+      "event_id": "SYN-FUTURE-1370",
+      "source_kind": "SYNTHETIC_TEST",
+      "time": {
+        "precision": "MONTH",
+        "year_dr": 1370,
+        "month": 7
+      },
+      "scope": {
+        "level": "REGIONAL",
+        "regions": [
+          "region-example"
+        ],
+        "location_tags": [
+          "road"
+        ]
+      },
+      "conditions": [],
+      "verified_prerequisites": [],
+      "effects": [
+        {
+          "effect_id": "SYN-FUTURE-MOD",
+          "kind": "DIRECT",
+          "action": "PROPOSE_MODIFIER",
+          "risk": "LOW",
+          "metric": "patrol_intensity",
+          "delta": 1,
+          "cap": 1
+        }
+      ]
+    }
+  ]
+}

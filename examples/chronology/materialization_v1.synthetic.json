@@ -1,0 +1,94 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "fixture_only": true,
+    "campaign_id": "SYN-CMP-A",
+    "branch_id": "SYN-MAIN",
+    "region_id": "SYN-AREA-1",
+    "host_epoch": 3,
+    "checkpoint_epoch": 7,
+    "build_fingerprint": "SYN-BUILD-1",
+    "pack_hash": "SYN-PACK-1",
+    "ruleset_revision": "SYN-RULES-1",
+    "world_tick": 102,
+    "time_mode": "PARTIAL",
+    "region_mode": "ACTIVE",
+    "max_catchup_ticks": 3,
+    "max_new_entities": 1,
+    "capabilities": [
+      "PROPOSE_CREATE",
+      "PROPOSE_PATCH"
+    ]
+  },
+  "snapshot": {
+    "campaign_id": "SYN-CMP-A",
+    "branch_id": "SYN-MAIN",
+    "region_id": "SYN-AREA-1",
+    "host_epoch": 3,
+    "checkpoint_epoch": 7,
+    "build_fingerprint": "SYN-BUILD-1",
+    "pack_hash": "SYN-PACK-1",
+    "ruleset_revision": "SYN-RULES-1",
+    "last_confirmed_world_tick": 100,
+    "entities": [
+      {
+        "persistent_id": "SYN-NPC-1",
+        "instance_id": "SYN-HOST-1",
+        "template_id": "SYN-TEMPLATE-GUARD",
+        "owner_kind": "INFINITY_AI",
+        "ownership_receipt_id": "SYN-OWN-1",
+        "confirmed_state": "ON_PATROL",
+        "retire_eligible": false
+      }
+    ]
+  },
+  "observation": {
+    "campaign_id": "SYN-CMP-A",
+    "branch_id": "SYN-MAIN",
+    "region_id": "SYN-AREA-1",
+    "host_epoch": 3,
+    "checkpoint_epoch": 7,
+    "build_fingerprint": "SYN-BUILD-1",
+    "pack_hash": "SYN-PACK-1",
+    "ruleset_revision": "SYN-RULES-1",
+    "coverage": "COMPLETE_SYNTHETIC",
+    "entities": [
+      {
+        "persistent_id": "SYN-NPC-1",
+        "instance_id": "SYN-HOST-1",
+        "owner_kind": "INFINITY_AI",
+        "ownership_receipt_id": "SYN-OWN-1"
+      }
+    ]
+  },
+  "desired": {
+    "campaign_id": "SYN-CMP-A",
+    "branch_id": "SYN-MAIN",
+    "region_id": "SYN-AREA-1",
+    "host_epoch": 3,
+    "checkpoint_epoch": 7,
+    "build_fingerprint": "SYN-BUILD-1",
+    "pack_hash": "SYN-PACK-1",
+    "ruleset_revision": "SYN-RULES-1",
+    "world_tick": 102,
+    "entities": [
+      {
+        "persistent_id": "SYN-NPC-1",
+        "owner_kind": "INFINITY_AI",
+        "template_id": "SYN-TEMPLATE-GUARD",
+        "target_state": "ON_PATROL",
+        "risk": "LOW",
+        "approved": true
+      },
+      {
+        "persistent_id": "SYN-NPC-2",
+        "owner_kind": "INFINITY_AI",
+        "template_id": "SYN-TEMPLATE-SCOUT",
+        "target_state": "WAITING",
+        "risk": "LOW",
+        "approved": true
+      }
+    ]
+  },
+  "pending_actions": []
+}

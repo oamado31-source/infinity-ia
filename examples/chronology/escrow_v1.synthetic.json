@@ -1,0 +1,136 @@
+{
+  "source_kind": "SYNTHETIC_FIXTURE",
+  "context": {
+    "mode": "SYNTHETIC_ONLY",
+    "fixture_only": true,
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MOD",
+    "host_epoch": 1,
+    "checkpoint_epoch": 1
+  },
+  "request": {
+    "escrow_id": "SYN-ESCROW",
+    "expected_revision": 1,
+    "requester": "SYN-HOST",
+    "audience": "SYN-AUDIT"
+  },
+  "trusted_agreement": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MOD",
+    "host_epoch": 1,
+    "checkpoint_epoch": 1,
+    "authenticated_fixture": true,
+    "escrow_id": "SYN-ESCROW",
+    "revision": 1,
+    "state": "COMMITTED",
+    "asset_id": "SYN-COIN-POOL",
+    "amount": "50",
+    "unit": "GOLD",
+    "depositant": "SYN-GUILD-B",
+    "custodian": "SYN-CUSTODIAN",
+    "allowed_audiences": [
+      "SYN-AUDIT"
+    ],
+    "contested": false
+  },
+  "trusted_capability": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MOD",
+    "host_epoch": 1,
+    "checkpoint_epoch": 1,
+    "authenticated_fixture": true,
+    "escrow_tested_two_clients": false,
+    "transfer_tested": false,
+    "query_tested": false,
+    "recovery_tested": false
+  },
+  "trusted_ownership": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MOD",
+    "host_epoch": 1,
+    "checkpoint_epoch": 1,
+    "authenticated_fixture": true,
+    "proven_owner": true,
+    "custodian_validated": true,
+    "asset_id": "SYN-COIN-POOL",
+    "owner": "SYN-GUILD-B"
+  },
+  "trusted_authorizations": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MOD",
+    "host_epoch": 1,
+    "checkpoint_epoch": 1,
+    "authenticated_fixture": true,
+    "authorized_requesters": [
+      "SYN-HOST"
+    ],
+    "allowed_audiences": [
+      "SYN-AUDIT"
+    ],
+    "depositant_consented": true,
+    "release_consent_valid": true
+  },
+  "trusted_release_rule": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MOD",
+    "host_epoch": 1,
+    "checkpoint_epoch": 1,
+    "authenticated_fixture": true,
+    "revision": 1,
+    "conditions_confirmed": true,
+    "contested": false
+  },
+  "trusted_host_receipts": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MOD",
+    "host_epoch": 1,
+    "checkpoint_epoch": 1,
+    "authenticated_fixture": true,
+    "uncertain_actions": [],
+    "dispatched_actions": [],
+    "confirmed_deposits": [
+      {
+        "receipt_id": "SYN-RECEIPT-D1",
+        "action_id": "SYN-ACTION-D1",
+        "escrow_id": "SYN-ESCROW",
+        "asset_id": "SYN-COIN-POOL",
+        "to_custodian": "SYN-CUSTODIAN",
+        "from_owner": "SYN-GUILD-B",
+        "unit": "GOLD",
+        "amount": "50",
+        "authenticated_fixture": true,
+        "status": "CONFIRMED",
+        "campaign_id": "SYN-CAMP",
+        "branch_id": "SYN-BRANCH",
+        "lineage_id": "SYN-LINEAGE",
+        "build_fingerprint": "SYN-BUILD",
+        "modpack_hash": "SYN-MOD",
+        "host_epoch": 1,
+        "checkpoint_epoch": 1
+      }
+    ],
+    "pending_release_keys": [],
+    "confirmed_release_keys": []
+  }
+}

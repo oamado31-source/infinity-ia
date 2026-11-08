@@ -1,0 +1,3 @@
+# Test-only dependencies; install into an isolated virtual environment.
+# Matches the JSON Schema Draft 2020-12 validators used by synthetic tests.
+jsonschema==4.26.0

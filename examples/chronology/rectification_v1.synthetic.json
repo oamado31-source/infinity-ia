@@ -1,0 +1,44 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "fixture_only": true, "host_mode": "SYNTHETIC_HOST_FIXTURE",
+    "campaign_id": "SYN-CAMPAIGN", "branch_id": "SYN-BRANCH", "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD", "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4, "checkpoint_epoch": 6, "world_tick": 200
+  },
+  "request": {
+    "operation_id": "SYN-OP", "purpose": "REVIEW_RECTIFICATION", "audience": "CURATOR",
+    "scope": {"campaign_id": "SYN-CAMPAIGN", "branch_id": "SYN-BRANCH", "lineage_id": "SYN-LINEAGE", "build_fingerprint": "SYN-BUILD", "modpack_hash": "SYN-MODPACK"},
+    "rectification_ref": "SYN-RECTIFICATION-1", "expected_ledger_revision": 3
+  },
+  "policy": {
+    "trusted_kind": "SYNTHETIC_POLICY_STORE", "revision": "SYN-POLICY-1",
+    "purposes": ["REVIEW_RECTIFICATION"], "audiences": ["CURATOR"], "process_protected": false,
+    "max_nodes": 50, "max_descendants": 30
+  },
+  "rectification_registry": {
+    "trusted_kind": "SYNTHETIC_RECTIFICATION_REGISTRY", "authenticated_fixture": true,
+    "rectification_id": "SYN-RECTIFICATION-1", "source": "DEC100_DEC101_DEC102_DEC103",
+    "state": "RECTIFICATION_COMMITTED", "classification": "PUBLIC", "revision": "SYN-RECT-REV-2",
+    "source_revision": "SYN-SEMANTICS-REV-4", "mapping_revision": "SYN-SEMANTICS-REV-4",
+    "root_admission_key": "SYN-ROOT", "committed_at_tick": 190,
+    "campaign_id": "SYN-CAMPAIGN", "branch_id": "SYN-BRANCH", "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD", "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4, "checkpoint_epoch": 6
+  },
+  "ledger": {
+    "trusted_kind": "SYNTHETIC_CAUSAL_LEDGER", "revision": 3,
+    "mapping_revision": "SYN-SEMANTICS-REV-4",
+    "campaign_id": "SYN-CAMPAIGN", "branch_id": "SYN-BRANCH", "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD", "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4, "checkpoint_epoch": 6,
+    "planned_case_keys": [], "pending_case_keys": [], "open_gateway_actions": [],
+    "nodes": [
+      {"id": "SYN-ROOT", "kind": "PROPOSAL", "state": "AUTHORIZED", "parents": [], "campaign_id": "SYN-CAMPAIGN", "branch_id": "SYN-BRANCH", "lineage_id": "SYN-LINEAGE", "build_fingerprint": "SYN-BUILD", "modpack_hash": "SYN-MODPACK"},
+      {"id": "SYN-LOCAL-EFFECT", "kind": "HOST_EFFECT", "state": "HOST_CONFIRMED", "parents": ["SYN-ROOT"], "campaign_id": "SYN-CAMPAIGN", "branch_id": "SYN-BRANCH", "lineage_id": "SYN-LINEAGE", "build_fingerprint": "SYN-BUILD", "modpack_hash": "SYN-MODPACK"},
+      {"id": "SYN-RUMOR-DELIVERED", "kind": "NEWS", "state": "DELIVERED", "parents": ["SYN-ROOT"], "campaign_id": "SYN-CAMPAIGN", "branch_id": "SYN-BRANCH", "lineage_id": "SYN-LINEAGE", "build_fingerprint": "SYN-BUILD", "modpack_hash": "SYN-MODPACK"},
+      {"id": "SYN-VIEW", "kind": "VIEW", "state": "DERIVED_VIEW", "parents": ["SYN-LOCAL-EFFECT"], "campaign_id": "SYN-CAMPAIGN", "branch_id": "SYN-BRANCH", "lineage_id": "SYN-LINEAGE", "build_fingerprint": "SYN-BUILD", "modpack_hash": "SYN-MODPACK"},
+      {"id": "SYN-PENDING", "kind": "PROPOSAL", "state": "QUEUED", "parents": ["SYN-RUMOR-DELIVERED"], "campaign_id": "SYN-CAMPAIGN", "branch_id": "SYN-BRANCH", "lineage_id": "SYN-LINEAGE", "build_fingerprint": "SYN-BUILD", "modpack_hash": "SYN-MODPACK"}
+    ]
+  }
+}

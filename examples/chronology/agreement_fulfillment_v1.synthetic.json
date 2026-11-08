@@ -1,0 +1,168 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "fixture_only": true,
+    "host_mode": "SYNTHETIC_HOST_FIXTURE",
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "world_tick": 15,
+    "clock_mode": "PARTIAL",
+    "authenticated_principal": "SYN-REP-B"
+  },
+  "request": {
+    "agreement_ref": "SYN-AG-1",
+    "term_ref": "SYN-TERM-1",
+    "expected_agreement_revision": 1,
+    "expected_term_revision": 1,
+    "purpose": "FULFILLMENT_REVIEW",
+    "audience": "PARTIES",
+    "trace_ref": "SYN-TRACE"
+  },
+  "trusted_policy": {
+    "trusted_kind": "SYNTHETIC_SIGNED_POLICY",
+    "authenticated_fixture": true,
+    "revision": "SYN-POL-1",
+    "authorized_principals": [
+      "SYN-REP-A",
+      "SYN-REP-B"
+    ],
+    "allowed_audiences": [
+      "PARTIES"
+    ],
+    "high_risk_unresolved": false
+  },
+  "trusted_agreement_registry": {
+    "trusted_kind": "SYNTHETIC_AGREEMENT_REGISTRY",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "agreement_id": "SYN-AG-1",
+    "revision": 1,
+    "commit_state": "COMMITTED",
+    "commit_receipt_authenticated": true,
+    "mandate_valid": true,
+    "party_ids": [
+      "SYN-ORG-A",
+      "SYN-ORG-B"
+    ],
+    "authorized_representatives": [
+      "SYN-REP-A",
+      "SYN-REP-B"
+    ],
+    "policy_revision": "SYN-POL-1",
+    "allowed_audiences": [
+      "PARTIES"
+    ],
+    "high_risk_unresolved": false
+  },
+  "trusted_term_registry": {
+    "trusted_kind": "SYNTHETIC_TERM_REGISTRY",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "agreement_id": "SYN-AG-1",
+    "term_id": "SYN-TERM-1",
+    "revision": 1,
+    "status": "ACTIVE",
+    "kind": "DELIVER_GOODS",
+    "obligor": "SYN-ORG-A",
+    "beneficiary": "SYN-ORG-B",
+    "amount": 10,
+    "unit": "CRATE",
+    "due_tick": 20,
+    "allowed_audiences": [
+      "PARTIES"
+    ],
+    "allow_overdelivery": false,
+    "high_risk_unresolved": false
+  },
+  "trusted_receipt_ledger": {
+    "trusted_kind": "SYNTHETIC_RECEIPT_LEDGER",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "term_id": "SYN-TERM-1",
+    "term_revision": 1,
+    "revision": 1,
+    "receipts": [
+      {
+        "receipt_id": "SYN-R-1",
+        "action_id": "SYN-ACTION-1",
+        "authenticated_fixture": true,
+        "campaign_id": "SYN-CAMP",
+        "branch_id": "SYN-BRANCH",
+        "lineage_id": "SYN-LINEAGE",
+        "build_fingerprint": "SYN-BUILD",
+        "modpack_hash": "SYN-MODS",
+        "host_epoch": 2,
+        "checkpoint_epoch": 3,
+        "term_id": "SYN-TERM-1",
+        "term_revision": 1,
+        "status": "CONFIRMED",
+        "amount": 6,
+        "unit": "CRATE",
+        "from_party": "SYN-ORG-A",
+        "to_party": "SYN-ORG-B",
+        "world_tick": 12
+      }
+    ],
+    "pending_actions": [],
+    "dispatched_actions": [],
+    "uncertain_actions": []
+  },
+  "trusted_claim_ledger": {
+    "trusted_kind": "SYNTHETIC_CLAIM_LEDGER",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "agreement_id": "SYN-AG-1",
+    "term_id": "SYN-TERM-1",
+    "term_revision": 1,
+    "claims": [],
+    "is_contested": false,
+    "force_majeure_alleged": false,
+    "high_risk_unresolved": false
+  },
+  "trusted_outbox_ledger": {
+    "trusted_kind": "SYNTHETIC_OUTBOX_LEDGER",
+    "authenticated_fixture": true,
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "agreement_id": "SYN-AG-1",
+    "revision": 1,
+    "state": "CLEAR",
+    "pending_actions": [],
+    "committed_proposal_keys": [],
+    "pending_proposal_keys": []
+  }
+}

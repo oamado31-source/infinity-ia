@@ -1,0 +1,209 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "campaign_id": "SYN-CAMP-1",
+    "branch_id": "SYN-BRANCH-1",
+    "lineage_id": "SYN-LINEAGE-1",
+    "host_epoch": 3,
+    "checkpoint_epoch": 4,
+    "build_fingerprint": "SYN-BUILD-1",
+    "modpack_hash": "SYN-MODPACK-1",
+    "world_tick": 20,
+    "clock_mode": "PARTIAL",
+    "fixture_only": true,
+    "host_mode": "SYNTHETIC_HOST_FIXTURE",
+    "authenticated_principal": "SYN-HOST-1"
+  },
+  "request": {
+    "agreement_id": "SYN-AGREEMENT-1",
+    "term_id": "SYN-TERM-B",
+    "expected_agreement_revision": 1,
+    "expected_term_revision": 1,
+    "policy_revision": "SYN-POLICY-109-1"
+  },
+  "trusted_agreement_registry": {
+    "campaign_id": "SYN-CAMP-1",
+    "branch_id": "SYN-BRANCH-1",
+    "lineage_id": "SYN-LINEAGE-1",
+    "host_epoch": 3,
+    "checkpoint_epoch": 4,
+    "build_fingerprint": "SYN-BUILD-1",
+    "modpack_hash": "SYN-MODPACK-1",
+    "authenticated_fixture": true,
+    "agreement_id": "SYN-AGREEMENT-1",
+    "revision": 1,
+    "state": "COMMITTED",
+    "consents_confirmed": true,
+    "mandates_valid": true,
+    "commit_proof_authenticated": true,
+    "parties": [
+      "SYN-GUILD-A",
+      "SYN-GUILD-B",
+      "SYN-GUILD-C"
+    ]
+  },
+  "trusted_term_registry": {
+    "campaign_id": "SYN-CAMP-1",
+    "branch_id": "SYN-BRANCH-1",
+    "lineage_id": "SYN-LINEAGE-1",
+    "host_epoch": 3,
+    "checkpoint_epoch": 4,
+    "build_fingerprint": "SYN-BUILD-1",
+    "modpack_hash": "SYN-MODPACK-1",
+    "authenticated_fixture": true,
+    "terms": [
+      {
+        "term_id": "SYN-TERM-A",
+        "agreement_id": "SYN-AGREEMENT-1",
+        "revision": 1,
+        "state": "COMMITTED",
+        "obligor": "SYN-GUILD-A",
+        "beneficiary": "SYN-GUILD-B",
+        "unit": "BOX",
+        "quantity": "10",
+        "earliest_world_tick": 15,
+        "resource_id": "SYN-CART-1",
+        "gate": {
+          "operator": "ALL",
+          "minimum": 0,
+          "dependencies": []
+        }
+      },
+      {
+        "term_id": "SYN-TERM-B",
+        "agreement_id": "SYN-AGREEMENT-1",
+        "revision": 1,
+        "state": "COMMITTED",
+        "obligor": "SYN-GUILD-B",
+        "beneficiary": "SYN-GUILD-C",
+        "unit": "GOLD",
+        "quantity": "50",
+        "earliest_world_tick": 15,
+        "resource_id": "SYN-PURSE-1",
+        "gate": {
+          "operator": "ALL",
+          "minimum": 0,
+          "dependencies": [
+            {
+              "term_id": "SYN-TERM-A",
+              "expected_revision": 1,
+              "kind": "CONFIRMED_COMPLETE"
+            }
+          ]
+        }
+      },
+      {
+        "term_id": "SYN-TERM-C",
+        "agreement_id": "SYN-AGREEMENT-1",
+        "revision": 1,
+        "state": "COMMITTED",
+        "obligor": "SYN-GUILD-C",
+        "beneficiary": "SYN-GUILD-A",
+        "unit": "ESCORT",
+        "quantity": "1",
+        "earliest_world_tick": 15,
+        "resource_id": "SYN-ESCORT-1",
+        "gate": {
+          "operator": "ALL",
+          "minimum": 0,
+          "dependencies": [
+            {
+              "term_id": "SYN-TERM-B",
+              "expected_revision": 1,
+              "kind": "CONFIRMED_COMPLETE"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "trusted_receipt_ledger": {
+    "campaign_id": "SYN-CAMP-1",
+    "branch_id": "SYN-BRANCH-1",
+    "lineage_id": "SYN-LINEAGE-1",
+    "host_epoch": 3,
+    "checkpoint_epoch": 4,
+    "build_fingerprint": "SYN-BUILD-1",
+    "modpack_hash": "SYN-MODPACK-1",
+    "authenticated_fixture": true,
+    "inflight_actions": [],
+    "receipts": [
+      {
+        "campaign_id": "SYN-CAMP-1",
+        "branch_id": "SYN-BRANCH-1",
+        "lineage_id": "SYN-LINEAGE-1",
+        "host_epoch": 3,
+        "checkpoint_epoch": 4,
+        "build_fingerprint": "SYN-BUILD-1",
+        "modpack_hash": "SYN-MODPACK-1",
+        "receipt_id": "SYN-RECEIPT-1",
+        "action_id": "SYN-ACTION-1",
+        "agreement_id": "SYN-AGREEMENT-1",
+        "term_id": "SYN-TERM-A",
+        "term_revision": 1,
+        "unit": "BOX",
+        "quantity": "6",
+        "from_party": "SYN-GUILD-A",
+        "to_party": "SYN-GUILD-B",
+        "status": "CONFIRMED",
+        "host_authenticated": true,
+        "world_tick": 18
+      }
+    ]
+  },
+  "trusted_authorization_registry": {
+    "campaign_id": "SYN-CAMP-1",
+    "branch_id": "SYN-BRANCH-1",
+    "lineage_id": "SYN-LINEAGE-1",
+    "host_epoch": 3,
+    "checkpoint_epoch": 4,
+    "build_fingerprint": "SYN-BUILD-1",
+    "modpack_hash": "SYN-MODPACK-1",
+    "authenticated_fixture": true,
+    "term_grants": [
+      {
+        "term_id": "SYN-TERM-A",
+        "revision": 1,
+        "party": "SYN-GUILD-A",
+        "authorized": true
+      },
+      {
+        "term_id": "SYN-TERM-B",
+        "revision": 1,
+        "party": "SYN-GUILD-B",
+        "authorized": true
+      },
+      {
+        "term_id": "SYN-TERM-C",
+        "revision": 1,
+        "party": "SYN-GUILD-C",
+        "authorized": true
+      }
+    ]
+  },
+  "trusted_reservation_registry": {
+    "campaign_id": "SYN-CAMP-1",
+    "branch_id": "SYN-BRANCH-1",
+    "lineage_id": "SYN-LINEAGE-1",
+    "host_epoch": 3,
+    "checkpoint_epoch": 4,
+    "build_fingerprint": "SYN-BUILD-1",
+    "modpack_hash": "SYN-MODPACK-1",
+    "authenticated_fixture": true,
+    "inflight_actions": [],
+    "conflicting_reservations": [],
+    "resources_available": true
+  },
+  "trusted_policy": {
+    "campaign_id": "SYN-CAMP-1",
+    "branch_id": "SYN-BRANCH-1",
+    "lineage_id": "SYN-LINEAGE-1",
+    "host_epoch": 3,
+    "checkpoint_epoch": 4,
+    "build_fingerprint": "SYN-BUILD-1",
+    "modpack_hash": "SYN-MODPACK-1",
+    "authenticated_fixture": true,
+    "revision": "SYN-POLICY-109-1",
+    "max_terms": 64
+  }
+}

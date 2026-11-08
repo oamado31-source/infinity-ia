@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Infinity AI — ChronologyRuleCatalog (unit-only proposal; DEC-096 PENDING)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_only",
+    "events"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1-draft"
+    },
+    "fixture_only": {
+      "const": true
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/event"
+      }
+    }
+  },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "source_kind",
+        "time",
+        "scope",
+        "conditions",
+        "effects"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "pattern": "^SYN-[A-Z0-9-]+$"
+        },
+        "source_kind": {
+          "const": "SYNTHETIC_TEST"
+        },
+        "time": {
+          "$ref": "#/$defs/time"
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "maxItems": 16
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/effect"
+          },
+          "maxItems": 12
+        },
+        "verified_prerequisites": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "precision",
+        "year_dr"
+      ],
+      "properties": {
+        "precision": {
+          "enum": [
+            "MONTH",
+            "YEAR_ONLY",
+            "DISPUTED"
+          ]
+        },
+        "year_dr": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "month": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "regions",
+        "location_tags"
+      ],
+      "properties": {
+        "level": {
+          "enum": [
+            "GLOBAL",
+            "REGIONAL",
+            "LOCAL"
+          ]
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "location_tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "op",
+        "value"
+      ],
+      "properties": {
+        "field": {
+          "enum": [
+            "regional_alert",
+            "campaign_phase",
+            "canon_divergence"
+          ]
+        },
+        "op": {
+          "enum": [
+            "EQ",
+            "IN"
+          ]
+        },
+        "value": {}
+      }
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effect_id",
+        "kind",
+        "action",
+        "risk"
+      ],
+      "properties": {
+        "effect_id": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "DIRECT",
+            "INDIRECT"
+          ]
+        },
+        "action": {
+          "const": "PROPOSE_MODIFIER"
+        },
+        "risk": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH"
+          ]
+        },
+        "metric": {
+          "enum": [
+            "patrol_intensity",
+            "robbery_risk",
+            "rumor_coverage"
+          ]
+        },
+        "delta": {
+          "type": "integer",
+          "minimum": -3,
+          "maximum": 3
+        },
+        "cap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "requires_applied_effect": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

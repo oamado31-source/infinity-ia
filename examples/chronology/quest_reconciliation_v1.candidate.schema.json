@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/infinity-ai/quest-reconciliation/v1-candidate.schema.json",
+  "title": "QuestReconciliationDecision — candidate contract, DEC-102/C",
+  "description": "Typed decision envelope only; runtime attestation/ACL/CAS are external and NOT guaranteed by JSON Schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "operation_id",
+    "scope",
+    "evidence_refs",
+    "evaluation",
+    "writes",
+    "proposals"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "candidate-v1"
+    },
+    "operation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "session_id",
+        "quest_key",
+        "build_fingerprint",
+        "modpack_hash",
+        "mapping_revision",
+        "host_epoch",
+        "checkpoint_epoch",
+        "overlay_revision"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "quest_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "build_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modpack_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mapping_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "overlay_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpoint_epoch": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "evidence_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host_observation_id",
+        "semantic_proof_id",
+        "overlay_snapshot_id",
+        "mapping_digest",
+        "receipt_ledger_ref"
+      ],
+      "properties": {
+        "host_observation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "semantic_proof_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "overlay_snapshot_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mapping_digest": {
+          "type": "string",
+          "minLength": 1
+        },
+        "receipt_ledger_ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason_code",
+        "coverage",
+        "freshness"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "CONSISTENT",
+            "PROPOSE_DERIVED_VIEW_REBASE",
+            "RESTORE_REVIEW_REQUIRED",
+            "UNKNOWN",
+            "QUARANTINED",
+            "BLOCKED_MAPPING",
+            "BLOCKED_ACL"
+          ]
+        },
+        "reason_code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "coverage": {
+          "enum": [
+            "FULL_FOR_SEMANTIC_PROOF",
+            "PARTIAL",
+            "UNAVAILABLE"
+          ]
+        },
+        "freshness": {
+          "enum": [
+            "FRESH",
+            "STALE",
+            "UNKNOWN"
+          ]
+        }
+      }
+    },
+    "writes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host_engine",
+        "quest_scripts",
+        "narrative_fact_ledger",
+        "npc_knowledge",
+        "auto_overlay_write"
+      ],
+      "properties": {
+        "host_engine": {
+          "const": false
+        },
+        "quest_scripts": {
+          "const": false
+        },
+        "narrative_fact_ledger": {
+          "const": false
+        },
+        "npc_knowledge": {
+          "const": false
+        },
+        "auto_overlay_write": {
+          "const": false
+        }
+      }
+    },
+    "proposals": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "kind",
+          "expected_overlay_revision",
+          "requires_separate_authorization"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "DERIVED_VIEW_REBASE",
+              "FORK_OR_RESCOPE_REVIEW",
+              "REQUEST_HOST_RECEIPTS",
+              "REQUEST_CAUSAL_REVIEW"
+            ]
+          },
+          "expected_overlay_revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requires_separate_authorization": {
+            "const": true
+          }
+        }
+      }
+    }
+  }
+}

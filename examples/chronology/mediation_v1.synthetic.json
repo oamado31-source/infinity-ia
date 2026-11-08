@@ -1,0 +1,162 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "fixture_only": true,
+    "host_mode": "SYNTHETIC_HOST_FIXTURE",
+    "world_tick": 45,
+    "clock_mode": "PARTIAL",
+    "authenticated_principal": "SYN-REP-B"
+  },
+  "request": {
+    "case_ref": "SYN-DISPUTE-1",
+    "party_ref": "SYN-ORG-B",
+    "audience": "PARTIES",
+    "purpose": "RIGHT_OF_REPLY",
+    "expected_revision": 1,
+    "trace_ref": "SYN-TRACE-1"
+  },
+  "trusted_policy": {
+    "trusted_kind": "SYNTHETIC_SIGNED_POLICY",
+    "revision": "SYN-POLICY-1",
+    "authorized_principals": [
+      "SYN-REP-A",
+      "SYN-REP-B"
+    ],
+    "allowed_audiences": [
+      "PARTIES",
+      "PUBLIC"
+    ],
+    "allowed_purposes": [
+      "RIGHT_OF_REPLY",
+      "MEDIATION"
+    ]
+  },
+  "trusted_case_registry": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "trusted_kind": "SYNTHETIC_DISPUTE_CASE",
+    "authenticated_fixture": true,
+    "case_id": "SYN-DISPUTE-1",
+    "case_revision": 5,
+    "party_ids": [
+      "SYN-ORG-A",
+      "SYN-ORG-B"
+    ],
+    "purpose": "RIGHT_OF_REPLY",
+    "allowed_audiences": [
+      "PARTIES"
+    ],
+    "status": "OPEN",
+    "high_risk_unresolved": false
+  },
+  "trusted_party_registry": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "trusted_kind": "SYNTHETIC_PARTY_REGISTRY",
+    "authenticated_fixture": true,
+    "parties": {
+      "SYN-ORG-A": {
+        "owner_attested": true,
+        "mandate": "VALID",
+        "represented_by": "SYN-REP-A",
+        "kind": "ORG",
+        "mediation_consent": "PENDING"
+      },
+      "SYN-ORG-B": {
+        "owner_attested": true,
+        "mandate": "VALID",
+        "represented_by": "SYN-REP-B",
+        "kind": "ORG",
+        "mediation_consent": "PENDING"
+      }
+    }
+  },
+  "trusted_evidence_ledger": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "trusted_kind": "SYNTHETIC_EVIDENCE_LEDGER",
+    "authenticated_fixture": true,
+    "case_id": "SYN-DISPUTE-1",
+    "status": "CONTESTED",
+    "claim_refs": [
+      "SYN-CLAIM-1"
+    ],
+    "classification": "RESTRICTED",
+    "allowed_audiences": [
+      "PARTIES"
+    ],
+    "high_risk_unresolved": false
+  },
+  "trusted_notice_ledger": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "trusted_kind": "SYNTHETIC_NOTICE_LEDGER",
+    "authenticated_fixture": true,
+    "case_id": "SYN-DISPUTE-1",
+    "respondent_id": "SYN-ORG-B",
+    "state": "DELIVERED",
+    "delivery_tick": 40,
+    "reply_status": "NOT_FILED",
+    "perceived": true,
+    "reply_deadline_tick": 50
+  },
+  "trusted_facilitator_registry": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "trusted_kind": "SYNTHETIC_FACILITATOR_REGISTRY",
+    "authenticated_fixture": true,
+    "case_id": "SYN-DISPUTE-1",
+    "status": "VALID",
+    "conflict_of_interest": false
+  },
+  "trusted_mediation_ledger": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODS",
+    "host_epoch": 2,
+    "checkpoint_epoch": 3,
+    "trusted_kind": "SYNTHETIC_MEDIATION_LEDGER",
+    "authenticated_fixture": true,
+    "case_revision": 5,
+    "revision": 1,
+    "committed_keys": [],
+    "pending_keys": [],
+    "pending": false,
+    "dispatched": false,
+    "uncertain": false
+  }
+}

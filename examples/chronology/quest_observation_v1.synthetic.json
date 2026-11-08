@@ -1,0 +1,175 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "fixture_only": true,
+    "host_mode": "SYNTHETIC_HOST_FIXTURE",
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "session_id": "SYN-SESSION",
+    "host_epoch": 3,
+    "checkpoint_epoch": 6,
+    "build_fingerprint": "SYN-BG2EE",
+    "modpack_hash": "SYN-MODPACK",
+    "adapter_revision": "SYN-ADAPTER-1",
+    "policy_revision": "SYN-POLICY-1",
+    "snapshot_tick": 100,
+    "coverage": "FULL_SYNTHETIC"
+  },
+  "manifest": [
+    {
+      "probe_id": "SYN-PROBE-1",
+      "semantic_key": "stage_completed",
+      "sensitivity": "PUBLIC_PROGRESS",
+      "audiences": [
+        "DIRECTOR"
+      ],
+      "purpose": "STAGE_CONTINUITY",
+      "validation": "SYNTHETIC_VERIFIED",
+      "max_age_ticks": 5,
+      "semantic_mapping_revision": "SYN-MAP-1",
+      "build_fingerprint": "SYN-BG2EE",
+      "modpack_hash": "SYN-MODPACK",
+      "adapter_revision": "SYN-ADAPTER-1"
+    },
+    {
+      "probe_id": "SYN-PROBE-SECRET",
+      "semantic_key": "secret_outcome",
+      "sensitivity": "QUEST_SECRET",
+      "audiences": [
+        "DIRECTOR"
+      ],
+      "purpose": "STAGE_CONTINUITY",
+      "validation": "SYNTHETIC_VERIFIED",
+      "max_age_ticks": 5,
+      "semantic_mapping_revision": "SYN-MAP-1",
+      "build_fingerprint": "SYN-BG2EE",
+      "modpack_hash": "SYN-MODPACK",
+      "adapter_revision": "SYN-ADAPTER-1"
+    },
+    {
+      "probe_id": "SYN-PROBE-PARTY",
+      "semantic_key": "party_milestone",
+      "sensitivity": "PARTY_PRIVATE",
+      "audiences": [
+        "PARTY"
+      ],
+      "purpose": "STAGE_CONTINUITY",
+      "validation": "SYNTHETIC_VERIFIED",
+      "max_age_ticks": 5,
+      "semantic_mapping_revision": "SYN-MAP-1",
+      "build_fingerprint": "SYN-BG2EE",
+      "modpack_hash": "SYN-MODPACK",
+      "adapter_revision": "SYN-ADAPTER-1"
+    },
+    {
+      "probe_id": "SYN-PROBE-UNVERIFIED",
+      "semantic_key": "stage_2_completed",
+      "sensitivity": "PUBLIC_PROGRESS",
+      "audiences": [
+        "DIRECTOR"
+      ],
+      "purpose": "STAGE_CONTINUITY",
+      "validation": "UNVERIFIED",
+      "max_age_ticks": 5,
+      "semantic_mapping_revision": "SYN-MAP-1",
+      "build_fingerprint": "SYN-BG2EE",
+      "modpack_hash": "SYN-MODPACK",
+      "adapter_revision": "SYN-ADAPTER-1"
+    }
+  ],
+  "observations": [
+    {
+      "probe_id": "SYN-PROBE-1",
+      "coverage": "FULL_SYNTHETIC",
+      "read_state": "AVAILABLE",
+      "observed_tick": 98,
+      "host_epoch": 3,
+      "checkpoint_epoch": 6,
+      "semantic_value": "COMPLETED",
+      "raw_internal_flag_value": "SYNTHETIC-PRIVATE-NOT-FOR-OUTPUT"
+    },
+    {
+      "probe_id": "SYN-PROBE-SECRET",
+      "coverage": "FULL_SYNTHETIC",
+      "read_state": "AVAILABLE",
+      "observed_tick": 98,
+      "host_epoch": 3,
+      "checkpoint_epoch": 6,
+      "semantic_value": "COMPLETED",
+      "raw_internal_flag_value": "SYNTHETIC-PRIVATE-NOT-FOR-OUTPUT"
+    },
+    {
+      "probe_id": "SYN-PROBE-PARTY",
+      "coverage": "FULL_SYNTHETIC",
+      "read_state": "AVAILABLE",
+      "observed_tick": 98,
+      "host_epoch": 3,
+      "checkpoint_epoch": 6,
+      "semantic_value": "COMPLETED",
+      "raw_internal_flag_value": "SYNTHETIC-PRIVATE-NOT-FOR-OUTPUT"
+    },
+    {
+      "probe_id": "SYN-PROBE-UNVERIFIED",
+      "coverage": "FULL_SYNTHETIC",
+      "read_state": "AVAILABLE",
+      "observed_tick": 98,
+      "host_epoch": 3,
+      "checkpoint_epoch": 6,
+      "semantic_value": "COMPLETED",
+      "raw_internal_flag_value": "SYNTHETIC-PRIVATE-NOT-FOR-OUTPUT"
+    }
+  ],
+  "requests": [
+    {
+      "request_id": "SYN-REQ-1",
+      "probe_id": "SYN-PROBE-1",
+      "purpose": "STAGE_CONTINUITY",
+      "audience": "DIRECTOR",
+      "knowledge_entitled": true,
+      "release_authorized": true,
+      "campaign_id": "SYN-CAMPAIGN",
+      "branch_id": "SYN-BRANCH",
+      "session_id": "SYN-SESSION",
+      "host_epoch": 3,
+      "checkpoint_epoch": 6,
+      "build_fingerprint": "SYN-BG2EE",
+      "modpack_hash": "SYN-MODPACK",
+      "adapter_revision": "SYN-ADAPTER-1",
+      "policy_revision": "SYN-POLICY-1"
+    },
+    {
+      "request_id": "SYN-REQ-2",
+      "probe_id": "SYN-PROBE-SECRET",
+      "purpose": "STAGE_CONTINUITY",
+      "audience": "DIRECTOR",
+      "knowledge_entitled": true,
+      "release_authorized": true,
+      "campaign_id": "SYN-CAMPAIGN",
+      "branch_id": "SYN-BRANCH",
+      "session_id": "SYN-SESSION",
+      "host_epoch": 3,
+      "checkpoint_epoch": 6,
+      "build_fingerprint": "SYN-BG2EE",
+      "modpack_hash": "SYN-MODPACK",
+      "adapter_revision": "SYN-ADAPTER-1",
+      "policy_revision": "SYN-POLICY-1"
+    },
+    {
+      "request_id": "SYN-REQ-3",
+      "probe_id": "SYN-PROBE-PARTY",
+      "purpose": "STAGE_CONTINUITY",
+      "audience": "PARTY",
+      "knowledge_entitled": true,
+      "release_authorized": true,
+      "campaign_id": "SYN-CAMPAIGN",
+      "branch_id": "SYN-BRANCH",
+      "session_id": "SYN-SESSION",
+      "host_epoch": 3,
+      "checkpoint_epoch": 6,
+      "build_fingerprint": "SYN-BG2EE",
+      "modpack_hash": "SYN-MODPACK",
+      "adapter_revision": "SYN-ADAPTER-1",
+      "policy_revision": "SYN-POLICY-1"
+    }
+  ]
+}

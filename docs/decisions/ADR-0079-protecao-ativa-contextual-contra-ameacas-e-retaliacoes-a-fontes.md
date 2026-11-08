@@ -1,0 +1,58 @@
+# ADR-0079 — Proteção ativa contextual contra ameaças e retaliações a fontes protegidas
+
+- **DEC:** **DEC-084 — opção C**, aprovada expressamente em **2026-11-07**.
+- **Estado:** **APROVADA como arquitetura de Discovery v8.0; NÃO IMPLEMENTADA**.
+- **Documento técnico:** `docs/84-protecao-ativa-de-testemunhas-avaliacao-de-ameacas-abrigo-escolta-e-reconciliacao.md` — **72 testes candidatos T084-01..T084-72, TODOS NÃO EXECUTADOS**.
+- **Preservação:** decisões **DEC-060–083 integralmente preservadas**, incluindo os **ADRs anteriores ADR-0001..ADR-0078 byte a byte idênticos à v7.9**. DEC-006/007/013/015/017/018 mantêm seus estados anteriores.
+
+## Contexto e problema
+
+A DEC-083/C distingue fonte protegida, depoimento, prova, identidade reservada e divulgação proporcional, mas não define como responder a ameaças reais ou suspeitas de retaliação. Um denunciante pode temer a própria guilda que investiga; uma autoridade pode estar comprometida; um pedido de escolta depende de recursos, itinerário, presença e tempo. Proteção automática por invulnerabilidade ou teleporte quebraria a simulação. Decisões livres do LLM poderiam inventar perseguidores, eliminar NPCs ou capturar jogadores sem contrato mecânico ou autorização. Precisamos de medidas graduais que **não garantam resultado nem substituam agência**, mas também de controles de segurança contra consequências irreversíveis baseadas em mera alegação.
+
+## Alternativas consideradas
+
+- **A — Proteção instantânea e invulnerabilidade:** rejeitada; efeitos mecânicos inexistentes, deslocamento fictício, falta de recursos e garantia injustificada.
+- **B — LLM decide ameaças, fugas e proteção livremente:** rejeitada; não preserva prova/consentimento/host, permite perseguição arbitrária e ações HIGH não revisadas.
+- **C — Avaliação de ameaça por evidência e medidas graduais contextualizadas, autorizadas e verificadas:** **APROVADA**.
+
+## Regras e invariantes vinculantes
+
+1. **Seis objetos distintos:** `ThreatReport` (alegação/aviso), `ThreatEvidence` (fonte e autenticidade), `ThreatAssessment` (avaliação de risco, não confirmação do ataque), `ProtectionRequest` (iniciativa consentida de PC ou solicitação legítima de NPC), `ProtectionPlan` (alternativas e recursos) e `ProtectionOutcome` (resultados **confirmados**, não planejados). `ProtectionActionReceipt` e `ProtectionIncident` têm identidades adicionais quando aplicáveis.
+2. **Certeza não se infere do risco.** Uma denúncia sem evidências não confirma agressor, retaliação, autoria ou execução de ameaça. `ALLEGED`, `CORROBORATED`, `CONFIRMED` e `DISPUTED/UNKNOWN` não são equivalentes. Risco alto pode exigir medidas preventivas de baixo impacto sem transformar suspeita em culpa.
+3. **Risco contextual e cumulativo.** Avaliar credibilidade, vulnerabilidade, acesso adversarial demonstrado, histórico, geografia, exposição, conflito de interesse, escala, intenção presumida versus ação comprovada, tempo de resposta e magnitude acumulada. Não fabricar probabilidades ou patamares numéricos até SPECS; MEDIUM/HIGH requerem gates correspondentes DEC-027/034.
+4. **Autoria e identidade verificadas.** Pessoa protegida vinculada à identidade lógica DEC-066 e política de segredo DEC-076/083; homonímia/persona não prova alvo. A identificação real da fonte não é enviada ao potencial perseguidor, nem a serviço/LLM/cliente sem ACL.
+5. **Agência e consentimento.** Nenhum modelo decide unilateralmente que um PC vai denunciar, fugir, aceitar escolta, confessar, trair aliado ou alterar seu histórico. DEC-019/041/042/045/046 protegem titular, ausentes e delegações. NPCs podem deliberar e recusar proteção conforme seus motivos e contexto, mas isso não bypassa autorização de efeitos coercitivos ou HIGH.
+6. **Medidas candidatas, não garantias:** proposta de discrição, verificação adicional, comunicação segura, pedido de abrigo, reforço de vigilância narrativamente suportado, mediação, escolta, deslocamento/realocação conforme itinerário, pausa ou cancelamento. Cada medida tem voluntariedade, prazo, autoridade, recursos, riscos e pré-condições.
+7. **Nenhuma proteção mecânica implícita.** Não criar invulnerabilidade, invisibilidade, teleporte, remoção de perseguidores, curas, captura, escolta automática, alteração de facção, morte, inventário ou quest por interpretação LLM. Alterações da engine exigem Action Gateway DEC-012, host DEC-011, capability por build DEC-051/072 e receipt, com POC host+dois clientes antes de declarar suporte.
+8. **Recursos e agentes finitos.** Um protetor precisa existir, estar disponível, ter recursos/competência e localização compatíveis. Guardas, mercenários, refúgios e transporte não são criados ilimitadamente por texto. Compromissos de proteção exigem reserva com propriedade, quotas e reconciliação, sem impedir o jogo principal.
+9. **Geografia e tempo vinculantes.** DEC-022/068/069: calendário configurado, distância, itinerários e modo FROZEN/PARTIAL/REALTIME. Transferir uma pessoa narrativamente não prova presença mecânica nem chegada; uma escolta não teleporta. Sem caminho viável, manter a proposta pendente ou oferecer alternativas, não inventar rota.
+10. **Proteção de informação operacional.** Rotas, nomes de protetores, endereços de abrigo, horários exatos e destinatários podem revelar a fonte indiretamente. ACL por finalidade/tempo/branch antes de qualquer prompt, cache, índice, log, UI ou worker LAN DEC-055/057–059. A DEC-085 detalhará o compromisso entre sigilo operacional e possíveis vazamentos legítimos.
+11. **Capacidade do agressor é verificável.** Guilda ou perseguidor só age se possuir conhecimento adquirido por canal legítimo DEC-029/074, recursos e possibilidades reais; não ganha onisciência a partir do `ProtectionPlan`. Nenhum ataque ou dano irreversível é gerado por regra narrativa sem risco/autorização e confirmação mecânica.
+12. **Conflitos de interesse das autoridades.** Uma instituição suspeita de ter ameaçado a testemunha não obtém automaticamente o plano de proteção. Avaliar competência de outro ator/organização com provas DEC-078–082, ACL e risco; não presumir que toda autoridade é idônea nem culpada.
+13. **Separação de domínio fora de cena/local.** Ameaças em viagem e encontros utilizam DEC-070/071/072/073; incidente distante pode gerar alerta/relato sem luta real. Se houver handoff para a área do jogador, reservar causa por `incident_id`, epoch e fencing; nunca duplo combate, captura ou efeito.
+14. **Medidas narrativas vs. físicas.** Uma proposta de abrigo não significa NPC fisicamente abrigado. Só `ProtectionOutcome` com recibo apropriado altera presença mecânica, HP, itens, scripts ou estado de quests. Para medidas puramente sociais, registrar evento narrativo autorizado sem afirmar mudança de engine.
+15. **Persistência seletiva pós-evento.** Ao terminar ameaça/escolta, manter história, crenças, relações, custódia de provas e efeitos confirmados; limpar somente recursos temporários comprovadamente pertencentes ao encounter, conforme DEC-073. Não apagar testemunha nem identidade por encerrar um plano.
+16. **Sem sucesso ou fracasso automático.** Proteção pode ser aceita, recusada, adiada, interrompida, ter sucesso parcial ou falhar conforme evidência e recursos; não transformar risco em destino predeterminado. Não forçar combate, assassinato ou perda de autonomia para criar drama.
+17. **Governança de ação HIGH.** Sequestro, morte, exposição de fonte, captura, confisco, alteração canônica/irreversível e PvP são default-deny até requisitos de DEC-027/034/041/042 e autorização específica. Mesmo uma soma de ações LOW que resulte em risco HIGH exige novo gate.
+18. **Ledger idempotente.** `protection_case_id`, `plan_revision`, `action_id`, `source_incident_id`, `checkpoint_epoch`, `build_fingerprint`, `host_receipt_ref`, `risk_policy_revision` e `idempotency_key` impedem múltiplas escoltas, duplicação de recursos ou repetição de ataque/proteção após retries. Sem receipt em resultado mecânico, `UNCERTAIN` e reconciliação, nunca reexecutar às cegas.
+19. **Timeout, crash, save/load e branches.** Proposta antiga é `STALE` após troca de branch, restauração de checkpoint, mudança de build ou revogação de permissão. Os recursos e reservas são reconciliados sem reanimar NPC morto, duplicar guarda, teletransportar ator ou apagar dano ocorrido. Narrativa acompanha o mesmo snapshot consistente DEC-053/054.
+20. **Notícias e reputação não universais.** DEC-029/030/074/075: proteger uma fonte ou investigar retaliação não significa que guardas de todas as cidades saibam do plano ou que facções tenham ganho/perda de reputação automática. Correções posteriores respeitam proveniência e histórico.
+21. **Cânone isolado.** DEC-060 impõe **partições físicas por ano DR** em `knowledge/periods/<ANO>-DR/`; DEC-061/062 preservam curadoria/fontes e DEC-063 fixa Knowledge Pack por campanha. Ameaças, riscos, rotas de fuga, aliases, casos de proteção, incidentes e resultados pertencem ao **overlay privado de campanha/ramo**; não se grava no corpus canônico.
+22. **Código e regras primeiro.** Gates, classificação de estado, ACL, leases, permissões, cronologia, reservas e idempotência são determinísticos. LLM local somente sob demanda para texto contextual e propostas sem autoridade; não passar segredos desnecessários ao roteador.
+23. **Observabilidade sem vazamento.** Health Monitor DEC-055 rastreia casos pendentes, divergências, falha de plano, ausência de capability e expiração de reservas, usando identificadores redigidos. Incerteza não equivale a sucesso, e alertas não divulgam refúgio, fonte ou rota.
+24. **Implantação incremental.** Primeiro contratos/fixtures offline; depois prova de ACL, ameaça alegada versus evento confirmado, capacidades e reservas; em seguida POC read-only do motor, simulação de percurso e somente depois ações tipadas testadas host+dois clientes. Sem POC, planos podem existir como narrativa segura, nunca como mecânica executada.
+
+## Cenário exemplificativo (hipotético)
+
+Um funcionário de uma guilda de Athkatla entrega provas e recebe notícia de possível retaliação. O sistema registra relato com proveniência, calcula **risco candidato** sem declarar culpados e apresenta alternativas: manter sigilo, consultar autoridade independente, pedir abrigo ou organizar escolta real com recursos existentes. Se uma escolta for autorizada, a presença e o percurso são planejados; só o host comprova mudanças físicas. Um perseguidor não recebe automaticamente a rota. O plano pode falhar ou ser abandonado, mas consequências HIGH não decorrem de texto gerado por LLM.
+
+## Consequências e trade-offs
+
+- **Benefícios:** proteção plausível sem invulnerabilidade, risco e consentimento auditáveis, itinerários coerentes, autoridade localizada e contenção de retaliações arbitrárias.
+- **Custos:** manifesto de recursos, provas de ameaça, versões de planos, estados de execução, ACL de rotas, reconciliação de save, POCs por build.
+- **Limites:** não foram demonstrados mecanismos de escolta, abrigo, perseguição, realocação ou detecção de ameaça no BG2:EE/EEex multiplayer. Não declarar capacidades sem POCs.
+- **Validação:** **72 testes candidatos T084-01..72, todos NÃO EXECUTADOS**; requisitos numéricos e interfaces ficam para SPECS.
+
+## DEC-085 — Próxima discussão, EM ABERTO
+
+**Sigilo operacional de planos de proteção e descoberta de refúgios por adversários:** A) tornar planos e refúgios permanentemente indetectáveis; B) permitir vazamentos e descobertas livremente pelo LLM; **C recomendada)** revelar informações apenas por acesso/canais/evidências legítimos, com minimização, auditoria, risco e proteção contra metaconhecimento, permitindo descobrir planos somente se causalmente possível e autorizado. A DEC-084 não antecipa essa escolha.

@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.0-candidate",
+  "fixture_only": true,
+  "ruleset_id": "SYN-RULESET-1369",
+  "ruleset_revision": 1,
+  "knowledge_pack_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "rules": [
+    {
+      "rule_id": "SYN-RULE-PATROL",
+      "revision": 1,
+      "canon_event_ref": "SYN-PORT-ALERT-1",
+      "source_kind": "SYNTHETIC_TEST",
+      "phase": "OCCURRENCE",
+      "time": {
+        "precision": "MONTH",
+        "year_dr_start": 1369,
+        "year_dr_end": 1369,
+        "month_start": 7,
+        "month_end": 7
+      },
+      "scope": {
+        "level": "REGIONAL",
+        "regions": [
+          "region-example"
+        ],
+        "location_tags": [
+          "road",
+          "gate"
+        ]
+      },
+      "all_conditions": [
+        {
+          "field": "campaign.flags.regional_alert",
+          "op": "EQ",
+          "value": true
+        },
+        {
+          "field": "campaign.flags.canon_divergence",
+          "op": "EQ",
+          "value": false
+        }
+      ],
+      "effect": {
+        "effect_id": "SYN-EFFECT-PATROL",
+        "kind": "DIRECT",
+        "template": "PROPOSE_MODIFIER",
+        "risk": "LOW",
+        "metric": "patrol_intensity",
+        "delta": 1,
+        "cap": 2
+      },
+      "branch_policy": "OVERLAY_ONLY",
+      "idempotency_scope": "CAMPAIGN_BRANCH_EPOCH_KPACK_RULESET_EVENT_RULE_PHASE_SCOPE_EFFECT"
+    },
+    {
+      "rule_id": "SYN-RULE-ROBBERY",
+      "revision": 1,
+      "canon_event_ref": "SYN-PORT-ALERT-1",
+      "source_kind": "SYNTHETIC_TEST",
+      "phase": "AFTERMATH",
+      "time": {
+        "precision": "MONTH",
+        "year_dr_start": 1369,
+        "year_dr_end": 1369,
+        "month_start": 7,
+        "month_end": 7
+      },
+      "scope": {
+        "level": "REGIONAL",
+        "regions": [
+          "region-example"
+        ],
+        "location_tags": [
+          "road",
+          "gate"
+        ]
+      },
+      "all_conditions": [
+        {
+          "field": "campaign.flags.regional_alert",
+          "op": "EQ",
+          "value": true
+        }
+      ],
+      "required_applied_effect_ids": [
+        "SYN-EFFECT-PATROL"
+      ],
+      "effect": {
+        "effect_id": "SYN-EFFECT-ROBBERY",
+        "kind": "INDIRECT",
+        "template": "PROPOSE_MODIFIER",
+        "risk": "MEDIUM",
+        "metric": "robbery_risk",
+        "delta": -1,
+        "cap": 2,
+        "requires_applied_effect": "SYN-EFFECT-PATROL"
+      },
+      "branch_policy": "OVERLAY_ONLY",
+      "idempotency_scope": "CAMPAIGN_BRANCH_EPOCH_KPACK_RULESET_EVENT_RULE_PHASE_SCOPE_EFFECT"
+    },
+    {
+      "rule_id": "SYN-RULE-YEAR-ONLY",
+      "revision": 1,
+      "canon_event_ref": "SYN-UNSPECIFIED-MONTH",
+      "source_kind": "SYNTHETIC_TEST",
+      "phase": "OCCURRENCE",
+      "time": {
+        "precision": "YEAR_ONLY",
+        "year_dr_start": 1369,
+        "year_dr_end": 1369
+      },
+      "scope": {
+        "level": "LOCAL",
+        "regions": [
+          "region-example"
+        ],
+        "location_tags": [
+          "tavern"
+        ]
+      },
+      "all_conditions": [],
+      "effect": {
+        "effect_id": "SYN-EFFECT-RUMOR",
+        "kind": "DIRECT",
+        "template": "PROPOSE_MODIFIER",
+        "risk": "LOW",
+        "metric": "rumor_coverage",
+        "delta": 1,
+        "cap": 1
+      },
+      "branch_policy": "OVERLAY_ONLY",
+      "idempotency_scope": "CAMPAIGN_BRANCH_EPOCH_KPACK_RULESET_EVENT_RULE_PHASE_SCOPE_EFFECT"
+    }
+  ]
+}

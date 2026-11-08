@@ -1,0 +1,124 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "fixture_only": true,
+    "host_mode": "SYNTHETIC_HOST_FIXTURE",
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6,
+    "clock_mode": "PARTIAL",
+    "world_tick": 220,
+    "authenticated_principal": "SYN-CURATOR"
+  },
+  "request": {
+    "correction_ref": "SYN-CORRECTION-1",
+    "recipient_ref": "SYN-NPC-1",
+    "delivery_ref": "SYN-DELIVERY-1",
+    "purpose": "BELIEF_CORRECTION_REVIEW",
+    "audience": "SYN-PRIVATE-NPC",
+    "expected_ledger_revision": 9,
+    "trace_ref": "SYN-TRACE-1"
+  },
+  "trusted_policy": {
+    "trusted_kind": "SYNTHETIC_SIGNED_POLICY",
+    "revision": "SYN-POLICY-1",
+    "allowed_purposes": [
+      "BELIEF_CORRECTION_REVIEW"
+    ],
+    "allowed_audiences": [
+      "SYN-PRIVATE-NPC"
+    ],
+    "allowed_channels": [
+      "SYN-MESSENGER",
+      "SYN-CONVERSATION"
+    ],
+    "max_hops": 4,
+    "authorized_principals": [
+      "SYN-CURATOR"
+    ]
+  },
+  "trusted_correction_registry": {
+    "trusted_kind": "SYNTHETIC_CORRECTION_REGISTRY",
+    "authenticated_fixture": true,
+    "correction_id": "SYN-CORRECTION-1",
+    "status": "COMMITTED",
+    "proof_source": "DEC104_CURATED_PROOF",
+    "revision": "SYN-REV-2",
+    "original_claim_ref": "SYN-OLD-CLAIM-1",
+    "classification": "RESTRICTED",
+    "purpose": "BELIEF_CORRECTION_REVIEW",
+    "evidence_grade": "CORROBORATED",
+    "source_family": "SYN-ORIGIN-1",
+    "committed_at_tick": 201,
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6
+  },
+  "trusted_recipient_registry": {
+    "trusted_kind": "SYNTHETIC_RECIPIENT_REGISTRY",
+    "authenticated_fixture": true,
+    "recipient_id": "SYN-NPC-1",
+    "clearance": 1,
+    "audiences": [
+      "SYN-PRIVATE-NPC"
+    ],
+    "allowed_purposes": [
+      "BELIEF_CORRECTION_REVIEW"
+    ],
+    "belief_before": "BELIEVES_PRIOR",
+    "source_confidence": "MEDIUM",
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6
+  },
+  "trusted_channel_ledger": {
+    "trusted_kind": "SYNTHETIC_DELIVERY_LEDGER",
+    "authenticated_fixture": true,
+    "delivery_id": "SYN-DELIVERY-1",
+    "recipient_id": "SYN-NPC-1",
+    "correction_id": "SYN-CORRECTION-1",
+    "correction_revision": "SYN-REV-2",
+    "state": "DELIVERED",
+    "channel": "SYN-MESSENGER",
+    "hop_count": 2,
+    "sent_at_tick": 208,
+    "arrived_at_tick": 218,
+    "perception": "CONFIRMED",
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6
+  },
+  "trusted_belief_ledger": {
+    "trusted_kind": "SYNTHETIC_BELIEF_LEDGER",
+    "authenticated_fixture": true,
+    "recipient_id": "SYN-NPC-1",
+    "revision": 9,
+    "belief_before": "BELIEVES_PRIOR",
+    "committed_revision_refs": [],
+    "planned_case_keys": [],
+    "pending_case_keys": [],
+    "campaign_id": "SYN-CAMPAIGN",
+    "branch_id": "SYN-BRANCH",
+    "lineage_id": "SYN-LINEAGE",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "host_epoch": 4,
+    "checkpoint_epoch": 6
+  }
+}

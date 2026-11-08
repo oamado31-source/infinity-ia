@@ -1,0 +1,103 @@
+{
+  "source_kind": "SYNTHETIC_TEST",
+  "context": {
+    "fixture_only": true,
+    "host_mode": "SYNTHETIC_HOST_FIXTURE",
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "session_id": "SYN-SESSION",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "mapping_revision": "SYN-MAP-2",
+    "quest_key": "SYN-QUEST",
+    "host_epoch": 7,
+    "checkpoint_epoch": 4,
+    "snapshot_tick": 30
+  },
+  "request": {
+    "operation_id": "SYN-OP-1",
+    "purpose": "RECONCILE",
+    "audience": "HOST_OPERATOR",
+    "scope": {
+      "campaign_id": "SYN-CAMP",
+      "branch_id": "SYN-BRANCH",
+      "session_id": "SYN-SESSION",
+      "build_fingerprint": "SYN-BUILD",
+      "modpack_hash": "SYN-MODPACK",
+      "mapping_revision": "SYN-MAP-2",
+      "quest_key": "SYN-QUEST"
+    },
+    "expected_overlay_revision": "SYN-R7"
+  },
+  "policy": {
+    "trusted_kind": "SYNTHETIC_POLICY_FIXTURE",
+    "revision": "SYN-POLICY-1",
+    "purposes": [
+      "RECONCILE"
+    ],
+    "audiences": [
+      "HOST_OPERATOR"
+    ],
+    "max_age_ticks": 10
+  },
+  "host": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "session_id": "SYN-SESSION",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "mapping_revision": "SYN-MAP-2",
+    "quest_key": "SYN-QUEST",
+    "source_kind": "SYNTHETIC_HOST_OBSERVATION",
+    "authenticated_fixture": true,
+    "host_epoch": 7,
+    "checkpoint_epoch": 4,
+    "observed_tick": 29,
+    "coverage": "FULL_FOR_SEMANTIC_PROOF",
+    "semantic_status": "MAPPED_MINIMAL",
+    "semantic_id": "SYN-STAGE-B",
+    "proof_id": "SYN-PROOF-1"
+  },
+  "overlay": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "session_id": "SYN-SESSION",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "mapping_revision": "SYN-MAP-2",
+    "quest_key": "SYN-QUEST",
+    "source_kind": "SYNTHETIC_OVERLAY_SNAPSHOT",
+    "trusted_fixture": true,
+    "host_epoch": 7,
+    "checkpoint_epoch": 4,
+    "revision": "SYN-R7",
+    "semantic_id": "SYN-STAGE-A"
+  },
+  "ledger": {
+    "campaign_id": "SYN-CAMP",
+    "branch_id": "SYN-BRANCH",
+    "session_id": "SYN-SESSION",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "mapping_revision": "SYN-MAP-2",
+    "quest_key": "SYN-QUEST",
+    "trusted_kind": "SYNTHETIC_LEDGER_FIXTURE",
+    "host_epoch": 7,
+    "checkpoint_epoch": 4,
+    "actions": []
+  },
+  "mapping": {
+    "trusted_kind": "SYNTHETIC_CURATED_MAPPING",
+    "review_status": "CURATED_SYNTHETIC",
+    "build_fingerprint": "SYN-BUILD",
+    "modpack_hash": "SYN-MODPACK",
+    "mapping_revision": "SYN-MAP-2",
+    "quest_key": "SYN-QUEST",
+    "allowed_transitions": [
+      {
+        "from": "SYN-STAGE-A",
+        "to": "SYN-STAGE-B"
+      }
+    ]
+  }
+}

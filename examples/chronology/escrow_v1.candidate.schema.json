@@ -1,0 +1,526 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:infinity-ai:escrow-v1-candidate",
+  "title": "DEC-110/C synthetic escrow evaluation fixture (not engine integration)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_kind",
+    "context",
+    "request",
+    "trusted_agreement",
+    "trusted_capability",
+    "trusted_ownership",
+    "trusted_authorizations",
+    "trusted_release_rule",
+    "trusted_host_receipts"
+  ],
+  "properties": {
+    "context": {
+      "type": "object",
+      "required": [
+        "mode",
+        "fixture_only",
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string"
+        },
+        "fixture_only": {
+          "type": "boolean"
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "authenticated_fixture": {
+          "type": "boolean"
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "escrow_id",
+        "expected_revision",
+        "requester",
+        "audience"
+      ],
+      "properties": {
+        "escrow_id": {
+          "type": "string"
+        },
+        "expected_revision": {
+          "type": "integer"
+        },
+        "requester": {
+          "type": "string"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "authenticated_fixture": {
+          "type": "boolean"
+        }
+      }
+    },
+    "trusted_agreement": {
+      "type": "object",
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "authenticated_fixture",
+        "escrow_id",
+        "revision",
+        "state",
+        "asset_id",
+        "amount",
+        "unit",
+        "depositant",
+        "custodian",
+        "allowed_audiences",
+        "contested"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "escrow_id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer"
+        },
+        "state": {
+          "type": "string"
+        },
+        "asset_id": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "depositant": {
+          "type": "string"
+        },
+        "custodian": {
+          "type": "string"
+        },
+        "allowed_audiences": {
+          "type": "array"
+        },
+        "contested": {
+          "type": "boolean"
+        }
+      }
+    },
+    "trusted_capability": {
+      "type": "object",
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "authenticated_fixture",
+        "escrow_tested_two_clients",
+        "transfer_tested",
+        "query_tested",
+        "recovery_tested"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "escrow_tested_two_clients": {
+          "type": "boolean"
+        },
+        "transfer_tested": {
+          "type": "boolean"
+        },
+        "query_tested": {
+          "type": "boolean"
+        },
+        "recovery_tested": {
+          "type": "boolean"
+        }
+      }
+    },
+    "trusted_ownership": {
+      "type": "object",
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "authenticated_fixture",
+        "proven_owner",
+        "custodian_validated",
+        "asset_id",
+        "owner"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "proven_owner": {
+          "type": "boolean"
+        },
+        "custodian_validated": {
+          "type": "boolean"
+        },
+        "asset_id": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        }
+      }
+    },
+    "trusted_authorizations": {
+      "type": "object",
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "authenticated_fixture",
+        "authorized_requesters",
+        "allowed_audiences",
+        "depositant_consented",
+        "release_consent_valid"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "authorized_requesters": {
+          "type": "array"
+        },
+        "allowed_audiences": {
+          "type": "array"
+        },
+        "depositant_consented": {
+          "type": "boolean"
+        },
+        "release_consent_valid": {
+          "type": "boolean"
+        }
+      }
+    },
+    "trusted_release_rule": {
+      "type": "object",
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "authenticated_fixture",
+        "revision",
+        "conditions_confirmed",
+        "contested"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "revision": {
+          "type": "integer"
+        },
+        "conditions_confirmed": {
+          "type": "boolean"
+        },
+        "contested": {
+          "type": "boolean"
+        }
+      }
+    },
+    "trusted_host_receipts": {
+      "type": "object",
+      "required": [
+        "campaign_id",
+        "branch_id",
+        "lineage_id",
+        "build_fingerprint",
+        "modpack_hash",
+        "host_epoch",
+        "checkpoint_epoch",
+        "authenticated_fixture",
+        "uncertain_actions",
+        "dispatched_actions",
+        "confirmed_deposits",
+        "pending_release_keys",
+        "confirmed_release_keys"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": "string"
+        },
+        "branch_id": {
+          "type": "string"
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "build_fingerprint": {
+          "type": "string"
+        },
+        "modpack_hash": {
+          "type": "string"
+        },
+        "host_epoch": {
+          "type": "integer"
+        },
+        "checkpoint_epoch": {
+          "type": "integer"
+        },
+        "authenticated_fixture": {
+          "const": true
+        },
+        "uncertain_actions": {
+          "type": "array"
+        },
+        "dispatched_actions": {
+          "type": "array"
+        },
+        "confirmed_deposits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "receipt_id",
+              "action_id",
+              "escrow_id",
+              "asset_id",
+              "from_owner",
+              "to_custodian",
+              "amount",
+              "unit",
+              "status",
+              "authenticated_fixture",
+              "campaign_id",
+              "branch_id",
+              "lineage_id",
+              "build_fingerprint",
+              "modpack_hash",
+              "host_epoch",
+              "checkpoint_epoch"
+            ],
+            "properties": {
+              "receipt_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "action_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "escrow_id": {
+                "type": "string"
+              },
+              "asset_id": {
+                "type": "string"
+              },
+              "from_owner": {
+                "type": "string"
+              },
+              "to_custodian": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "string"
+              },
+              "unit": {
+                "type": "string"
+              },
+              "status": {
+                "const": "CONFIRMED"
+              },
+              "authenticated_fixture": {
+                "const": true
+              },
+              "campaign_id": {
+                "type": "string"
+              },
+              "branch_id": {
+                "type": "string"
+              },
+              "lineage_id": {
+                "type": "string"
+              },
+              "build_fingerprint": {
+                "type": "string"
+              },
+              "modpack_hash": {
+                "type": "string"
+              },
+              "host_epoch": {
+                "type": "integer"
+              },
+              "checkpoint_epoch": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "pending_release_keys": {
+          "type": "array"
+        },
+        "confirmed_release_keys": {
+          "type": "array"
+        }
+      }
+    },
+    "source_kind": {
+      "const": "SYNTHETIC_FIXTURE"
+    }
+  }
+}

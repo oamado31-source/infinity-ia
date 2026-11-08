@@ -1,0 +1,57 @@
+# ADR-0078 — Proteção contextual de denunciantes, testemunhas e fontes; divulgação proporcional e controlada
+
+- **Decisão:** **DEC-083 — opção C**, aprovada expressamente em **2026-11-07**.
+- **Estado:** **APROVADA em arquitetura de Discovery v7.9, NÃO IMPLEMENTADA**.
+- **Documento técnico:** `docs/83-protecao-de-testemunhas-denunciantes-fontes-acl-e-divulgacao-proporcional.md` — **70 testes candidatos T083-01..T083-70, NÃO EXECUTADOS**.
+- **Preservação:** **DEC-060–082 integralmente preservadas; ADR-0001..ADR-0077 byte a byte idênticos à v7.8**. DEC-006/007/013/015/017/018 permanecem com os estados anteriores.
+
+## Contexto e problema
+
+DEC-077/C exige pistas e depoimentos com proveniência, e DEC-082/C permite investigar abusos de poder e corrupção em instituições do cenário. Um denunciante, testemunha ou informante pode enfrentar ameaça de retaliação, exposição ou coação; também pode apresentar informações incompletas, tendenciosas ou fabricadas. Precisamos de um protocolo que não torne todos os depoimentos públicos por padrão nem imponha sigilo absoluto que impeça investigações e contestação legítimas. A proteção narrativa deve coexistir com a agência dos jogadores, com uma autoridade regional/faccional realista, com a cronologia dos Forgotten Realms e com o limite de capacidades do host BG2:EE/EEex.
+
+## Alternativas avaliadas
+
+- **A — Publicidade da identidade por padrão:** rejeitada como regra geral; revela segredos, facilita retaliação e ignora competência, audiência e consentimento.
+- **B — Sigilo absoluto, irreversível e universal:** rejeitada; impede verificações legítimas, contraditório contextual, decisões autorizadas e investigação de fontes falsificadas.
+- **C — Proteção contextual e proporcional com acesso por finalidade, evidências auditáveis e divulgação controlada:** **APROVADA**.
+
+## Decisão vinculante e invariantes
+
+1. **Separar identidades, conteúdos e alegações.** `ProtectedSourceIdentity` contém referência confidencial do ator (somente se houver prova); `TestimonyRecord` contém o teor do depoimento, não precisa expor a identidade; `EvidenceProvenance` registra procedência e cadeia de custódia; `SourceProtectionPolicy` define ACL por finalidade/audiência; `DisclosureRequest` e `DisclosureReceipt` são ações de divulgação, e `RetaliationRiskAssessment` é avaliação de risco, não confirmação de ameaça.
+2. **Identidade factual não é nome publicado.** Usar `actor_identity_id` estável DEC-066 e separação persona/alias DEC-076; nome, roupa, classe, retrato ou homônimo não comprovam quem é a fonte. Não incluir mapeamento de persona↔ator em depoimento público por padrão.
+3. **Consentimento e titularidade.** O PC controla o que escolhe voluntariamente revelar de seu histórico DEC-019/041. Um LLM/NPC não inventa decisão, confissão ou depoimento de PC; titularidade e controle delegado DEC-045/046 são distintos. Proteções de segurança do sistema não são anuladas por conveniência narrativa; impactos involuntários do mundo permanecem sujeitos aos gates existentes.
+4. **Privacidade graduada por finalidade.** Perfis conceituais: `SEALED`, `INVESTIGATOR_SCOPED`, `AUTHORITY_SCOPED`, `PARTY_SCOPED`, `PUBLIC_CLAIM_ONLY`, `PUBLIC_AUTHORIZED`. Não há direito automático de a party, host de sessão, administrador LAN, guilda, acusado ou autoridade distante ler identidade ou provas integrais; papel e necessidade devem ser verificados.
+5. **Prova autenticada separada de exposição da fonte.** Investigadores autorizados podem receber extratos, metadados, hash/referências e conteúdo minimizado, sem automaticamente descobrir o nome da fonte. Contraditório/contestação se dirige ao conteúdo e proveniência permitido; solicitar identificação requer processo independente. Não usar segredo como substituto para credibilidade.
+6. **Proveniência íntegra e independente.** Cada depoimento liga `testimony_id`, origem, registro/época DR, contexto, edição/revisão, cadeia de fonte, integridade, ACL e relações com provas contraditórias. Duas cópias da mesma denúncia não se tornam duas testemunhas independentes (DEC-061/077).
+7. **Evidência e risco não são a mesma coisa.** `RetaliationRiskAssessment` pode considerar acesso presumível do adversário, poder da facção, ameaças verificadas, vulnerabilidade, geografia e alcance temporal. Rumor de ameaça não é agressão confirmada; risco alto não comprova culpa da instituição nem concede certeza sobre a fonte.
+8. **Revelação é operação de risco.** Solicitar divulgação exige destinatários concretos, propósito, escopo temporal/geográfico, justificativa verificável, proporcionalidade, fundamento de competência, revisão de versão, autorização/consentimento e classificação LOW/MEDIUM/HIGH por DEC-027/034/041. Repetição da mesma divulgação não pode duplicar consequências.
+9. **Nenhuma publicação espontânea por LLM.** A IA pode sugerir redações, versões anonimizadas e perguntas, mas não tem permissão para resolver ACL, revelar identidade, concluir culpabilidade, conceder imunidade, iniciar represália ou emitir ordem/mandado. Gateway determinístico valida proposta antes de qualquer output visível.
+10. **Conhecimento por observador.** Registro selado privado não torna NPC onisciente; um magistrado, guarda ou líder de guilda somente recebe informação se canal DEC-029/074/079, competência, tempo e ACL permitirem. Uma revelação feita a uma autoridade não se torna verdade pública; memória DEC-064/065 preserva o que cada observador realmente aprendeu.
+11. **Competência é contextual.** Autoridade só acessa testemunho/identidade se sua competência de época/região/facção for demonstrada e compatível com a política. A existência de autoridade corrupta não concede leitura automática; caso contestado ou `UNKNOWN` bloqueia divulgação de segredo até revisão.
+12. **Proteção não é invulnerabilidade.** Sigilo não garante que NPCs nunca descubram ou ameacem a fonte por vias narrativas legítimas. O sistema não concede escudo mecânico, teleporte, invisibilidade, escolta ou remoção de perseguidores sem capacidades testadas, autorização e host receipt. A DEC-084 discutirá respostas ativas a ameaças e retaliações.
+13. **Divulgação parcial e necessidade mínima.** Preferir versão com pseudônimo/ID opaco, agregação de relatos, extrato de prova ou testemunho anonimizado quando suficientes. Metadados reveladores indiretos (rota, hora exata, profissão rara, cargo, família) também são sensíveis; anonimização não é garantia absoluta contra reidentificação.
+14. **Controle de saída e armazenamento.** Aplicar ACL **antes** de LLM/roteador, cache, embeddings, prompt, índice, UI, logs, stream, export e workers LAN DEC-055/057–059. Credenciais do host ou pareamento da LAN não bastam; auditar acesso negado sem escrever a própria identidade em logs de erro.
+15. **Revelação não pode ser desfeita do conhecimento de NPC.** Revogar acesso bloqueia novas divulgações e invalida cache/jobs, mas não apaga automaticamente memórias sociais; correção e repercussões seguem DEC-064/074/080/081. Não realizar retcon silencioso para fingir que a fonte nunca foi exposta.
+16. **Temporalidade e ramo.** Tudo vinculado a `(campaign_id, branch_id, knowledge_pack_revision, checkpoint_epoch, world_time_dr, source_id, testimony_id, disclosure_id)` e revisões de ACL. Save/load, branch alternativo, restore ou mudança de política tornam jobs obsoletos `STALE` e exigem reconciliação. Segredo de outro ramo não migra automaticamente.
+17. **Cânone isolado.** DEC-060 determina lore em **pastas físicas por ano DR** (`knowledge/periods/<ANO>-DR/`) com proveniência/curadoria DEC-061/062 e Knowledge Packs fixados DEC-063. Identidades protegidas, depoimentos de campanha e ACL ficam exclusivamente no overlay privado da campanha/ramo, nunca no cânone nem em artefatos de catálogo DEC-072.
+18. **Não presumir veracidade, competência ou culpa.** Testemunho confidencial pode ser falso, incoerente ou insuficiente; denunciantes, acusados, guarda e instituição recebem hipóteses separadas e direito narrativo contextual de contestação DEC-077/078/082. Divulgar ou proteger fonte não confirma o fato alegado.
+19. **Não forçar escolhas de PCs ou NPCs.** Para PCs, escolhas de testemunhar, mentir, esconder-se ou denunciar exigem ação/autorização humana (DEC-041/045/046). NPCs podem decidir dentro de suas motivações e conhecimento, mas resolução de ameaça ou divulgação passa pelo sistema de riscos; sem roteiros deterministas de confissão forçada.
+20. **Efeito mecânico só pelo host.** Alterações de inventário, localização, estado de NPC, morte, hostilidade, prisão, `Protect Witness` virtual ou missão/quest só por DEC-011/012/050/051, build fingerprint, capability POC e recibos do host; efeitos HIGH default-deny. Nenhuma mecânica de proteção de testemunha foi comprovada em BG2:EE/EEex multiplayer.
+21. **Idempotência e auditoria.** `DisclosureLedger` tem chave conceitual `(campaign, branch, testimony_or_source, audience_scope, purpose, rule_revision, disclosure_revision)` e fencing/epoch; replays, jobs duplicados e timeout `UNCERTAIN` nunca repetem uma revelação destrutiva sem reconciliação. Auditoria interna guarda hash/evidence refs e motivos; auditoria compartilhada é filtrada.
+22. **Compromissos e retenção.** Políticas de sigilo podem expirar por regra/versionamento/consentimento, nunca por mero decurso de tempo sem gate. Retenção mínima necessária, backup/restore cifrado conforme implantação futura, ACL e revogação; mensagens de testemunhas não devem poluir corpus canônico ou LLM geral.
+23. **Implementação incremental.** Primeiro fixtures sintéticas e testes de ACL/proveniência/embeddings e vazamento; depois casos legais/faccionais simulados offline; somente depois observar compatibilidade host+dois clientes. Consentimento e classificação de risco não são delegados a LLM.
+
+## Exemplo hipotético
+
+Um empregado de uma guilda de Athkatla entrega uma carta que indicaria pagamento suspeito a oficial. O registro do documento e seu hash podem ser consultados por um investigador autorizado; sua identidade verdadeira fica `SEALED`, e outro guarda recebe apenas uma versão redigida. A guilda pode tentar descobrir a fonte por investigação contextual, mas não lê o ledger secreto. Se uma prova exigir revelar a identidade a autoridade competente, isso abre **uma proposta de divulgação distinta** com finalidade, público, riscos, consentimento e log de decisão; não há proteção automática contra retaliação nem ordem mecânica executada no BG2:EE.
+
+## Consequências, limites e validação
+
+- Permite investigações com fontes confidenciais, cooperação e contestação sem exposição global.
+- Custa ACL por campo, versões de depoimentos, cadeias de fontes, minimização, auditoria e reconciliação distribuída.
+- O sistema pode bloquear divulgação quando competência, prova ou consentimento forem insuficientes; isso é desejável perante alto risco.
+- **70 testes T083-* candidatos não executados**. Não foram comprovados hooks de depoimentos, mandados, segredo de personagem ou proteção física no BG2:EE/EEex multiplayer.
+
+## Próxima discussão — DEC-084 (aberta)
+
+**Resposta a ameaças e retaliações contra fontes protegidas:** A) invulnerabilidade/teleporte automático; B) retaliação e fuga geridas livremente por LLM sem gates; **C (recomendada)** resposta contextual, graduada e baseada em ameaça comprovada, com planos de escolta/abrigo/deslocamento somente quando origem, consentimento, recursos, risco e capacidade do host estiverem comprovados. Uma medida protetiva narrativa não equivale a efeito mecânico.

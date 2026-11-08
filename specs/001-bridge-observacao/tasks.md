@@ -4,5 +4,5 @@
 - [x] Implementar casos sintéticos de aceite e ataques (SPEC-001) — `tests/test_bridge_spec001.py` (sintéticos; não são evidência P0–P4).
 - [x] Integrar componente isolado sem escrita em BG2:EE (SPEC-001) — `ReadOnlyBridge` + `SyntheticAdapter`; nenhum adapter real.
 - [x] Documentar estados UNKNOWN/erro/fallback e rollback (SPEC-001) — `estados-e-fallback.md`.
-- [ ] Executar POC real em ambiente pinado e registrar evidência (P0–P4) — NÃO EXECUTADA. Ferramentas P0 em `tools/windows-lab/`; ambiente de laboratório proposto em CR-2026-001.
+- [ ] Executar POC real em ambiente pinado e registrar evidência (P0–P4) — **P0 aprovado no laboratório ARM64/VM** ([evidência](../../docs/evidence/P0-2026-11-08-laboratorio-arm64.md)); P1, P2 e P4 NÃO EXECUTADOS; P0 nativo pendente.
 - [ ] Revisão de segurança, privacidade, licença e aprovação de merge.

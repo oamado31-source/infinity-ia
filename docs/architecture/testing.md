@@ -2,7 +2,7 @@
 
 | Gate | Ambiente | Critério de aceite | Situação atual |
 |---|---|---|---|
-| P0 | BG2:EE limpo, Windows | manifesto, teste base e save descartável | NÃO EXECUTADO |
+| P0 | BG2:EE limpo, Windows | manifesto, teste base e save descartável | APROVADO no laboratório ARM64/VM em 2026-11-08 ([evidência](../evidence/P0-2026-11-08-laboratorio-arm64.md), CR-2026-001); NÃO EXECUTADO em Windows x86-64 nativo |
 | P1 | EEex pinado | loader inicializa sem falhas na build | NÃO EXECUTADO |
 | P2 | Bridge read-only | dados allowlisted, UNKNOWN, nenhuma escrita | NÃO EXECUTADO |
 | P3 | Mutação opcional isolada | autorização+receipt+rollback em save descartável | NÃO EXECUTADO |

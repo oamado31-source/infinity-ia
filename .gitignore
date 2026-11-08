@@ -1,0 +1,36 @@
+# Sensitive game/user assets
+*.sav
+*.dmp
+*.key
+*.bif
+*.biff
+*.tlk
+*.cre
+*.are
+*.wed
+*.mos
+*.bam
+*.wav
+*.mp3
+*.ogg
+WeiDU.log
+*.sqlite
+*.sqlite3
+*.db
+*.env
+.env*
+*.pem
+*.p12
+*secret*
+# caches
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.pyc
+.venv/
+# local game dirs
+local-game/
+saves/
+logs/
+backups/

@@ -1,0 +1,35 @@
+{
+  "schema_version": "infinity-ai.p0.build-manifest.v1",
+  "collector_version": "0.1.0",
+  "collected_at": "2026-11-08T12:00:00Z",
+  "environment": {
+    "os_caption": "SYNTHETIC Windows",
+    "os_version": "10.0.0",
+    "os_build": "00000",
+    "os_architecture": "64-bit",
+    "processor_architecture": "AMD64",
+    "is_virtual_machine": false,
+    "vm_vendor": null
+  },
+  "game": {
+    "detected": true,
+    "install_kind": "manual",
+    "executable": {
+      "name": "Baldur.exe",
+      "file_version": "0.0.0.0-synthetic",
+      "product_version": "0.0.0.0-synthetic",
+      "pe_machine": "x64",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "files": [
+      {"path": "Baldur.exe", "sha256": "1111111111111111111111111111111111111111111111111111111111111111", "size": 1},
+      {"path": "chitin.key", "sha256": "2222222222222222222222222222222222222222222222222222222222222222", "size": 2},
+      {"path": "lang/en_US/dialog.tlk", "sha256": "3333333333333333333333333333333333333333333333333333333333333333", "size": 3}
+    ],
+    "override_files": [],
+    "weidu_log_sha256": null,
+    "eeex_markers": [],
+    "mod_setup_markers": [],
+    "languages": ["en_US"]
+  }
+}

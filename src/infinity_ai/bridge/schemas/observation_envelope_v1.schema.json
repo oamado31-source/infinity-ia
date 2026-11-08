@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "infinity-ai.bridge.observation.v1",
+  "title": "SPEC-001 read-only observation envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "observation_id", "timestamp", "campaign_id", "branch_id",
+    "host_epoch", "build_fingerprint", "modpack_hash", "field", "purpose", "audience", "status",
+    "reason", "value", "coverage", "visibility", "provenance"],
+  "properties": {
+    "schema_version": {"const": "infinity-ai.bridge.observation.v1"},
+    "observation_id": {"type": "string", "minLength": 1},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "campaign_id": {"type": "string", "minLength": 1},
+    "branch_id": {"type": "string", "minLength": 1},
+    "host_epoch": {"type": "integer", "minimum": 0},
+    "build_fingerprint": {"type": "string", "minLength": 1},
+    "modpack_hash": {"type": "string", "minLength": 1},
+    "field": {"type": "string", "minLength": 1},
+    "purpose": {"type": "string"},
+    "audience": {"enum": ["HOST", "PLAYER", "NARRATIVE_CONTEXT", null]},
+    "status": {"enum": ["OBSERVED", "UNKNOWN", "BLOCKED_CAPABILITY", "DENIED"]},
+    "reason": {"enum": ["NONE", "BUILD_MISMATCH", "MODPACK_MISMATCH", "ADAPTER_MISMATCH",
+      "EPOCH_MISMATCH", "CAMPAIGN_MISMATCH", "SESSION_NOT_VALIDATED", "FIELD_NOT_ALLOWLISTED",
+      "WRITE_FORBIDDEN", "MALFORMED_REQUEST", "ACL_AUDIENCE", "ACL_PURPOSE",
+      "ADAPTER_UNAVAILABLE", "NOT_OBSERVED"]},
+    "value": {"type": ["string", "null"]},
+    "coverage": {"enum": ["FULL", "PARTIAL", "NONE"]},
+    "visibility": {"enum": ["PARTY", "HOST_ONLY", "SECRET", null]},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter_version", "evidence"],
+      "properties": {
+        "adapter_version": {"type": "string", "minLength": 1},
+        "evidence": {"enum": ["SYNTHETIC", "POC_VERIFIED"]}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "OBSERVED"}}},
+      "then": {"properties": {"value": {"type": "string", "minLength": 1},
+        "reason": {"const": "NONE"}, "coverage": {"enum": ["FULL", "PARTIAL"]}}},
+      "else": {"properties": {"value": {"const": null}, "coverage": {"const": "NONE"},
+        "reason": {"not": {"const": "NONE"}}}}
+    }
+  ]
+}

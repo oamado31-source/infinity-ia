@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "infinity-ai.p0.build-manifest.v1",
+  "title": "P0 read-only build manifest collected on the Windows host",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "collector_version", "collected_at", "environment", "game"],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "relpath": {"type": "string", "minLength": 1, "pattern": "^(?![\\\\/])(?!.*:)(?!(.*[\\\\/])?\\.\\.([\\\\/]|$)).+$"},
+    "file": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256", "size"],
+      "properties": {"path": {"$ref": "#/$defs/relpath"}, "sha256": {"$ref": "#/$defs/sha256"},
+        "size": {"type": "integer", "minimum": 0}}
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "infinity-ai.p0.build-manifest.v1"},
+    "collector_version": {"type": "string"},
+    "collected_at": {"type": "string", "format": "date-time"},
+    "environment": {
+      "type": "object", "additionalProperties": false,
+      "required": ["os_caption", "os_version", "os_build", "os_architecture",
+        "processor_architecture", "is_virtual_machine", "vm_vendor"],
+      "properties": {
+        "os_caption": {"type": "string"}, "os_version": {"type": "string"},
+        "os_build": {"type": "string"}, "os_architecture": {"type": "string"},
+        "processor_architecture": {"type": "string"},
+        "is_virtual_machine": {"type": "boolean"}, "vm_vendor": {"type": ["string", "null"]}
+      }
+    },
+    "game": {
+      "type": "object",
+      "required": ["detected"],
+      "properties": {
+        "detected": {"type": "boolean"},
+        "install_kind": {"enum": ["steam", "gog", "beamdog", "manual", "unknown"]},
+        "executable": {
+          "type": "object", "additionalProperties": false,
+          "required": ["name", "file_version", "product_version", "pe_machine", "sha256"],
+          "properties": {"name": {"type": "string"}, "file_version": {"type": ["string", "null"]},
+            "product_version": {"type": ["string", "null"]},
+            "pe_machine": {"enum": ["x86", "x64", "arm64", "unknown"]},
+            "sha256": {"$ref": "#/$defs/sha256"}}
+        },
+        "files": {"type": "array", "items": {"$ref": "#/$defs/file"}},
+        "override_files": {"type": "array", "items": {"$ref": "#/$defs/file"}},
+        "weidu_log_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "eeex_markers": {"type": "array", "items": {"type": "string"}},
+        "mod_setup_markers": {"type": "array", "items": {"type": "string"}},
+        "languages": {"type": "array", "items": {"type": "string"}}
+      },
+      "if": {"properties": {"detected": {"const": true}}},
+      "then": {"required": ["install_kind", "executable", "files", "override_files",
+        "weidu_log_sha256", "eeex_markers", "mod_setup_markers", "languages"]}
+    }
+  }
+}

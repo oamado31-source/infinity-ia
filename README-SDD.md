@@ -14,11 +14,11 @@ Projeto público independente do motor original Infinity Engine. Repositório ca
 Arquitetura aprovada e código sintético; nenhuma bridge real Windows+EEex+2 clientes provada. Voz push-to-talk com STT/TTS é requisito aprovado **para fase posterior à UI texto funcional**.
 
 ## Não distribuir
-Conteúdo protegido da Beamdog/Wizards, saves e mods de terceiros sem licença, credenciais, microfone/vozes privados. O projeto **ainda precisa escolher licença para ser open-source jurídico**.
+Conteúdo protegido da Beamdog/Wizards, saves e mods de terceiros sem licença, credenciais, microfone/vozes privados. O software e a documentação originais elegíveis são licenciados sob **Apache-2.0**; consulte [`LICENSE`](LICENSE), [`NOTICE`](NOTICE) e [`docs/architecture/licensing.md`](docs/architecture/licensing.md). Direitos de terceiros permanecem excluídos.
 
 ## Primeiro ciclo
 Read-only bridge e manifesto → host e dois clientes → SQLite/event memory → NPC dialogue texto → voz opcional. Leia `docs/architecture/roadmap.md`.
 
 ## Publicação
 
-Leia [`docs/architecture/publishing.md`](docs/architecture/publishing.md). O repositório público https://github.com/oamado31-source/infinity-ia já foi criado. O ruleset `protect-main` está ativo; o status check `tests` será exigido somente após executar com êxito o CI da importação.
+Leia [`docs/architecture/publishing.md`](docs/architecture/publishing.md). O repositório público https://github.com/oamado31-source/infinity-ia já foi criado. O ruleset `protect-main` está ativo e exige o status check `tests` para integração por Pull Request.

@@ -27,4 +27,6 @@ Use as [Issues](https://github.com/oamado31-source/infinity-ia/issues) para regi
 
 ## Licença e dependências
 
-A licença do código original do Infinity AI está em definição. BG2:EE e EEex são dependências externas, distribuídas separadamente sob seus próprios termos. Para os testes de integração, será necessária uma instalação própria de BG2:EE.
+O código, a documentação original e os exemplos sintéticos do Infinity AI que podem ser licenciados por seus titulares são distribuídos sob a [Apache License 2.0](LICENSE) (`Apache-2.0`), conforme [ADR-0112](docs/decisions/ADR-0112-licenca-apache-2.0-e-direitos-de-terceiros.md). Consulte também o [NOTICE](NOTICE) e a [política de licenciamento e terceiros](docs/architecture/licensing.md).
+
+**A licença não cobre propriedade intelectual de terceiros.** Baldur’s Gate II: Enhanced Edition, Forgotten Realms, Infinity Engine, EEex, GemRB, marcas, recursos gráficos/sonoros, dados e mods externos permanecem sujeitos aos direitos e termos de seus respectivos titulares. O projeto é independente, não distribui esses componentes e não é afiliado ou endossado por seus proprietários. Para testes de integração, é necessária uma instalação própria e legitimamente obtida do jogo.

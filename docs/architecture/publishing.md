@@ -1,36 +1,40 @@
-# Publicar o Infinity AI no GitHub (após validação)
+# Publicação e governança do Infinity AI no GitHub
 
-**Repositório canônico:** `oamado31-source/infinity-ia`, público. Já existe; importação no PR #3 `bootstrap/sdd-v11`. Não fazer push direto para `main`.
+**Repositório canônico:** [oamado31-source/infinity-ia](https://github.com/oamado31-source/infinity-ia), público.  
+**Baseline:** Discovery SDD v11.0 integrado na `main` pelo PR #3.  
+**Política:** não fazer push direto para `main`; criar branches e Pull Requests.
 
-## Antes de publicar
+## Estado do licenciamento
 
-1. Confirmar estratégia (novo repositório independente recomendado; não forkar GemRB ou EEex como base da V1).
-2. Escolher licença SPDX adequada ao código próprio (`LICENSE-PENDING.md`); analisar dependências GPL e EEex antes de usar código desses projetos.
-3. Inspecionar o histórico das 105 ADRs, docs e fixtures para qualquer material privado, senhas, tokens, dados de terceiros ou conteúdo de jogo protegido. O script básico não substitui revisão humana.
-4. Usar apenas fontes próprias: não enviar diretório do jogo, saves, áudio gravado, logs reais ou executáveis do EEex.
+A decisão **ADR-0112** aprovou `Apache-2.0` para os materiais originais
+elegíveis do Infinity AI. Consulte `LICENSE`, `NOTICE` e
+[`licensing.md`](licensing.md). O antigo `LICENSE-PENDING.md` foi retirado
+porque descrevia uma pendência já resolvida.
 
-## Publicação via Git local
+Não distribuir binários, saves, scripts, mods, dados nem assets originais de
+BG2:EE/EEex ou outras ferramentas de terceiros sem direitos e revisão específica.
+A licença do código próprio não muda os termos de GemRB, EEex, WeiDU ou dos jogos.
 
-O repositório já existe e tem `main` protegida. **NÃO execute os comandos abaixo que inicializam outro repositório ou enviam para `main`**; use `IMPORTAR_INFINITY_AI.command` para atualizar o PR #3. Os comandos a seguir são mantidos como referência histórica, não instrução atual:
+## Fluxo de alterações
 
-```bash
-git init -b main
-git add .
-git commit -m "chore: bootstrap Infinity AI SDD with validated ADR baseline"
-git remote add origin https://github.com/oamado31-source/infinity-ia.git
-git push -u origin main
-```
+1. Atualizar `main` localmente e criar uma branch por alteração.
+2. Vincular mudanças funcionais à SPEC, REQ e ADR/CR apropriados; **não editar
+   ADRs históricos ratificados**.
+3. Abrir Pull Request com motivação, escopo, testes, riscos e rollback.
+4. Aguardar `tests` no GitHub Actions e revisão conforme `protect-main`.
+5. Integrar pelo método permitido no repositório; verificar CI pós-merge.
+6. Preservar backups e conferir a ausência de material sensível e de terceiros.
 
-Não executar esses comandos se ainda existir material sensível ou não houver licença/autorizações para a publicação.
+Para atualizações futuras, não reutilizar o script de importação inicial
+para sobrescrever a `main` ou reabrir o PR #3, já encerrado.
 
-## Configuração obrigatória no GitHub
+## Verificações de publicação
 
-- Settings → Branches / Rulesets → proteger `main`: PR obrigatório, revisão humana e status checks; não permitir deletar nem force push, evitar bypass conforme plano e permissões.
-- Usar `CODEOWNERS` para pedir revisão (não é regra de proteção por si só).
-- Não conceder acesso Write/Maintain/Admin para colaboradores ocasionais; forks e PRs permitem contribuição sem essa permissão.
-- Ativar private vulnerability reporting, GitHub Actions CI e revisão de dependências.
-- Fazer snapshot externo assinado/versionado do ZIP e reter cópias de backups de acordo com política do projeto.
-
-## Critério de sucesso
-
-Verificar remotamente visibility=PUBLIC, branch default=main, proteções efetivas, CI concluído, ADRs intactos, licença explícita e ausência de assets/segredos.
+- A `main` deve continuar protegida e exigir o status check `tests`.
+- A verificação automatizada de extensões e arquivos proibidos é básica e
+  **não substitui auditoria humana de origem, licença e dados sensíveis**.
+- Novas dependências exigem inventário de versão, licença e obrigações.
+- Alterações de workflow GitHub Actions devem ser revisadas com atenção a
+  permissões, segredos e execução em PRs externos.
+- As integrações reais Windows + EEex + dois clientes continuam sujeitas
+  às evidências e gates descritos nas SPECs.

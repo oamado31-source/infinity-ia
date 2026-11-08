@@ -1,6 +1,6 @@
 # Architecture — Visão executável e limites
 
-## Topologia da primeira fase
+## Topologia alvo (etapa 1 em single player; clientes na etapa 2, ADR-0113)
 
 ```
 BG2:EE Windows (host + 2 clientes)
@@ -26,7 +26,7 @@ BG2:EE Windows (host + 2 clientes)
 - Não acoplar a interface do host ao protocolo interno de GemRB ou ao executável da Beamdog.
 - Cada adaptador implementa contrato comum e anuncia capability por fingerprint; sem fingerprint válido, retornar UNKNOWN/BLOCKED_CAPABILITY.
 - Mods e engines alternativos entram como adaptadores novos, não alteração de núcleo.
-- Primeiro teste prova BG2 vanilla → EEex → leitura allowlisted → host+2 clients.
+- Primeiro teste prova BG2 vanilla → EEex → leitura allowlisted em single player (etapa 1); host + 2 clientes na etapa 2 (ADR-0113).
 - Nenhuma função de áudio confere permissão de Action Gateway ou altera quest original.
 
 ## Desenho evolutivo

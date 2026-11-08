@@ -13,13 +13,13 @@ Cada modo terá seus próprios arquivos de campanha. No Living World, a cronolog
 
 ## Como a integração foi pensada
 
-- **BG2:EE no Windows.** A primeira prova de conceito parte de uma instalação limpa do jogo e acrescenta o EEex e uma ponte de integração. A meta é validar essa configuração em uma sessão cooperativa com dois clientes.
+- **BG2:EE no Windows.** A primeira prova de conceito parte de uma instalação limpa do jogo e acrescenta o EEex e uma ponte de integração. O desenvolvimento acontece primeiro em **single player**; a sessão cooperativa com dois clientes é a segunda etapa ([ADR-0113](docs/decisions/ADR-0113-single-player-primeiro-multiplayer-na-etapa-2.md)).
 - **Autoridade dividida.** O host do jogo confirma mudanças mecânicas. O Infinity AI mantém a memória e o estado narrativo da campanha. A ponte valida as operações entre os dois.
 - **Regras primeiro.** Código determinístico governa as regras e as mudanças de estado. Um modelo de linguagem local pode ser acionado sob demanda para tarefas narrativas, como formular um diálogo a partir dos fatos conhecidos por um NPC.
 
 ## Estado do projeto
 
-O projeto está em fase de especificação e validação técnica. A integração multiplayer com EEex ainda precisa ser demonstrada de ponta a ponta. A próxima etapa é validar a sequência **BG2:EE limpo → EEex → ponte → sessão com dois clientes**. Este repositório ainda não oferece uma versão jogável.
+O projeto está em fase de especificação e validação técnica. Num laboratório Windows 11 ARM64, a sequência **BG2:EE limpo → EEex → ponte somente leitura** já foi validada em single player. As próximas etapas são memória de NPC, persistência e diálogo, ainda em single player; o multiplayer vem depois. Este repositório ainda não oferece uma versão jogável.
 
 ## Acompanhar e contribuir
 

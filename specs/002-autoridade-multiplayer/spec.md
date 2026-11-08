@@ -1,6 +1,6 @@
 # SPEC-002 — Autoridade host e dois clientes
 
-**Status:** APROVADA COMO SPEC INICIAL (Q01–Q28), **POC REAL NÃO EXECUTADA**.  
+**Status:** APROVADA COMO SPEC INICIAL (Q01–Q28), **POC REAL NÃO EXECUTADA**. **Etapa 2** (ADR-0113): implementação depois do marco single player.  
 **Rastreabilidade:** DEC-001/011/012/041–046/053/057/058; ADR-0108/0110; Q05/09/25/28.
 
 ## Objetivo / escopo

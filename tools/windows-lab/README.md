@@ -28,6 +28,15 @@ python scripts/p0_assess_manifest.py p0-manifest.json
 
 ## 4. Teste base manual (completa o P0)
 
+**Dependência de sistema:** o jogo precisa do runtime OpenAL. O Steam o instala na primeira vez que o jogo é aberto pela loja; abrindo direto pela cópia antes disso, o Windows acusa `OpenAL32.dll não foi encontrado`. O instalador vem com o jogo (`oalinst.exe`, assinado pela Creative Labs). Num PowerShell de administrador:
+
+```powershell
+Get-AuthenticodeSignature 'C:\InfinityLab\BG2EE-P0\oalinst.exe'   # Status deve ser Valid
+Start-Process 'C:\InfinityLab\BG2EE-P0\oalinst.exe' -ArgumentList '/s' -Wait
+```
+
+Ele instala em `System32`/`SysWOW64`, fora da pasta do jogo, então o `build_fingerprint` não muda. Registre a versão instalada no relatório (no laboratório de 2026-11-08: 6.14.0357.24).
+
 1. Abra o jogo pela cópia dedicada, inicie um jogo novo, ande até sair da primeira área.
 2. Salve num slot com nome `INFINITY-P0-DESCARTAVEL`, feche e recarregue o save.
 3. Registre: data, SHA do commit, `build_fingerprint`, `modpack_hash`, ambiente e resultado.

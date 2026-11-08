@@ -93,7 +93,14 @@ function Find-GameRoot {
         elseif ($pub -and $pub.Value -like '*Beamdog*') { $kind = 'beamdog' }
         [void]$found.Add(@{ root = $loc.Value.TrimEnd('\'); kind = $kind })
     }
-    return ,$found
+    # O mesmo Steam aparece em varias chaves do registro: remove duplicatas pelo caminho real.
+    $seen = @{}
+    $unique = New-Object System.Collections.ArrayList
+    foreach ($c in $found) {
+        $key = (Resolve-Path -LiteralPath $c.root).ProviderPath.TrimEnd('\').ToLowerInvariant()
+        if (-not $seen.ContainsKey($key)) { $seen[$key] = $true; [void]$unique.Add($c) }
+    }
+    return ,$unique
 }
 
 # --- Ambiente (sem nome de maquina ou usuario) ---

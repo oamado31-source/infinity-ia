@@ -33,7 +33,7 @@
       "required": ["adapter_version", "evidence"],
       "properties": {
         "adapter_version": {"type": "string", "minLength": 1},
-        "evidence": {"enum": ["SYNTHETIC", "POC_VERIFIED"]}
+        "evidence": {"enum": ["SYNTHETIC", "LAB_OBSERVED", "POC_VERIFIED"]}
       }
     }
   },

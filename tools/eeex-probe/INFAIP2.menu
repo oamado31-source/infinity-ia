@@ -1,0 +1,9 @@
+menu
+{
+	name "INFAI_P2_Menu"
+	ignoreEsc
+	label
+	{
+		enabled "INFAI_P2_Tick()"
+	}
+}

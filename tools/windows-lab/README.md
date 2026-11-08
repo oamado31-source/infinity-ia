@@ -56,6 +56,17 @@ Nunca instale o EEex na cópia P0: crie outra cópia a partir da instalação li
 4. Abra sempre pelo `InfinityLoader.exe` (abrir pelo `Baldur.exe` com EEex instalado trava o jogo). Se não abrir, atualize o Visual C++ Redistributable x64.
 5. Confirme que `EEex.dll` e `InfinityLoaderDLL.dll` estão carregados no processo `Baldur.exe` e que não surgiu `InfinityLoader_Crash\`. Saves feitos com EEex vão em slot próprio (`INFINITY-P1-DESCARTAVEL`), nunca por cima do save P0.
 
-## 6. Onde guardar a evidência
+## 6. Gate P2 — bridge read-only pelo log do EEex
+
+Na cópia P1 (com EEex), instale o probe conforme `tools/eeex-probe/README.md` e colete o manifesto de referência (ele passa a incluir os 2 arquivos do probe no `modpack_hash`). Com a VM acessível por SSH:
+
+```bash
+export INFINITY_LAB_SSH='ssh -i ~/.ssh/<chave> -o IdentitiesOnly=yes -o BatchMode=yes -l "<usuario>" <ip-da-vm>'
+python tools/windows-lab/p2_lab_session.py --pinned-manifest <p2-manifest.json> --out <sessao.jsonl> --duration 600
+```
+
+Roteiro no jogo: menu principal → carregar save → (trocar de área) → salvar em `INFINITY-P2-DESCARTAVEL` → recarregar → fechar. Esperado: `UNKNOWN` no menu, `OBSERVED` no mapa, `EPOCH_MISMATCH` no reload seguido de reconexão, `ADAPTER_UNAVAILABLE`/`UNKNOWN` com o jogo fechado; requisições de escrita, campo fora da allowlist e ACL errada sempre recusadas. O relógio da VM é local (UTC−3 no laboratório); os envelopes usam UTC.
+
+## 7. Onde guardar a evidência
 
 O manifesto bruto fica fora do repositório (contém hashes da sua instalação, nada sensível, mas também nada que precise ser público). No relatório da PR, cite apenas fingerprint, modpack hash, versões, ambiente e resultado. **Nunca** suba saves, `chitin.key`, `.tlk`, `.bif` ou capturas com conteúdo do jogo.

@@ -57,8 +57,13 @@ class Coverage(str, Enum):
 
 
 class Evidence(str, Enum):
-    """Where an observation came from. Only POC_VERIFIED can ever back a capability claim."""
+    """Where an observation came from. Only POC_VERIFIED can ever back a capability claim.
+
+    LAB_OBSERVED: read from the real game in the lab environment of CR-2026-001 (Windows on ARM
+    VM) while a gate is being exercised; it is real data, but not a native-build capability.
+    """
     SYNTHETIC = 'SYNTHETIC'
+    LAB_OBSERVED = 'LAB_OBSERVED'
     POC_VERIFIED = 'POC_VERIFIED'
 
 

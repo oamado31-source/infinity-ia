@@ -59,7 +59,10 @@ def _utc_now() -> str:
 class ReadOnlyBridge:
     def __init__(self, pinned: SessionIdentity, allowlist: Allowlist, adapter: ReadOnlyAdapter,
                  *, clock: Callable[[], str] = _utc_now,
-                 id_factory: Callable[[], str] = lambda: str(uuid.uuid4())) -> None:
+                 id_factory: Callable[[], str] = lambda: str(uuid.uuid4()),
+                 evidence: Evidence = Evidence.SYNTHETIC) -> None:
+        """`evidence` labels envelopes that carry no reading (refusals, failures) so a real
+        lab session is never recorded as SYNTHETIC. Readings keep the adapter's own label."""
         if allowlist.build_fingerprint != pinned.build_fingerprint:
             raise ValueError('Allowlist is pinned to a different build')
         self._pinned = pinned
@@ -67,6 +70,7 @@ class ReadOnlyBridge:
         self._adapter = adapter
         self._clock = clock
         self._new_id = id_factory
+        self._evidence = evidence
         self._check = SessionCheck(False, (Reason.SESSION_NOT_VALIDATED,))
 
     @property
@@ -137,9 +141,9 @@ class ReadOnlyBridge:
 
     def _refuse(self, field: str, purpose: str, audience: Audience | None, status: Status,
                 reason: Reason, visibility=None,
-                evidence: Evidence = Evidence.SYNTHETIC) -> ObservationEnvelope:
+                evidence: Evidence | None = None) -> ObservationEnvelope:
         return self._envelope(field, purpose, audience, status, reason, None, Coverage.NONE,
-                              visibility, evidence)
+                              visibility, evidence or self._evidence)
 
     def _envelope(self, field, purpose, audience, status, reason, value, coverage, visibility,
                   evidence) -> ObservationEnvelope:

@@ -4,7 +4,7 @@
 |---|---|---|---|
 | P0 | BG2:EE limpo, Windows | manifesto, teste base e save descartável | APROVADO no laboratório ARM64/VM em 2026-11-08 ([evidência](../evidence/P0-2026-11-08-laboratorio-arm64.md), CR-2026-001); NÃO EXECUTADO em Windows x86-64 nativo |
 | P1 | EEex pinado | loader inicializa sem falhas na build | APROVADO no laboratório ARM64/VM em 2026-11-08 com EEex v1.3.1 Minimal ([evidência](../evidence/P1-2026-11-08-laboratorio-arm64.md), CR-2026-001); NÃO EXECUTADO em Windows x86-64 nativo |
-| P2 | Bridge read-only | dados allowlisted, UNKNOWN, nenhuma escrita | NÃO EXECUTADO |
+| P2 | Bridge read-only | dados allowlisted, UNKNOWN, nenhuma escrita | APROVADO no laboratório ARM64/VM em 2026-11-08 (probe EEex por log, 2 campos; [evidência](../evidence/P2-2026-11-08-laboratorio-arm64.md), CR-2026-001); NÃO EXECUTADO em Windows x86-64 nativo |
 | P3 | Mutação opcional isolada | autorização+receipt+rollback em save descartável | NÃO EXECUTADO |
 | P4 | Host + 2 clientes | consistência após save/load/reconnect, logs, sem desync | NÃO EXECUTADO |
 

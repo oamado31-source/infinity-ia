@@ -1,0 +1,325 @@
+# SPDX-License-Identifier: Apache-2.0
+"""ADR-0114 common regional knowledge: acquisition channels, pin, branches and dialogue use."""
+import json
+import shutil
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'src'))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from infinity_ai.canon.pack import KNOWLEDGE_ROOT, load_partition, load_sources  # noqa: E402
+from infinity_ai.canon.pin import pin_pack  # noqa: E402
+from infinity_ai.dialogue.context import Catalog, build_context  # noqa: E402
+from infinity_ai.dialogue.engine import (  # noqa: E402
+    DialogueEngine, DialogueRequest, DialogueStatus, system_prompt,
+)
+from infinity_ai.dialogue.llm import FakeProvider  # noqa: E402
+from infinity_ai.memory.common_knowledge import (  # noqa: E402
+    BackgroundRegion, Residence, acquire_common_knowledge,
+)
+from infinity_ai.memory.model import KnowledgeBasis  # noqa: E402
+from infinity_ai.memory.store import MemoryStore  # noqa: E402
+from infinity_ai.state.recorder import ObservationRecorder  # noqa: E402
+from infinity_ai.state.store import ROOT_BRANCH, CampaignStore, StoreError  # noqa: E402
+from test_recorder import obs, party  # noqa: E402
+
+PACK = load_partition(1369)
+BUILD = frozenset(a for e in PACK.entries.values() for a in e.area_resrefs) | {'AR0602'}
+DAY = 7200
+CITY = {'region:amn', 'region:athkatla', 'org:council-of-six', 'org:cowled-wizards'}
+
+
+def reply(speech, used=(), unknown=False):
+    return json.dumps({'speech': speech, 'used_facts': list(used), 'unknown': unknown},
+                      ensure_ascii=False)
+
+
+class Story(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.store = CampaignStore.open(Path(self.tmp.name) / 'c.sqlite3', 'lab')
+        self.addCleanup(self.store.close)
+        self.rec = ObservationRecorder(self.store)
+        self.memory = MemoryStore(self.store)
+
+    def see(self, area, t, members='["imoen","jaheira"]', epoch=0):
+        return self.rec.observe(*obs(area, t, epoch=epoch), party(members, epoch=epoch))
+
+    def pin(self, pack=PACK, game_time=None, branch=ROOT_BRANCH):
+        pin_pack(self.store, branch, pack, game_time=game_time)
+
+    def acquire(self, at, pack=PACK, branch=ROOT_BRANCH, **kw):
+        return acquire_common_knowledge(self.store, branch, pack, campaign_year=1369,
+                                        build_areas=BUILD, at_game_time=at, **kw)
+
+    def known(self, npc='npc:jaheira', branch=ROOT_BRANCH, at=10**9):
+        return set(self.memory.known_canon(npc, branch, at))
+
+
+BERNARD = 'npc:bernard'
+
+
+def lives(region='region:athkatla', since=0, evidence='GAME_DATA:AR0406', npc=BERNARD):
+    return {npc: [Residence(region, since, evidence)]}
+
+
+class PartyNeverLearnsByTimeTests(Story):
+    def test_days_in_athkatla_teach_companions_nothing(self):
+        self.see('AR0602', 100)
+        self.pin(game_time=100)
+        self.see('AR0406', 1000)
+        report = self.acquire(1000 + 10 * DAY)
+        self.assertEqual(report.status, 'OK')
+        self.assertEqual(report.granted, ())
+        self.assertEqual(self.known(), set())
+        self.assertEqual(self.known('npc:imoen'), set())
+        refused = {(r.npc_id, r.entry_id, r.reason) for r in report.refusals}
+        self.assertIn(('npc:jaheira', 'org:council-of-six', 'NO_CHANNEL'), refused)
+
+    def test_a_residence_does_not_count_while_in_the_party(self):
+        self.see('AR0406', 0)
+        self.pin(game_time=0)
+        self.acquire(10 * DAY, residents=lives(npc='npc:jaheira'))
+        self.assertEqual(self.known(), set())
+
+
+class ResidenceTests(Story):
+    def test_a_day_living_in_athkatla_teaches_city_and_country_common_knowledge(self):
+        self.see('AR0602', 100)
+        self.pin(game_time=100)
+        self.assertEqual(self.acquire(100 + DAY - 1, residents=lives()).granted, ())
+        report = self.acquire(100 + DAY, residents=lives())
+        self.assertEqual(self.known(BERNARD), CITY)
+        self.assertTrue(all(k.basis is KnowledgeBasis.RESIDENCE for k in report.granted))
+        self.assertNotIn('org:shadow-thieves', self.known(BERNARD))        # CANON_REFERENCE
+        self.assertNotIn('region:tethyr', self.known(BERNARD))
+        self.assertEqual(self.known(), set())                              # companions: nothing
+
+    def test_living_in_the_countryside_does_not_teach_city_specifics(self):
+        self.see('AR0602', 0)
+        self.pin(game_time=0)
+        self.acquire(DAY, residents=lives('region:amn'))
+        self.assertEqual(self.known(BERNARD), {'region:amn', 'org:cowled-wizards'})
+
+    def test_time_in_the_party_is_not_residence(self):
+        self.see('AR0602', 0)
+        self.pin(game_time=0)
+        self.see('AR0406', DAY // 4, '["imoen","bernard"]')
+        self.see('AR0406', 3 * DAY // 4, '["imoen"]')
+        self.acquire(DAY, residents=lives())
+        self.assertEqual(self.known(BERNARD), set())
+        self.acquire(3 * DAY // 2, residents=lives())
+        self.assertEqual(self.known(BERNARD), CITY)
+
+    def test_residence_before_the_pin_does_not_count(self):
+        self.see('AR0300', 0)
+        self.see('AR0300', 5 * DAY)        # no event (same area/party), just a later observation
+        self.pin(game_time=5 * DAY)
+        self.assertEqual(self.acquire(5 * DAY + 10, residents=lives()).granted, ())
+        self.acquire(6 * DAY, residents=lives())
+        self.assertEqual(self.known(BERNARD), CITY)
+
+    def test_residence_counts_from_when_the_stay_began(self):
+        self.see('AR0300', 0)
+        self.pin(game_time=0)
+        self.assertEqual(self.acquire(2 * DAY, residents=lives(since=DAY + 1)).granted, ())
+        self.acquire(2 * DAY + 1, residents=lives(since=DAY + 1))
+        self.assertEqual(self.known(BERNARD), CITY)
+
+    def test_pin_without_game_time_anchors_on_the_last_event_before_it(self):
+        self.see('AR0300', 0)
+        self.pin()
+        self.acquire(DAY, residents=lives())
+        self.assertEqual(self.known(BERNARD), CITY)
+
+    def test_residence_needs_evidence_and_a_known_region(self):
+        self.see('AR0300', 0)
+        self.pin(game_time=0)
+        for stay in (lives(evidence=' '), lives('region:rashemen'), lives(since='0')):
+            with self.subTest(stay=stay):
+                self.acquire(10 * DAY, residents=stay)
+                self.assertEqual(self.known(BERNARD), set())
+
+    def test_idempotent(self):
+        self.see('AR0300', 0)
+        self.pin(game_time=0)
+        first = self.acquire(DAY, residents=lives())
+        self.assertEqual(len(first.granted), 4)
+        self.assertEqual(self.acquire(DAY + 50, residents=lives()).granted, ())
+        rows = self.store.connection.execute('SELECT count(*) FROM npc_canon_knowledge').fetchone()
+        self.assertEqual(rows[0], 4)
+
+    def test_rows_are_append_only(self):
+        self.see('AR0300', 0)
+        self.pin(game_time=0)
+        self.acquire(DAY, residents=lives())
+        with self.assertRaises(Exception):
+            self.store.connection.execute("UPDATE npc_canon_knowledge SET snapshot_json = 'x'")
+        with self.assertRaises(Exception):
+            self.store.connection.execute('DELETE FROM npc_canon_knowledge')
+
+
+class PinAndRevisionTests(Story):
+    def setUp(self):
+        super().setUp()
+        kdir = tempfile.TemporaryDirectory()
+        self.addCleanup(kdir.cleanup)
+        self.kroot = Path(kdir.name) / 'knowledge'
+        shutil.copytree(KNOWLEDGE_ROOT, self.kroot)
+
+    def corrected_pack(self):
+        path = self.kroot / 'periods' / '1369-DR' / 'organizations' / 'council-of-six.json'
+        doc = json.loads(path.read_text(encoding='utf-8'))
+        doc['summary'] = 'Versão corrigida do resumo.'
+        path.write_text(json.dumps(doc, ensure_ascii=False), encoding='utf-8')
+        return load_partition(1369, self.kroot)
+
+    def test_nothing_without_a_matching_pin(self):
+        self.see('AR0300', 0)
+        self.assertEqual(self.acquire(DAY, residents=lives()).status, 'NOT_PINNED')
+        self.pin(game_time=0)
+        changed = self.corrected_pack()
+        self.assertEqual(self.acquire(DAY, pack=changed, residents=lives()).status,
+                         'REVISION_CHANGED')
+        self.assertEqual(self.known(BERNARD), set())
+
+    def test_correction_after_repin_keeps_what_was_learned(self):
+        self.see('AR0300', 0)
+        self.pin(game_time=0)
+        self.acquire(DAY, residents=lives())
+        changed = self.corrected_pack()
+        self.pin(changed, game_time=DAY)
+        self.acquire(3 * DAY, pack=changed, residents=lives())
+        council = self.memory.known_canon(BERNARD, ROOT_BRANCH)['org:council-of-six']
+        self.assertNotIn('corrigida', council.summary)
+        self.assertEqual(council.pack_revision, PACK.revision)
+
+
+class BranchTests(Story):
+    def test_fork_before_the_threshold_does_not_know(self):
+        self.see('AR0300', 0)
+        self.pin(game_time=0)
+        self.see('AR0400', DAY)
+        self.acquire(DAY, residents=lives())
+        child = self.see('AR0300', DAY // 2, epoch=1).branch_id
+        self.assertNotEqual(child, ROOT_BRANCH)
+        self.assertEqual(self.known(BERNARD, branch=child), set())
+        self.assertEqual(self.known(BERNARD, branch=ROOT_BRANCH), CITY)
+        _, _, held = self.memory.recall_common(npc_id=BERNARD, branch_id=child,
+                                               at_game_time=DAY // 2, purpose='npc_dialogue',
+                                               audience='NARRATIVE_CONTEXT')
+        self.assertEqual(held, ())
+
+    def test_recall_gates(self):
+        status, reason, _ = self.memory.recall_common(
+            npc_id='npc:jaheira', branch_id=ROOT_BRANCH, at_game_time=1, purpose='debug',
+            audience='NARRATIVE_CONTEXT')
+        self.assertEqual(reason, 'ACL_PURPOSE')
+        status, reason, _ = self.memory.recall_common(
+            npc_id='npc:jaheira', branch_id='nope', at_game_time=1, purpose='npc_dialogue',
+            audience='NARRATIVE_CONTEXT')
+        self.assertEqual(reason, 'UNKNOWN_BRANCH')
+
+    def test_write_requires_visible_events(self):
+        self.see('AR0300', 0)
+        with self.assertRaises(StoreError):
+            self.memory.record_canon_knowledge(
+                npc_id='npc:jaheira', branch_id=ROOT_BRANCH, game_time=1,
+                basis=KnowledgeBasis.ORIGIN, region_id='region:amn', entry_id='region:amn',
+                pack_year_dr=1369, pack_revision=PACK.revision, pin_event_id='ev-missing',
+                trigger_event_id='ev-missing', title='t', summary='s')
+
+
+class OriginTests(Story):
+    def background(self, **over):
+        b = dict(region_id='region:tethyr', source_id='bg2-manual', locator='p. 31',
+                 checked_by='mantenedor', checked_at='2026-11-09')
+        b.update(over)
+        return {'npc:jaheira': [BackgroundRegion(**b)]}
+
+    def test_curated_origin_is_known_from_the_first_appearance(self):
+        self.see('AR0602', 100)
+        self.pin(game_time=100)
+        report = self.acquire(150, backgrounds=self.background(), sources=load_sources())
+        self.assertEqual(self.known(), {'region:tethyr', 'event:tethyr-reclamation-wars-end'})
+        self.assertTrue(all(k.basis is KnowledgeBasis.ORIGIN and k.game_time == 100
+                            for k in report.granted))
+        self.assertEqual(self.known('npc:imoen'), set())
+
+    def test_origin_also_holds_for_npcs_outside_the_party(self):
+        self.see('AR0602', 100)
+        self.pin(game_time=100)
+        b = self.background()['npc:jaheira']
+        report = self.acquire(150, backgrounds={BERNARD: b}, sources=load_sources())
+        self.assertEqual(self.known(BERNARD), {'region:tethyr', 'event:tethyr-reclamation-wars-end'})
+        self.assertTrue(all(k.game_time == 100 for k in report.granted))   # from the pin
+
+    def test_origin_needs_a_checked_strong_source(self):
+        self.see('AR0602', 100)
+        self.pin(game_time=100)
+        for over in ({'checked_by': ''}, {'locator': ' '}, {'source_id': 'unknown'},
+                     {'region_id': 'region:rashemen'}):
+            with self.subTest(over=over):
+                self.acquire(150, backgrounds=self.background(**over), sources=load_sources())
+                self.assertEqual(self.known(), set())
+
+
+class DialogueTests(Story):
+    def setUp(self):
+        super().setUp()
+        self.see('AR0602', 0)
+        self.pin(game_time=0)
+        self.see('AR0300', 10)
+
+    def learn(self):
+        amn = BackgroundRegion('region:amn', 'bg2-manual', 'p. 0 (sintético)', 'teste', '2026-11-09')
+        return self.acquire(10 + DAY, backgrounds={'npc:jaheira': [amn]}, sources=load_sources())
+
+    def ctx(self, at):
+        return build_context(self.memory, self.store, Catalog.load(), npc_id='npc:jaheira',
+                             branch_id=ROOT_BRANCH, at_game_time=at).context
+
+    def test_knowledge_reaches_the_prompt_only_after_acquisition(self):
+        before = self.ctx(100)
+        self.assertEqual(before.knowledge, ())
+        self.assertIn('você não conhece a região', system_prompt(before))
+        self.learn()
+        after = self.ctx(10 + DAY)
+        texts = {k.fact_id: k.text for k in after.knowledge}
+        self.assertEqual(len(texts), 4)
+        self.assertTrue(any(t.startswith('Conselho dos Seis:') for t in texts.values()))
+        self.assertIn('CONHECIMENTO GERAL:\nK1:', system_prompt(after))
+        self.assertTrue({'Amn', 'Athkatla', 'Conselho', 'Seis'} <= after.vocabulary)
+
+    def test_engine_maps_k_ids_and_rejects_raw_ids(self):
+        self.learn()
+        council = next(k.fact_id for k in self.ctx(10 + DAY).knowledge
+                       if k.event_id == 'canon:org:council-of-six')
+        engine = DialogueEngine(self.store, FakeProvider([
+            reply(f'Segundo {council}, quem manda é o Conselho.', [council]),
+            reply('Quem manda em Amn é o Conselho dos Seis, gente sem rosto.', [council])]),
+            Catalog.load())
+        result = engine.respond(DialogueRequest('npc:jaheira', 'Quem governa aqui?'),
+                                branch_id=ROOT_BRANCH, at_game_time=10 + DAY)
+        self.assertEqual(result.status, DialogueStatus.OK)
+        self.assertEqual(result.used_event_ids, ('canon:org:council-of-six',))
+        self.assertTrue(any('META_TALK' in f for f in result.flags))
+
+    def test_without_acquisition_the_council_is_an_unknown_name(self):
+        self.acquire(10 + 10 * DAY)                    # days in Athkatla, no origin: nothing
+        engine = DialogueEngine(self.store, FakeProvider([
+            reply('O Conselho dos Seis manda aqui.', []),
+            reply('O Conselho dos Seis manda aqui.', [])]), Catalog.load())
+        result = engine.respond(DialogueRequest('npc:jaheira', 'Quem governa?'),
+                                branch_id=ROOT_BRANCH, at_game_time=10 + 10 * DAY)
+        self.assertEqual(result.status, DialogueStatus.FALLBACK)
+        self.assertTrue(any('UNKNOWN_NAMES' in f for f in result.flags))
+
+
+if __name__ == '__main__':
+    unittest.main()

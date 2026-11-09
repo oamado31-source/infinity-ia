@@ -1,7 +1,7 @@
 {
   "schema": "infinity-ai.canon-entry.v1",
   "partition_year_dr": 1369,
-  "access_scope": "CANON_REFERENCE",
+  "access_scope": "COMMON_REGIONAL",
   "curation": {
     "curated_by": "claude-code",
     "curated_at": "2026-11-09",
@@ -16,6 +16,7 @@
     "AR0020",
     "AR0300",
     "AR0400",
+    "AR0406",
     "AR0500",
     "AR0700",
     "AR0800",

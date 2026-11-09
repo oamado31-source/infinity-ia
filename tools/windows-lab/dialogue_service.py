@@ -4,7 +4,10 @@
 Lab-only (CR-2026-001, ADR-0113). One thread reads the game over SSH (bridge -> recorder, same as
 the S1 session); an HTTP server bound to the VMware NAT address answers the Windows overlay.
 Every request needs the session token. No endpoint writes to the game; transcripts are not
-stored, and the console log carries metadata only (ADR-0107 item 6).
+stored, and the console log carries metadata only (ADR-0107 item 6). After each observation the
+ADR-0114 rule runs on the pinned 1369 DR pack (pin it with pin_canon_pack.py; nothing is acquired
+while the pin does not match). Companions only acquire through a curated origin: time spent in a
+place never teaches a party member.
 
   export INFINITY_LAB_SSH='ssh -i ~/.ssh/<key> -o IdentitiesOnly=yes -o BatchMode=yes -l "<user>" <vm-ip>'
   python tools/windows-lab/dialogue_service.py --pinned-manifest <manifest.json> --config-out <overlay.json>
@@ -36,10 +39,14 @@ from infinity_ai.bridge.eeex_log import (  # noqa: E402
 )
 from infinity_ai.bridge.manifest import build_fingerprint, modpack_hash  # noqa: E402
 from infinity_ai.bridge.service import ReadOnlyBridge  # noqa: E402
+from infinity_ai.canon.pack import load_partition, load_sources  # noqa: E402
 from infinity_ai.dialogue.context import Catalog, current_companions  # noqa: E402
 from infinity_ai.dialogue.engine import DialogueEngine, DialogueRequest  # noqa: E402
 from infinity_ai.dialogue.llm import OllamaProvider  # noqa: E402
-from infinity_ai.gamedata.inventory import load_local_names  # noqa: E402
+from infinity_ai.gamedata.inventory import load_local_names, load_local_resrefs  # noqa: E402
+from infinity_ai.memory.common_knowledge import (  # noqa: E402
+    DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge,
+)
 from infinity_ai.state.recorder import ObservationRecorder, RecordAction  # noqa: E402
 from infinity_ai.state.store import CampaignStore  # noqa: E402
 from lab_ssh import SshLogSource, live_manifest, now_iso, ssh_from_env  # noqa: E402
@@ -61,9 +68,15 @@ class GameView:
 class Observer(threading.Thread):
     """Owns its own DB connection (SQLite connections are per thread)."""
 
-    def __init__(self, args, ssh, pin_build, pin_modpack, live_build, live_modpack) -> None:
+    def __init__(self, args, ssh, pin_build, pin_modpack, live_build, live_modpack,
+                 catalog: Catalog | None = None) -> None:
         super().__init__(daemon=True)
         self.args, self.ssh = args, ssh
+        self.catalog = catalog or Catalog.load()
+        self.pack = load_partition(args.campaign_year)
+        self.sources = load_sources()
+        self.build_areas = load_local_resrefs(live_build, args.language)
+        self._knowledge_status = None
         self.pin = (pin_build, pin_modpack)
         self.source = SshLogSource(ssh, args.game_root)
         self.adapter = EEexLogAdapter(self.source, campaign_id=args.campaign, branch_id='main',
@@ -98,6 +111,8 @@ class Observer(threading.Thread):
                 if result.action is RecordAction.RECORDED:
                     print(f'{now_iso()} gravado: ' + ', '.join(e.event_type for e in result.events))
                 observed = result.action is not RecordAction.SKIPPED
+                if observed:
+                    self._acquire(store, recorder.branch_id, int(envs[1].value))
                 view = GameView(
                     observed=observed, branch_id=recorder.branch_id,
                     game_time=int(envs[1].value) if observed else None,
@@ -110,6 +125,20 @@ class Observer(threading.Thread):
                 with self.lock:
                     self.view = replace(self.view, observed=False)
             time.sleep(self.args.interval)
+
+
+    def _acquire(self, store: CampaignStore, branch_id: str, game_time: int) -> None:
+        report = acquire_common_knowledge(
+            store, branch_id, self.pack, campaign_year=self.args.campaign_year,
+            build_areas=self.build_areas, backgrounds=self.catalog.backgrounds(),
+            threshold=self.args.residence_threshold, at_game_time=game_time,
+            sources=self.sources)
+        if report.status != self._knowledge_status:
+            print(f'{now_iso()} conhecimento comum: {report.status}')
+            self._knowledge_status = report.status
+        for k in report.granted:
+            print(f'{now_iso()} conhecimento comum adquirido: npc={k.npc_id} entrada={k.entry_id} '
+                  f'base={k.basis.value} regiao={k.region_id} t={k.game_time}')
 
 
 def make_handler(token: str, observer: Observer, catalog: Catalog, args):
@@ -201,6 +230,10 @@ def main() -> int:
                     help='keep the token already in --config-out (overlay keeps working after a restart)')
     ap.add_argument('--interval', type=float, default=3.0)
     ap.add_argument('--language', default='pt_BR', help='game language of the local area inventory')
+    ap.add_argument('--campaign-year', type=int, default=1369, help='DR year (ADR-0109)')
+    ap.add_argument('--residence-threshold', type=int, default=DEFAULT_RESIDENCE_THRESHOLD,
+                    help='game time an NPC outside the party lives in a region before it knows its '
+                         'common knowledge (ADR-0114; party members never learn by time)')
     args = ap.parse_args()
 
     pinned = json.loads(args.pinned_manifest.read_text(encoding='utf-8-sig'))
@@ -210,7 +243,13 @@ def main() -> int:
     live_build, live_modpack = build_fingerprint(live), modpack_hash(live)
     print(f'live matches pinned: {(live_build, live_modpack) == (pin_build, pin_modpack)}')
 
-    observer = Observer(args, ssh, pin_build, pin_modpack, live_build, live_modpack)
+    game_names = load_local_names(live_build, args.language)
+    print(f'nomes de area do jogo (inventario local): {len(game_names)}')
+    catalog = Catalog.load(game_area_names=game_names)
+    observer = Observer(args, ssh, pin_build, pin_modpack, live_build, live_modpack, catalog)
+    print(f'pacote {args.campaign_year} DR {observer.pack.revision[:19]}..., '
+          f'areas da build: {len(observer.build_areas or ())}, '
+          f'limite de residencia: {args.residence_threshold}')
     observer.start()
 
     token = secrets.token_urlsafe(24)
@@ -220,10 +259,8 @@ def main() -> int:
     fd = os.open(args.config_out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, 'w', encoding='utf-8') as fh:
         json.dump({'url': f'http://{args.bind}:{args.port}', 'token': token}, fh)
-    game_names = load_local_names(live_build, args.language)
-    print(f'nomes de area do jogo (inventario local): {len(game_names)}')
     server = ThreadingHTTPServer((args.bind, args.port), make_handler(
-        token, observer, Catalog.load(game_area_names=game_names), args))
+        token, observer, catalog, args))
     print(f'servindo em http://{args.bind}:{args.port} (config do overlay em {args.config_out})')
     try:
         server.serve_forever()

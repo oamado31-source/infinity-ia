@@ -73,3 +73,28 @@ class RecallResult:
     reason: str
     items: tuple[RecallItem, ...] = field(default_factory=tuple)
     beliefs: tuple[BeliefRevision, ...] = field(default_factory=tuple)
+
+
+class KnowledgeBasis(str, Enum):
+    """ADR-0114 channels for common regional knowledge (INQUIRY is reserved, not granted yet)."""
+    ORIGIN = 'ORIGIN'
+    RESIDENCE = 'RESIDENCE'
+    INQUIRY = 'INQUIRY'
+
+
+@dataclass(frozen=True)
+class CanonKnowledge:
+    """A COMMON_REGIONAL canon entry an NPC acquired, with the summary as it was at the time."""
+    knowledge_id: str
+    npc_id: str
+    branch_id: str
+    game_time: int
+    basis: KnowledgeBasis
+    region_id: str
+    entry_id: str
+    pack_year_dr: int
+    pack_revision: str
+    pin_event_id: str
+    trigger_event_id: str
+    title: str
+    summary: str

@@ -177,3 +177,15 @@ def load_local_names(build_fingerprint: str, language: str,
     if doc.get('schema') != INVENTORY_SCHEMA or doc.get('build_fingerprint') != build_fingerprint:
         return {}
     return {a['resref']: a['display_name'] for a in doc.get('areas', []) if a.get('display_name')}
+
+
+def load_local_resrefs(build_fingerprint: str, language: str,
+                       base_dir: Path = DEFAULT_LOCAL_DIR) -> frozenset[str] | None:
+    """Area resrefs of this exact build from a written inventory, or None (gate: NO_INVENTORY)."""
+    path = _install_dir(Path(base_dir), build_fingerprint) / f'areas.{language}.json'
+    if not path.is_file():
+        return None
+    doc = json.loads(path.read_text(encoding='utf-8'))
+    if doc.get('schema') != INVENTORY_SCHEMA or doc.get('build_fingerprint') != build_fingerprint:
+        return None
+    return frozenset(a['resref'] for a in doc.get('areas', []))

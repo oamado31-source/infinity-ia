@@ -2,16 +2,20 @@
 """SPEC-004 deterministic dialogue context: what an NPC may say comes only from its recall.
 
 REQ-VOICE-005: the context is built from `MemoryStore.recall` (NPC, branch, time, audience
-already enforced) and rendered as numbered facts. Area codes never reach the text; unknown areas
+already enforced) and rendered as numbered facts. Common regional knowledge the NPC acquired
+under ADR-0114 (`MemoryStore.recall_common`) is rendered separately as K-items, from the snapshot
+taken at acquisition; canon the NPC has not acquired never reaches the context. Area codes never reach the text; unknown areas
 are presented as unnamed places. Only companions currently in the party can be talked to.
 """
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
+from ..memory.common_knowledge import BackgroundRegion
 from ..memory.model import RecallStatus
 from ..memory.store import MemoryStore
 from ..state.store import CampaignStore
@@ -21,6 +25,8 @@ DEFAULT_PERSONA_DIR = ROOT / 'knowledge' / 'personas'
 DEFAULT_AREA_NAMES = ROOT / 'knowledge' / 'areas' / 'bg2ee-area-names.pt_BR.json'
 UNNAMED_AREA = 'um lugar que você não sabe nomear'
 MAX_FACTS = 20
+MAX_KNOWLEDGE = 12
+_NAME = re.compile(r"[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ'-]*")
 GENERIC_FALLBACK = 'Hum... não sei bem o que dizer agora.'
 
 
@@ -36,6 +42,7 @@ class Persona:
     style: tuple[str, ...]
     vocabulary: frozenset[str]
     fallback: str = GENERIC_FALLBACK
+    background: tuple[BackgroundRegion, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -52,6 +59,7 @@ class DialogueContext:
     facts: tuple[Fact, ...]
     vocabulary: frozenset[str]
     companions: tuple[str, ...]
+    knowledge: tuple[Fact, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -79,9 +87,13 @@ class Catalog:
             personas[doc['npc_id']] = Persona(doc['npc_id'], doc['display_name'],
                                               tuple(doc.get('style', ())),
                                               frozenset(doc.get('vocabulary', ())),
-                                              doc.get('fallback') or GENERIC_FALLBACK)
+                                              doc.get('fallback') or GENERIC_FALLBACK,
+                                              _background(doc))
         areas = json.loads(Path(area_names).read_text(encoding='utf-8')).get('areas', {})
         return cls(personas, dict(areas), dict(game_area_names or {}))
+
+    def backgrounds(self) -> dict[str, tuple[BackgroundRegion, ...]]:
+        return {n: p.background for n, p in self.personas.items() if p.background}
 
     def persona(self, npc_id: str) -> Persona:
         if npc_id in self.personas:
@@ -95,6 +107,19 @@ class Catalog:
     def area(self, resref: str | None) -> str:
         key = resref or ''
         return self.game_area_names.get(key) or self.area_names.get(key, UNNAMED_AREA)
+
+
+def _background(doc: dict) -> tuple[BackgroundRegion, ...]:
+    """Curated ORIGIN regions; incomplete records are dropped (the rule rechecks the source)."""
+    out = []
+    for b in doc.get('background_regions') or ():
+        try:
+            out.append(BackgroundRegion(b['region_id'], b['source_id'], b['locator'],
+                                        (b.get('curation') or {}).get('checked_by', ''),
+                                        (b.get('curation') or {}).get('checked_at', '')))
+        except (KeyError, TypeError):
+            continue
+    return tuple(out)
 
 
 def current_companions(store: CampaignStore, branch_id: str) -> tuple[str, ...] | None:
@@ -157,5 +182,17 @@ def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *
     facts = facts[-MAX_FACTS:]
     numbered = tuple(Fact(f'F{i}', f.event_id, f.text, f.game_time)
                      for i, f in enumerate(facts, 1))
+
+    status, reason, held = memory.recall_common(npc_id=npc_id, branch_id=branch_id,
+                                                at_game_time=at_game_time,
+                                                purpose='npc_dialogue',
+                                                audience='NARRATIVE_CONTEXT')
+    if status is not RecallStatus.OK:
+        return ContextResult(ContextStatus.DENIED, reason)
+    knowledge = []
+    for i, k in enumerate(held[:MAX_KNOWLEDGE], 1):
+        knowledge.append(Fact(f'K{i}', f'canon:{k.entry_id}', f'{k.title}: {k.summary}',
+                              k.game_time))
+        vocabulary |= set(_NAME.findall(k.title)) | set(_NAME.findall(k.summary))
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(
-        catalog.persona(npc_id), numbered, frozenset(vocabulary), companions))
+        catalog.persona(npc_id), numbered, frozenset(vocabulary), companions, tuple(knowledge)))

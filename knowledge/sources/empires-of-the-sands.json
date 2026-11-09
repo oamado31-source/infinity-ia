@@ -1,0 +1,14 @@
+{
+  "schema": "infinity-ai.source.v1",
+  "bibliographic_status": "CONFIRMED_FROM_COPY",
+  "notes": "FR3, acessório TSR 9224, por Scott Haring; dados lidos da página de créditos da cópia do mantenedor (©1988, ISBN 0-88038-539-1). O texto não declara ano DR; pertence ao cenário original de 1987-88 (cerca de 1357 DR, aproximado), anterior ao fim da guerra civil de Tethyr. Só sustenta entradas de 1369 DR com validade explícita e, de preferência, cruzamento com Lands of Intrigue.",
+  "source_id": "empires-of-the-sands",
+  "title": "Empires of the Sands (FR3)",
+  "publisher": "TSR",
+  "year": 1988,
+  "edition": "AD&D 1st edition, Forgotten Realms Accessory FR3",
+  "creators": ["Scott Haring"],
+  "isbn": "0-88038-539-1",
+  "source_class": "S0_PRIMARY",
+  "setting_year_dr": 1357
+}

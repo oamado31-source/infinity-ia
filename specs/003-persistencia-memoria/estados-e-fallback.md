@@ -37,6 +37,13 @@ Só transições são gravadas; polls sem mudança não geram linhas. Envelope `
 - `BeliefRevision` (append-only): exige ao menos uma experiência do **próprio** NPC disponível naquele momento; precisa estender a cabeça atual da cadeia (`StaleRevision` caso contrário); `authored_by = RULES` (LLM não grava).
 - `recall`: finalidade em `narrative_context`/`npc_dialogue`, audiência válida, ramo existente e tempo conhecido; devolve só experiências do NPC, na linhagem, até o tempo pedido, com visibilidade permitida à audiência, e crenças cujas provas também estão visíveis. Resultado vazio significa "nada conhecido", nunca "não aconteceu".
 
+## Conhecimento comum regional (ADR-0114)
+
+- Tabela `npc_canon_knowledge` (migração 0002, append-only). Cada linha guarda NPC, ramo, tempo, canal (`ORIGIN`, `RESIDENCE`; `INQUIRY` reservado), região, entrada, revisão do pacote, pin, evento-gatilho e instantâneo de título e resumo. A chave idempotente é campanha/ramo/NPC/entrada/canal/revisão.
+- `acquire_common_knowledge` roda depois de cada observação gravada e devolve um estado: `NOT_PINNED`, `REVISION_CHANGED`, `UNKNOWN_TIME`, `NO_OBSERVATION` ou `OK`. As recusas são tipadas: `GATE_<status>`, `NO_REGION`, `NO_CHANNEL`. Fora de `OK`, nada é gravado.
+- Membros do grupo só adquirem por origem curada; tempo de permanência nunca conta para eles. `RESIDENCE` conta só tempo depois do pin e fora do grupo.
+- `recall_common` aplica os mesmos filtros de `recall` (finalidade, audiência, ramo, tempo). A visibilidade segue o evento-gatilho: um fork anterior a ele não sabe.
+
 ## Falhas e fallback
 
 | Situação | Comportamento |

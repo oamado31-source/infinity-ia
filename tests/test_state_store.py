@@ -63,7 +63,7 @@ class StoreTests(TempDirCase):
         store.close()
         store = self.open()
         versions = store.connection.execute('SELECT version FROM schema_migrations').fetchall()
-        self.assertEqual(versions, [(1,)])
+        self.assertEqual(versions, [(1,), (2,)])
         self.assertEqual(len(store.visible_events(ROOT_BRANCH)), 1)
 
     def test_changed_migration_is_detected(self):

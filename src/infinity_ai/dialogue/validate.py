@@ -16,7 +16,7 @@ from .context import DialogueContext
 MAX_SPEECH = 400
 _CODES = re.compile(r'\b[A-Z]{2}\d{3,4}\b|\b(?:ev|xp|rev|br)-[0-9a-f]{6,}|\bnpc:\w+|\bsha256:', re.I)
 _META = re.compile(r'modelo de linguagem|intelig[eê]ncia artificial|\bprompt\b|\bsistema\b'
-                   r'|language model|\bas an ai\b|\bF\d+\b|used_facts', re.I)
+                   r'|language model|\bas an ai\b|\b[FK]\d+\b|used_facts', re.I)
 _META_EXACT = re.compile(r'\bIA\b|\bAI\b')  # case-sensitive: "eu ia" is ordinary Portuguese
 _MARKUP = re.compile(r'[<>{}\[\]`*#|]')
 _WORD = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ'-]*")
@@ -69,7 +69,7 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
         reasons.append('EMPTY')
     if len(speech) > MAX_SPEECH:
         reasons.append('TOO_LONG')
-    known_ids = {f.fact_id for f in context.facts}
+    known_ids = {f.fact_id for f in context.facts + context.knowledge}
     invented = sorted(set(used) - known_ids)
     if invented:
         reasons.append('UNKNOWN_FACT_IDS:' + ','.join(invented))

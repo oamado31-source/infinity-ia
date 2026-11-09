@@ -1,0 +1,19 @@
+{
+  "schema": "infinity-ai.source.v1",
+  "bibliographic_status": "TO_CONFIRM",
+  "notes": "O PDF do mantenedor abre com 0 páginas (arquivo corrompido ou incompleto) e não pôde ser lido em 2026-11-09. Ambientado em 1372 DR: só entra com validade explícita.",
+  "source_id": "fr-campaign-setting-3e",
+  "title": "Forgotten Realms Campaign Setting",
+  "publisher": "Wizards of the Coast",
+  "year": 2001,
+  "edition": "D&D 3rd edition",
+  "creators": [
+    "Ed Greenwood",
+    "Sean K. Reynolds",
+    "Skip Williams",
+    "Rob Heinsoo"
+  ],
+  "isbn": null,
+  "source_class": "S0_PRIMARY",
+  "setting_year_dr": 1372
+}

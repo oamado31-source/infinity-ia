@@ -1,0 +1,44 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "partition_year_dr": 1369,
+  "access_scope": "CANON_REFERENCE",
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-09",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-09"
+  },
+  "id": "region:athkatla",
+  "kind": "REGION",
+  "title": "Athkatla",
+  "region_id": "region:amn",
+  "area_resrefs": [
+    "AR0020",
+    "AR0300",
+    "AR0400",
+    "AR0500",
+    "AR0700",
+    "AR0800",
+    "AR0900",
+    "AR1000"
+  ],
+  "summary": "Capital de Amn e a cidade de maior peso político e comercial do país. O poder ali é disputado entre o governo oficial e a guilda de ladrões local; a sede do Conselho dos Seis fica na cidade.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "source_refs": [
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"Athkatla\" (PDF p. 27)"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 7"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "WORLDMAP (mapa 2): distritos com nome no jogo"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED"
+}

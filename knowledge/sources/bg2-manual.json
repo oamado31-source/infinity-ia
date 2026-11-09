@@ -1,0 +1,14 @@
+{
+  "schema": "infinity-ai.source.v1",
+  "bibliographic_status": "TO_CONFIRM",
+  "notes": "A seção \"The Role of Years\" chama 1369 DR de ano atual. Citar pela seção e pela página do PDF. Dados bibliográficos a confirmar com o exemplar.",
+  "source_id": "bg2-manual",
+  "title": "Baldur's Gate II — manual do jogo",
+  "publisher": "BioWare / Black Isle Studios (Interplay)",
+  "year": 2000,
+  "edition": "manual do jogo original (PDF do mantenedor; páginas sem numeração impressa)",
+  "creators": [],
+  "isbn": null,
+  "source_class": "S0_PRIMARY",
+  "setting_year_dr": 1369
+}

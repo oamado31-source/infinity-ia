@@ -26,11 +26,13 @@ def ssh_from_env(var: str) -> list[str]:
     return shlex.split(os.path.expanduser(raw))
 
 
-def run_ps(ssh: list[str], script: str, timeout: int = 300) -> str:
+def run_ps(ssh: list[str], script: str, timeout: int = 300, stdin: bytes | None = None) -> str:
+    """Run a PowerShell script on the VM. Large inputs go through `stdin` (read in the script
+    with [Console]::In.ReadToEnd()), because the Windows command line is limited to ~8 KB."""
     script = "$ProgressPreference = 'SilentlyContinue'\n" + script
     encoded = base64.b64encode(script.encode('utf-16-le')).decode('ascii')
     cmd = ssh + [f'powershell -NoProfile -NonInteractive -EncodedCommand {encoded}']
-    result = subprocess.run(cmd, capture_output=True, timeout=timeout)
+    result = subprocess.run(cmd, capture_output=True, timeout=timeout, input=stdin)
     # The Windows console code page is not UTF-8 (cp850 here); stdout carries ASCII JSON only.
     stderr = result.stderr.decode('cp850', errors='replace')
     if result.returncode != 0:
@@ -86,3 +88,63 @@ if (Test-Path -LiteralPath $f) {{
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec='seconds').replace('+00:00', 'Z')
+
+
+class SshByteSource:
+    """ByteSource over SSH: reads slices of files in the VM's game copy into memory only.
+
+    Nothing from the game is written on this machine (REQ-CANON-004); callers keep the bytes in
+    memory and persist only derived, local-only data outside the repository.
+    """
+
+    def __init__(self, ssh: list[str], game_root: str, batch: int = 200) -> None:
+        self._ssh, self._root, self._batch = ssh, game_root.rstrip('\\'), batch
+
+    def _win(self, path: str) -> str:
+        rel = path.replace('/', '\\').lstrip('\\')
+        if '..' in rel.split('\\') or "'" in rel:
+            raise ValueError(f'unsafe path {path!r}')
+        return f'{self._root}\\{rel}'
+
+    def size(self, path: str) -> int | None:
+        out = run_ps(self._ssh, f"$f = '{self._win(path)}'; "
+                                "if (Test-Path -LiteralPath $f -PathType Leaf) "
+                                "{ (Get-Item -LiteralPath $f).Length } else { -1 }", timeout=60)
+        value = int(out.strip() or -1)
+        return None if value < 0 else value
+
+    def read(self, path: str, offset: int, length: int) -> bytes:
+        return self.read_many([(path, offset, length)])[0]
+
+    def read_many(self, requests) -> list[bytes]:
+        results: list[bytes] = []
+        for start in range(0, len(requests), self._batch):
+            chunk = [{'p': self._win(p), 'o': int(o), 'n': int(n)}
+                     for p, o, n in requests[start:start + self._batch]]
+            out = run_ps(self._ssh, '''
+$reqs = [Console]::In.ReadToEnd() | ConvertFrom-Json
+$res = foreach ($r in @($reqs)) {
+  $s = [IO.File]::Open($r.p, 'Open', 'Read', 'ReadWrite')
+  try {
+    [void]$s.Seek([int64]$r.o, 'Begin'); $b = New-Object byte[] ([int]$r.n)
+    $got = 0; while ($got -lt $r.n) { $k = $s.Read($b, $got, $r.n - $got); if ($k -le 0) { break }; $got += $k }
+    if ($got -ne $r.n) { throw "short read $($r.p)" }
+    [Convert]::ToBase64String($b)
+  } finally { $s.Dispose() }
+}
+ConvertTo-Json -Compress -InputObject @($res)
+''', timeout=300, stdin=json.dumps(chunk).encode())
+            decoded = json.loads(out)
+            decoded = [decoded] if isinstance(decoded, str) else decoded
+            if len(decoded) != len(chunk):
+                raise RuntimeError('remote read returned a different number of slices')
+            results.extend(base64.b64decode(item) for item in decoded)
+        return results
+
+    def list_dir(self, path: str, suffix: str) -> list[str]:
+        out = run_ps(self._ssh, f"$d = '{self._win(path)}'; if (Test-Path -LiteralPath $d) "
+                                f"{{ ConvertTo-Json -Compress -InputObject @(Get-ChildItem -LiteralPath $d -File "
+                                f"| Where-Object {{ $_.Name -like '*{suffix}' }} | ForEach-Object {{ $_.Name }}) }} "
+                                "else { '[]' }", timeout=60).strip()
+        names = json.loads(out) if out else []
+        return sorted([names] if isinstance(names, str) else names)

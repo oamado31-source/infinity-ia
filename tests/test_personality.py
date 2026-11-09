@@ -10,7 +10,7 @@ from infinity_ai.personality import ALIGNMENT_AXES, HEXACO, generate_new_npc_pro
 
 class PersonalityGeneratorTests(unittest.TestCase):
     def make(self, **kwargs):
-        data = dict(npc_id="npc:new-guard-1", campaign_id="camp-1",
+        data = dict(npc_id="npc:generated:new-guard-1", campaign_id="camp-1",
                     creation_branch_id="main", world_seed="world-seed",
                     npc_origin="CREATED")
         data.update(kwargs)
@@ -19,7 +19,7 @@ class PersonalityGeneratorTests(unittest.TestCase):
     def test_deterministic_per_identity_branch_campaign_and_seed(self):
         self.assertEqual(self.make(), self.make())
         baseline = self.make()
-        for change in ({"npc_id": "npc:new-guard-2"},
+        for change in ({"npc_id": "npc:generated:new-guard-2"},
                        {"campaign_id": "camp-2"},
                        {"creation_branch_id": "fork"},
                        {"world_seed": "another-seed"}):
@@ -28,7 +28,7 @@ class PersonalityGeneratorTests(unittest.TestCase):
 
     def test_profile_has_six_bounded_traits_and_nine_alignment_options(self):
         for i in range(100):
-            p = self.make(npc_id=f"npc:generated-{i}")
+            p = self.make(npc_id=f"npc:generated:{i}")
             self.assertEqual(set(p["hexaco"]), set(HEXACO))
             self.assertTrue(all(0 <= v <= 100 for v in p["hexaco"].values()))
             code = p["alignment_initial"]["code"]
@@ -62,6 +62,8 @@ class PersonalityGeneratorTests(unittest.TestCase):
                 self.make(npc_origin=origin)
         with self.assertRaises(ValueError):
             self.make(npc_id="invalid")
+        with self.assertRaises(ValueError):
+            self.make(npc_id="npc:imoen", npc_origin="CREATED")
         with self.assertRaises(ValueError):
             self.make(world_seed="")
 

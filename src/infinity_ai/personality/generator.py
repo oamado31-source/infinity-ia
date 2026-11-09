@@ -71,8 +71,8 @@ def generate_new_npc_profile(*, npc_id: str, campaign_id: str, creation_branch_i
     for value in (npc_id, campaign_id, creation_branch_id, world_seed):
         if not isinstance(value, str) or not value.strip():
             raise ValueError("npc_id, campaign_id, creation_branch_id and world_seed required")
-    if not npc_id.startswith("npc:"):
-        raise ValueError("npc_id must start with npc:")
+    if not npc_id.startswith("npc:generated:") or len(npc_id) <= len("npc:generated:"):
+        raise ValueError("new NPC ids must use npc:generated: namespace")
     weights = _validated_weights(alignment_weights)
     seed_text = json.dumps([POLICY, world_seed, campaign_id, creation_branch_id, npc_id],
                            ensure_ascii=False, separators=(",", ":"))

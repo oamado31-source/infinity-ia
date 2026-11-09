@@ -1,0 +1,45 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "partition_year_dr": 1369,
+  "access_scope": "CANON_REFERENCE",
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-09",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-09"
+  },
+  "verification_status": "SOURCE_CHECKED",
+  "id": "region:tethyr",
+  "kind": "REGION",
+  "title": "Tethyr",
+  "region_id": null,
+  "area_resrefs": [
+    "AR5000"
+  ],
+  "summary": "Reino ao sul de Amn, com longa história de invasões, disputas e comércio com o vizinho. Depois de anos de guerra civil e de reconquista, voltou a ter monarcas em 1369 DR. Saradush fica em seu território, no ducado de Suretmarch.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1372,
+  "date_precision": "RANGE",
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Um, p. 51 (\"Tethyr of Today\")"
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 150, \"1369 DR Year of the Gauntlet\""
+    },
+    {
+      "source_id": "fr-campaign-setting-3e",
+      "locator": "seção sobre Amn, Calimshan e Tethyr (PDF p. 154)"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Um, p. 89 (\"Duchy of Suretmarch\")"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "WORLDMAP (mapa 0): Saradush"
+    }
+  ]
+}

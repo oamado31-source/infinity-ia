@@ -1,0 +1,27 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "partition_year_dr": 1369,
+  "access_scope": "CANON_REFERENCE",
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-09",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-09"
+  },
+  "verification_status": "SOURCE_CHECKED",
+  "id": "event:vemmil-ships-sea-reavers",
+  "kind": "EVENT",
+  "title": "Navios Vemmil saqueados pelos Sea Reavers",
+  "summary": "No fim de Eleint, quatro dos sete navios do clã Vemmil, que voltavam de uma missão a Zakhara, são saqueados pelos piratas Sea Reavers. Os três restantes chegam a Murann e são recebidos com festa.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1369,
+  "date_precision": "MONTH_ONLY",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 23 (\"1369 Year of the Gauntlet\")"
+    }
+  ]
+}

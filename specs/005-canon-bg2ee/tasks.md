@@ -6,6 +6,7 @@
 - [x] Documentar estados UNKNOWN/erro/fallback e rollback (SPEC-005) — `estados-e-fallback.md`.
 - [ ] Executar POC real em ambiente pinado e registrar evidência — **inventário real e primeiro lote de curadoria no laboratório ARM64** ([evidência](../../docs/evidence/S1c-2026-11-09-laboratorio-arm64.md)); curadoria dos livros e Windows nativo pendentes.
 - [x] Curadoria: primeiro lote conferido pelo mantenedor (Athkatla, Amn, Conselho dos Seis, Ladrões das Sombras, Magos Encapuzados; ano da campanha = 1369 DR por decisão de 2026-11-09).
-- [ ] Próximos lotes: marcos de 1369 DR (*Grand History*), famílias/casas mercantis (*Lands of Intrigue*), confirmação bibliográfica, FR3e legível.
+- [x] Segundo lote conferido (Tethyr com Saradush ligada à build, fim das Guerras de Reconquista, navios Vemmil, retorno dos exilados); FR3e brasileiro legível registrado.
+- [ ] Próximos lotes: famílias/casas mercantis (*Lands of Intrigue*), Costa da Espada; confirmação bibliográfica.
 - [ ] REQ-CANON-003 (eventos pessoais N1/N2) e escolha da segunda região.
 - [ ] Revisão de segurança, privacidade, licença e aprovação de merge.

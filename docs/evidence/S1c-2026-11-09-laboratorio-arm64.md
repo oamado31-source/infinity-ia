@@ -52,6 +52,23 @@ Livros em PDF numa pasta privada fora do repositório; lidos por extração de t
 
 Os resumos são texto nosso (≤ 280 caracteres), sem citações; nenhum trecho, imagem ou mapa dos livros está no repositório.
 
+## Segundo lote de curadoria
+
+O FR3e chegou numa cópia legível: edição brasileira (*Forgotten Realms — Cenário de Campanha*, d20, 2002, ISBN 85-7532-040-8), 323 páginas; "ano atual" 1372 DR (Ano da Magia Selvagem, PDF p. 79); sem números de página impressos no texto extraído, citado por seção e página do PDF.
+
+| Entrada | Status | Fontes |
+|---|---|---|
+| `region:tethyr` | `SOURCE_CHECKED` | *Lands of Intrigue* Livro Um, pp. 51 e 89; *Grand History* p. 150; FR3e (PDF p. 154); dados do jogo (`AR5000` "Saradush") |
+| `event:tethyr-reclamation-wars-end` | `SOURCE_CHECKED` | *Grand History* p. 150, "1369 DR Year of the Gauntlet" |
+| `event:vemmil-ships-sea-reavers` | `SOURCE_CHECKED` | *Lands of Intrigue* Livro Dois, p. 23 |
+| `event:tethyrian-exiles-return` | `SOURCE_CHECKED` | *Lands of Intrigue* Livro Dois, p. 23 |
+
+**REQ-CANON-002 na prática:** sem áreas ligadas, Tethyr e a coroação davam `UNMAPPED_REGION` (o fato existe, mas não se materializa no jogo). O inventário mostrou `AR5000` = "Saradush" (mapa-múndi 0, Trono de Bhaal), e o *Lands of Intrigue* (Livro Um, p. 89, ducado de Suretmarch) situa Saradush em Tethyr; com essa ligação a região passou a ter área na build.
+
+**Gate com o inventário real:** as 10 entradas → `CANON_OK`. **Pin:** a revisão do pacote mudou; `check_pin` acusou `REVISION_CHANGED` até o novo pin explícito (`sha256:4af92483…`, 10 entradas) → `MATCH`; os dois pins ficam no histórico do ramo.
+
+Ficaram fora deste lote, por não terem ligação direta com Amn nem região no pacote: início da 12ª Guerra de Serôs (portos da Costa da Espada) e o ataque a Skaug (*Grand History* p. 150; *Lands of Intrigue* Livro Dois, p. 23).
+
 ## Pendências
 
-Próximos lotes (marcos de 1369 DR do *Grand History*, famílias e casas mercantis do *Lands of Intrigue*), confirmação bibliográfica das obras (edição/ISBN), cópia legível do FR3e, regra de conhecimento comum regional para NPCs (ADR-0059), REQ-CANON-003 e segunda região; Windows nativo.
+Próximos lotes (famílias e casas mercantis do *Lands of Intrigue*, Costa da Espada), confirmação bibliográfica das obras (edição/ISBN/editora), regra de conhecimento comum regional para NPCs (ADR-0059), REQ-CANON-003 e segunda região; Windows nativo.

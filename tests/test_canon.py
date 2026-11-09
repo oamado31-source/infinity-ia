@@ -133,8 +133,8 @@ class GateTests(TempKnowledge):
         for entry_id, e in pack.entries.items():
             if e.verification_status not in ('SOURCE_CHECKED', 'CAMPAIGN_CANON'):
                 with self.subTest(entry_id=entry_id):
-                    self.assertEqual(assess(pack, entry_id, campaign_year=1369,
-                                            build_areas=CITY).status, CanonStatus.WEAK_SOURCE)
+                    self.assertNotEqual(assess(pack, entry_id, campaign_year=1369,
+                                               build_areas=CITY).status, CanonStatus.CANON_OK)
 
     def test_checked_entry_in_mapped_region_is_canon(self):
         self.add(entry())

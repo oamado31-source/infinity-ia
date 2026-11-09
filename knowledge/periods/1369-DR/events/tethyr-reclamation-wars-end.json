@@ -1,0 +1,27 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "partition_year_dr": 1369,
+  "access_scope": "CANON_REFERENCE",
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-09",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-09"
+  },
+  "verification_status": "SOURCE_CHECKED",
+  "id": "event:tethyr-reclamation-wars-end",
+  "kind": "EVENT",
+  "title": "Fim das Guerras de Reconquista de Tethyr",
+  "summary": "As Guerras de Reconquista de Tethyr terminam com a coroação da rainha-monarca Zaranda e do rei Haedrak III.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1369,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:tethyr",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 150, \"1369 DR Year of the Gauntlet\""
+    }
+  ]
+}

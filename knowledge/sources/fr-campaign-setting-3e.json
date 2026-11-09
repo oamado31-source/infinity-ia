@@ -1,19 +1,19 @@
 {
   "schema": "infinity-ai.source.v1",
   "bibliographic_status": "TO_CONFIRM",
-  "notes": "O PDF do mantenedor abre com 0 páginas (arquivo corrompido ou incompleto) e não pôde ser lido em 2026-11-09. Ambientado em 1372 DR: só entra com validade explícita.",
+  "notes": "Edição brasileira (publicada em novembro de 2002). O \"ano atual\" do livro é 1372 DR, Ano da Magia Selvagem (PDF p. 79): só entra com validade explícita. O texto extraído não traz números de página impressos; citar pela seção e pela página do PDF. Dados bibliográficos a confirmar.",
   "source_id": "fr-campaign-setting-3e",
-  "title": "Forgotten Realms Campaign Setting",
-  "publisher": "Wizards of the Coast",
-  "year": 2001,
-  "edition": "D&D 3rd edition",
+  "title": "Forgotten Realms — Cenário de Campanha (edição brasileira, d20)",
+  "publisher": "a confirmar (edição brasileira)",
+  "year": 2002,
+  "edition": "tradução brasileira de 2002 da 3ª edição",
   "creators": [
     "Ed Greenwood",
     "Sean K. Reynolds",
     "Skip Williams",
     "Rob Heinsoo"
   ],
-  "isbn": null,
+  "isbn": "85-7532-040-8",
   "source_class": "S0_PRIMARY",
   "setting_year_dr": 1372
 }

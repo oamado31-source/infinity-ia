@@ -34,3 +34,5 @@ local-game/
 saves/
 logs/
 backups/
+# macOS Finder metadata
+.DS_Store

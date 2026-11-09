@@ -17,8 +17,8 @@ from collections.abc import Iterable
 from ..bridge.domain import Audience, Visibility, audience_may_see
 from ..state.store import CampaignStore, LineageStep, StoreError
 from .model import (
-    AcquisitionMode, BeliefRevision, NpcExperience, RecallItem, RecallResult, RecallStatus,
-    Stance,
+    AcquisitionMode, BeliefRevision, CanonKnowledge, KnowledgeBasis, NpcExperience, RecallItem,
+    RecallResult, RecallStatus, Stance,
 )
 
 RECALL_PURPOSES = frozenset({'narrative_context', 'npc_dialogue'})
@@ -36,6 +36,16 @@ class StaleRevision(MemoryRuleError):
 _EXP_FIELDS = ('experience_id, npc_id, campaign_id, branch_id, game_time, acquisition_mode, '
                'claim_event_id, channel_ref, visibility')
 _EXP_COLUMNS = _EXP_FIELDS + ', recorded_at'
+
+
+_KNOW_FIELDS = ('knowledge_id, npc_id, branch_id, game_time, basis, region_id, entry_id, '
+                'pack_year_dr, pack_revision, pin_event_id, trigger_event_id, snapshot_json')
+
+
+def _row_to_knowledge(row: tuple) -> CanonKnowledge:
+    snapshot = json.loads(row[11])
+    return CanonKnowledge(row[0], row[1], row[2], row[3], KnowledgeBasis(row[4]), row[5], row[6],
+                          row[7], row[8], row[9], row[10], snapshot['title'], snapshot['summary'])
 
 
 def _row_to_experience(row: tuple) -> NpcExperience:
@@ -188,3 +198,71 @@ class MemoryStore:
             if chain and set(chain[-1].source_experience_ids) <= visible_sources:
                 beliefs.append(chain[-1])
         return RecallResult(RecallStatus.OK, 'OK', tuple(items), tuple(beliefs))
+
+    # ---- common regional knowledge (ADR-0114) --------------------------------------------
+
+    def _knowledge_visible(self, k: CanonKnowledge, branch_id: str) -> bool:
+        step = self._step_for(branch_id, k.branch_id)
+        trigger = self._store.get_event(k.trigger_event_id)
+        return step is not None and trigger is not None and step.admits(trigger.seq, k.game_time)
+
+    def known_canon(self, npc_id: str, branch_id: str,
+                    at_game_time: int | None = None) -> dict[str, CanonKnowledge]:
+        """Entries this NPC already holds in this branch (earliest acquisition per entry)."""
+        rows = self._conn.execute(
+            f'SELECT {_KNOW_FIELDS} FROM npc_canon_knowledge WHERE campaign_id = ? AND npc_id = ? '
+            'ORDER BY game_time, rowid', (self._store.campaign_id, npc_id)).fetchall()
+        known: dict[str, CanonKnowledge] = {}
+        for k in map(_row_to_knowledge, rows):
+            if at_game_time is not None and k.game_time > at_game_time:
+                continue
+            if k.entry_id not in known and self._knowledge_visible(k, branch_id):
+                known[k.entry_id] = k
+        return known
+
+    def record_canon_knowledge(self, *, npc_id: str, branch_id: str, game_time: int,
+                               basis: KnowledgeBasis, region_id: str, entry_id: str,
+                               pack_year_dr: int, pack_revision: str, pin_event_id: str,
+                               trigger_event_id: str, title: str, summary: str
+                               ) -> tuple[CanonKnowledge, bool]:
+        """Low-level write; the eligibility rule lives in memory.common_knowledge."""
+        if not npc_id or not entry_id or not region_id or not pack_revision:
+            raise MemoryRuleError('npc_id, entry_id, region_id and pack_revision are required')
+        if isinstance(game_time, bool) or not isinstance(game_time, int) or game_time < 0:
+            raise MemoryRuleError('game_time must be a non-negative integer')
+        for event_id in (pin_event_id, trigger_event_id):
+            if not self._store.is_visible(branch_id, event_id):
+                raise MemoryRuleError(f'{event_id} is not part of this branch')
+        key = hashlib.sha256('|'.join((self._store.campaign_id, branch_id, npc_id, entry_id,
+                                       basis.value, pack_revision)).encode()).hexdigest()
+        snapshot = json.dumps({'title': title, 'summary': summary}, ensure_ascii=False,
+                              sort_keys=True)
+        cursor = self._conn.execute(
+            f'INSERT INTO npc_canon_knowledge ({_KNOW_FIELDS}, campaign_id, idempotency_key, '
+            'recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '
+            'ON CONFLICT (idempotency_key) DO NOTHING',
+            ('ck-' + uuid.uuid4().hex, npc_id, branch_id, game_time, basis.value, region_id,
+             entry_id, pack_year_dr, pack_revision, pin_event_id, trigger_event_id, snapshot,
+             self._store.campaign_id, key, self._store.now()))
+        row = self._conn.execute(f'SELECT {_KNOW_FIELDS} FROM npc_canon_knowledge '
+                                 'WHERE idempotency_key = ?', (key,)).fetchone()
+        return _row_to_knowledge(row), cursor.rowcount == 1
+
+    def recall_common(self, *, npc_id: str, branch_id: str, at_game_time: int | None,
+                      purpose: str, audience: str) -> tuple[RecallStatus, str,
+                                                            tuple[CanonKnowledge, ...]]:
+        """Same gates as `recall`; common knowledge is party-level, never secret."""
+        if purpose not in RECALL_PURPOSES:
+            return RecallStatus.DENIED, 'ACL_PURPOSE', ()
+        try:
+            audience_enum = Audience(audience)
+        except ValueError:
+            return RecallStatus.DENIED, 'UNKNOWN_AUDIENCE', ()
+        if not self._store.branch_exists(branch_id):
+            return RecallStatus.DENIED, 'UNKNOWN_BRANCH', ()
+        if isinstance(at_game_time, bool) or not isinstance(at_game_time, int) or at_game_time < 0:
+            return RecallStatus.DENIED, 'UNKNOWN_TIME', ()
+        if not audience_may_see(audience_enum, Visibility.PARTY):
+            return RecallStatus.OK, 'OK', ()
+        return RecallStatus.OK, 'OK', tuple(self.known_canon(npc_id, branch_id,
+                                                             at_game_time).values())

@@ -11,4 +11,6 @@
 
 **Estados:** `RESEARCH_ONLY` nunca é afirmado como fato; `SOURCE_CHECKED` exige conferência do mantenedor com obra e página; o gate (`src/infinity_ai/canon/gate.py`) ainda exige ano coincidente e região com áreas na build. Cânone não vira memória de NPC sem canal de aquisição (ADR-0059).
 
+**`access_scope`:** `COMMON_REGIONAL` marca o que é de conhecimento público numa região e pode ser adquirido pelos canais do ADR-0114: origem curada (`background_regions` na persona), residência de NPC de fora do grupo e, depois, investigação ativa. Companheiros nunca aprendem por tempo de permanência. `CANON_REFERENCE` (por exemplo, organizações secretas) só serve de referência e nunca é adquirido por esses canais.
+
 Para pedir uma entrada nova: `templates/canon-entry.md`.

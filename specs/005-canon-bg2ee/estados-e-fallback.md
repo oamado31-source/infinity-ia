@@ -27,7 +27,7 @@ Inventário: só leitura; leitura remota no laboratório traz fatias para a mem�
 
 ## Uso no diálogo
 
-Só nomes de área: jogo (S0) → curadoria provisória → "um lugar que você não sabe nomear". Fatos canônicos **não** entram no prompt dos NPCs nesta etapa (ADR-0059: precisa de canal de aquisição; regra futura, ex. conhecimento comum regional com `access_scope = COMMON_REGIONAL`).
+Só nomes de área: jogo (S0) → curadoria provisória → "um lugar que você não sabe nomear". Fatos canônicos só entram no prompt de um NPC que os adquiriu por um canal do ADR-0114 (conhecimento comum regional, `access_scope = COMMON_REGIONAL`). Cada aquisição exige pin `MATCH` e gate `CANON_OK` e guarda um instantâneo do resumo; corrigir o pacote ou fazer novo pin não altera o que já foi aprendido. Estados e falhas: `specs/003-persistencia-memoria/estados-e-fallback.md`.
 
 ## Fora desta parte
 

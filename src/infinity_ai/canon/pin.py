@@ -15,16 +15,25 @@ class PinStatus(str, Enum):
 
 
 def pin_pack(store: CampaignStore, branch_id: str, pack: CanonPack, *,
-             evidence: str = 'SYNTHETIC') -> tuple[Event, bool]:
-    """Record which pack revision this branch uses; re-pinning the same revision is idempotent."""
+             evidence: str = 'SYNTHETIC', game_time: int | None = None) -> tuple[Event, bool]:
+    """Record which pack revision this branch uses; re-pinning the same revision is idempotent.
+
+    `game_time` (latest observed game time, when known) anchors ADR-0114: only residence time
+    after the pin counts towards common knowledge of this revision."""
     with store.transaction():
         return store.append_event(
             branch_id=branch_id, host_epoch=0, event_type='KnowledgePackPinned',
-            category='CAMPAIGN_FACT', game_time=None,
+            category='CAMPAIGN_FACT', game_time=game_time,
             payload={'year_dr': pack.year_dr, 'revision': pack.revision,
                      'coverage_status': pack.coverage_status, 'entries': len(pack.entries)},
             evidence=evidence,
             idempotency_key=f'pack-pin|{branch_id}|{pack.year_dr}|{pack.revision}')
+
+
+def active_pin(store: CampaignStore, branch_id: str, year_dr: int) -> Event | None:
+    pins = [e for e in store.visible_events(branch_id, 'KnowledgePackPinned')
+            if e.payload.get('year_dr') == year_dr]
+    return pins[-1] if pins else None
 
 
 def check_pin(store: CampaignStore, branch_id: str, pack: CanonPack) -> PinStatus:

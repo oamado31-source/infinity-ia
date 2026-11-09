@@ -44,6 +44,9 @@ from infinity_ai.dialogue.context import Catalog, current_companions  # noqa: E4
 from infinity_ai.dialogue.engine import DialogueEngine, DialogueRequest  # noqa: E402
 from infinity_ai.dialogue.llm import OllamaProvider  # noqa: E402
 from infinity_ai.gamedata.inventory import load_local_names, load_local_resrefs  # noqa: E402
+from infinity_ai.personality import (  # noqa: E402
+    FirstContactService, FirstContactError, NpcEncounterDialogue,
+)
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
     DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge,
 )
@@ -182,14 +185,17 @@ def make_handler(token: str, observer: Observer, catalog: Catalog, args):
         def do_POST(self) -> None:
             if not self._authorized():
                 return
-            if self.path != '/v1/dialogue':
+            if self.path not in ('/v1/dialogue', '/v1/encounter-dialogue'):
                 return self._send(404, {'error': 'not found'})
             length = int(self.headers.get('Content-Length') or 0)
             if length <= 0 or length > MAX_BODY:
                 return self._send(413, {'error': 'body size'})
             try:
                 doc = json.loads(self.rfile.read(length).decode('utf-8'))
-                npc_id, text = doc['npc_id'], doc['text']
+                text = doc['text']
+                npc_id = doc['npc_id'] if self.path == '/v1/dialogue' else None
+                contact_event_id = (doc.get('contact_event_id')
+                                    if self.path == '/v1/encounter-dialogue' else None)
             except (ValueError, KeyError, TypeError, UnicodeDecodeError):
                 return self._send(400, {'error': 'bad request'})
             view = observer.snapshot()
@@ -198,9 +204,28 @@ def make_handler(token: str, observer: Observer, catalog: Catalog, args):
                                         'speech': '', 'display_name': catalog.display(str(npc_id))})
             store = CampaignStore.open(args.db, args.campaign)
             try:
-                result = DialogueEngine(store, provider, catalog).respond(
-                    DialogueRequest(npc_id, text), branch_id=view.branch_id,
-                    at_game_time=view.game_time)
+                if self.path == '/v1/encounter-dialogue':
+                    # The client sends ONLY a reference to an already recorded trusted
+                    # observation. It cannot invent role/identity/position or mark
+                    # actors VERIFIED through this endpoint.
+                    try:
+                        if not isinstance(contact_event_id, str) or not contact_event_id:
+                            raise FirstContactError('CONTACT_OBSERVATION_REQUIRED')
+                        event = store.get_event(contact_event_id)
+                        if not event or event.payload.get('scene_id') != view.area:
+                            raise FirstContactError('CONTACT_SCENE_MISMATCH')
+                        contact = FirstContactService(store, world_seed=args.world_seed).begin(
+                            contact_event_id=contact_event_id, branch_id=view.branch_id,
+                            at_game_time=view.game_time)
+                    except FirstContactError as exc:
+                        return self._send(200, {'status': 'DENIED',
+                                                'reason': str(exc), 'speech': '',
+                                                'display_name': 'Pessoa desconhecida'})
+                    result = NpcEncounterDialogue(provider).respond(contact, text)
+                else:
+                    result = DialogueEngine(store, provider, catalog).respond(
+                        DialogueRequest(npc_id, text), branch_id=view.branch_id,
+                        at_game_time=view.game_time)
             finally:
                 store.close()
             print(f'{now_iso()} dialogo npc={result.npc_id} status={result.status.value} '
@@ -219,6 +244,8 @@ def main() -> int:
     ap.add_argument('--config-out', required=True, type=Path,
                     help='where to write the overlay config (URL + token) for copying to the VM')
     ap.add_argument('--campaign', default='lab-s1')
+    ap.add_argument('--world-seed', default='lab-s1',
+                    help='stable per-campaign SPEC-006 seed; not a game-derived identity')
     ap.add_argument('--db', type=Path,
                     default=Path.home() / '.infinity-ai' / 'campaigns' / 'lab-s1.sqlite3')
     ap.add_argument('--game-root', default=r'C:\InfinityLab\BG2EE-P1')

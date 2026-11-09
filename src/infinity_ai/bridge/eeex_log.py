@@ -23,10 +23,13 @@ PROBE_SCHEMA = 'infinity-ai.eeex-probe.v1'
 ADAPTER_VERSION = 'eeex-log-0.1+probe-v1'
 AREA_FIELD = 'host.current_area_id'
 GAME_TIME_FIELD = 'host.game_time'
-PROBE_FIELDS = frozenset({AREA_FIELD, GAME_TIME_FIELD})
+PARTY_FIELD = 'party.companion_ids'
+PROBE_FIELDS = frozenset({AREA_FIELD, GAME_TIME_FIELD, PARTY_FIELD})
 
 _MAX_LINE = 2048
 _RESREF = re.compile(r'[A-Za-z0-9_#-]{1,8}')
+_SCRIPT_NAME = re.compile(r'[A-Za-z0-9_#-]{1,32}')
+_MAX_COMPANIONS = 5
 
 
 class StaleLogError(RuntimeError):
@@ -63,7 +66,38 @@ def _normalize_field(name: str, value: object) -> str | None:
     if name == GAME_TIME_FIELD:
         number = _non_negative_int(value)
         return None if number is None else str(number)
+    if name == PARTY_FIELD:
+        return _normalize_companions(value)
     return None
+
+
+def _normalize_companions(value: object) -> str | None:
+    """Companion script names -> canonical JSON list of lowercase ids ('[]' = no companions).
+
+    Any malformed entry invalidates the whole field (UNKNOWN), never a partial party.
+    """
+    if not isinstance(value, list) or len(value) > _MAX_COMPANIONS:
+        return None
+    names = []
+    for item in value:
+        if not isinstance(item, str) or not _SCRIPT_NAME.fullmatch(item) or item == 'None':
+            return None
+        names.append(item.lower())
+    return json.dumps(sorted(set(names)), separators=(',', ':'))
+
+
+def companion_ids(value: str | None) -> tuple[str, ...] | None:
+    """Parse the canonical party value back into NPC ids (`npc:<scriptname>`)."""
+    if value is None:
+        return None
+    try:
+        names = json.loads(value)
+    except ValueError:
+        return None
+    if not isinstance(names, list) or not all(isinstance(n, str) and _SCRIPT_NAME.fullmatch(n)
+                                              for n in names):
+        return None
+    return tuple(f'npc:{n}' for n in names)
 
 
 def parse_snapshot_line(line: str) -> Snapshot | None:

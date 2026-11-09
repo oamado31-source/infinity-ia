@@ -210,7 +210,7 @@ class EncounterDialogueTests(FirstContactTests):
             p, "Bom dia")
         self.assertEqual(result.status, DialogueStatus.FALLBACK)
         self.assertEqual(result.reason, "MODEL_UNAVAILABLE")
-        c = self.begin(self.contact(time=110, state="CANONICAL"))
+        c = self.begin(self.contact(time=110, state="CANONICAL"), at=110)
         out = NpcEncounterDialogue(FakeProvider([])).respond(c, "Oi")
         self.assertEqual(out.status, DialogueStatus.DENIED)
         self.assertEqual(out.reason, "USE_CANONICAL_PROFILE")

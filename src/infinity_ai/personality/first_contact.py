@@ -105,7 +105,7 @@ class FirstContactService:
         if state not in _ALLOWED_STATES:
             raise FirstContactError("unknown identity state")
         role = data.get("role")
-        if role not in ROLE_NAMES:
+        if not isinstance(role, str) or role not in ROLE_NAMES:
             raise FirstContactError("role must be an adapter-curated enum")
         display = ROLE_NAMES[role]
 

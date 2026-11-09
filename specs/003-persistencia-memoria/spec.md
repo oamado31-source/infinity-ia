@@ -26,3 +26,7 @@
 ## Não objetivos da primeira implementação
 
 Não substituir o jogo, não alterar quest original arbitrariamente, não invocar LLM para decidir host state, não afirmar hooks existentes sem POC.
+
+## Extensão proposta — SPEC-006 (personalidade dos NPCs)
+
+A personalidade inicial (seis fatores psicológicos, valores, alinhamento AD&D, motivações e vulnerabilidades) é especificada em [SPEC-006](../006-personalidade-alinhamento-npc/spec.md), **proposta**, não incorporada à implementação atual de SQLite. Quando aprovada e implementada, a SPEC-003 deverá persistir snapshots de criação por identidade/campanha/branch, imutáveis/idempotentes e herdáveis por fork. Emoções, crenças, relações e alinhamento projetado são estados evolutivos diferentes; nunca re-sorteá-los a cada sessão ou usar memória de outro ramo. A origem e o alinhamento oficiais permanecem curados, não aleatórios. Nenhuma migração de banco está sendo introduzida por esta alteração documental.

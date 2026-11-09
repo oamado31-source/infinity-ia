@@ -101,3 +101,9 @@ python tools/windows-lab/build_area_inventory.py --language pt_BR
 ```
 
 Lê fatias de `chitin.key`, do BIF com o mapa-múndi e do `dialog.tlk` da cópia na VM para a memória e grava só o inventário derivado em `~/.infinity-ai/knowledge/install-<fingerprint>/` (fora do repo). O serviço de diálogo carrega esses nomes ao iniciar (`--language`).
+
+## Anexo — SPEC-006: diálogo de primeiro contato com pessoas comuns (protótipo)
+
+A API de laboratório agora reconhece `POST /v1/encounter-dialogue` com `Authorization: Bearer <token>` e JSON `{"contact_event_id":"ev-...", "text":"Bom dia"}`. O servidor só aceita **evento já gravado** do tipo `NpcDialogueStarted`, visível no ramo atual e com cena coincidente com a área observada. Não há rota para fabricar perfis/observações pelo overlay. Os campos de ator, papel social, identidade e prova precisam vir de um **adaptador de jogo confiável**, ainda não implementado.
+
+Este endpoint é infraestrutura experimental, **não habilita cliques em NPCs comuns do BG2:EE**. O overlay atual continua limitado aos companheiros. O probe EEex atual vê área, tempo e party: primeiro é necessário verificar tecnicamente a observação do clique em qualquer personagem (inclusive figurantes sem diálogo nativo), respeitando diálogos roteirizados. Sem observação o serviço bloqueia, e NPCs canônicos não são randomizados. A semente de criação pode ser fixada por `--world-seed`, que deve permanecer estável por campanha; perfis verificados já persistidos não são regenerados.

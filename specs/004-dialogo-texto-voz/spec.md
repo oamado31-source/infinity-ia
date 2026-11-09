@@ -27,3 +27,9 @@
 ## Não objetivos da primeira implementação
 
 Não substituir o jogo, não alterar quest original arbitrariamente, não invocar LLM para decidir host state, não afirmar hooks existentes sem POC.
+
+## Extensão proposta — SPEC-006 (personalidade e alinhamento nos diálogos)
+
+A persona atual `style/vocabulary/fallback` é provisória. A matriz de seis traços, os nove alinhamentos AD&D e valores/motivações estão definidos em [SPEC-006](../006-personalidade-alinhamento-npc/spec.md), proposta, e detalhados em [arquitetura](../../docs/architecture/npc-personality-matrix.md). Ao integrar o runtime, SPEC-004 deve receber um perfil **versionado e filtrado** para definir tom, tolerância a riscos e interpretação dos fatos F/K legitimamente disponíveis. O prompt não pode criar conhecimento a partir de personalidade/alinhamento, revelar vulnerabilidades ocultas de terceiros nem alterar o jogo. O gerador de perfis é somente sintético e **ainda não foi integrado ao `DialogueEngine`**.
+
+**Nota de status:** S1b, diálogo real por texto no laboratório ARM64/VM single player, foi validado após a redação da SPEC inicial; a voz segue não implementada. Ver `docs/evidence/S1b-2026-11-09-laboratorio-arm64.md`.

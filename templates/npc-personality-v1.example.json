@@ -1,0 +1,28 @@
+{
+  "schema": "infinity-ai.personality.v1",
+  "npc_id": "npc:generated:example-created",
+  "origin": "CREATED",
+  "generator_version": "spec-006-generator-v1",
+  "seed_fingerprint": "example-only-not-a-real-seed",
+  "creation_context": {
+    "campaign_id": "example-campaign",
+    "creation_branch_id": "main"
+  },
+  "hexaco": {
+    "honesty_humility": 76,
+    "emotionality": 62,
+    "extraversion": 34,
+    "agreeableness": 47,
+    "conscientiousness": 81,
+    "openness": 69
+  },
+  "alignment_initial": {
+    "code": "NG",
+    "ethical": "NEUTRAL",
+    "moral": "GOOD",
+    "provenance": "GENERATED"
+  },
+  "values": ["justice", "knowledge", "loyalty"],
+  "drives": ["protection", "discovery"],
+  "vulnerabilities": ["loss", "betrayal"]
+}

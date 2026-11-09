@@ -13,8 +13,8 @@ from infinity_ai.bridge.domain import (  # noqa: E402
     Visibility,
 )
 from infinity_ai.bridge.eeex_log import (  # noqa: E402
-    ADAPTER_VERSION, AREA_FIELD, GAME_TIME_FIELD, EEexLogAdapter, NoSnapshotError,
-    StaleLogError, parse_latest_snapshot, parse_snapshot_line,
+    ADAPTER_VERSION, AREA_FIELD, GAME_TIME_FIELD, PARTY_FIELD, EEexLogAdapter, NoSnapshotError,
+    StaleLogError, companion_ids, parse_latest_snapshot, parse_snapshot_line,
 )
 from infinity_ai.bridge.service import ReadOnlyBridge  # noqa: E402
 
@@ -27,8 +27,9 @@ BUILD, MODPACK = 'sha256:build-lab', 'sha256:modpack-lab'
 
 
 def probe_line(seq=1, session=0, clock=1000, area='AR0602', time=38974, prefix='INFO: LPRINT: ',
-               **extra_fields):
-    fields = {AREA_FIELD: area, GAME_TIME_FIELD: time, **extra_fields}
+               party=('Imoen',), **extra_fields):
+    fields = {AREA_FIELD: area, GAME_TIME_FIELD: time,
+              PARTY_FIELD: list(party) if party is not None else None, **extra_fields}
     doc = {'schema': 'infinity-ai.eeex-probe.v1', 'seq': seq, 'session_seq': session,
            'clock_ms': clock, 'fields': fields}
     return f'{prefix}INFAI-P2 {json.dumps(doc)}\n'
@@ -47,7 +48,8 @@ class ParserTests(unittest.TestCase):
     def test_parses_probe_line_with_loader_prefix(self):
         snap = parse_snapshot_line(probe_line())
         self.assertEqual((snap.seq, snap.session_seq, snap.clock_ms), (1, 0, 1000))
-        self.assertEqual(dict(snap.fields), {AREA_FIELD: 'AR0602', GAME_TIME_FIELD: '38974'})
+        self.assertEqual(dict(snap.fields), {AREA_FIELD: 'AR0602', GAME_TIME_FIELD: '38974',
+                                             PARTY_FIELD: '["imoen"]'})
 
     def test_latest_valid_line_wins_and_noise_is_ignored(self):
         text = ('INFO: scanning override\n' + probe_line(seq=1, area='AR0601') +
@@ -84,9 +86,34 @@ class ParserTests(unittest.TestCase):
     def test_only_allowlisted_fields_survive(self):
         snap = parse_snapshot_line(probe_line(**{'quest.hidden_state': 'spoiler',
                                                  'creature.inventory': 'SW1H01'}))
-        self.assertEqual(set(snap.fields), {AREA_FIELD, GAME_TIME_FIELD})
+        self.assertEqual(set(snap.fields), {AREA_FIELD, GAME_TIME_FIELD, PARTY_FIELD})
         with self.assertRaises(TypeError):
             snap.fields['quest.hidden_state'] = 'x'
+
+    def test_party_is_normalized_or_unknown_as_a_whole(self):
+        cases = {
+            ('Imoen', 'Jaheira'): '["imoen","jaheira"]',
+            ('Jaheira', 'Imoen', 'Imoen'): '["imoen","jaheira"]',
+            (): '[]',
+            ('Imoen', 'None'): None,
+            ('Imoen', 'bad name'): None,
+            ('Imoen', 7): None,
+            tuple(f'N{i}' for i in range(6)): None,
+        }
+        for party, expected in cases.items():
+            with self.subTest(party=party):
+                self.assertEqual(parse_snapshot_line(probe_line(party=party)).fields[PARTY_FIELD],
+                                 expected)
+        self.assertIsNone(parse_snapshot_line(probe_line(party=None)).fields[PARTY_FIELD])
+        old_probe = probe_line().replace(', "party.companion_ids": ["Imoen"]', '')
+        self.assertIsNone(parse_snapshot_line(old_probe).fields[PARTY_FIELD])
+
+    def test_companion_ids_helper(self):
+        self.assertEqual(companion_ids('["imoen","jaheira"]'), ('npc:imoen', 'npc:jaheira'))
+        self.assertEqual(companion_ids('[]'), ())
+        for bad in (None, 'not json', '{"a":1}', '["bad name"]'):
+            with self.subTest(bad=bad):
+                self.assertIsNone(companion_ids(bad))
 
     def test_invalid_values_become_none(self):
         cases = [('AR0602"; DROP', 1), ('TOOLONGRESREF', 1), ('', 1), (None, 1), (7, 1),

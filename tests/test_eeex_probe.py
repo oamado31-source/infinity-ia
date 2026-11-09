@@ -14,14 +14,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 
 from infinity_ai.bridge.eeex_log import (  # noqa: E402
-    AREA_FIELD, GAME_TIME_FIELD, parse_latest_snapshot, parse_snapshot_line,
+    AREA_FIELD, GAME_TIME_FIELD, PARTY_FIELD, parse_latest_snapshot, parse_snapshot_line,
 )
 
 PROBE = ROOT / 'tools' / 'eeex-probe' / 'M_INFAI.lua'
 MENU = ROOT / 'tools' / 'eeex-probe' / 'INFAIP2.menu'
 
 ALLOWED_ENGINE_CALLS = frozenset({
-    'EEex_Area_GetVisible', 'EEex_GameState_AddInitializedListener',
+    'EEex_Area_GetVisible', 'EEex_Sprite_GetInPortrait', 'EEex_GameState_AddInitializedListener',
     'EEex_GameState_AddDestroyedListener', 'EEex_Menu_LoadFile',
     'EEex_Menu_AddMainFileLoadedListener', 'EEex_Menu_AddAfterMainFileReloadedListener',
     'Infinity_GetClockTicks', 'Infinity_PushMenu',
@@ -82,7 +82,8 @@ class ProbeStaticTests(unittest.TestCase):
 
     def test_engine_reads_are_protected_by_pcall(self):
         source = PROBE.read_text(encoding='utf-8')
-        for read in ('EEex_Area_GetVisible()', 'm_worldTime.m_gameTime'):
+        for read in ('EEex_Area_GetVisible()', 'm_worldTime.m_gameTime',
+                     'EEex_Sprite_GetInPortrait(i)'):
             index = source.index(read)
             self.assertGreater(index, source.rfind('pcall(function()', 0, index))
             self.assertNotEqual(source.rfind('pcall(function()', 0, index), -1)
@@ -99,7 +100,8 @@ except ImportError:
     lua52 = None
 
 _MOCK_ENGINE = r'''
-MOCK = { clock = 0, area = nil, game_time = 0, area_error = false, printed = {},
+MOCK = { clock = 0, area = nil, game_time = 0, area_error = false, printed = {}, party = {},
+         party_error = false,
          pushed = {}, loaded = {}, listeners = { main = {}, init = {}, reload = {}, destroyed = {} } }
 function print(s) table.insert(MOCK.printed, s) end
 function Infinity_GetClockTicks() return MOCK.clock end
@@ -116,6 +118,12 @@ function EEex_Area_GetVisible()
   if MOCK.area_error then error("binding failure") end
   if MOCK.area == nil then return nil end
   return readonly({ m_resref = readonly({ get = function(self) return MOCK.area end }, "m_resref") }, "area")
+end
+function EEex_Sprite_GetInPortrait(i)
+  if MOCK.party_error then error("portrait binding failure") end
+  local name = MOCK.party[i]
+  if name == nil then return nil end
+  return readonly({ m_scriptName = readonly({ get = function(self) return name end }, "m_scriptName") }, "sprite")
 end
 local worldTime = setmetatable({}, { __index = function(_, k) if k == "m_gameTime" then return MOCK.game_time end end,
                                      __newindex = function() error("write to m_worldTime") end })
@@ -176,6 +184,26 @@ class ProbeBehaviourTests(unittest.TestCase):
         snaps = [parse_snapshot_line(line) for line in self.lines()]
         self.assertEqual([s.session_seq for s in snaps], [0, 1])
         self.assertEqual([s.seq for s in snaps], [1, 2])
+
+    def test_companions_skip_protagonist_and_none(self):
+        self.lua.execute('MOCK.party = { [0] = "None", [1] = "Jaheira", [2] = "None", [4] = "Imoen" }')
+        self.step(1000, area='AR0602', game_time=1)
+        snap = parse_snapshot_line(self.lines()[-1])
+        self.assertEqual(snap.fields[PARTY_FIELD], '["imoen","jaheira"]')
+
+    def test_party_change_republishes_and_menu_has_no_party(self):
+        self.step(1000, area=None, game_time=0)
+        self.assertIsNone(parse_snapshot_line(self.lines()[-1]).fields[PARTY_FIELD])
+        self.step(2100, area='AR0602', game_time=1)
+        self.assertEqual(parse_snapshot_line(self.lines()[-1]).fields[PARTY_FIELD], '[]')
+        self.lua.execute('MOCK.party = { [1] = "Imoen" }')
+        self.step(3200)
+        self.assertEqual(parse_snapshot_line(self.lines()[-1]).fields[PARTY_FIELD], '["imoen"]')
+        self.assertEqual(len(self.lines()), 3)
+
+    def test_party_binding_failure_is_null_not_empty(self):
+        self.step(1000, area='AR0602', game_time=1, party_error=True)
+        self.assertIsNone(parse_snapshot_line(self.lines()[-1]).fields[PARTY_FIELD])
 
     def test_binding_failure_becomes_null(self):
         self.step(1000, area_error=True, game_time=5)

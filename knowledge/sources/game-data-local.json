@@ -1,0 +1,14 @@
+{
+  "schema": "infinity-ai.source.v1",
+  "bibliographic_status": "CONFIRMED",
+  "notes": "Lido da instalação local (REQ-CANON-004); o conteúdo extraído fica só em ~/.infinity-ai/knowledge, nunca no repositório.",
+  "source_id": "game-data-local",
+  "title": "Dados do jogo na instalação local do mantenedor (KEY/WMP/TLK)",
+  "publisher": "Beamdog (BG2:EE 2.7.3.0)",
+  "year": null,
+  "edition": "build pinada pelo build_fingerprint",
+  "creators": [],
+  "isbn": null,
+  "source_class": "S0_PRIMARY",
+  "setting_year_dr": null
+}

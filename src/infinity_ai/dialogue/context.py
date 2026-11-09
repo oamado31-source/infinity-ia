@@ -65,10 +65,14 @@ class ContextResult:
 class Catalog:
     personas: dict[str, Persona] = field(default_factory=dict)
     area_names: dict[str, str] = field(default_factory=dict)
+    game_area_names: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def load(cls, persona_dir: Path = DEFAULT_PERSONA_DIR,
-             area_names: Path = DEFAULT_AREA_NAMES) -> Catalog:
+             area_names: Path = DEFAULT_AREA_NAMES,
+             game_area_names: dict[str, str] | None = None) -> Catalog:
+        """`game_area_names`: names read from the local install (SPEC-005 inventory, S0); they
+        take precedence over the provisional curated names."""
         personas = {}
         for path in sorted(Path(persona_dir).glob('*.json')):
             doc = json.loads(path.read_text(encoding='utf-8'))
@@ -77,7 +81,7 @@ class Catalog:
                                               frozenset(doc.get('vocabulary', ())),
                                               doc.get('fallback') or GENERIC_FALLBACK)
         areas = json.loads(Path(area_names).read_text(encoding='utf-8')).get('areas', {})
-        return cls(personas, dict(areas))
+        return cls(personas, dict(areas), dict(game_area_names or {}))
 
     def persona(self, npc_id: str) -> Persona:
         if npc_id in self.personas:
@@ -89,7 +93,8 @@ class Catalog:
         return self.persona(npc_id).display_name
 
     def area(self, resref: str | None) -> str:
-        return self.area_names.get(resref or '', UNNAMED_AREA)
+        key = resref or ''
+        return self.game_area_names.get(key) or self.area_names.get(key, UNNAMED_AREA)
 
 
 def current_companions(store: CampaignStore, branch_id: str) -> tuple[str, ...] | None:

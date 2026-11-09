@@ -92,3 +92,12 @@ Copie `overlay.json` (URL + token) para `%LOCALAPPDATA%\InfinityAI\overlay.json`
 ## 9. Onde guardar a evidência
 
 O manifesto bruto fica fora do repositório (contém hashes da sua instalação, nada sensível, mas também nada que precise ser público). No relatório da PR, cite apenas fingerprint, modpack hash, versões, ambiente e resultado. **Nunca** suba saves, `chitin.key`, `.tlk`, `.bif` ou capturas com conteúdo do jogo.
+
+## Anexo — S1c: inventário de áreas da instalação (SPEC-005)
+
+```bash
+export INFINITY_LAB_SSH='ssh -i ~/.ssh/<chave> -o IdentitiesOnly=yes -o BatchMode=yes -l "<usuario>" <ip-da-vm>'
+python tools/windows-lab/build_area_inventory.py --language pt_BR
+```
+
+Lê fatias de `chitin.key`, do BIF com o mapa-múndi e do `dialog.tlk` da cópia na VM para a memória e grava só o inventário derivado em `~/.infinity-ai/knowledge/install-<fingerprint>/` (fora do repo). O serviço de diálogo carrega esses nomes ao iniciar (`--language`).

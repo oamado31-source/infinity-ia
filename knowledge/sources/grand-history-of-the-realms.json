@@ -1,0 +1,17 @@
+{
+  "schema": "infinity-ai.source.v1",
+  "bibliographic_status": "TO_CONFIRM",
+  "notes": "Cronologia ano a ano; cada entrada vale para o ano do cabeçalho em que aparece. Dados bibliográficos a confirmar.",
+  "source_id": "grand-history-of-the-realms",
+  "title": "Grand History of the Realms",
+  "publisher": "Wizards of the Coast",
+  "year": 2007,
+  "edition": "1ª",
+  "creators": [
+    "Brian R. James",
+    "Ed Greenwood"
+  ],
+  "isbn": null,
+  "source_class": "S0_PRIMARY",
+  "setting_year_dr": null
+}

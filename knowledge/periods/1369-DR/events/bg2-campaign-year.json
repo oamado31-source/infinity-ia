@@ -1,0 +1,31 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "partition_year_dr": 1369,
+  "access_scope": "CANON_REFERENCE",
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-09",
+    "checked_by": "mantenedor (decisão: adotar o manual)",
+    "checked_at": "2026-11-09"
+  },
+  "id": "event:bg2-campaign-year",
+  "kind": "EVENT",
+  "title": "Ano da campanha de Shadows of Amn",
+  "summary": "Nesta campanha, a história de Shadows of Amn se passa em 1369 DR, como diz o manual do BG2. O Grand History registra os mesmos acontecimentos em 1368 DR; a divergência fica documentada e não vale aqui.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1369,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"The Role of Years\" (PDF p. 34)"
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "pp. 148–149, \"1368 DR Year of the Banner\""
+    }
+  ],
+  "verification_status": "CAMPAIGN_CANON"
+}

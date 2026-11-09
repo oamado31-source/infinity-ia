@@ -1,0 +1,31 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "partition_year_dr": 1369,
+  "access_scope": "CANON_REFERENCE",
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-09",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-09"
+  },
+  "id": "org:council-of-six",
+  "kind": "ORGANIZATION",
+  "title": "Conselho dos Seis",
+  "summary": "Governa Amn há cerca de três décadas. Os seis conselheiros são conhecidos só pelos títulos (Meisarch, Tessarch, Namarch, Iltarch, Pommarch, Dahaunarch); revelar quem são é punido com tortura e morte. Reúne-se na Casa do Conselho, em Athkatla.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"Athkatla\" (PDF p. 27)"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 7"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED"
+}

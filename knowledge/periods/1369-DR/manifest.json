@@ -1,0 +1,13 @@
+{
+  "schema": "infinity-ai.period-manifest.v1",
+  "year_dr": 1369,
+  "coverage_status": "PARTIAL",
+  "categories": [
+    "regions",
+    "events",
+    "organizations",
+    "characters"
+  ],
+  "validation_status": "FIRST_BATCH_CHECKED",
+  "note": "Partição de 1369 DR (ADR-0013, ADR-0109). Entradas RESEARCH_ONLY nunca são afirmadas como fato; SOURCE_CHECKED exige conferência do mantenedor com obra e página."
+}

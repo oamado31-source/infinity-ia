@@ -1,0 +1,31 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "partition_year_dr": 1369,
+  "access_scope": "CANON_REFERENCE",
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-09",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-09"
+  },
+  "id": "org:cowled-wizards",
+  "kind": "ORGANIZATION",
+  "title": "Magos Encapuzados",
+  "summary": "Ordem de magos poderosos que, em Amn, regula e restringe o uso de magia e vigia magos estrangeiros. Organiza-se em células por cidade; a maior e mais antiga fica em Athkatla. O povo amniano desconfia da magia.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"Cowled Wizards\" (PDF p. 28)"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Três, p. 8"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED"
+}

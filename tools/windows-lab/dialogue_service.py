@@ -39,6 +39,7 @@ from infinity_ai.bridge.service import ReadOnlyBridge  # noqa: E402
 from infinity_ai.dialogue.context import Catalog, current_companions  # noqa: E402
 from infinity_ai.dialogue.engine import DialogueEngine, DialogueRequest  # noqa: E402
 from infinity_ai.dialogue.llm import OllamaProvider  # noqa: E402
+from infinity_ai.gamedata.inventory import load_local_names  # noqa: E402
 from infinity_ai.state.recorder import ObservationRecorder, RecordAction  # noqa: E402
 from infinity_ai.state.store import CampaignStore  # noqa: E402
 from lab_ssh import SshLogSource, live_manifest, now_iso, ssh_from_env  # noqa: E402
@@ -199,6 +200,7 @@ def main() -> int:
     ap.add_argument('--reuse-token', action='store_true',
                     help='keep the token already in --config-out (overlay keeps working after a restart)')
     ap.add_argument('--interval', type=float, default=3.0)
+    ap.add_argument('--language', default='pt_BR', help='game language of the local area inventory')
     args = ap.parse_args()
 
     pinned = json.loads(args.pinned_manifest.read_text(encoding='utf-8-sig'))
@@ -218,8 +220,10 @@ def main() -> int:
     fd = os.open(args.config_out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, 'w', encoding='utf-8') as fh:
         json.dump({'url': f'http://{args.bind}:{args.port}', 'token': token}, fh)
-    server = ThreadingHTTPServer((args.bind, args.port),
-                                 make_handler(token, observer, Catalog.load(), args))
+    game_names = load_local_names(live_build, args.language)
+    print(f'nomes de area do jogo (inventario local): {len(game_names)}')
+    server = ThreadingHTTPServer((args.bind, args.port), make_handler(
+        token, observer, Catalog.load(game_area_names=game_names), args))
     print(f'servindo em http://{args.bind}:{args.port} (config do overlay em {args.config_out})')
     try:
         server.serve_forever()

@@ -158,6 +158,36 @@ class FirstContactTests(unittest.TestCase):
         with self.assertRaises(FirstContactError):
             self.begin(e3, at=120)
 
+    def test_malformed_role_is_rejected_safely(self):
+        for role in (["BEGGAR"], {"role": "BEGGAR"}, None, "ASSASSIN"):
+            e = self.contact(role=role)
+            with self.subTest(role=role), self.assertRaises(FirstContactError):
+                self.begin(e)
+
+    def test_alignment_bias_changes_interpretation_not_game_or_facts(self):
+        e = self.contact()
+        lawful = FirstContactService(
+            self.store, world_seed="campaign-world",
+            alignment_weights={k: (1 if k == "LG" else 0)
+                               for k in ("LG", "NG", "CG", "LN", "TN", "CN", "LE", "NE", "CE")}
+        ).begin(contact_event_id=e.event_id, branch_id="main", at_game_time=100)
+        chaotic = FirstContactService(
+            self.store, world_seed="campaign-world",
+            alignment_weights={k: (1 if k == "CE" else 0)
+                               for k in ("LG", "NG", "CG", "LN", "TN", "CN", "LE", "NE", "CE")}
+        ).begin(contact_event_id=e.event_id, branch_id="main", at_game_time=100)
+        self.assertEqual(lawful.profile["alignment_initial"]["code"], "LG")
+        self.assertEqual(chaotic.profile["alignment_initial"]["code"], "CE")
+        answer = json.dumps({"speech": "Não sei informar.", "used_facts": [], "unknown": True})
+        provider_lg, provider_ce = FakeProvider([answer]), FakeProvider([answer])
+        NpcEncounterDialogue(provider_lg).respond(lawful, "Quem governa aqui?")
+        NpcEncounterDialogue(provider_ce).respond(chaotic, "Quem governa aqui?")
+        self.assertIn("valoriza regras e compromissos", provider_lg.calls[0][0]["content"])
+        self.assertIn("preza autonomia e liberdade", provider_ce.calls[0][0]["content"])
+        self.assertIn("FATOS: (nenhum)", provider_lg.calls[0][0]["content"])
+        self.assertIn("FATOS: (nenhum)", provider_ce.calls[0][0]["content"])
+        self.assertEqual(self.store.visible_events("main", "NpcPersonalityAssigned"), [])
+
     def test_no_verified_identity_without_matching_proof(self):
         e = self.contact(state="VERIFIED", verified_npc_id="npc:generated:test",
                          identity_proof_event_id="ev-made-up")

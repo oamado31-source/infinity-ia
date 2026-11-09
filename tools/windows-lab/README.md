@@ -78,6 +78,17 @@ python tools/windows-lab/s1_record_session.py --pinned-manifest <manifesto.json>
 
 O banco fica em `~/.infinity-ai/campaigns/lab-s1.sqlite3` (fora do repo) e o backup em `~/.infinity-ai/campaigns/backups/`. Rodar de novo continua o mesmo banco sem duplicar. Para provar a divisão de ramos é preciso **mudar algo depois do save** (área ou grupo) e então recarregar o save; um reload sem mudança gravada depois do save continua no mesmo ramo, por projeto.
 
-## 8. Onde guardar a evidência
+## 8. S1b — diálogo por texto com overlay (single player)
+
+No Mac (Ollama com `qwen3:8b` rodando):
+
+```bash
+export INFINITY_LAB_SSH='ssh -i ~/.ssh/<chave> -o IdentitiesOnly=yes -o BatchMode=yes -l "<usuario>" <ip-da-vm>'
+python tools/windows-lab/dialogue_service.py --pinned-manifest <manifesto.json> --config-out <fora-do-repo>/overlay.json
+```
+
+Copie `overlay.json` (URL + token) para `%LOCALAPPDATA%\InfinityAI\overlay.json` na VM e `tools/windows-overlay/` para a VM; abra `Start-InfinityOverlay.cmd` na sessão do jogador. Programas com janela iniciados pelo SSH não aparecem na área de trabalho; para abrir pelo SSH, use uma tarefa agendada de uso único com `LogonType Interactive` e apague-a em seguida. **Abra o jogo uma vez só**: duas instâncias disputam o `InfinityLoader.log` e a segunda não escreve nele. `--reuse-token` mantém o overlay funcionando após reiniciar o serviço; `--ollama-url` permite simular o modelo fora do ar sem parar o Ollama.
+
+## 9. Onde guardar a evidência
 
 O manifesto bruto fica fora do repositório (contém hashes da sua instalação, nada sensível, mas também nada que precise ser público). No relatório da PR, cite apenas fingerprint, modpack hash, versões, ambiente e resultado. **Nunca** suba saves, `chitin.key`, `.tlk`, `.bif` ou capturas com conteúdo do jogo.

@@ -26,3 +26,8 @@ P0 vanilla → P1 EEex → P2 bridge read-only → memória NPC e save/load (sin
 - Primeiro evento paralelo do usuário, somente proposta sem spawn até POC.
 - Expansões EET/IWD/NWN e modos de combate alternativos após gates próprios.
 - Economia/facções agregadas, escrow, justiça dinâmica e eventos críticos sob contratos existentes.
+
+
+## Extensão proposta SPEC-006 — contato com qualquer habitante (Living World)
+
+Após segurança da bridge/estabilização de tempo: POC read-only de seleção e tentativa de diálogo em pessoas comuns; emitir `NpcDialogueStarted` observado com prova de alvo/cena; provisionar persona/alinhamento no primeiro contato; manter personalidade de figurante somente no escopo do encontro até identidade `VERIFIED`; quando verificada, atribuir snapshot append-only por campanha/branch; responder via overlay local sem comprometer scripts/quests originais. A rota e o núcleo sintético já existem no PR da SPEC-006; **o hook in-game e o gate real ainda não**.

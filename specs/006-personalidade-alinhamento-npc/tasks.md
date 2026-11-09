@@ -4,9 +4,12 @@
 - [x] Criar gerador puro e exemplo de snapshot `infinity-ai.personality.v1`.
 - [x] Cobrir reprodução por seed/identidade, seis traços, nove alinhamentos, pesos inválidos e recusa de origem canônica com testes sintéticos.
 - [ ] Aprovar ADR-0115 e calibrar pesos/limiares de design com mantenedor (não inferir aprovação pelo PR).
-- [ ] Criar schema JSON formal, identidade autoritativa e armazenamento append-only/idempotente em SPEC-003.
-- [ ] Demonstrar save/load/fork com perfis antes/depois do ponto de ramificação.
+- [x] Implementar atribuição append-only/idempotente via eventos existentes da SPEC-003 **para identidades já verificadas por evidência sintética**; schema JSON formal e prova real da identidade permanecem pendentes.
+- [x] Testar sinteticamente reabertura de DB e forks antes/depois da atribuição, sem confundir perfis entre ramos.
 - [ ] Curar personalidade e alinhamento de NPCs oficiais com referência conferida e compatibilidade de classe.
-- [ ] Integrar perfil e estado dinâmico ao prompt mínimo de SPEC-004, sem revelar segredo; adicionar testes de reação/fallback.
+- [x] Integrar perfil-base em um **diálogo genérico de laboratório separado** (texto, estilo, alinhamento inicial, fatos vazios, validador e fallback), sem substituir o DialogueEngine da party.
+- [ ] Integrar estado dinâmico, crenças e reações à SPEC-004 após aquisição legítima de fatos e memória individual.
 - [ ] Implementar avaliação contextual e auditável da evolução (ADR-0030–0032); preservar `engine_alignment` até autorização/POC.
-- [ ] Testar no laboratório BG2:EE (single player) e publicar evidências reais, com proteção de arquivos e dados.
+- [x] Implementar `FirstContactService` e rota experimental `/v1/encounter-dialogue` com evento gravado e sessão observada.
+- [ ] Desenvolver POC do clique em qualquer ator do BG2:EE (inclusive NPC sem diálogo nativo), identidade/instância e geração real de `NpcDialogueStarted`.
+- [ ] Executar teste real em laboratório BG2:EE e publicar evidência de interação com pessoas comuns, sem afetar diálogos originais.

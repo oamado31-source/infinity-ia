@@ -10,3 +10,10 @@
 8. Testar reações divergentes ao mesmo evento observado, contradições, reload/fork, limites mecânicos, carga/performance e POC single player.
 
 **Não objetivos desta entrega:** psicometria real, inventário HEXACO-PI-R, modificação de BG2:EE, agente LLM por NPC, alinhamento mecânico automático, comportamento canônico alterado.
+
+## Extensão — primeira conversa com qualquer habitante
+
+9. Reconhecer por observação confiável o início de diálogo e o ator alvo, sem presumir que o BG2:EE oferece hook universal.
+10. Atribuir persona/alinhamento sob demanda: efêmera se identidade incerta, persistente append-only se verificada; evitar reroll e memória atribuída a homônimos.
+11. Disponibilizar rota de laboratório por referência a evento observado e conversa genérica segura por LLM local; manter o motor original soberano.
+12. Provar in-game clique/seleção, convivência com diálogos roteirizados, cena, save/load, segurança, performance, identidade e promoção antes de afirmar integração operacional.

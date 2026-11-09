@@ -84,4 +84,31 @@ Fala, recusa, comércio, mudança de facção, deserção, combate, assassinato,
 - **REQ-PERS-008:** QUANDO LLM falhar, preservar perfil/estado e fornecer resposta neutra de fallback; nunca permitir mutação de jogo.
 - **REQ-PERS-009:** QUANDO NPC oficial possuir restrições de classe, preservar compatibilidade e bloquear mudanças mecânicas até POC e autorização.
 
-**Aceite atual:** gerador puro, esquema-exemplo, cenários sintéticos de reprodução, nove alinhamentos e falha segura. **Pendente:** persistência, idempotência, curadoria canônica, contexto do diálogo, reações, evolução e POC real BG2:EE/EEex.
+**Aceite atual:** gerador puro, primeiro contato por evento sintético observado, perfil efêmero, snapshot persistente append-only para identidade verificada, diálogo genérico sintético, testes de ramificação/fallback; ainda sem prova de clique no jogo. **Pendente:** identidade verificada por engine, interceptação de qualquer pessoa, curadoria canônica, evolução, alinhamento mecânico e POC real BG2:EE/EEex.
+
+## Extensão aprovada como intenção de produto — NPC é qualquer pessoa encontrada
+
+**Esclarecimento do mantenedor (2026-11-09):** NPC não significa somente companheiro, inimigo, aventureiro ou personagem nomeado. Inclui habitantes comuns, pessoas nas ruas, mendigos, camponeses, guardas, vendedores, viajantes e outros atores presentes numa cena. A intenção é que o jogador possa iniciar uma interação com qualquer pessoa *realmente apresentada pelo jogo ou pelo sistema de encontros autorizado*, mesmo que o jogo original não tenha diálogo roteirizado. Isso **não comprova** a existência de um hook de clique ou capacidade de dialogar com todos os CREs de BG2:EE; tal integração exige uma POC específica, autorização e proteção de scripts/diálogos originais.
+
+### Provisionamento preguiçoso (lazy) no primeiro diálogo
+
+1. Não gerar nem executar LLM para todos os transeuntes. O adaptador de observação deverá emitir `NpcDialogueStarted` **somente após um clique/interação de diálogo efetivamente reconhecido**, com tempo, cena, sessão, alvo visível, permissão e estado de identidade.
+2. Verificar o evento gravado no banco **pelo lado confiável do servidor**. Um texto do jogador ou um campo arbitrário de HTTP não é evidência de alvo nem de identidade. Se observação ausente/inválida, falhar fechado.
+3. **NPC canônico/roteirizado:** `CANONICAL` conserva persona/alinhamento do jogo; nunca sobrescrever o diálogo do jogo sem regra de compatibilidade.
+4. **Pessoa não identificada** (`CANDIDATE`, `AMBIGUOUS`, `STALE`): gerar personalidade e alinhamento **temporários para o encontro**, sem recuperar memória pessoal de outro ator, sem criar identidade permanente nem registrar `NpcPersonalityAssigned`. Se o adaptador provar token único no escopo da sessão/cena, contatos subsequentes ali reutilizam o perfil; se não, **cada interação é independente**.
+5. **Pessoa de identidade verificada** (`VERIFIED`): exigir evento `NpcIdentityVerified` anterior, visível no ramo, compatível com NPC, sessão, área e instância. Recuperar `NpcPersonalityAssigned` já visível ou gravar uma única atribuição append-only contendo snapshot e prova. Uma restauração herda somente o passado admitido pela linha do tempo e um fork anterior não herda evento posterior.
+6. O `role` é rótulo observável controlado (`BEGGAR`, `COMMONER`, `PEASANT`, `MERCHANT`, `GUARD`, `TRAVELER`, `ARTISAN`, `NOBLE`, `OTHER`), **não** biografia presumida, status moral, profissão comprovada, fonte de conhecimento ou distribuição de alinhamento. O comportamento pode ser coerente com o perfil sem estereotipar pobreza, cultura ou condição social.
+7. O primeiro diálogo usa persona gerada com estilo/valores/alinhamento **como orientação de fala**, não como fonte de fatos. Sem conhecimento/episódios conferidos, o sistema deve reconhecer que não sabe. Segurança, segredos e ações no jogo continuam separados.
+8. Crescer em importância (reencontro, missão, amizade, comércio, rumor ou promessa) pode gerar **candidatura** à promoção, mas só uma identificação `VERIFIED` comprovada autoriza perfil persistente, relações e memória privada (ADR-0061/0062). Não migrar automaticamente lembranças efêmeras para a nova identidade.
+
+### Contratos sintéticos implementados
+
+- `src/infinity_ai/personality/first_contact.py`: `FirstContactService.begin(contact_event_id, branch_id, at_game_time)`, requer observação válida, trata canônicos, encontro temporário e perfil persistente.
+- Eventos da camada de estado já existente (sem migração SQL nova): `NpcDialogueStarted` (`CAMPAIGN_OBSERVATION`), `NpcIdentityVerified` e `NpcPersonalityAssigned` (`CAMPAIGN_FACT`), no armazenamento append-only da SPEC-003.
+- `src/infinity_ai/personality/encounter_dialogue.py`: `NpcEncounterDialogue` com `LlmProvider` local/falso, validação de saída e fallback; não substitui a conversa do jogo por padrão e **não registra transcrições**.
+- `tools/windows-lab/dialogue_service.py`: rota autenticada `POST /v1/encounter-dialogue`, recebendo somente `contact_event_id` e `text`, após observação já registrada e conferência de área; **não cria** observações nem expõe um endpoint para inventar identidades/perfis.
+- `tests/test_first_contact.py`: cenários sintéticos de mendigo, camponês, guarda e demais papéis, estabilidade/isolamento de encontro, ambiguidade, canonicidade, prova de identidade, persistência, save/load/fork, segurança e LLM indisponível.
+
+### POC necessária para interação de qualquer pessoa em BG2:EE
+
+Ainda **não existe** detecção validada do clique em qualquer CRE nem evento `NpcDialogueStarted` vindo de EEex. O probe vigente informa apenas área, tempo e integrantes da party. O comportamento ao clicar num figurante sem diálogo no jogo deve ser inspecionado em uma cópia descartável e em build pinada. Gate proposto: observar alvo e início de diálogo sem bloquear banters/quests originais; impedir colisões de IDs de instâncias e interface; emitir contato read-only; testar falhas, save/load, mudança de área e desempenho; somente depois ligar a rota do laboratório a uma UI de interação disponível.

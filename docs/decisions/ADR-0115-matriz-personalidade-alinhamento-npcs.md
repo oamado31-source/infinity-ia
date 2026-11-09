@@ -33,3 +33,9 @@ A persona da SPEC-004 hoje contém estilo, vocabulário e fallback. Esses campos
 - Interface de autoria/revisão para companheiros canônicos e NPCs criados.
 
 O gerador anexado à SPEC é **experimental**, testado sinteticamente; nenhuma capacidade de reação, escrita BG2:EE ou POC real decorre deste ADR.
+
+## Ampliação de escopo solicitada pelo mantenedor — 2026-11-09
+
+A intenção de produto cobre **qualquer pessoa** presente no mapa, não apenas companheiros/aventureiros/inimigos. O perfil de um camponês ou mendigo pode ser provisionado no **primeiro diálogo**, somente mediante evento observado/permitido, sem sortear a população inteira antecipadamente. Se a identidade for `CANDIDATE/AMBIGUOUS/STALE`, perfil e alinhamento são de **encontro efêmero**, sem persistência de memória privada; `VERIFIED` exige prova positiva prévia para atribuição append-only e recuperação por ramo. Canônicos permanecem curados e não são randomizados.
+
+**Política técnica executada sinteticamente:** `FirstContactService` e `NpcEncounterDialogue` (SPEC-006). A possibilidade de clicar ou interceptar qualquer NPC do BG2:EE/EEex **não foi comprovada**; a conexão real precisa de POC. Essa extensão respeita ADR-0061/0062 e não transforma um clique numa prova de identidade persistente.

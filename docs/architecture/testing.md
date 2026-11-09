@@ -17,3 +17,6 @@
 - Integração somente com instalações autorizadas de BG2:EE/EEex; nunca em save real sem permissão.
 - Voz: mic inativo default, push-to-talk, fallback texto, STT indisponível, TTS indisponível, permissão revogada, latência e sem retenção involuntária.
 - PR checks: unittest+syntax/JSON+ADR append-only+arquivo proibido/segredo, sem credenciais de escrita.
+
+
+**SPEC-006 — estado:** testes sintéticos de geração de perfis, primeiro diálogo com habitantes comuns, isolamento por cena/sessão, identidade incerta, perfil verificado por evento de prova e persistência em ramos. API de laboratório `/v1/encounter-dialogue` está preparada, porém **não conectada a um hook real de clique/seleção de qualquer NPC**. Antes de marcar como POC aprovada, registrar prova na instalação BG2:EE pinada, coexistência com diálogos canônicos, caso de dois NPCs de mesmo nome, identificador efêmero, manipulação de tempo/scene, save/load/fork e ausência de alterações não autorizadas.

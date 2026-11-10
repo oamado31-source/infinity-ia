@@ -280,7 +280,8 @@ class Talker(threading.Thread):
             stored = set(MemoryStore(store).known_canon(speaker, view.branch_id, view.game_time)) \
                 if speaker else set()
             known_now = tuple(sorted(stored | set(known_by_identity) | set(known_by_relationship)))
-            also_known = tuple((e, pack.get(e).title, pack.get(e).summary, pack.get(e).layers)
+            also_known = tuple((e, pack.get(e).title, pack.get(e).summary, pack.get(e).layers,
+                                pack.get(e).access_scope, pack.get(e).subject_id)
                                for e in known_now if pack.get(e) is not None)
             # Wisdom and Intelligence (game data) set how deeply the person knows (ADR-0117).
             wisdom = getattr(resident, 'wisdom', 0) or None

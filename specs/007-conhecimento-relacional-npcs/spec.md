@@ -14,7 +14,7 @@ Representar relações entre NPCs, lugares, organizações e outros atores como 
 - Audiências REGIONAL_PUBLIC, AFFILIATED e EXPLICIT_NPCS.
 - Afiliações curadas na identidade do NPC.
 - Integração de relações públicas aos canais existentes de conhecimento regional e INQUIRY.
-- Inclusão de relações restritas no contexto apenas para NPCs elegíveis.
+- Inclusão de relações restritas em seção própria do contexto, apenas para NPCs elegíveis, preservando o sujeito da relação para validar falas sobre si.
 - Aplicação de WIS + INT às camadas de compreensão já existentes.
 - Caso de validação: Lehtinan, Coroa de Cobre e Bernard.
 

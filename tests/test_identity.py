@@ -213,8 +213,9 @@ class CurationFileTests(unittest.TestCase):
         doc = json.loads((ROOT / 'knowledge' / 'npcs' / 'bernard.pt_BR.json').read_text('utf-8'))
         self.assertEqual(doc['schema'], CURATION_SCHEMA)
         self.assertTrue(all(len(f) <= 200 for f in doc['self_facts']))
-        self.assertEqual(load_curations(PACK)['npc:cre-bernard'].occupation,
-                         'taverneiro da Coroa de Cobre')
+        curation = load_curations(PACK)['npc:cre-bernard']
+        self.assertEqual(curation.occupation, 'taverneiro da Coroa de Cobre')
+        self.assertEqual(curation.origin_region, 'region:tethyr')
 
 
 BUILD = frozenset(a for e in PACK.entries.values() for a in e.area_resrefs)

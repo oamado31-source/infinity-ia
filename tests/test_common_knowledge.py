@@ -153,10 +153,10 @@ class ResidenceTests(Story):
         self.see('AR0300', 0)
         self.pin(game_time=0)
         first = self.acquire(DAY, residents=lives())
-        self.assertEqual(len(first.granted), 4)
+        self.assertEqual(len(first.granted), 6)
         self.assertEqual(self.acquire(DAY + 50, residents=lives()).granted, ())
         rows = self.store.connection.execute('SELECT count(*) FROM npc_canon_knowledge').fetchone()
-        self.assertEqual(rows[0], 4)
+        self.assertEqual(rows[0], 6)
 
     def test_rows_are_append_only(self):
         self.see('AR0300', 0)
@@ -517,7 +517,7 @@ class ResidentDialogueTests(Story):
         self.acquire(110, residents=placed('AR0406'))
         context = self.ctx().context
         self.assertEqual(context.facts, ())
-        self.assertEqual(len(context.knowledge), 4)
+        self.assertEqual(len(context.knowledge), 6)
         prompt = system_prompt(context)
         self.assertIn('Você é Bernard e está na Coroa de Cobre', prompt)
         self.assertNotIn('companheiro(a) de viagem', prompt)

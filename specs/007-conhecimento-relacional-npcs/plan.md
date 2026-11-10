@@ -6,4 +6,4 @@
 4. **Diálogo:** unir conhecimento público, memória e relações restritas no contexto do habitante; filtrar INQUIRY para COMMON_REGIONAL.
 5. **Curadoria:** registrar a Coroa de Cobre, a propriedade pública e a relação operacional de Bernard.
 6. **Validação:** testes de schema, gate, elegibilidade, INQUIRY, contexto e resposta de Bernard.
-7. **Laboratório:** atualizar o pin da campanha de teste explicitamente e repetir a conversa com Bernard; testar também um estranho e um frequentador curado.
+7. **Laboratório:** usar a campanha isolada `lab-s1f`, com banco próprio (sem reutilizar `lab-s1e`); atualizar explicitamente o pin 1369 DR e repetir a conversa com Bernard, um estranho sem afiliação e um frequentador REGULAR curado.

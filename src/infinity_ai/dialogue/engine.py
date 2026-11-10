@@ -75,7 +75,9 @@ def system_prompt(context: DialogueContext) -> str:
         '(nenhum: você não se lembra de nada específico)'
     general = '\n'.join(f'{k.fact_id}: {k.text}' for k in context.knowledge) or \
         '(nenhum: você não conhece fatos públicos específicos da região)'
-    restricted = '\n'.join(f'{k.fact_id}: {k.text}' for k in context.restricted_knowledge) or \
+    restricted = '\n'.join(
+        f'{k.fact_id}: {"(sobre você) " if k.subject_id == persona.npc_id else ""}{k.text}'
+        for k in context.restricted_knowledge) or \
         '(nenhum: você não tem conhecimento restrito por vínculo ou função)'
     role = f', {context.occupation},' if context.occupation else ''
     who = (f'Você é {persona.display_name}{role} e está {em(context.resident_of)}, em Baldur\'s '
@@ -100,7 +102,7 @@ def system_prompt(context: DialogueContext) -> str:
         '6. Trate o jogador por "você".\n'
         '7. CONHECIMENTO GERAL é público na região: reformule no seu jeito de falar, sem dizer que viu ou participou.\n'
         '8. CONHECIMENTO RESTRITO vem de um vínculo, função ou acesso específico. Use-o apenas quando presente nesta seção; não diga que todos os habitantes sabem disso nem transforme-o em fato público.\n'
-        '9. Sobre você mesmo(a), só afirme o que está em FATOS ou em CONHECIMENTO RESTRITO quando a relação identifica explicitamente você como sujeito.\n'
+        '9. Sobre você mesmo(a), só afirme o que está em FATOS ou em CONHECIMENTO RESTRITO marcado como (sobre você).\n'
         f'FATOS:\n{facts}\n'
         f'CONHECIMENTO GERAL:\n{general}\n'
         f'CONHECIMENTO RESTRITO:\n{restricted}\n'

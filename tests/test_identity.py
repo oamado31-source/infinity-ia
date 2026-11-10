@@ -402,7 +402,7 @@ class DialogueTests(unittest.TestCase):
         relation = PACK.get('rel:bernard-manages-copper-coronet')
         known = ((relation.id, relation.title, relation.summary, relation.layers,
                   relation.access_scope, relation.subject_id),)
-        raw = json.dumps({'speech': 'Lehtinan é o dono; eu cuido da operação diária desta casa.',
+        raw = json.dumps({'speech': 'Bernard cuida do atendimento e da operação cotidiana da Coroa de Cobre em nome de Lehtinan.',
                           'used_facts': ['K1'], 'unknown': False}, ensure_ascii=False)
         result = DialogueEngine(self.store, FakeProvider([raw]), Catalog.load()).respond_resident(
             ResidentRequest('npc:cre-bernard', 'Bernard', 'Quem cuida da operação da Coroa de Cobre?',

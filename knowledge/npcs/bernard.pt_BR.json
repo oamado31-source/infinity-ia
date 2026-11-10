@@ -2,7 +2,7 @@
   "schema": "infinity-ai.npc-identity-curation.v1",
   "npc_id": "npc:cre-bernard",
   "language": "pt_BR",
-  "note": "Identidade curada (ADR-0117). Tethyr é mantida como origem de projeto por decisão do mantenedor, sem alegar confirmação independente de canon. A referência externa confirma residência em Athkatla, mas não declara outra terra natal.",
+  "note": "Identidade curada conforme ADR-0117; Tethyr é origem curada do perfil do projeto por decisão específica da ADR-0118, sem confirmação independente de canon. Athkatla/Amn é a residência documentada.",
   "occupation": "taverneiro da Coroa de Cobre",
   "origin_region": "region:tethyr",
   "years_here": null,
@@ -21,7 +21,7 @@
     },
     {
       "source_id": "maintainer",
-      "locator": "decisão do mantenedor em 2026-11-10: manter Tethyr como origem curada do perfil de laboratório/projeto; a referência externa consultada não aponta outra terra natal. Não apresentar como fato comprovado pela Wiki."
+      "locator": "ADR-0118, decisão explícita do mantenedor em 2026-11-10: manter Tethyr como origem curada do perfil de laboratório/projeto; não apresentar como fato comprovado pela Forgotten Realms Wiki."
     }
   ],
   "curation": {

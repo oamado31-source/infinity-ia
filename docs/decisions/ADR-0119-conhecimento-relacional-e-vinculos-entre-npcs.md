@@ -42,4 +42,4 @@ Uma relação não é uma característica pessoal: “Lehtinan é dono da Coroa 
 - A decisão do mantenedor em 2026-11-10 estabelece a propriedade pública local e a política de acesso operacional para o caso inicial.
 - A localização da Coroa de Cobre em AR0406 usa o inventário local do jogo já referenciado na curadoria de Bernard.
 - A entrada S4 é cânone do projeto/campanha, não uma afirmação de que a fonte externa foi verificada independentemente.
-- Validação no BG2:EE: evidência S1f (`docs/evidence/S1f-2026-11-10-laboratorio-arm64.md`). Falta o frequentador REGULAR curado.
+- Validação no BG2:EE: evidência S1f (`docs/evidence/S1f-2026-11-10-laboratorio-arm64.md`), com Bernard (STAFF), NPCs sem afiliação e Salvanas (REGULAR curado).

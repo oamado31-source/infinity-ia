@@ -1,7 +1,7 @@
 # Evidência S1f — conhecimento relacional e caixa com companheiros (single player, 2026-11-10)
 
 **Gate:** S1 (etapa 1, ADR-0113), parte "f": ADR-0119 / SPEC-007 sobre ADR-0114, 0116 e 0117.
-**Resultado:** conhecimento relacional (público e restrito) e caixa para companheiros com a matriz de Sabedoria/Inteligência **APROVADOS no laboratório ARM64/VM** (CR-2026-001). O frequentador `REGULAR` curado **ainda não foi testado**. Single player.
+**Resultado:** conhecimento relacional (público e restrito) e caixa para companheiros com a matriz de Sabedoria/Inteligência **APROVADOS no laboratório ARM64/VM** (CR-2026-001). O frequentador `REGULAR` curado (Salvanas) foi testado e aprovado. Single player.
 **Executado por:** o mantenedor, no jogo (cópia `BG2EE-P1`); Claude Code, via SSH.
 
 ## Preparação
@@ -47,13 +47,14 @@ O teste continuou na mesma campanha `lab-s1f`, com o serviço reiniciado a cada 
 | Cópia e recitação | "Sou humano, vivo em Athkatla e estou aqui na Coroa de Cobre." | "Moro em Athkatla, sim." |
 | Salvanas / Nobre: quem governa Amn? | camada popular copiada quase palavra por palavra | "É o Conselho dos Seis. Ninguém sabe quem são eles." / "Conselho dos Seis. Ninguém sabe quem são os seis." |
 
+**Frequentador `REGULAR` curado (fecha o roteiro da SPEC-007):** Salvanas, com `place:copper-coronet:REGULAR` conferido pelo mantenedor, foi perguntado "Você está sempre por aqui? Quem cuida da taverna no dia-a-dia?" e respondeu "Estou aqui sempre que posso. Bernard cuida do dia-a-dia.". O log registrou `entradas=['rel:bernard-manages-copper-coronet']` e `assuntos=7` (antes 6). A relação restrita não foi ensinada a ninguém: há 0 registros dela no banco `lab-s1f`.
+
 Ainda não foi visto no jogo um viajante ou forasteiro gerado: os genéricos consultados sortearam `HABITANTE`.
 
 ## Achados para depois
 
 - **Atributos de terceiros inventados:** o cliente descreveu Lehtinan com um traço de caráter que não está no pacote. O validador só confere nomes e afirmações sobre si.
 - **Exemplos nas regras 2, 7 e 8:** restaurados (ADR-0120, item 8), com o pedido de usar só o fato que responde à pergunta.
-- **Frequentador `REGULAR` curado:** falta uma curadoria conferida pelo mantenedor para fechar o roteiro da SPEC-007.
 - **Viajante e forasteiro gerados:** ainda não apareceram no jogo; falar com mais clientes da taverna.
 - **Opiniões inventadas:** Jierdan disse que "governa quem tem dinheiro". Opiniões e atributos de terceiros continuam fora do validador.
 - **Carregar o save não recarrega a caixa:** o motor só lê o módulo quando o jogo abre. Depois de enviar a caixa, é preciso fechar e abrir o jogo.

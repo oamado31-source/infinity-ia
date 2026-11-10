@@ -58,6 +58,7 @@ class Fact:
     event_id: str
     text: str
     game_time: int
+    subject_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,7 @@ class DialogueContext:
     orientation: str | None = None   # SPEC-006 alignment orientation, when a profile applies
     occupation: str | None = None    # ADR-0117 identity: what the person does, when known
     manner: str | None = None        # ADR-0117 Wisdom tier: how the person speaks and reasons
+    restricted_knowledge: tuple[Fact, ...] = ()  # ADR-0119: role/affiliation-bound facts
 
 
 @dataclass(frozen=True)
@@ -191,7 +193,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            at_game_time: int | None,
                            profile: dict | None = None,
                            identity: NpcIdentity | None = None,
-                           also_known: tuple[tuple[str, str, str, Mapping[str, str]], ...] = (),
+                            also_known: tuple[tuple, ...] = (),
                            wisdom: int | None = None,
                            intelligence: int | None = None,
                            game_alignment: int | None = None) -> ContextResult:
@@ -201,8 +203,9 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
     e.g. a local placed by the game data) reaches CONHECIMENTO GERAL. A SPEC-006 `profile`, when
     given, sets the speaking style and the alignment orientation; it never adds facts. An ADR-0117
     `identity` becomes the "SOBRE VOCÊ" facts (F-items): all the person may say about itself.
-    `also_known` = (entry_id, title, summary, layers) the person knows from its homeland or home
-    (ADR-0117), added to CONHECIMENTO GERAL when not already held. Wisdom and Intelligence set
+    `also_known` = (entry_id, title, summary, layers[, access_scope[, subject_id]]). Public entries
+    join CONHECIMENTO GERAL; RESTRICTED entries join a separate section and require an explicit
+    affiliation/allowlist. Wisdom and Intelligence set
     how deeply it understands each subject and how it speaks (`knowledge_tier`), not how many
     subjects it knows."""
     if dead:
@@ -231,25 +234,28 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
     if status is not RecallStatus.OK:
         return ContextResult(ContextStatus.DENIED, reason)
     tier = knowledge_tier(wisdom, intelligence)
-    subjects = {k.entry_id: (k.title, k.summary, k.layers) for k in held}
-    for entry_id, t, s, layers in also_known:
+    subjects = {k.entry_id: (k.title, k.summary, k.layers, 'COMMON_REGIONAL', None) for k in held}
+    for item in also_known:
+        entry_id, t, s, layers = item[:4]
+        scope = item[4] if len(item) > 4 else 'COMMON_REGIONAL'
+        subject_id = item[5] if len(item) > 5 else None
         learned = subjects.get(entry_id)
         if learned is None:
-            subjects[entry_id] = (t, s, layers)
+            subjects[entry_id] = (t, s, layers, scope, subject_id)
         elif not learned[2] and learned[1] == s:
             # Learned before layers existed: same checked summary, so its layers restate it.
-            subjects[entry_id] = (learned[0], learned[1], layers)
-    knowledge = []
+            subjects[entry_id] = (learned[0], learned[1], layers, learned[3], learned[4])
+    knowledge, restricted = [], []
     for i, entry_id in enumerate(sorted(subjects)[:MAX_KNOWLEDGE], 1):
-        t, s, layers = subjects[entry_id]
+        t, s, layers, scope, subject_id = subjects[entry_id]
         text = layered_text(s, layers, tier)
-        knowledge.append(Fact(f'K{i}', f'canon:{entry_id}', f'{t}: {text}', at_game_time or 0))
+        fact = Fact(f'K{i}', f'canon:{entry_id}', f'{t}: {text}', at_game_time or 0, subject_id)
+        (restricted if scope == 'RESTRICTED' else knowledge).append(fact)
         vocabulary |= set(_NAME.findall(t)) | set(_NAME.findall(text))
-    knowledge = tuple(knowledge)
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(
-        persona, facts, frozenset(vocabulary), (), knowledge,
+        persona, facts, frozenset(vocabulary), (), tuple(knowledge),
         identity.place if identity and identity.place else place, orientation,
-        identity.occupation if identity else None, tier.style))
+        identity.occupation if identity else None, tier.style, tuple(restricted)))
 
 
 def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *, npc_id: str,

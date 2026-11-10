@@ -8,5 +8,5 @@
 - [x] Impedir propagação de relações RESTRICTED pelo INQUIRY público.
 - [x] Adicionar curadoria inicial da Coroa de Cobre e Bernard.
 - [x] Adicionar testes automatizados para acesso, memória, INQUIRY e resposta de Bernard.
-- [ ] Executar testes no BG2:EE após atualização explícita do pin da campanha de laboratório.
-- [ ] Confirmar comportamento com um NPC sem afiliação e um frequentador REGULAR curado.
+- [ ] Executar testes no BG2:EE após atualização explícita do pin na campanha isolada `lab-s1f` (banco próprio; não reutilizar `lab-s1e`).
+- [ ] Confirmar comportamento com Bernard (STAFF), um NPC sem afiliação e um frequentador REGULAR curado.

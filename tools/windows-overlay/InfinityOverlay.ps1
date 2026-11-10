@@ -57,6 +57,8 @@ function Add-Line([string]$Text) {
     $log.AppendText($Text + "`r`n`r`n"); $log.ScrollToEnd()
 }
 
+$script:lastBox = $null; $script:boxReady = $false
+
 function Update-State {
     try {
         $state = Invoke-Api GET '/v1/state'
@@ -65,6 +67,13 @@ function Update-State {
         foreach ($c in @($state.companions)) { [void]$npcs.Items.Add($c) }
         $match = @($npcs.Items) | Where-Object { $_.npc_id -eq $selected } | Select-Object -First 1
         if ($match) { $npcs.SelectedItem = $match } elseif ($npcs.Items.Count -gt 0) { $npcs.SelectedIndex = 0 }
+        # Conversa feita na caixa dentro do jogo (ADR-0116): repetida aqui, caso o jogo nao a mostre.
+        $boxId = if ($state.box) { $state.box.req_id } else { $null }
+        if ($script:boxReady -and $boxId -and $boxId -ne $script:lastBox) {
+            Add-Line "[no jogo] Voce para $($state.box.speaker): $($state.box.question)"
+            Add-Line "[no jogo] $($state.box.speaker): $($state.box.speech)"
+        }
+        $script:lastBox = $boxId; $script:boxReady = $true   # a troca anterior a abertura nao e repetida
         if ($state.observed) {
             $status.Text = "Em: $($state.area)  |  companheiros: $(@($state.companions).Count)"
         } else {

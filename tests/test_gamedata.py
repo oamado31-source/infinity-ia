@@ -11,10 +11,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 
 from infinity_ai.gamedata.formats import (  # noqa: E402
-    AREA_TYPE, NO_STRREF, WMP_TYPE, parse_biff_header, parse_key, parse_tlk_header, parse_wmp,
+    AREA_TYPE, CRE_TYPE, NO_STRREF, WMP_TYPE, parse_are_actors, parse_biff_header,
+    parse_cre_identity, parse_key, parse_tlk_header, parse_wmp,
 )
 from infinity_ai.gamedata.inventory import (  # noqa: E402
-    INVENTORY_SCHEMA, build_inventory, load_local_names, write_inventory,
+    INVENTORY_SCHEMA, RESIDENTS_SCHEMA, build_inventory, build_residents, load_local_names,
+    load_local_residents, write_inventory,
 )
 from infinity_ai.gamedata.source import FileSystemSource, GameDataError  # noqa: E402
 
@@ -71,6 +73,37 @@ def build_wmp(maps):
             struct.pack_into('<2I', a, 0x40, caption, tooltip)
             out_areas += bytes(a)
     return b'WMAPV1.0' + struct.pack('<2I', len(maps), 16) + out_maps + out_areas
+
+
+def build_cre(name_strref, script, ea=128, general=1):
+    c = bytearray(0x2D4)
+    c[0:8] = b'CRE V1.0'
+    struct.pack_into('<I', c, 0x08, name_strref)
+    c[0x270] = ea
+    c[0x271] = general
+    c[0x280:0x280 + len(script)] = script.encode('latin-1')
+    return bytes(c)
+
+
+def build_are(actors):
+    """actors: (name, cre_resref, embedded_cre_bytes_or_None)."""
+    head = bytearray(0x11C)
+    head[0:8] = b'AREAV1.0'
+    table_off = len(head)
+    blob_off = table_off + 0x110 * len(actors)
+    table, blob = b'', b''
+    for name, cre, emb in actors:
+        a = bytearray(0x110)
+        a[0:len(name)] = name.encode('latin-1')
+        a[0x80:0x80 + len(cre)] = cre.encode('latin-1')
+        if emb is not None:
+            struct.pack_into('<I', a, 0x28, 1)
+            struct.pack_into('<2I', a, 0x88, blob_off + len(blob), len(emb))
+            blob += emb
+        table += bytes(a)
+    struct.pack_into('<I', head, 0x54, table_off)
+    struct.pack_into('<H', head, 0x58, len(actors))
+    return bytes(head) + table + blob
 
 
 class FakeInstall(unittest.TestCase):
@@ -167,11 +200,93 @@ class InventoryTests(FakeInstall):
         self.assertFalse((ROOT / 'knowledge' / 'tmp-inventory').exists())
 
 
+class ResidentFormatTests(unittest.TestCase):
+    def test_actors_and_identity(self):
+        emb = build_cre(7, 'Guard01', 128)
+        actors = parse_are_actors(build_are([('Bernard', 'BERNAR', None), ('Guard', '', emb)]))
+        self.assertEqual([(a.actor_name, a.cre_resref, a.embedded is None) for a in actors],
+                         [('Bernard', 'BERNAR', True), ('Guard', '', False)])
+        ident = parse_cre_identity(build_cre(3, 'Bernard', 128, 2))
+        self.assertEqual((ident.name_strref, ident.script_name, ident.allegiance, ident.general),
+                         (3, 'Bernard', 128, 2))
+        self.assertEqual(parse_cre_identity(build_cre(3, 'None')).script_name, '')
+        self.assertIsNone(parse_cre_identity(build_cre(NO_STRREF, 'x')).name_strref)
+
+    def test_bad_are_and_cre(self):
+        broken = bytearray(build_are([('A', 'X', None)]))
+        struct.pack_into('<H', broken, 0x58, 500)
+        for parser, data in ((parse_are_actors, b'AREAV9.9' + bytes(100)),
+                             (parse_are_actors, bytes(broken)),
+                             (parse_cre_identity, b'CRE V1.0' + bytes(10)),
+                             (parse_cre_identity, b'CRE V9.0' + bytes(0x2D4))):
+            with self.subTest(parser=parser.__name__), self.assertRaises(GameDataError):
+                parser(data)
+
+
+class ResidentInventoryTests(unittest.TestCase):
+    """AR0406 with Bernard (BIF), a commoner without script, an embedded guard; AR0300 with an
+    override CRE that also stands in AR0406."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name) / 'game'
+        for d in ('data', 'lang/pt_BR', 'override'):
+            (root / d).mkdir(parents=True)
+        coronet = build_are([('Bernard', 'BERNAR', None), ('Plebeu', 'COMMON', None),
+                             ('Guarda', '', build_cre(2, 'Guard01', 128)),
+                             ('Viajante', 'TRAVEL', None)])
+        docks = build_are([('Viajante', 'TRAVEL', None)])
+        (root / 'data' / 'AREAS.bif').write_bytes(build_biff([
+            (0, AREA_TYPE, coronet), (1, AREA_TYPE, docks),
+            (2, CRE_TYPE, build_cre(0, 'Bernard')), (3, CRE_TYPE, build_cre(1, ''))]))
+        (root / 'chitin.key').write_bytes(build_key(['data\\AREAS.bif'], [
+            ('AR0406', AREA_TYPE, 0, 0), ('AR0300', AREA_TYPE, 0, 1),
+            ('BERNAR', CRE_TYPE, 0, 2), ('COMMON', CRE_TYPE, 0, 3)]))
+        (root / 'override' / 'TRAVEL.CRE').write_bytes(build_cre(3, 'Traveler', 128))
+        (root / 'lang' / 'pt_BR' / 'dialog.tlk').write_bytes(
+            build_tlk(['Bernard', 'Plebeu', 'Guarda', 'Viajante']))
+        self.source = FileSystemSource(root)
+
+    def build(self, areas=('AR0406', 'AR0300')):
+        return build_residents(self.source, language='pt_BR', build_fingerprint='sha256:' + 'ab' * 32,
+                               areas=set(areas), now='2026-11-09T00:00:00Z')
+
+    def test_residents_by_script_name(self):
+        inv = self.build()
+        by = {r.npc_id: r for r in inv.residents}
+        self.assertEqual(set(by), {'npc:bernard', 'npc:guard01', 'npc:traveler', 'npc:cre-common'})
+        self.assertEqual(by['npc:cre-common'].script_name, '')
+        self.assertEqual((by['npc:bernard'].display_name, by['npc:bernard'].areas,
+                          by['npc:bernard'].cre_resref), ('Bernard', ('AR0406',), 'BERNAR'))
+        self.assertEqual(by['npc:traveler'].areas, ('AR0300', 'AR0406'))
+        self.assertEqual(by['npc:guard01'].display_name, 'Guarda')
+        self.assertEqual(inv.skipped_without_script, 0)
+        self.assertEqual(inv.areas, ('AR0300', 'AR0406'))
+
+    def test_only_requested_areas_and_unknown_areas_ignored(self):
+        inv = self.build(['AR0300', 'AR9999'])
+        self.assertEqual([r.npc_id for r in inv.residents], ['npc:traveler'])
+
+    def test_written_outside_repo_and_loaded_by_fingerprint(self):
+        inv = self.build()
+        base = Path(self.tmp.name) / 'local-knowledge'
+        doc = json.loads(write_inventory(inv, base).read_text(encoding='utf-8'))
+        self.assertEqual((doc['schema'], doc['source']['kind']), (RESIDENTS_SCHEMA, 'GAME_DATA_LOCAL'))
+        loaded = load_local_residents(inv.build_fingerprint, 'pt_BR', base)
+        self.assertEqual(loaded['npc:bernard'].areas, ('AR0406',))
+        self.assertEqual(load_local_residents('sha256:' + 'cd' * 32, 'pt_BR', base), {})
+        with self.assertRaises(GameDataError):
+            write_inventory(inv, ROOT / 'knowledge' / 'tmp-residents')
+        self.assertFalse((ROOT / 'knowledge' / 'tmp-residents').exists())
+
+
 class RepositoryHygieneTests(unittest.TestCase):
     def test_no_game_derived_inventory_is_committed(self):
         offenders = [str(p.relative_to(ROOT)) for p in ROOT.rglob('*.json')
                      if '.git' not in p.parts and '.venv' not in p.parts
-                     and INVENTORY_SCHEMA in p.read_text(encoding='utf-8', errors='ignore')]
+                     and any(schema in p.read_text(encoding='utf-8', errors='ignore')
+                             for schema in (INVENTORY_SCHEMA, RESIDENTS_SCHEMA))]
         self.assertEqual(offenders, [])
 
 

@@ -27,8 +27,14 @@ def ssh_from_env(var: str) -> list[str]:
 
 
 def run_ps(ssh: list[str], script: str, timeout: int = 300, stdin: bytes | None = None) -> str:
-    """Run a PowerShell script on the VM. Large inputs go through `stdin` (read in the script
-    with [Console]::In.ReadToEnd()), because the Windows command line is limited to ~8 KB."""
+    """Run a PowerShell script on the VM. Large inputs go through `stdin` as ONE line, read in the
+    script with [Console]::In.ReadLine(), because the Windows command line is limited to ~8 KB.
+    ReadToEnd() stalls intermittently on this OpenSSH for inputs above ~4 KB (EOF is not seen);
+    a newline-terminated single line is read reliably (tested up to 60 KB)."""
+    if stdin is not None:
+        if b'\n' in stdin.rstrip(b'\n'):
+            raise ValueError('stdin must be a single line (JSON or base64)')
+        stdin = stdin.rstrip(b'\n') + b'\n'
     script = "$ProgressPreference = 'SilentlyContinue'\n" + script
     encoded = base64.b64encode(script.encode('utf-16-le')).decode('ascii')
     cmd = ssh + [f'powershell -NoProfile -NonInteractive -EncodedCommand {encoded}']
@@ -63,6 +69,25 @@ try {{
             return '', math.inf
         text = base64.b64decode(doc['b64']).decode('utf-8', errors='replace')
         return text, float(doc['age'])
+
+
+def put_override_file(ssh: list[str], game_root: str, name: str, data: bytes) -> None:
+    """Write one file into the game copy's override folder (bytes as given), atomically."""
+    if not name.replace('.', '').replace('_', '').replace('-', '').isalnum():
+        raise ValueError(f'unsafe file name {name!r}')
+    run_ps(ssh, f'''
+$dir = Join-Path '{game_root}' 'override'
+$tmp = Join-Path $dir '{name}.tmp'
+[IO.File]::WriteAllBytes($tmp, [Convert]::FromBase64String([Console]::In.ReadLine().Trim()))
+Move-Item -LiteralPath $tmp -Destination (Join-Path $dir '{name}') -Force
+''', timeout=60, stdin=base64.b64encode(data))
+
+
+def remove_override_file(ssh: list[str], game_root: str, name: str) -> None:
+    if not name.replace('.', '').replace('_', '').replace('-', '').isalnum():
+        raise ValueError(f'unsafe file name {name!r}')
+    run_ps(ssh, f"Remove-Item -LiteralPath (Join-Path '{game_root}' 'override\\{name}') "
+                "-ErrorAction SilentlyContinue", timeout=60)
 
 
 def live_manifest(ssh: list[str], game_root: str, out_name: str = 'lab-live-manifest.json') -> dict:
@@ -122,7 +147,7 @@ class SshByteSource:
             chunk = [{'p': self._win(p), 'o': int(o), 'n': int(n)}
                      for p, o, n in requests[start:start + self._batch]]
             out = run_ps(self._ssh, '''
-$reqs = [Console]::In.ReadToEnd() | ConvertFrom-Json
+$reqs = [Console]::In.ReadLine() | ConvertFrom-Json
 $res = foreach ($r in @($reqs)) {
   $s = [IO.File]::Open($r.p, 'Open', 'Read', 'ReadWrite')
   try {

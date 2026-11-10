@@ -66,10 +66,14 @@ def build_fingerprint(manifest: dict[str, Any]) -> str:
     })
 
 
+# Transient data files written while the game runs (ADR-0116 reply channel): not part of the mod.
+TRANSIENT_OVERRIDE = frozenset({'override/infairsp.lua'})
+
+
 def modpack_hash(manifest: dict[str, Any]) -> str:
     game = manifest['game']
     return _digest({
-        'override': _files(game['override_files']),
+        'override': [f for f in _files(game['override_files']) if f[0] not in TRANSIENT_OVERRIDE],
         'weidu_log_sha256': game.get('weidu_log_sha256'),
         'eeex_markers': sorted(m.lower() for m in game['eeex_markers']),
         'mod_setup_markers': sorted(m.lower() for m in game['mod_setup_markers']),

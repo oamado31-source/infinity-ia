@@ -107,3 +107,10 @@ Lê fatias de `chitin.key`, do BIF com o mapa-múndi e do `dialog.tlk` da cópia
 A API de laboratório agora reconhece `POST /v1/encounter-dialogue` com `Authorization: Bearer <token>` e JSON `{"contact_event_id":"ev-...", "text":"Bom dia"}`. O servidor só aceita **evento já gravado** do tipo `NpcDialogueStarted`, visível no ramo atual e com cena coincidente com a área observada. Não há rota para fabricar perfis/observações pelo overlay. Os campos de ator, papel social, identidade e prova precisam vir de um **adaptador de jogo confiável**, ainda não implementado.
 
 Este endpoint é infraestrutura experimental, **não habilita cliques em NPCs comuns do BG2:EE**. O overlay atual continua limitado aos companheiros. O probe EEex atual vê área, tempo e party: primeiro é necessário verificar tecnicamente a observação do clique em qualquer personagem (inclusive figurantes sem diálogo nativo), respeitando diálogos roteirizados. Sem observação o serviço bloqueia, e NPCs canônicos não são randomizados. A semente de criação pode ser fixada por `--world-seed`, que deve permanecer estável por campanha; perfis verificados já persistidos não são regenerados.
+
+## Anexo — ADR-0116: perguntar a habitantes na caixa do jogo
+
+1. Inventário de habitantes (fora do repositório): `python tools/windows-lab/build_area_inventory.py --residents`.
+2. Copiar a caixa para a VM: `python tools/windows-lab/talk_poc.py --deploy` e reabrir o jogo.
+3. Serviço numa campanha nova: `dialogue_service.py ... --campaign lab-s1e --db ~/.infinity-ai/campaigns/lab-s1e.sqlite3 [--world-seed <semente>]`. Depois, pin: `pin_canon_pack.py --campaign lab-s1e --db ...`.
+4. No jogo, F9 sobre a pessoa. O console do serviço mostra `caixa pedido=... perfil=... status=... entradas=[...] ouvintes=[...]` e, quando houver, `conhecimento comum adquirido ... base=INQUIRY`.

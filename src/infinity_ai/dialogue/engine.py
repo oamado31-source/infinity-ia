@@ -15,7 +15,9 @@ from enum import Enum
 
 from ..memory.store import MemoryStore
 from ..state.store import CampaignStore
-from .context import Catalog, ContextStatus, DialogueContext, build_context
+from .context import (
+    Catalog, ContextResult, ContextStatus, DialogueContext, build_context, build_resident_context,
+)
 from .llm import LlmError, LlmProvider
 from .validate import validate_reply
 
@@ -33,6 +35,16 @@ class DialogueStatus(str, Enum):
 class DialogueRequest:
     npc_id: str
     player_text: str
+
+
+@dataclass(frozen=True)
+class ResidentRequest:
+    """A person addressed through the in-game box (ADR-0116); fields come from the probe."""
+    npc_id: str
+    display_name: str
+    player_text: str
+    area: str | None
+    dead: bool
 
 
 @dataclass(frozen=True)
@@ -62,8 +74,15 @@ def system_prompt(context: DialogueContext) -> str:
         '(nenhum: você não se lembra de nada específico)'
     general = '\n'.join(f'{k.fact_id}: {k.text}' for k in context.knowledge) or \
         '(nenhum: você não conhece a região onde está)'
+    who = (f'Você é {persona.display_name}, que está em {context.resident_of}, em Baldur\'s Gate II; '
+           'um forasteiro (o jogador) puxou conversa com você. '
+           if context.resident_of else
+           f'Você é {persona.display_name}, companheiro(a) de viagem do jogador em Baldur\'s Gate II. ')
+    if context.orientation:
+        who += (f'Orientação: {context.orientation}; isso não é destino nem autorização para agir '
+                'no jogo, e não revele esta orientação. ')
     return (
-        f'Você é {persona.display_name}, companheiro(a) de viagem do jogador em Baldur\'s Gate II. '
+        who +
         f'Responda em português do Brasil, em personagem, em 1 a 3 frases curtas. Estilo: {style}.\n'
         'Regras:\n'
         '1. Só afirme o que está em FATOS ou em CONHECIMENTO GERAL; liste em used_facts os ids '
@@ -97,21 +116,39 @@ class DialogueEngine:
 
     def respond(self, request: DialogueRequest, *, branch_id: str,
                 at_game_time: int | None) -> DialogueResponse:
-        started = self._clock()
+        """A companion in the party (overlay)."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
-        text = request.player_text if isinstance(request.player_text, str) else ''
+        return self._converse(npc_id, request.player_text, lambda: build_context(
+            self._memory, self._store, self._catalog, npc_id=npc_id, branch_id=branch_id,
+            at_game_time=at_game_time))
+
+    def respond_resident(self, request: ResidentRequest, *, residence_areas: tuple[str, ...],
+                         branch_id: str, at_game_time: int | None,
+                         profile: dict | None = None) -> DialogueResponse:
+        """A person in the in-game box: SPEC-006 profile for style, only acquired knowledge."""
+        npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
+        return self._converse(npc_id, request.player_text, lambda: build_resident_context(
+            self._memory, self._store, self._catalog, npc_id=npc_id,
+            display_name=request.display_name, residence_areas=residence_areas,
+            area=request.area, dead=request.dead, branch_id=branch_id,
+            at_game_time=at_game_time, profile=profile), display_name=request.display_name)
+
+    def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,
+                  display_name: str = '') -> DialogueResponse:
+        started = self._clock()
+        text = player_text if isinstance(player_text, str) else ''
         text = text.strip()
 
         def done(status, speech, reason, context=None, **kw) -> DialogueResponse:
-            name = context.persona.display_name if context else self._catalog.display(npc_id or '?')
+            name = context.persona.display_name if context else \
+                (display_name or self._catalog.display(npc_id or '?'))
             return DialogueResponse(status, npc_id, speech, reason, name,
                                     model=self._provider.model,
                                     latency_ms=int((self._clock() - started) * 1000), **kw)
 
         if not npc_id.startswith('npc:') or not text or len(text) > MAX_PLAYER_TEXT:
             return done(DialogueStatus.DENIED, '', 'BAD_INPUT')
-        built = build_context(self._memory, self._store, self._catalog, npc_id=npc_id,
-                              branch_id=branch_id, at_game_time=at_game_time)
+        built = build()
         if built.status is not ContextStatus.OK:
             return done(DialogueStatus.DENIED, '', built.reason)
         context = built.context

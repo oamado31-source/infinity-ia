@@ -1,0 +1,238 @@
+# SPDX-License-Identifier: Apache-2.0
+"""In-game dialogue box: protocol parsing, reply escaping and static checks on the Lua module."""
+import json
+import re
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'src'))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from infinity_ai.bridge.manifest import modpack_hash  # noqa: E402
+from infinity_ai.bridge.talk import (  # noqa: E402
+    PLACEHOLDER_REPLY, TALK_SCHEMA, lua_string, parse_talk_line, parse_talk_requests,
+    render_reply,
+)
+from types import SimpleNamespace  # noqa: E402
+
+from infinity_ai.personality.in_game import (  # noqa: E402
+    profile_for, record_dialogue_start, resolve_speaker,
+)
+from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
+from test_eeex_probe import FORBIDDEN, strip_lua  # noqa: E402
+
+try:
+    import lupa  # type: ignore
+except ImportError:  # optional, like in test_eeex_probe
+    lupa = None
+
+MODULE = ROOT / 'tools' / 'eeex-probe' / 'M_INFAIT.lua'
+MENU = ROOT / 'tools' / 'eeex-probe' / 'INFAITLK.menu'
+ALLOWED = frozenset({
+    'EEex_Sprite_GetInPortrait', 'EEex_GameObject_GetUnderCursor', 'EEex_Sprite_GetName',
+    'EEex_Area_GetVisible', 'EEex_Area_GetAllOfTypeStringInRange',
+    'EEex_Menu_AddMainFileLoadedListener', 'EEex_Menu_LoadFile', 'EEex_Key_AddPressedListener',
+    'EEex_Key_GetFromName', 'EEex_Key_GetName', 'EEex_GameState_AddDestroyedListener',
+    'Infinity_GetScreenSize',
+    'Infinity_SetArea', 'Infinity_PushMenu', 'Infinity_PopMenu', 'Infinity_FocusTextEdit',
+    'Infinity_TextEditHasFocus', 'Infinity_GetClockTicks', 'Infinity_DoFile',
+    'EEex_Resource_Fetch',
+})
+
+
+def line(**over):
+    doc = {'schema': TALK_SCHEMA, 'req_id': '1-2500-1', 'session_seq': 1, 'clock_ms': 2500,
+           'area': 'AR0406', 'game_time': 53322, 'input': 'TEXT',
+           'speaker': {'script': 'Bernard', 'name': 'Bernard', 'cre': 'bernar', 'instance': 7,
+                       'dead': False},
+           'text': 'Quem governa Amn?', 'listeners': ['Jaheira', 'Imoen']}
+    doc.update(over)
+    return 'INFO: LPRINT: INFAI-TALK ' + json.dumps(doc, ensure_ascii=False) + '\n'
+
+
+class ParseTests(unittest.TestCase):
+    def test_valid_request(self):
+        req = parse_talk_line(line())
+        self.assertEqual(req.req_id, '1-2500-1')
+        self.assertEqual(req.speaker_id, 'npc:bernard')
+        self.assertEqual(req.listeners, ('npc:imoen', 'npc:jaheira'))
+        self.assertEqual((req.area, req.game_time, req.input), ('AR0406', 53322, 'TEXT'))
+        self.assertEqual(req.speaker_instance, 7)
+
+    def test_speaker_without_script_and_unreadable_listeners(self):
+        req = parse_talk_line(line(speaker={'script': '', 'name': 'Plebeu', 'cre': 'common',
+                                            'dead': False}, listeners=None))
+        self.assertEqual(req.speaker_id, 'npc:cre-common')
+        nobody = parse_talk_line(line(speaker={'script': '', 'name': 'x', 'cre': '../x',
+                                               'dead': False}))
+        self.assertIsNone(nobody.speaker_id)
+        self.assertIsNone(req.listeners)
+
+    def test_malformed_lines_are_dropped(self):
+        bad = [line(schema='x'), line(req_id='1; os.exit()'), line(text=''), line(text='a' * 501),
+               line(input='COMMAND'), line(listeners=['A', 'B', 'C', 'D', 'E', 'F']),
+               line(listeners=['None']), line(speaker={'script': 'a b', 'name': 'x', 'dead': False}),
+               line(speaker={'script': 'x', 'name': 'x', 'dead': 'no'}), line(session_seq=-1),
+               'INFAI-TALK {not json}\n', 'INFAI-P2 {}\n']
+        for raw in bad:
+            with self.subTest(raw=raw[:60]):
+                self.assertIsNone(parse_talk_line(raw))
+
+    def test_bad_area_is_unknown_not_fatal(self):
+        self.assertIsNone(parse_talk_line(line(area='../../x')).area)
+
+    def test_requests_in_order_and_partial_last_line_skipped(self):
+        text = line() + 'noise\n' + line(req_id='1-2600-2') + line(req_id='1-2700-3').rstrip('\n')
+        self.assertEqual([r.req_id for r in parse_talk_requests(text)], ['1-2500-1', '1-2600-2'])
+
+
+class DialogueStartTests(unittest.TestCase):
+    """The box request as SPEC-006's trusted dialogue-start observation."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.store = CampaignStore.open(Path(tmp.name) / 'c.sqlite3', 'lab')
+        self.addCleanup(self.store.close)
+
+    def req(self, req_id='1-2500-1', script='', cre='bernar', instance=7, dead=False):
+        return parse_talk_line(line(req_id=req_id, speaker={
+            'script': script, 'name': 'Bernard', 'cre': cre, 'instance': instance, 'dead': dead}))
+
+    def start(self, req, t=100):
+        event = record_dialogue_start(self.store, ROOT_BRANCH, req, game_time=t)
+        return event, profile_for(self.store, ROOT_BRANCH, event, at_game_time=t,
+                                  world_seed='lab-seed')
+
+    def test_generic_person_gets_a_temporary_profile_stable_per_instance(self):
+        (event, (profile, scope)) = self.start(self.req())
+        self.assertEqual(scope, 'ENCOUNTER')
+        self.assertEqual(len(profile['hexaco']), 6)
+        self.assertNotIn('text', event.payload)
+        self.assertEqual(event.payload['identity_state'], 'CANDIDATE')
+        _, (again, _) = self.start(self.req(req_id='1-2600-2'), t=110)
+        _, (other, _) = self.start(self.req(req_id='1-2700-3', instance=8), t=120)
+        self.assertEqual(again, profile)                    # same person in the same scene
+        self.assertNotEqual(other, profile)                 # another person
+        self.assertEqual(self.store.visible_events(ROOT_BRANCH, 'NpcPersonalityAssigned'), [])
+
+    def test_script_named_creature_is_canonical_and_not_randomized(self):
+        _, (profile, scope) = self.start(self.req(script='Rumar', cre='rumar'))
+        self.assertIsNone(profile)
+        self.assertEqual(scope, 'CANONICAL')
+
+    def test_dead_or_unplaced_speaker_gets_no_profile(self):
+        _, (profile, scope) = self.start(self.req(dead=True))
+        self.assertIsNone(profile)
+        self.assertTrue(scope.startswith('NO_PROFILE'))
+
+    def test_saved_game_cre_star_is_matched_in_the_area(self):
+        def res(npc, cre, script='', areas=('AR0406',)):
+            return SimpleNamespace(npc_id=npc, cre_resref=cre, script_name=script, areas=areas)
+        residents = {'npc:cre-bernard': res('npc:cre-bernard', 'BERNARD'),
+                     'npc:cre-xernard': res('npc:cre-xernard', 'XERNARD', areas=('AR0300',)),
+                     'npc:rumar': res('npc:rumar', 'RUMAR', script='Rumar')}
+        star = self.req(cre='*ERNARD')
+        self.assertIsNone(star.speaker_id)
+        self.assertEqual(resolve_speaker(star, residents), 'npc:cre-bernard')
+        self.assertIsNone(resolve_speaker(self.req(cre='*UMAR'), residents))  # has a script
+        self.assertEqual(resolve_speaker(self.req(script='Rumar', cre='*UMAR'), residents),
+                         'npc:rumar')
+        residents['npc:cre-zernard'] = res('npc:cre-zernard', 'ZERNARD')
+        self.assertIsNone(resolve_speaker(star, residents))                  # ambiguous
+        event = record_dialogue_start(self.store, ROOT_BRANCH, star, game_time=1,
+                                      speaker_id='npc:cre-bernard')
+        self.assertEqual(event.payload['speaker_id'], 'npc:cre-bernard')
+
+    def test_one_event_per_request(self):
+        first, _ = self.start(self.req())
+        second, _ = self.start(self.req())
+        self.assertEqual(first.event_id, second.event_id)
+
+
+class ReplyTests(unittest.TestCase):
+    def test_lua_string_has_no_raw_breakers(self):
+        literal = lua_string('a"b\\c\nd\x7f]]--')
+        self.assertTrue(literal.startswith('"') and literal.endswith('"'))
+        self.assertNotRegex(literal[1:-1], r'(?<!\\)"|[\n\r\x00-\x1f\x7f]')
+        self.assertIn('\\034', literal)
+
+    def test_render_reply_shape(self):
+        out = render_reply('1-2500-1', 'O  Conselho\n dos Seis.')
+        self.assertEqual(out, 'INFAI_TALK_Reply = {req_id = "1-2500-1", '
+                              'speech = "O Conselho dos Seis."}\n')
+        with self.assertRaises(ValueError):
+            render_reply('1"} os.exit() --', 'x')
+
+    def test_reply_file_does_not_change_the_modpack(self):
+        def manifest(*files):
+            return {'game': {'override_files': [{'path': p, 'sha256': h * 64} for p, h in files],
+                             'weidu_log_sha256': None, 'eeex_markers': [],
+                             'mod_setup_markers': []}}
+        base = manifest(('override/M_INFAIT.lua', 'a'))
+        self.assertEqual(modpack_hash(base), modpack_hash(manifest(
+            ('override/M_INFAIT.lua', 'a'), ('override/INFAIRSP.lua', 'b'))))
+        self.assertNotEqual(modpack_hash(base), modpack_hash(manifest(
+            ('override/M_INFAIT.lua', 'a'), ('override/OTHER.lua', 'b'))))
+
+    @unittest.skipIf(lupa is None, 'lupa not installed')
+    def test_placeholder_defines_an_empty_reply(self):
+        lua = lupa.LuaRuntime()
+        lua.execute(PLACEHOLDER_REPLY)
+        self.assertEqual(lua.globals().INFAI_TALK_Reply['req_id'], '')
+
+    @unittest.skipIf(lupa is None, 'lupa not installed')
+    def test_reply_round_trips_and_cannot_inject(self):
+        speech = 'Fim"} INFAI_PWNED = true --\nçãé \\ \x01 ]] [[x'
+        lua = lupa.LuaRuntime()
+        lua.execute(render_reply('1-2500-1', speech))
+        reply = lua.globals().INFAI_TALK_Reply
+        self.assertEqual(reply['speech'], ' '.join(speech.split()))
+        self.assertIsNone(lua.globals().INFAI_PWNED)
+
+
+class ModuleStaticTests(unittest.TestCase):
+    def setUp(self):
+        self.raw = MODULE.read_text(encoding='utf-8')
+        self.code = strip_lua(self.raw)
+
+    def test_only_allowlisted_engine_functions(self):
+        used = set(re.findall(r'\b(?:EEex|Infinity)_\w+', self.code))
+        self.assertEqual(used - ALLOWED, set())
+
+    def test_no_forbidden_capabilities(self):
+        self.assertIsNone(FORBIDDEN.search(self.code), FORBIDDEN.search(self.code))
+
+    def test_only_the_reply_resource_is_dropped_from_cache(self):
+        self.assertEqual(re.findall(r'EEex_Resource_Fetch\(([^)]*)\)', self.raw), ['"INFAIRSP", "LUA"'])
+        self.assertEqual(self.code.count('EngineGlobals.'), 1)
+        self.assertIn('EngineGlobals.dimmDump(res)', self.raw)
+
+    def test_reads_only_the_reply_file(self):
+        self.assertEqual(self.code.count('Infinity_DoFile'), 1)
+        self.assertEqual(strip_lua(self.raw.replace('pcall(Infinity_DoFile, "INFAIRSP")', '')
+                                   ).count('Infinity_DoFile'), 0)
+
+    def test_never_assigns_to_engine_state(self):
+        for src_line in self.code.splitlines():
+            for lhs in re.findall(r'([\w.\[\]:]+)\s*=(?!=)', src_line):
+                if src_line.strip().startswith(('if ', 'elseif ')):
+                    continue
+                with self.subTest(line=src_line.strip()):
+                    self.assertNotRegex(lhs, r'\.m_|:|EngineGlobals')
+                    root = lhs.split('.')[0].split('[')[0]
+                    self.assertTrue(root.startswith(('INFAI_', 'infai_')) or root.islower(), lhs)
+
+    def test_menu_is_bound_to_the_module(self):
+        menu = MENU.read_text(encoding='utf-8')
+        for name in ('INFAI_TALK_Menu', 'INFAI_TALK_Edit', 'INFAI_TALK_PTT', 'INFAI_TALK_Tick()',
+                     'INFAI_TALK_Send()', 'INFAI_TALK_Close()', 'INFAI_TALK_Input'):
+            self.assertIn(name, menu)
+        self.assertIn('"INFAITLK"', self.raw)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -8,40 +8,22 @@ from a trusted first-contact event, never from arbitrary player text.
 from __future__ import annotations
 
 import time
+
 from .first_contact import FirstContact
 from ..dialogue.context import DialogueContext, Persona
-from ..dialogue.engine import (DialogueRequest, DialogueResponse, DialogueStatus,
-                               MAX_ATTEMPTS, MAX_PLAYER_TEXT)
+from ..dialogue.engine import (DialogueResponse, DialogueStatus, MAX_ATTEMPTS,
+                               MAX_PLAYER_TEXT)
 from ..dialogue.llm import LlmError, LlmProvider
 from ..dialogue.validate import validate_reply
-
-
-def style_from_profile(profile: dict) -> tuple[str, ...]:
-    h = profile["hexaco"]
-    styles = [
-        "fala de modo reservado" if h["extraversion"] < 40 else
-        "fala de modo expansivo" if h["extraversion"] > 60 else "fala com naturalidade",
-        "prefere franqueza" if h["honesty_humility"] > 60 else
-        "é diplomático e protege seus interesses",
-        "é metódico" if h["conscientiousness"] > 60 else "é espontâneo",
-        "é curioso" if h["openness"] > 60 else "prefere situações conhecidas",
-    ]
-    return tuple(styles)
+from .style import orientation_from_profile, style_from_profile
 
 
 def local_prompt(context: DialogueContext, profile: dict) -> str:
     style = "; ".join(context.persona.style)
-    ethical, moral = (profile["alignment_initial"]["ethical"],
-                      profile["alignment_initial"]["moral"])
-    ethics = {"LAWFUL": "valoriza regras e compromissos", "NEUTRAL": "avalia regras pelo contexto",
-              "CHAOTIC": "preza autonomia e liberdade"}[ethical]
-    morality = {"GOOD": "tende a se preocupar com o bem alheio",
-                "NEUTRAL": "equilibra interesses e consequências",
-                "EVIL": "costuma priorizar seus próprios interesses"}[moral]
     return (
         f"Você interpreta {context.persona.display_name}, uma pessoa do mundo de BG2:EE, "
         "não um companheiro do grupo. Responda em português do Brasil com 1 a 3 frases curtas.\n"
-        f"Estilo comportamental: {style}. Orientação inicial: {ethics}; {morality}. "
+        f"Estilo comportamental: {style}. Orientação inicial: {orientation_from_profile(profile)}. "
         "Essas tendências não são destino, nem autorização para agir no jogo.\n"
         "Responda apenas ao que lhe foi perguntado. Você não recebeu biografia, profissão "
         "comprovada, memórias, rumores ou conhecimento da região além do rótulo observado. "

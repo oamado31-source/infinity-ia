@@ -125,7 +125,8 @@ def knowledge_tier(wisdom: int | None, intelligence: int | None = None) -> Knowl
     else:
         studied = 'NONE'
     name, style = TIER_STYLES[level]
-    return KnowledgeTier(level, name, level >= 3 or studied != 'NONE', studied, style)
+    # Intelligence unlocks STUDIED, never the experience-based INFORMED layer.
+    return KnowledgeTier(level, name, level >= 3, studied, style)
 
 
 def layered_text(summary: str, layers: Mapping[str, str] | None, tier: KnowledgeTier) -> str:
@@ -138,9 +139,7 @@ def layered_text(summary: str, layers: Mapping[str, str] | None, tier: Knowledge
         sentences = re.split(r'(?<=[.!?])\s+', summary.strip())
         layers = {'POPULAR': sentences[0], 'INFORMED': ' '.join(sentences[1:])}
     popular = layers.get('POPULAR', '')
-    if tier.level == 1:
-        return first_sentences(popular, 1)
-    parts = [popular]
+    parts = [first_sentences(popular, 1) if tier.level == 1 else popular]
     if tier.informed and layers.get('INFORMED'):
         parts.append(layers['INFORMED'])
     if tier.studied != 'NONE' and layers.get('STUDIED'):
@@ -302,8 +301,9 @@ def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None
     if klass:
         facts.append(f'Você tem treino de {_gendered(klass, gender)}.')
         prov['class'] = GAME_DATA
-    source = curation if curation and (curation.origin_region or curation.places_visited) \
-        else None
+    # A checked official-NPC curation is authoritative even when origin is unknown.
+    # Missing curated fields stay unknown; they must not be filled by generic generation.
+    source = curation
     origin = source.origin_region if source else (generated or {}).get('origin_region')
     born_here = bool((generated or {}).get('born_here')) if not source else \
         (origin is not None and origin == home_region)

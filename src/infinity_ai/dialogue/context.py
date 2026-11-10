@@ -18,7 +18,9 @@ from enum import Enum
 from pathlib import Path
 
 from ..memory.common_knowledge import BackgroundRegion
-from ..personality.identity import KnowledgeTier, NpcIdentity, knowledge_tier, layered_text
+from ..memory.model import KnowledgeBasis
+from ..personality.identity import (HABITANTE, KnowledgeTier, NpcIdentity, knowledge_tier,
+                                    layered_text, popular_only)
 from ..personality.style import (
     orientation_from_game_alignment, orientation_from_profile, style_from_profile,
 )
@@ -72,6 +74,8 @@ class DialogueContext:
     occupation: str | None = None    # ADR-0117 identity: what the person does, when known
     manner: str | None = None        # ADR-0117 Wisdom tier: how the person speaks and reasons
     restricted_knowledge: tuple[Fact, ...] = ()  # ADR-0119: role/affiliation-bound facts
+    standing: str | None = None      # ADR-0120: HABITANTE, VIAJANTE or FORASTEIRO (residents)
+    staff: bool = False              # ADR-0119/0120: a curated STAFF tie to a place (may say it works there)
 
 
 @dataclass(frozen=True)
@@ -198,7 +202,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            also_known: tuple[tuple, ...] = (),
                            wisdom: int | None = None,
                            intelligence: int | None = None,
-                           game_alignment: int | None = None) -> ContextResult:
+                           game_alignment: int | None = None,
+                           popular_only_ids: frozenset[str] = frozenset()) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
@@ -229,13 +234,19 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                       for i, text in enumerate(identity.self_facts, 1))
         for text in identity.self_facts + identity.regions_named:
             vocabulary |= set(_NAME.findall(text))
+    # ADR-0120: a traveler or outsider was placed here by the game, but does not live here: its
+    # game-placed RESIDENCE does not count (what it heard by INQUIRY or brought from home does).
+    standing = identity.standing if identity is not None else HABITANTE
+    away = frozenset({KnowledgeBasis.RESIDENCE}) if standing != HABITANTE else frozenset()
     status, reason, held = memory.recall_common(npc_id=npc_id, branch_id=branch_id,
                                                 at_game_time=at_game_time,
                                                 purpose='npc_dialogue',
-                                                audience='NARRATIVE_CONTEXT')
+                                                audience='NARRATIVE_CONTEXT',
+                                                exclude_basis=away)
     if status is not RecallStatus.OK:
         return ContextResult(ContextStatus.DENIED, reason)
     tier = knowledge_tier(wisdom, intelligence)
+    shallow = popular_only(tier)
     subjects = {k.entry_id: (k.title, k.summary, k.layers, 'COMMON_REGIONAL', None) for k in held}
     for item in also_known:
         entry_id, t, s, layers = item[:4]
@@ -253,14 +264,17 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
     knowledge, restricted = [], []
     for i, entry_id in enumerate(sorted(subjects)[:MAX_KNOWLEDGE], 1):
         t, s, layers, scope, subject_id = subjects[entry_id]
-        text = layered_text(s, layers, tier)
+        learned_here = entry_id in popular_only_ids and not any(
+            k.entry_id == entry_id for k in held)
+        text = layered_text(s, layers, shallow if learned_here else tier)
         fact = Fact(f'K{i}', f'canon:{entry_id}', f'{t}: {text}', at_game_time or 0, subject_id)
         (restricted if scope == 'RESTRICTED' else knowledge).append(fact)
         vocabulary |= set(_NAME.findall(t)) | set(_NAME.findall(text))
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(
         persona, facts, frozenset(vocabulary), (), tuple(knowledge),
         identity.place if identity and identity.place else place, orientation,
-        identity.occupation if identity else None, tier.style, tuple(restricted)))
+        identity.occupation if identity else None, tier.style, tuple(restricted), standing,
+        any(a.endswith(':STAFF') for a in identity.affiliations) if identity else False))
 
 
 def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *, npc_id: str,

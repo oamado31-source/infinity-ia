@@ -33,9 +33,27 @@
 4. **Companheiro sem a matriz:** no primeiro teste, Minsc citou "há décadas", que pertence à camada de estudo. A caixa passou a enviar Sabedoria e Inteligência da criatura. A primeira tentativa leu campos inexistentes da ficha e mandou 0. A correção usa `EEex_Sprite_GetActiveStats` (`m_nWIS` e `m_nINT`).
 5. **Pedido de companheiro respondido de novo** depois de reiniciar o serviço: os ids atendidos passam a ficar num arquivo local ao lado do banco.
 
+## Estatuto local e ajustes de fala (ADR-0120)
+
+O teste continuou na mesma campanha `lab-s1f`, com o serviço reiniciado a cada ajuste. A caixa do jogo não mudou.
+
+| Passo | Antes | Depois |
+|---|---|---|
+| Lorde Jierdan (ficha não humanoide, curado `HABITANTE`) | `habitante=False`, 0 assuntos; enrolava ("sei quem é" sem dizer quem) | `estatuto=HABITANTE`, 6 assuntos; disse que vive ali e é nobre de Athkatla, e citou Lehtinan como dono |
+| Nobre `copcust3` | "Não sou de cá…" | "Sou Nobre, vivo aqui." |
+| Campesino: onde mora | "A taverna é minha casa. Trabalho aqui…" | "Minha casa é em Athkatla, perto da Coroa de Cobre." |
+| Campesino: trabalha aqui? | "Trabalho aqui como carregador." (inventado) | "…trabalho na cidade. Sou carregador." |
+| "dono dessa taverna/do local" | `NOT_SPOKEN` em 5 casos | `inquiry=OK` ("taverna" e "local" valem pela Coroa de Cobre; o nome pode vir da pergunta) |
+| Cópia e recitação | "Sou humano, vivo em Athkatla e estou aqui na Coroa de Cobre." | "Moro em Athkatla, sim." |
+| Salvanas / Nobre: quem governa Amn? | camada popular copiada quase palavra por palavra | "É o Conselho dos Seis. Ninguém sabe quem são eles." / "Conselho dos Seis. Ninguém sabe quem são os seis." |
+
+Ainda não foi visto no jogo um viajante ou forasteiro gerado: os genéricos consultados sortearam `HABITANTE`.
+
 ## Achados para depois
 
 - **Atributos de terceiros inventados:** o cliente descreveu Lehtinan com um traço de caráter que não está no pacote. O validador só confere nomes e afirmações sobre si.
-- **Exemplos nas regras 2, 7 e 8:** os exemplos de prompt removidos nesta branch fazem falta. A recomendação é restaurá-los com exemplos fora do mundo do jogo.
+- **Exemplos nas regras 2, 7 e 8:** restaurados (ADR-0120, item 8), com o pedido de usar só o fato que responde à pergunta.
 - **Frequentador `REGULAR` curado:** falta uma curadoria conferida pelo mantenedor para fechar o roteiro da SPEC-007.
+- **Viajante e forasteiro gerados:** ainda não apareceram no jogo; falar com mais clientes da taverna.
+- **Opiniões inventadas:** Jierdan disse que "governa quem tem dinheiro". Opiniões e atributos de terceiros continuam fora do validador.
 - **Carregar o save não recarrega a caixa:** o motor só lê o módulo quando o jogo abre. Depois de enviar a caixa, é preciso fechar e abrir o jogo.

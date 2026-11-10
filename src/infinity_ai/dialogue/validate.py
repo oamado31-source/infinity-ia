@@ -25,6 +25,21 @@ _SELF_CLAIM = re.compile(
     r'\b(?:me pertence|me pertencem|(?:sou|eu sou) (?:o|a) (?:dono|dona|senhor|senhora|chefe|'
     r'líder|rei|rainha|lorde|capitão|capitã|governante)|(?:meu|minha|meus|minhas) '
     r'(?:pai|mãe|irmão|irmã|filho|filha|esposa|marido|família|terras|propriedades))\b', re.I)
+# ADR-0120: claims about where the person is from, checked against its standing and facts.
+_AWAY_CLAIM = re.compile(
+    r'\b(?:não sou (?:daqui|de aqui|de cá|desta cidade)|estou de passagem|sou de fora|'
+    r'sou (?:um |uma )?(?:forasteir[oa]|estrangeir[oa]|viajante))\b', re.I)
+_HOME_CLAIM = re.compile(r'(?<!não )\b(?:sou (?:daqui|de aqui|de cá)|moro aqui|vivo aqui)\b',
+                         re.I)
+# Working at the place where one is: only with a curated STAFF affiliation (ADR-0119/0120).
+_WORK_CLAIM = re.compile(
+    r'(?<!não )\b(?:trabalho (?:aqui|nesta casa|nesta taverna|na taverna|na casa|para o dono|'
+    r'para (?:ele|ela) aqui)|sou (?:funcionári[oa]|empregad[oa]) (?:daqui|da casa|desta casa|'
+    r'da taverna|desta taverna))\b', re.I)
+_BORN_CLAIM = re.compile(r'(?<!não )\b(?:nasci|cresci) aqui\b', re.I)
+_ORIGIN_CLAIM = re.compile(
+    r"\b(?i:sou de|vim de|venho de|nasci em|sou natural de)\s+(?:[ao]s? )?"
+    r"([A-ZÀ-Ý][\w'-]+)")
 _WORD = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ'-]*")
 _BOUNDARY = re.compile(r'[.!?…:"“«—]')
 
@@ -49,6 +64,25 @@ def _unknown_names(speech: str, vocabulary: frozenset[str]) -> list[str]:
             found.append(word)
         prev_end = match.end()
     return found
+
+
+def _origin_contradicts(speech: str, context: DialogueContext) -> str | None:
+    """ADR-0120: which claim about where the person is from contradicts its standing or facts
+    ("não sou daqui" from a resident, "moro aqui" from a traveler, "nasci aqui" or "vim de X"
+    not in its facts, "trabalho aqui" without a STAFF tie), or None."""
+    resident = context.standing == 'HABITANTE'
+    facts = ' '.join(f.text for f in context.facts).lower()
+    if _AWAY_CLAIM.search(speech) and resident:
+        return 'AWAY'
+    if _HOME_CLAIM.search(speech) and not resident:
+        return 'HOME'
+    if _BORN_CLAIM.search(speech) and 'nasceu' not in facts:
+        return 'BORN'
+    if _WORK_CLAIM.search(speech) and not context.staff:
+        return 'WORK'
+    if any(m.group(1).lower() not in facts for m in _ORIGIN_CLAIM.finditer(speech)):
+        return 'ORIGIN'
+    return None
 
 
 def player_names(player_text: str | None) -> frozenset[str]:
@@ -95,6 +129,9 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
         own = ' '.join(own_facts + [context.persona.display_name]).lower()
         if word not in own:
             reasons.append('SELF_CLAIM')
+    why = _origin_contradicts(speech, context) if context.standing else None
+    if why:
+        reasons.append(f'SELF_CLAIM:{why}')      # the log shows which claim was refused
     vocabulary = context.vocabulary | (player_names(player_text) if unknown else frozenset())
     names = _unknown_names(speech, vocabulary)
     if names:

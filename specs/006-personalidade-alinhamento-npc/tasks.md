@@ -17,3 +17,4 @@
 - [x] Camada P0 de identidade (ADR-0117): dados do jogo (raça, classe, gênero, alinhamento, papel no nome), curadoria `knowledge/npcs/` com conferência, geração fechada para genéricos, persistência igual à da personalidade e fatos "SOBRE VOCÊ" no diálogo; `tests/test_identity.py`.
 - [ ] Conferir a curadoria de Bernard e curar os NPCs oficiais da Coroa de Cobre; testar no laboratório (S1f).
 - [ ] Usar o alinhamento da ficha do jogo como `alignment_initial` de NPCs oficiais (hoje só na identidade).
+- [x] Estatuto local (ADR-0120): HABITANTE, VIAJANTE (só o popular do lugar) e FORASTEIRO (nada do lugar), por curadoria ou sorteio conforme o papel; validador de origem; `tests/test_identity.py`. Falta testar no laboratório.

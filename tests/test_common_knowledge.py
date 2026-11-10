@@ -93,6 +93,26 @@ class PartyNeverLearnsByTimeTests(Story):
 
 
 class ResidenceTests(Story):
+    def test_a_traveler_ignores_game_placed_residence_but_keeps_what_it_heard(self):
+        # ADR-0120: the game placed it here, but it does not live here.
+        self.see('AR0602', 100)
+        self.pin(game_time=100)
+        report = self.acquire(100 + DAY, residents=lives())
+        away = frozenset({KnowledgeBasis.RESIDENCE})
+        self.assertEqual(set(self.memory.known_canon(BERNARD, ROOT_BRANCH, 100 + DAY,
+                                                     exclude_basis=away)), set())
+        council = next(k for k in report.granted if k.entry_id == 'org:council-of-six')
+        self.memory.record_canon_knowledge(
+            npc_id=BERNARD, branch_id=ROOT_BRANCH, game_time=100 + DAY,
+            basis=KnowledgeBasis.INQUIRY, region_id=council.region_id,
+            entry_id=council.entry_id, pack_year_dr=council.pack_year_dr,
+            pack_revision=council.pack_revision, pin_event_id=council.pin_event_id,
+            trigger_event_id=council.trigger_event_id, title=council.title,
+            summary=council.summary, layers=council.layers)
+        heard = self.memory.known_canon(BERNARD, ROOT_BRANCH, 100 + DAY, exclude_basis=away)
+        self.assertEqual(set(heard), {'org:council-of-six'})
+        self.assertIs(heard['org:council-of-six'].basis, KnowledgeBasis.INQUIRY)
+
     def test_a_day_living_in_athkatla_teaches_city_and_country_common_knowledge(self):
         self.see('AR0602', 100)
         self.pin(game_time=100)

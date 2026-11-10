@@ -32,6 +32,15 @@ AFFILIATION_PATTERN = re.compile(r'^place:[a-z0-9-]{1,64}:[A-Z][A-Z0-9_]{0,31}$'
 
 GAME_DATA, CURATED, GENERATED = 'GAME_DATA', 'CURATED', 'GENERATED'
 
+# ADR-0120: local standing. A resident knows the place; a traveler (same realm, passing through)
+# knows only its popular core; an outsider (distant land) knows nothing of it, only its homeland.
+HABITANTE, VIAJANTE, FORASTEIRO = 'HABITANTE', 'VIAJANTE', 'FORASTEIRO'
+STANDINGS = (HABITANTE, VIAJANTE, FORASTEIRO)
+# Chance that a generic person of this role is not a resident (design tuning, ADR-0120).
+AWAY_CHANCE = {'TRAVELER': 1.0, 'SAILOR': 0.6, 'PATRON': 0.3, 'MERCHANT': 0.3, 'FIGHTER': 0.2,
+               'COMMONER': 0.05, 'PEASANT': 0.05}
+OUTSIDER_SHARE = 1 / 3        # of those away, how many come from a distant land
+
 # Role words found in the game's own display names (pt_BR), written by us: prefix -> role.
 ROLE_PATTERNS: tuple[tuple[str, str], ...] = (
     ('guarda', 'GUARD'), ('leao de chacara', 'GUARD'), ('soldado', 'GUARD'),
@@ -130,6 +139,12 @@ def knowledge_tier(wisdom: int | None, intelligence: int | None = None) -> Knowl
     return KnowledgeTier(level, name, level >= 3, studied, style)
 
 
+def popular_only(tier: KnowledgeTier) -> KnowledgeTier:
+    """ADR-0120: what a traveler knows of the place it passes through, the popular core only,
+    whatever its Wisdom (a rudimentary person still keeps just the first sentence)."""
+    return KnowledgeTier(min(tier.level, 2), tier.name, False, 'NONE', tier.style)
+
+
 def layered_text(summary: str, layers: Mapping[str, str] | None, tier: KnowledgeTier) -> str:
     """What this person knows of an entry: popular core, then informed, then studied layers.
 
@@ -170,6 +185,15 @@ def em(place: str) -> str:
     return 'em ' + place
 
 
+def por(place: str) -> str:
+    """Portuguese "por" + place: "a Coroa de Cobre" -> "pela Coroa de Cobre"."""
+    for article, contracted in (('as ', 'pelas '), ('os ', 'pelos '), ('a ', 'pela '),
+                                ('o ', 'pelo ')):
+        if place.startswith(article):
+            return contracted + place[len(article):]
+    return 'por ' + place
+
+
 def _gendered(pair: tuple[str, str], gender: int) -> str:
     return pair[1] if gender == 2 else pair[0]
 
@@ -183,6 +207,7 @@ class Curation:
     places_visited: tuple[str, ...]
     self_facts: tuple[str, ...]
     affiliations: tuple[str, ...] = ()
+    standing: str | None = None          # ADR-0120; None = not curated (game data decides)
 
 
 def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[str, Curation]:
@@ -204,12 +229,15 @@ def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[s
                 not isinstance(a, str) or not AFFILIATION_PATTERN.fullmatch(a)
                 for a in raw_affiliations):
             continue
+        standing = doc.get('standing')
+        if standing is not None and standing not in STANDINGS:
+            continue
         years = doc.get('years_here')
         out[doc['npc_id']] = Curation(
             doc['npc_id'], doc.get('occupation'), doc.get('origin_region'),
             years if isinstance(years, int) and years > 0 else None,
             tuple(doc.get('places_visited') or ()), facts,
-            tuple(sorted(set(raw_affiliations))))
+            tuple(sorted(set(raw_affiliations))), standing)
     return out
 
 
@@ -248,8 +276,22 @@ def generate_identity(*, npc_id: str, role: str | None, gender: int, home_region
     count = rng.randint(0, min(2, len(elsewhere)))
     visited = sorted(rng.sample([r for r in elsewhere if r != origin], k=min(
         count, len([r for r in elsewhere if r != origin]))))
+    # ADR-0120: standing on its own seed, so residents keep every draw above unchanged.
+    standing = HABITANTE
+    away = random.Random(int.from_bytes(hashlib.sha256((seed + 'standing').encode()).digest(),
+                                        'big'))
+    if home_chain and away.random() < AWAY_CHANCE.get(role or 'COMMONER', 0.0):
+        realm = home_chain[1:]                  # ancestors: same realm, not this very place
+        if elsewhere and (not realm or away.random() < OUTSIDER_SHARE):
+            standing, origin = FORASTEIRO, away.choice(elsewhere)
+        elif realm:
+            standing, origin = VIAJANTE, away.choice(realm)
+        if standing != HABITANTE:
+            born_here, years = False, None
+            visited = [r for r in visited if r != origin]
     return {'occupation': occupation, 'origin_region': origin, 'years_here': years,
-            'born_here': born_here, 'places_visited': visited, 'policy': POLICY}
+            'born_here': born_here, 'places_visited': visited, 'standing': standing,
+            'policy': POLICY}
 
 
 @dataclass(frozen=True)
@@ -263,7 +305,9 @@ class NpcIdentity:
     regions_named: tuple[str, ...] = ()
     provenance: Mapping[str, str] = field(default_factory=dict)
     origin_region: str | None = None     # homeland (ADR-0117): its common knowledge is known
-    home_region: str | None = None       # where it lives (ADR-0117): its common knowledge too
+    home_region: str | None = None       # where it is (ADR-0117): known as its standing allows
+    standing: str = HABITANTE            # ADR-0120: resident, traveler or outsider
+    affiliations: tuple[str, ...] = ()   # ADR-0119 curated ties to places (e.g. ...:STAFF)
 
     @property
     def source(self) -> str:
@@ -274,7 +318,7 @@ class NpcIdentity:
         return {'schema': IDENTITY_SCHEMA, 'npc_id': self.npc_id, 'name': self.name,
                 'place': self.place, 'region': self.region_title,
                 'occupation': self.occupation, 'self_facts': list(self.self_facts),
-                'provenance': dict(self.provenance)}
+                'standing': self.standing, 'provenance': dict(self.provenance)}
 
 
 def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None,
@@ -286,9 +330,23 @@ def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None
     title = (lambda r: pack.get(r).title if r and _is_region(pack, r) else None)
     region_title = title(home_region)
     prov: dict[str, str] = {'name': GAME_DATA}
+    # ADR-0120: curation > generated > resident (the game placed it here).
+    if curation and getattr(curation, 'standing', None) in STANDINGS:
+        standing, prov['standing'] = curation.standing, CURATED
+    elif not curation and generated and generated.get('standing') in STANDINGS:
+        standing, prov['standing'] = generated['standing'], GENERATED
+    else:
+        standing = HABITANTE
     facts = [f'Você se chama {name}.']
     if place:
-        facts.append(f'Você vive {em(place)}' + (f', {em(region_title)}.' if region_title else '.'))
+        # Where it lives (the city) is not where it is (a tavern): being placed somewhere does not
+        # make it live or work there; a tie to the place needs a curated affiliation (ADR-0119).
+        if standing == HABITANTE:
+            facts.append(f'Você vive {em(region_title)} e está {em(place)}.' if region_title
+                         else f'Você está {em(place)}.')
+        else:
+            facts.append(f'Você está de passagem {por(region_title)} e está agora {em(place)}.'
+                         if region_title else f'Você está de passagem {por(place)}.')
         prov['home'] = GAME_DATA
     occupation = None
     if curation and curation.occupation:
@@ -321,7 +379,12 @@ def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None
     background = CURATED if source else GENERATED
     named = [r for r in [origin] + visited if r]
     if origin and title(origin):
-        if born_here:
+        if standing == FORASTEIRO:
+            facts.append(f'Você é de {title(origin)}, terra distante, e não conhece bem os '
+                         'costumes daqui.')
+        elif standing == VIAJANTE:
+            facts.append(f'Você veio de {title(origin)}.')
+        elif born_here:
             facts.append('Você nasceu e cresceu aqui.')
         else:
             facts.append(f'Você veio de {title(origin)}'
@@ -337,7 +400,8 @@ def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None
     return NpcIdentity(npc_id, name, place, region_title, occupation, tuple(facts),
                        tuple(title(r) for r in named if title(r)), prov,
                        origin if origin and title(origin) else None,
-                       home_region if region_title else None)
+                       home_region if region_title else None, standing,
+                       tuple(getattr(curation, 'affiliations', ()) or ()) if curation else ())
 
 
 IdentityFactory = Callable[[str], dict]

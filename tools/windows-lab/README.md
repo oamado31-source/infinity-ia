@@ -89,6 +89,26 @@ python tools/windows-lab/dialogue_service.py --pinned-manifest <manifesto.json> 
 
 Copie `overlay.json` (URL + token) para `%LOCALAPPDATA%\InfinityAI\overlay.json` na VM e `tools/windows-overlay/` para a VM; abra `Start-InfinityOverlay.cmd` na sessão do jogador. Programas com janela iniciados pelo SSH não aparecem na área de trabalho; para abrir pelo SSH, use uma tarefa agendada de uso único com `LogonType Interactive` e apague-a em seguida. **Abra o jogo uma vez só**: duas instâncias disputam o `InfinityLoader.log` e a segunda não escreve nele. `--reuse-token` mantém o overlay funcionando após reiniciar o serviço; `--ollama-url` permite simular o modelo fora do ar sem parar o Ollama.
 
+
+## Anexo — ADR-0119: conhecimento relacional (S1f, isolado)
+
+A validação desta mudança usa a campanha **`lab-s1f`** e um banco próprio, sem reutilizar registros da `lab-s1e` nem o banco padrão `lab-s1.sqlite3`. Execute os comandos na máquina que mantém o banco do laboratório, a partir da raiz do repositório:
+
+```bash
+python tools/windows-lab/pin_canon_pack.py --campaign lab-s1f --db ~/.infinity-ai/campaigns/lab-s1f.sqlite3 --year 1369
+python tools/windows-lab/dialogue_service.py --pinned-manifest <manifesto.json> --config-out <fora-do-repo>/overlay-s1f.json --campaign lab-s1f --world-seed lab-s1f --db ~/.infinity-ai/campaigns/lab-s1f.sqlite3
+```
+
+O primeiro comando cria/atualiza explicitamente o pin do pacote canônico 1369 DR no ramo ativo de `lab-s1f`; não altera o pin de outras campanhas. O segundo serviço deve usar exatamente a mesma campanha e o mesmo banco. Se o banco S1f já existir em outro caminho, passe esse caminho nos dois comandos.
+
+Roteiro mínimo:
+1. Bernard, com afiliação `place:copper-coronet:STAFF`: deve reconhecer Lehtinan como proprietário e explicar sua própria função operacional.
+2. Um NPC sem afiliação, mesmo presente em AR0406: deve conhecer a propriedade pública local, mas não a relação operacional restrita.
+3. Um frequentador com curadoria explícita `place:copper-coronet:REGULAR`: deve receber a relação operacional restrita.
+4. Se houver ouvintes na party, confirmar que INQUIRY pode propagar a relação pública efetivamente dita, mas nunca a relação RESTRICTED.
+
+Registre o SHA do commit, a revisão do pacote, o ramo/campanha e os resultados. Não suba o banco, saves, inventário local do jogo ou arquivos extraídos.
+
 ## 9. Onde guardar a evidência
 
 O manifesto bruto fica fora do repositório (contém hashes da sua instalação, nada sensível, mas também nada que precise ser público). No relatório da PR, cite apenas fingerprint, modpack hash, versões, ambiente e resultado. **Nunca** suba saves, `chitin.key`, `.tlk`, `.bif` ou capturas com conteúdo do jogo.

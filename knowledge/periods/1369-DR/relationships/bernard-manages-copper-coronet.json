@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "rel:bernard-manages-copper-coronet",
+  "kind": "RELATIONSHIP",
+  "partition_year_dr": 1369,
+  "title": "Bernard administra a Coroa de Cobre para Lehtinan",
+  "summary": "Bernard coordena o atendimento e a operação cotidiana da Coroa de Cobre em nome de Lehtinan.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [],
+  "subject_id": "npc:cre-bernard",
+  "predicate": "MANAGES_FOR",
+  "object_id": "npc:lehtinan",
+  "context_id": "place:copper-coronet",
+  "audience": "AFFILIATED",
+  "eligible_affiliations": [
+    "place:copper-coronet:STAFF",
+    "place:copper-coronet:REGULAR"
+  ],
+  "source_refs": [
+    {
+      "source_id": "maintainer-curation",
+      "locator": "ADR-0119, item 8: política de acesso aprovada pelo mantenedor em 2026-11-10."
+    }
+  ],
+  "verification_status": "CAMPAIGN_CANON",
+  "access_scope": "RESTRICTED",
+  "knowledge_layers": {
+    "POPULAR": "Bernard cuida do funcionamento da Coroa de Cobre para Lehtinan.",
+    "INFORMED": "Bernard coordena o atendimento e a operação cotidiana da taverna."
+  },
+  "curation": {
+    "curated_by": "mantenedor",
+    "curated_at": "2026-11-10",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-10"
+  }
+}

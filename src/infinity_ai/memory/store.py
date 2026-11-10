@@ -207,15 +207,19 @@ class MemoryStore:
         trigger = self._store.get_event(k.trigger_event_id)
         return step is not None and trigger is not None and step.admits(trigger.seq, k.game_time)
 
-    def known_canon(self, npc_id: str, branch_id: str,
-                    at_game_time: int | None = None) -> dict[str, CanonKnowledge]:
-        """Entries this NPC already holds in this branch (earliest acquisition per entry)."""
+    def known_canon(self, npc_id: str, branch_id: str, at_game_time: int | None = None,
+                    exclude_basis: frozenset = frozenset()) -> dict[str, CanonKnowledge]:
+        """Entries this NPC already holds in this branch (earliest acquisition per entry),
+        ignoring acquisitions whose basis is in `exclude_basis` (ADR-0120: a traveler's
+        game-placed RESIDENCE does not count, what it heard by INQUIRY does)."""
         rows = self._conn.execute(
             f'SELECT {_KNOW_FIELDS} FROM npc_canon_knowledge WHERE campaign_id = ? AND npc_id = ? '
             'ORDER BY game_time, rowid', (self._store.campaign_id, npc_id)).fetchall()
         known: dict[str, CanonKnowledge] = {}
         for k in map(_row_to_knowledge, rows):
             if at_game_time is not None and k.game_time > at_game_time:
+                continue
+            if k.basis in exclude_basis:
                 continue
             if k.entry_id not in known and self._knowledge_visible(k, branch_id):
                 known[k.entry_id] = k
@@ -253,8 +257,8 @@ class MemoryStore:
         return _row_to_knowledge(row), cursor.rowcount == 1
 
     def recall_common(self, *, npc_id: str, branch_id: str, at_game_time: int | None,
-                      purpose: str, audience: str) -> tuple[RecallStatus, str,
-                                                            tuple[CanonKnowledge, ...]]:
+                      purpose: str, audience: str, exclude_basis: frozenset = frozenset()
+                      ) -> tuple[RecallStatus, str, tuple[CanonKnowledge, ...]]:
         """Same gates as `recall`; common knowledge is party-level, never secret."""
         if purpose not in RECALL_PURPOSES:
             return RecallStatus.DENIED, 'ACL_PURPOSE', ()
@@ -268,5 +272,5 @@ class MemoryStore:
             return RecallStatus.DENIED, 'UNKNOWN_TIME', ()
         if not audience_may_see(audience_enum, Visibility.PARTY):
             return RecallStatus.OK, 'OK', ()
-        return RecallStatus.OK, 'OK', tuple(self.known_canon(npc_id, branch_id,
-                                                             at_game_time).values())
+        return RecallStatus.OK, 'OK', tuple(self.known_canon(
+            npc_id, branch_id, at_game_time, exclude_basis=exclude_basis).values())

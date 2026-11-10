@@ -1,0 +1,14 @@
+{
+  "schema": "infinity-ai.source.v1",
+  "source_id": "maintainer-curation",
+  "title": "Curadoria explícita do mantenedor do Infinity AI",
+  "publisher": "Mantenedor do projeto",
+  "year": null,
+  "edition": "Registro versionado de decisões do projeto",
+  "creators": [],
+  "isbn": null,
+  "source_class": "S4_MAINTAINER_CURATED",
+  "setting_year_dr": null,
+  "bibliographic_status": "CURATED",
+  "notes": "Registra fatos e políticas explicitamente aprovados pelo mantenedor para o cânone da campanha. Não é fonte externa, não equivale a verificação bibliográfica e só passa pelo gate quando a entrada está marcada CAMPAIGN_CANON e tem conferência registrada."
+}

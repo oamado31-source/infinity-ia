@@ -59,7 +59,9 @@ class TempKnowledge(unittest.TestCase):
 class PackTests(TempKnowledge):
     def test_real_partition_loads_and_revision_is_stable(self):
         pack = load_partition(1369)
-        self.assertTrue({'region:amn', 'region:athkatla'} <= set(pack.entries))
+        self.assertTrue({'region:amn', 'region:athkatla', 'place:copper-coronet',
+                         'rel:lehtinan-owns-copper-coronet',
+                         'rel:bernard-manages-copper-coronet'} <= set(pack.entries))
         self.assertEqual(pack.revision, load_partition(1369).revision)
 
     def test_committed_checked_entries_record_who_checked(self):
@@ -125,6 +127,30 @@ class PackTests(TempKnowledge):
             with self.subTest(path=path.name):
                 validator.validate(json.loads(path.read_text(encoding='utf-8')))
         validator.validate(entry())
+
+    def test_relationship_entries_are_typed_graph_edges(self):
+        pack = load_partition(1369)
+        owner = pack.get('rel:lehtinan-owns-copper-coronet')
+        self.assertEqual((owner.subject_id, owner.predicate, owner.object_id),
+                         ('npc:lehtinan', 'OWNER_OF', 'place:copper-coronet'))
+        self.assertEqual(owner.audience, 'REGIONAL_PUBLIC')
+        private = pack.get('rel:bernard-manages-copper-coronet')
+        self.assertEqual(private.audience, 'AFFILIATED')
+        self.assertIn('place:copper-coronet:STAFF', private.eligible_affiliations)
+
+    def test_maintainer_curated_source_requires_campaign_canon(self):
+        source = [{'source_id': 'maintainer-curation', 'locator': 'decisão aprovada'}]
+        self.add(entry(id='event:maintainer-ok', verification_status='CAMPAIGN_CANON',
+                       source_refs=source), name='maintainer-ok')
+        self.add(entry(id='event:maintainer-no', verification_status='SOURCE_CHECKED',
+                       source_refs=source), name='maintainer-no')
+        pack = self.load()
+        build_areas = frozenset(a for e in pack.entries.values() for a in e.area_resrefs)
+        self.assertEqual(assess(pack, 'event:maintainer-ok', campaign_year=1369,
+                                build_areas=build_areas).status, CanonStatus.CANON_OK)
+        self.assertEqual(assess(pack, 'event:maintainer-no', campaign_year=1369,
+                                build_areas=build_areas).status, CanonStatus.WEAK_SOURCE)
+
 
 
 class GateTests(TempKnowledge):

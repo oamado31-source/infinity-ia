@@ -27,14 +27,16 @@
     },
     "id": {
       "type": "string",
-      "pattern": "^(region|event|org|char):[a-z0-9-]{1,64}$"
+      "pattern": "^(region|event|org|char|place|rel):[a-z0-9-]{1,64}$"
     },
     "kind": {
       "enum": [
         "REGION",
         "EVENT",
         "ORGANIZATION",
-        "CHARACTER"
+        "CHARACTER",
+        "PLACE",
+        "RELATIONSHIP"
       ]
     },
     "partition_year_dr": {
@@ -178,6 +180,165 @@
           "maxLength": 200
         }
       }
+    },
+    "subject_id": {
+      "type": "string",
+      "pattern": "^(npc|region|event|org|char|place):[a-z0-9-]{1,64}$"
+    },
+    "predicate": {
+      "type": "string",
+      "enum": [
+        "OWNER_OF",
+        "WORKS_AT",
+        "MANAGES_FOR",
+        "EMPLOYED_BY",
+        "FREQUENTS",
+        "MEMBER_OF",
+        "ALLIED_WITH",
+        "HOSTILE_TO",
+        "FAMILY_OF",
+        "MENTORS",
+        "APPRENTICE_OF",
+        "REPORTS_TO",
+        "SERVES"
+      ]
+    },
+    "object_id": {
+      "type": "string",
+      "pattern": "^(npc|region|event|org|char|place):[a-z0-9-]{1,64}$"
+    },
+    "context_id": {
+      "type": "string",
+      "pattern": "^(npc|region|event|org|char|place):[a-z0-9-]{1,64}$"
+    },
+    "audience": {
+      "type": "string",
+      "enum": [
+        "REGIONAL_PUBLIC",
+        "AFFILIATED",
+        "EXPLICIT_NPCS"
+      ]
+    },
+    "eligible_affiliations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^place:[a-z0-9-]{1,64}:[A-Z][A-Z0-9_]{0,31}$"
+      }
+    },
+    "allowed_npc_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^npc:[a-z0-9-]{1,64}$"
+      }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "RELATIONSHIP"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "subject_id",
+          "predicate",
+          "object_id",
+          "audience"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "RELATIONSHIP"
+          },
+          "access_scope": {
+            "const": "COMMON_REGIONAL"
+          }
+        },
+        "required": [
+          "kind",
+          "access_scope"
+        ]
+      },
+      "then": {
+        "properties": {
+          "audience": {
+            "const": "REGIONAL_PUBLIC"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "RELATIONSHIP"
+          },
+          "access_scope": {
+            "const": "RESTRICTED"
+          },
+          "audience": {
+            "const": "AFFILIATED"
+          }
+        },
+        "required": [
+          "kind",
+          "access_scope",
+          "audience"
+        ]
+      },
+      "then": {
+        "required": [
+          "eligible_affiliations"
+        ],
+        "properties": {
+          "eligible_affiliations": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "RELATIONSHIP"
+          },
+          "access_scope": {
+            "const": "RESTRICTED"
+          },
+          "audience": {
+            "const": "EXPLICIT_NPCS"
+          }
+        },
+        "required": [
+          "kind",
+          "access_scope",
+          "audience"
+        ]
+      },
+      "then": {
+        "required": [
+          "allowed_npc_ids"
+        ],
+        "properties": {
+          "allowed_npc_ids": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
 }

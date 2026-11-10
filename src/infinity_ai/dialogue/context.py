@@ -13,13 +13,14 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
 from ..memory.common_knowledge import BackgroundRegion
-from ..personality.identity import NpcIdentity, knowledge_tier, layered_text
+from ..memory.model import KnowledgeBasis
+from ..personality.identity import (HABITANTE, KnowledgeTier, NpcIdentity, knowledge_tier,
+                                    layered_text, popular_only)
 from ..personality.style import (
     orientation_from_game_alignment, orientation_from_profile, style_from_profile,
 )
@@ -58,6 +59,7 @@ class Fact:
     event_id: str
     text: str
     game_time: int
+    subject_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -71,6 +73,9 @@ class DialogueContext:
     orientation: str | None = None   # SPEC-006 alignment orientation, when a profile applies
     occupation: str | None = None    # ADR-0117 identity: what the person does, when known
     manner: str | None = None        # ADR-0117 Wisdom tier: how the person speaks and reasons
+    restricted_knowledge: tuple[Fact, ...] = ()  # ADR-0119: role/affiliation-bound facts
+    standing: str | None = None      # ADR-0120: HABITANTE, VIAJANTE or FORASTEIRO (residents)
+    staff: bool = False              # ADR-0119/0120: a curated STAFF tie to a place (may say it works there)
 
 
 @dataclass(frozen=True)
@@ -170,7 +175,9 @@ RESIDENT_FALLBACK = 'Hum? Disso eu não sei.'
 
 
 def _knowledge_items(memory: MemoryStore, npc_id: str, branch_id: str, at_game_time: int | None,
-                     vocabulary: set[str]) -> tuple[RecallStatus, str, tuple[Fact, ...]]:
+                     vocabulary: set[str], tier: KnowledgeTier | None = None
+                     ) -> tuple[RecallStatus, str, tuple[Fact, ...]]:
+    """What the companion acquired; with a known `tier` (ADR-0117), only the layers it reaches."""
     status, reason, held = memory.recall_common(npc_id=npc_id, branch_id=branch_id,
                                                 at_game_time=at_game_time,
                                                 purpose='npc_dialogue',
@@ -179,9 +186,10 @@ def _knowledge_items(memory: MemoryStore, npc_id: str, branch_id: str, at_game_t
         return status, reason, ()
     knowledge = []
     for i, k in enumerate(held[:MAX_KNOWLEDGE], 1):
-        knowledge.append(Fact(f'K{i}', f'canon:{k.entry_id}', f'{k.title}: {k.summary}',
+        text = layered_text(k.summary, k.layers, tier) if tier is not None else k.summary
+        knowledge.append(Fact(f'K{i}', f'canon:{k.entry_id}', f'{k.title}: {text}',
                               k.game_time))
-        vocabulary |= set(_NAME.findall(k.title)) | set(_NAME.findall(k.summary))
+        vocabulary |= set(_NAME.findall(k.title)) | set(_NAME.findall(text))
     return status, reason, tuple(knowledge)
 
 
@@ -191,18 +199,20 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            at_game_time: int | None,
                            profile: dict | None = None,
                            identity: NpcIdentity | None = None,
-                           also_known: tuple[tuple[str, str, str, Mapping[str, str]], ...] = (),
+                           also_known: tuple[tuple, ...] = (),
                            wisdom: int | None = None,
                            intelligence: int | None = None,
-                           game_alignment: int | None = None) -> ContextResult:
+                           game_alignment: int | None = None,
+                           popular_only_ids: frozenset[str] = frozenset()) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
     e.g. a local placed by the game data) reaches CONHECIMENTO GERAL. A SPEC-006 `profile`, when
     given, sets the speaking style and the alignment orientation; it never adds facts. An ADR-0117
     `identity` becomes the "SOBRE VOCÊ" facts (F-items): all the person may say about itself.
-    `also_known` = (entry_id, title, summary, layers) the person knows from its homeland or home
-    (ADR-0117), added to CONHECIMENTO GERAL when not already held. Wisdom and Intelligence set
+    `also_known` = (entry_id, title, summary, layers[, access_scope[, subject_id]]). Public entries
+    join CONHECIMENTO GERAL; RESTRICTED entries join a separate section and require an explicit
+    affiliation/allowlist. Wisdom and Intelligence set
     how deeply it understands each subject and how it speaks (`knowledge_tier`), not how many
     subjects it knows."""
     if dead:
@@ -224,36 +234,55 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                       for i, text in enumerate(identity.self_facts, 1))
         for text in identity.self_facts + identity.regions_named:
             vocabulary |= set(_NAME.findall(text))
+    # ADR-0120: a traveler or outsider was placed here by the game, but does not live here: its
+    # game-placed RESIDENCE does not count (what it heard by INQUIRY or brought from home does).
+    standing = identity.standing if identity is not None else HABITANTE
+    away = frozenset({KnowledgeBasis.RESIDENCE}) if standing != HABITANTE else frozenset()
     status, reason, held = memory.recall_common(npc_id=npc_id, branch_id=branch_id,
                                                 at_game_time=at_game_time,
                                                 purpose='npc_dialogue',
-                                                audience='NARRATIVE_CONTEXT')
+                                                audience='NARRATIVE_CONTEXT',
+                                                exclude_basis=away)
     if status is not RecallStatus.OK:
         return ContextResult(ContextStatus.DENIED, reason)
     tier = knowledge_tier(wisdom, intelligence)
-    subjects = {k.entry_id: (k.title, k.summary, k.layers) for k in held}
-    for entry_id, t, s, layers in also_known:
+    shallow = popular_only(tier)
+    subjects = {k.entry_id: (k.title, k.summary, k.layers, 'COMMON_REGIONAL', None) for k in held}
+    for item in also_known:
+        entry_id, t, s, layers = item[:4]
+        scope = item[4] if len(item) > 4 else 'COMMON_REGIONAL'
+        subject_id = item[5] if len(item) > 5 else None
         learned = subjects.get(entry_id)
         if learned is None:
-            subjects[entry_id] = (t, s, layers)
-        elif not learned[2] and learned[1] == s:
-            # Learned before layers existed: same checked summary, so its layers restate it.
-            subjects[entry_id] = (learned[0], learned[1], layers)
-    knowledge = []
+            subjects[entry_id] = (t, s, layers, scope, subject_id)
+        else:
+            # A learned entry keeps its snapshot, but takes who it is about from the pack; and
+            # if learned before layers existed (same checked summary), the layers restate it.
+            new_layers = layers if not learned[2] and learned[1] == s else learned[2]
+            subjects[entry_id] = (learned[0], learned[1], new_layers, learned[3],
+                                  learned[4] or subject_id)
+    knowledge, restricted = [], []
     for i, entry_id in enumerate(sorted(subjects)[:MAX_KNOWLEDGE], 1):
-        t, s, layers = subjects[entry_id]
-        text = layered_text(s, layers, tier)
-        knowledge.append(Fact(f'K{i}', f'canon:{entry_id}', f'{t}: {text}', at_game_time or 0))
+        t, s, layers, scope, subject_id = subjects[entry_id]
+        learned_here = entry_id in popular_only_ids and not any(
+            k.entry_id == entry_id for k in held)
+        text = layered_text(s, layers, shallow if learned_here else tier)
+        fact = Fact(f'K{i}', f'canon:{entry_id}', f'{t}: {text}', at_game_time or 0, subject_id)
+        (restricted if scope == 'RESTRICTED' else knowledge).append(fact)
         vocabulary |= set(_NAME.findall(t)) | set(_NAME.findall(text))
-    knowledge = tuple(knowledge)
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(
-        persona, facts, frozenset(vocabulary), (), knowledge,
+        persona, facts, frozenset(vocabulary), (), tuple(knowledge),
         identity.place if identity and identity.place else place, orientation,
-        identity.occupation if identity else None, tier.style))
+        identity.occupation if identity else None, tier.style, tuple(restricted), standing,
+        any(a.endswith(':STAFF') for a in identity.affiliations) if identity else False))
 
 
 def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *, npc_id: str,
-                  branch_id: str, at_game_time: int | None) -> ContextResult:
+                  branch_id: str, at_game_time: int | None, wisdom: int | None = None,
+                  intelligence: int | None = None) -> ContextResult:
+    """A companion in the party. When the game sends its Wisdom/Intelligence (in-game box), the
+    ADR-0117 matrix sets how deeply it understands what it learned and how it speaks; without
+    them (overlay) the whole checked summary is used, as before."""
     companions = current_companions(store, branch_id)
     if companions is None:
         return ContextResult(ContextStatus.DENIED, 'PARTY_UNKNOWN')
@@ -281,9 +310,11 @@ def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *
     numbered = tuple(Fact(f'F{i}', f.event_id, f.text, f.game_time)
                      for i, f in enumerate(facts, 1))
 
+    tier = knowledge_tier(wisdom, intelligence) if wisdom or intelligence else None
     status, reason, knowledge = _knowledge_items(memory, npc_id, branch_id, at_game_time,
-                                                 vocabulary)
+                                                 vocabulary, tier)
     if status is not RecallStatus.OK:
         return ContextResult(ContextStatus.DENIED, reason)
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(
-        catalog.persona(npc_id), numbered, frozenset(vocabulary), companions, knowledge))
+        catalog.persona(npc_id), numbered, frozenset(vocabulary), companions, knowledge,
+        manner=tier.style if tier is not None else None))

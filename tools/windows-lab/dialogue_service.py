@@ -58,17 +58,18 @@ from infinity_ai.gamedata.inventory import (  # noqa: E402
     load_local_names, load_local_residents, load_local_resrefs,
 )
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
-    DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, entries_named, identity_entries,
-    placement_regions, residents_as_stays, share_knowledge,
+    DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, entries_named, identity_knowledge,
+    local_aliases, placement_regions, relationship_entries, residents_as_stays, share_knowledge,
 )
 from infinity_ai.canon.pin import PinStatus, check_pin  # noqa: E402
+from infinity_ai.memory.model import KnowledgeBasis  # noqa: E402
 from infinity_ai.memory.store import MemoryStore  # noqa: E402
 from infinity_ai.personality import (  # noqa: E402
     FirstContactError, FirstContactService, NpcEncounterDialogue,
 )
 from infinity_ai.personality.identity import (  # noqa: E402
-    build_identity, generate_identity, knowledge_tier, layered_text, load_curations,
-    role_from_name,
+    HABITANTE, build_identity, generate_identity, knowledge_tier, layered_text, load_curations,
+    popular_only, role_from_name,
 )
 from infinity_ai.personality.in_game import (  # noqa: E402
     profile_for, record_dialogue_start, resolve_speaker,
@@ -220,6 +221,7 @@ class Talker(threading.Thread):
                                     store.connection.execute(
                                         "SELECT payload_json FROM events "
                                         "WHERE event_type = 'NpcDialogueStarted'")}
+                        answered |= self._answered_companions()
                         self.seen = {r.req_id for r in requests if r.req_id in answered or not (
                             snap and r.session_seq == snap.session_seq
                             and 0 <= snap.clock_ms - r.clock_ms <= PENDING_WINDOW_MS)}
@@ -228,21 +230,59 @@ class Talker(threading.Thread):
                         if req.req_id not in self.seen:
                             self.seen.add(req.req_id)
                             self._answer(store, req)
+                            if req.speaker_party:
+                                self._remember_companion(req.req_id)
             except Exception as exc:  # keep answering; one failed request is just logged
                 print(f'{now_iso()} caixa de dialogo falhou: {type(exc).__name__}')
             time.sleep(0.5)
+
+    def _answered_path(self) -> Path:
+        # A companion's turn records no event (no first contact), so answered ids are kept in a
+        # local side file next to the campaign database: no text, only request ids.
+        return Path(self.args.db).expanduser().with_suffix('.talk-answered.txt')
+
+    def _answered_companions(self) -> set[str]:
+        try:
+            return set(self._answered_path().read_text(encoding='utf-8').split())
+        except OSError:
+            return set()
+
+    def _remember_companion(self, req_id: str) -> None:
+        try:
+            with self._answered_path().open('a', encoding='utf-8') as f:
+                f.write(req_id + '\n')
+        except OSError:
+            pass
 
     def _answer(self, store: CampaignStore, req) -> None:
         view = self.observer.snapshot()
         speaker = resolve_speaker(req, self.observer.residents) or ''
         resident = self.observer.residents.get(speaker)
         areas = resident.areas if resident is not None and speaker in self.observer.stays else ()
-        scope, shared, ident_source, known_by_identity, known_now = '-', '-', '-', [], ()
+        curation = self.observer.curations.get(speaker)
+        if not areas and resident is not None and curation is not None \
+                and curation.standing == HABITANTE:
+            areas = resident.areas      # ADR-0120: a checked curation says it lives here
+        scope, shared, ident_source = '-', '-', '-'
+        known_by_identity, known_by_relationship, known_now = [], [], ()
         flags: list[str] = []
         wisdom = intelligence = None
-        tier, known_texts = '-', {}
+        tier, known_texts, standing = '-', {}, '-'
         if not view.observed or view.branch_id is None or view.game_time is None:
             speech, status, reason, used, granted = RESIDENT_FALLBACK, 'DENIED', 'NO_OBSERVATION', (), ()
+        elif req.speaker_party:
+            # A companion in the box talks exactly as in the overlay: party memories and what it
+            # learned (SPEC-004); no first contact, no INQUIRY (a companion never teaches another).
+            # ADR-0117: its Wisdom/Intelligence (sent by the box) set the depth, as for residents.
+            wisdom, intelligence = req.speaker_wisdom, req.speaker_intelligence
+            if wisdom or intelligence:
+                tier = knowledge_tier(wisdom, intelligence).name
+            result = DialogueEngine(store, self.provider, self.catalog).respond(
+                DialogueRequest(speaker, req.text), branch_id=view.branch_id,
+                at_game_time=view.game_time, wisdom=wisdom, intelligence=intelligence)
+            status, reason, flags = result.status.value, result.reason, list(result.flags)
+            speech = result.speech or self.catalog.persona(speaker).fallback
+            used, granted, scope = (), (), 'COMPANHEIRO'
         else:
             # SPEC-006: the box request is the dialogue-start observation (no text stored).
             started = record_dialogue_start(store, view.branch_id, req, game_time=view.game_time,
@@ -265,48 +305,64 @@ class Talker(threading.Thread):
             identity = build_identity(
                 npc_id=speaker or 'npc:desconhecido', name=req.speaker_name, pack=pack,
                 place=place if place != UNNAMED_AREA else None, home_region=home,
-                resident=resident, curation=self.observer.curations.get(speaker),
-                generated=generated)
-            ident_source = identity.source
-            # ADR-0117: what is public in the homeland and where the person lives (pinned pack).
-            known_by_identity = identity_entries(
-                pack, homeland=identity.origin_region, home=identity.home_region,
-                campaign_year=self.args.campaign_year,
-                build_areas=self.observer.build_areas) \
-                if check_pin(store, view.branch_id, pack) is PinStatus.MATCH else []
-            stored = set(MemoryStore(store).known_canon(speaker, view.branch_id, view.game_time)) \
+                resident=resident, curation=curation, generated=generated)
+            ident_source, standing = identity.source, identity.standing
+            # ADR-0117/0120: public knowledge from homeland/home by standing; ADR-0119: private
+            # edges by affiliation.
+            shallow_ids: list[str] = []
+            if check_pin(store, view.branch_id, pack) is PinStatus.MATCH:
+                known_by_identity, shallow_ids = identity_knowledge(
+                    pack, homeland=identity.origin_region, home=identity.home_region,
+                    campaign_year=self.args.campaign_year, build_areas=self.observer.build_areas,
+                    standing=standing)
+                known_by_relationship = relationship_entries(
+                    pack, npc_id=speaker, affiliations=curation.affiliations if curation else (),
+                    campaign_year=self.args.campaign_year, build_areas=self.observer.build_areas)
+            away = frozenset({KnowledgeBasis.RESIDENCE}) if standing != HABITANTE else frozenset()
+            stored = set(MemoryStore(store).known_canon(speaker, view.branch_id, view.game_time,
+                                                        exclude_basis=away)) \
                 if speaker else set()
-            known_now = tuple(sorted(stored | set(known_by_identity)))
-            also_known = tuple((e, pack.get(e).title, pack.get(e).summary, pack.get(e).layers)
+            shallow = frozenset(e for e in shallow_ids if e not in stored)
+            known_now = tuple(sorted(stored | set(known_by_identity) | set(known_by_relationship)
+                                     | shallow))
+            also_known = tuple((e, pack.get(e).title, pack.get(e).summary, pack.get(e).layers,
+                                pack.get(e).access_scope, pack.get(e).subject_id)
                                for e in known_now if pack.get(e) is not None)
             # Wisdom and Intelligence (game data) set how deeply the person knows (ADR-0117).
             wisdom = getattr(resident, 'wisdom', 0) or None
             intelligence = getattr(resident, 'intelligence', 0) or None
             tier_obj = knowledge_tier(wisdom, intelligence)
             tier = tier_obj.name
-            known_texts = {e: layered_text(pack.get(e).summary, pack.get(e).layers, tier_obj)
+            known_texts = {e: layered_text(pack.get(e).summary, pack.get(e).layers,
+                                           popular_only(tier_obj) if e in shallow else tier_obj)
                            for e in known_now if pack.get(e) is not None}
             result = DialogueEngine(store, self.provider, self.catalog).respond_resident(
                 ResidentRequest(speaker, req.speaker_name, req.text, req.area, req.speaker_dead),
                 residence_areas=areas, branch_id=view.branch_id, at_game_time=view.game_time,
                 profile=profile, identity=identity, also_known=also_known, wisdom=wisdom,
-                intelligence=intelligence, game_alignment=getattr(resident, 'alignment', None))
+                intelligence=intelligence, game_alignment=getattr(resident, 'alignment', None),
+                popular_only_ids=shallow)
             status, reason = result.status.value, result.reason
             flags = list(result.flags)
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
             used = tuple(e.split(':', 1)[1] for e in result.used_event_ids
                          if e.startswith('canon:'))
+            aliases = local_aliases(pack, req.area)   # "taverna" = the place where it is
             if result.status is DialogueStatus.OK and speaker:
                 # The model may name an entry without declaring it: what was said is what was heard.
                 used = tuple(dict.fromkeys(used + tuple(entries_named(
-                    self.observer.pack, known_now, speech, known_texts, question=req.text))))
+                    self.observer.pack, known_now, speech, known_texts, question=req.text,
+                    aliases=aliases))))
             granted = ()
-            if result.status is DialogueStatus.OK and used and req.listeners:
+            shareable = tuple(e for e in used if pack.get(e) is not None
+                              and pack.get(e).access_scope == 'COMMON_REGIONAL')
+            if result.status is DialogueStatus.OK and shareable and req.listeners:
                 report = share_knowledge(
                     store, view.branch_id, self.observer.pack, speaker=speaker,
-                    listeners=req.listeners, used_entry_ids=used, req_id=req.req_id,
+                    listeners=req.listeners, used_entry_ids=shareable, req_id=req.req_id,
                     host_epoch=req.session_seq, at_game_time=view.game_time, speech=speech,
-                    also_held=known_by_identity, known_texts=known_texts, question=req.text)
+                    also_held=known_by_identity, known_texts=known_texts, question=req.text,
+                    aliases=aliases)
                 granted = report.granted
                 shared = report.status + ''.join(f' {r.entry_id}:{r.reason}' for r in report.refusals
                                                  if r.reason != 'NOT_A_LISTENER')
@@ -316,7 +372,8 @@ class Talker(threading.Thread):
         put_override_file(self.ssh, self.args.game_root, f'{REPLY_RESREF}.lua',
                           render_reply(req.req_id, speech).encode('utf-8'))
         print(f'{now_iso()} caixa pedido={req.req_id} falante={speaker or "-"} '
-              f'habitante={bool(areas)} perfil={scope} identidade={ident_source} '
+              f'habitante={bool(areas)} estatuto={standing} perfil={scope} '
+              f'identidade={ident_source} '
               f'wis={wisdom or "-"} int={intelligence or "-"} camada={tier} '
               f'assuntos={len(known_now)} recusas={flags} '
               f'status={status} motivo={reason} '

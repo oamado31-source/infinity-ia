@@ -13,14 +13,18 @@ sys.path.insert(0, str(ROOT / 'src'))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from infinity_ai.canon.pack import load_partition  # noqa: E402
-from infinity_ai.dialogue.context import Catalog, build_resident_context  # noqa: E402
+from infinity_ai.dialogue.context import (  # noqa: E402
+    Catalog, DialogueContext, Fact, Persona, build_resident_context,
+)
 from infinity_ai.dialogue.engine import (  # noqa: E402
     DialogueEngine, DialogueStatus, ResidentRequest, system_prompt,
 )
 from infinity_ai.dialogue.llm import FakeProvider  # noqa: E402
+from infinity_ai.dialogue.validate import validate_reply  # noqa: E402
 from infinity_ai.canon.pin import pin_pack  # noqa: E402
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
-    conveyed, entries_named, identity_entries, share_knowledge,
+    conveyed, entries_named, heard, identity_entries, identity_knowledge, local_aliases,
+    share_knowledge,
 )
 from infinity_ai.personality.style import orientation_from_game_alignment  # noqa: E402
 from infinity_ai.memory.store import MemoryStore  # noqa: E402
@@ -132,7 +136,7 @@ class GeneratorTests(unittest.TestCase):
             self.assertIn(g['origin_region'], regions)
             self.assertTrue(set(g['places_visited']) <= regions)
             self.assertLessEqual(len(g['places_visited']), 2)
-            if g['born_here']:
+            if g['born_here'] or g['standing'] != 'HABITANTE':
                 self.assertIsNone(g['years_here'])
             else:
                 self.assertTrue(1 <= g['years_here'] <= 40)
@@ -152,7 +156,7 @@ class BuildTests(unittest.TestCase):
                                place='a Coroa de Cobre', home_region='region:athkatla',
                                resident=resident(display_name='Rumar', klass=4))
         self.assertEqual(ident.source, GAME_DATA)
-        self.assertIn('Você vive na Coroa de Cobre, em Athkatla.', ident.self_facts)
+        self.assertIn('Você vive em Athkatla e está na Coroa de Cobre.', ident.self_facts)
         self.assertIn('Você é humano.', ident.self_facts)
         self.assertIn('Você tem treino de ladrão.', ident.self_facts)
         self.assertFalse(any('veio de' in f or 'passou por' in f for f in ident.self_facts))
@@ -167,7 +171,7 @@ class BuildTests(unittest.TestCase):
         self.assertIsNone(ident.origin_region)
         self.assertNotIn('origin', ident.provenance)
         self.assertFalse(any('veio de' in f or 'passou por' in f for f in ident.self_facts))
-        self.assertIn('Você vive na Coroa de Cobre, em Athkatla.', ident.self_facts)
+        self.assertIn('Você vive em Athkatla e está na Coroa de Cobre.', ident.self_facts)
 
     def test_generated_background_names_only_pack_regions(self):
         ident = build_identity(npc_id='npc:cre-ftown7', name='Cliente da Taverna', pack=PACK,
@@ -216,6 +220,7 @@ class CurationFileTests(unittest.TestCase):
         curation = load_curations(PACK)['npc:cre-bernard']
         self.assertEqual(curation.occupation, 'taverneiro da Coroa de Cobre')
         self.assertEqual(curation.origin_region, 'region:tethyr')
+        self.assertEqual(curation.affiliations, ('place:copper-coronet:STAFF',))
 
 
 BUILD = frozenset(a for e in PACK.entries.values() for a in e.area_resrefs)
@@ -227,7 +232,8 @@ class HomelandAndHomeTests(unittest.TestCase):
                                  campaign_year=1369, build_areas=BUILD)
         self.assertEqual(set(known), {'region:tethyr', 'event:tethyr-reclamation-wars-end',
                                       'region:athkatla', 'region:amn', 'org:council-of-six',
-                                      'org:cowled-wizards'})
+                                      'org:cowled-wizards', 'place:copper-coronet',
+                                      'rel:lehtinan-owns-copper-coronet'})
         self.assertNotIn('org:shadow-thieves', known)                      # not common
         countryside = identity_entries(PACK, homeland=None, home='region:amn',
                                        campaign_year=1369, build_areas=BUILD)
@@ -348,7 +354,7 @@ class DialogueTests(unittest.TestCase):
                                     pack=PACK, place='a Coroa de Cobre',
                                     home_region='region:athkatla',
                                     resident=resident(display_name='Cliente da Taverna'),
-                                    generated=gen(role='PATRON'))
+                                    generated={**gen(role='PATRON'), 'standing': 'HABITANTE'})
 
     def ctx(self):
         return build_resident_context(
@@ -360,7 +366,7 @@ class DialogueTests(unittest.TestCase):
         context = self.ctx()
         self.assertEqual([f.text for f in context.facts], list(self.ident.self_facts))
         prompt = system_prompt(context)
-        self.assertIn('F2: Você vive na Coroa de Cobre, em Athkatla.', prompt)
+        self.assertIn('F2: Você vive em Athkatla e está na Coroa de Cobre.', prompt)
         self.assertIn('8. Sobre você mesmo(a)', prompt)
         self.assertIn(self.ident.occupation, prompt)
 
@@ -384,6 +390,31 @@ class DialogueTests(unittest.TestCase):
         self.assertEqual([k.event_id for k in context.knowledge], ['canon:region:tethyr'])
         self.assertIn('K1: Tethyr:', system_prompt(context))
 
+    def test_public_relationship_reaches_resident_dialogue(self):
+        relation = PACK.get('rel:lehtinan-owns-copper-coronet')
+        known = ((relation.id, relation.title, relation.summary, relation.layers),)
+        raw = json.dumps({'speech': 'Lehtinan é o dono da Coroa de Cobre.',
+                          'used_facts': ['K1'], 'unknown': False}, ensure_ascii=False)
+        result = DialogueEngine(self.store, FakeProvider([raw]), Catalog.load()).respond_resident(
+            ResidentRequest('npc:cre-bernard', 'Bernard', 'Quem é o dono da Coroa de Cobre?',
+                            'AR0406', False), residence_areas=('AR0406',),
+            branch_id=ROOT_BRANCH, at_game_time=10, also_known=known)
+        self.assertEqual(result.status, DialogueStatus.OK, result.flags)
+        self.assertEqual(result.used_event_ids, ('canon:rel:lehtinan-owns-copper-coronet',))
+
+    def test_restricted_relationship_reaches_its_own_prompt_section(self):
+        relation = PACK.get('rel:bernard-manages-copper-coronet')
+        known = ((relation.id, relation.title, relation.summary, relation.layers,
+                  relation.access_scope, relation.subject_id),)
+        raw = json.dumps({'speech': 'Bernard cuida do atendimento e da operação cotidiana da Coroa de Cobre em nome de Lehtinan.',
+                          'used_facts': ['K1'], 'unknown': False}, ensure_ascii=False)
+        result = DialogueEngine(self.store, FakeProvider([raw]), Catalog.load()).respond_resident(
+            ResidentRequest('npc:cre-bernard', 'Bernard', 'Quem cuida da operação da Coroa de Cobre?',
+                            'AR0406', False), residence_areas=('AR0406',),
+            branch_id=ROOT_BRANCH, at_game_time=10, also_known=known)
+        self.assertEqual(result.status, DialogueStatus.OK, result.flags)
+        self.assertEqual(result.used_event_ids, ('canon:rel:bernard-manages-copper-coronet',))
+
     def test_self_claims_outside_the_facts_are_refused(self):
         bad = json.dumps({'speech': 'Estou aqui porque a cidade me pertence.', 'used_facts': [],
                           'unknown': False}, ensure_ascii=False)
@@ -403,6 +434,25 @@ class DialogueTests(unittest.TestCase):
             residence_areas=(), branch_id=ROOT_BRANCH, at_game_time=10)
         self.assertEqual(result.status, DialogueStatus.OK, result.flags)
 
+    def test_public_fact_about_oneself_can_be_claimed(self):
+        owner = PACK.get('rel:lehtinan-owns-copper-coronet')
+        self.assertIsNotNone(owner)
+        also = ((owner.id, owner.title, owner.summary, owner.layers, owner.access_scope,
+                 owner.subject_id),)
+        context = build_resident_context(
+            MemoryStore(self.store), self.store, Catalog.load(), npc_id='npc:lehtinan',
+            display_name='Lehtinan', residence_areas=(), area='AR0406', dead=False,
+            branch_id=ROOT_BRANCH, at_game_time=10, also_known=also).context
+        k = context.knowledge[0]
+        self.assertIn(f'{k.fact_id}: (sobre você)', system_prompt(context))
+        reply = json.dumps({'speech': 'Sim, eu sou o dono desta casa.', 'used_facts': [k.fact_id],
+                            'unknown': False}, ensure_ascii=False)
+        result = DialogueEngine(self.store, FakeProvider([reply]), Catalog.load()
+                                ).respond_resident(
+            ResidentRequest('npc:lehtinan', 'Lehtinan', 'Você é o dono?', 'AR0406', False),
+            residence_areas=(), branch_id=ROOT_BRANCH, at_game_time=10, also_known=also)
+        self.assertEqual(result.status, DialogueStatus.OK, result.flags)
+
     def test_official_npc_speaks_with_its_game_alignment(self):
         context = build_resident_context(
             MemoryStore(self.store), self.store, Catalog.load(), npc_id='npc:lehtinan',
@@ -411,7 +461,13 @@ class DialogueTests(unittest.TestCase):
         self.assertIn('Orientação: valoriza regras', system_prompt(context))
 
     def test_prompt_asks_for_own_words(self):
-        self.assertIn('sem copiar a frase do texto', system_prompt(self.ctx()))
+        prompt = system_prompt(self.ctx())
+        self.assertIn('sem copiar a frase do texto', prompt)
+        # Rules 2, 7 and 8 carry out-of-world examples again (S1f: copied facts, recited lists).
+        self.assertIn('"O rio enche na primavera"', prompt)
+        self.assertIn('não recite a lista de FATOS', prompt)
+        self.assertIn('"Isso não é da sua conta."', prompt)
+        self.assertIn('"Tesouro? Não faço ideia', prompt)
 
     def test_invented_unknown_place_is_refused(self):
         bad = json.dumps({'speech': 'Eu vim de Waterdeep, sou só um viajante.', 'used_facts': [],
@@ -427,3 +483,207 @@ class DialogueTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class StandingTests(unittest.TestCase):
+    """ADR-0120: resident, traveler (same realm, passing through) and outsider (distant land)."""
+
+    def test_standing_is_drawn_by_role_and_deterministic(self):
+        self.assertEqual(gen(role='TRAVELER'), gen(role='TRAVELER'))
+        for i in range(30):
+            npc = f'npc:generated:enc-{i}'
+            self.assertNotEqual(gen(npc=npc, role='TRAVELER')['standing'], 'HABITANTE')
+            self.assertEqual(gen(npc=npc, role='GUARD')['standing'], 'HABITANTE')
+        patrons = {gen(npc=f'npc:generated:enc-{i}', role='PATRON')['standing'] for i in range(60)}
+        self.assertEqual(patrons, {'HABITANTE', 'VIAJANTE', 'FORASTEIRO'})
+
+    def test_residents_keep_their_previous_draws(self):
+        # The standing has its own seed: a resident's trade and origin did not change.
+        for i in range(30):
+            g = gen(npc=f'npc:generated:enc-{i}', role='PATRON')
+            if g['standing'] == 'HABITANTE':
+                self.assertTrue(g['born_here'] or 1 <= g['years_here'] <= 40)
+
+    def test_origin_matches_the_standing(self):
+        for i in range(60):
+            g = gen(npc=f'npc:generated:enc-{i}', role='TRAVELER')
+            if g['standing'] == 'VIAJANTE':
+                self.assertEqual(g['origin_region'], 'region:amn')          # same realm
+            else:
+                self.assertEqual(g['origin_region'], 'region:tethyr')       # distant land
+            self.assertIsNone(g['years_here'])
+            self.assertFalse(g['born_here'])
+
+    def test_facts_follow_the_standing(self):
+        def facts(standing, origin):
+            g = {**gen(role='PATRON'), 'standing': standing, 'origin_region': origin,
+                 'born_here': False, 'years_here': None}
+            return build_identity(npc_id='npc:cre-x', name='Cliente da Taverna', pack=PACK,
+                                  place='a Coroa de Cobre', home_region='region:athkatla',
+                                  resident=resident(), generated=g)
+        traveler = facts('VIAJANTE', 'region:amn')
+        self.assertIn('Você está de passagem por Athkatla e está agora na Coroa de Cobre.',
+                      traveler.self_facts)
+        self.assertIn('Você veio de Amn.', traveler.self_facts)
+        self.assertEqual(traveler.standing, 'VIAJANTE')
+        outsider = facts('FORASTEIRO', 'region:tethyr')
+        self.assertTrue(any(f.startswith('Você é de Tethyr, terra distante')
+                            for f in outsider.self_facts))
+        self.assertEqual(facts('HABITANTE', 'region:athkatla').standing, 'HABITANTE')
+
+    def test_curated_standing_wins_and_must_be_known(self):
+        curation = SimpleNamespace(occupation='nobre de Athkatla', origin_region=None,
+                                   years_here=None, places_visited=(), self_facts=(),
+                                   affiliations=(), standing='HABITANTE')
+        ident = build_identity(npc_id='npc:firkra01', name='Lorde Jierdan', pack=PACK,
+                               place='a Coroa de Cobre', home_region='region:athkatla',
+                               curation=curation,
+                               generated={**gen(role='TRAVELER')})
+        self.assertEqual((ident.standing, ident.provenance['standing']), ('HABITANTE', CURATED))
+        with tempfile.TemporaryDirectory() as d:
+            CurationFileTests().write(d, standing='TURISTA')
+            self.assertEqual(load_curations(PACK, Path(d)), {})
+            CurationFileTests().write(d, standing='VIAJANTE')
+            self.assertEqual(load_curations(PACK, Path(d))['npc:cre-bernard'].standing,
+                             'VIAJANTE')
+
+    def test_knowledge_by_standing(self):
+        def known(standing, homeland):
+            return identity_knowledge(PACK, homeland=homeland, home='region:athkatla',
+                                      campaign_year=1369, build_areas=BUILD, standing=standing)
+        full, shallow = known('HABITANTE', None)
+        self.assertIn('org:council-of-six', full)
+        self.assertEqual(shallow, [])
+        full, shallow = known('VIAJANTE', 'region:amn')
+        self.assertIn('org:council-of-six', shallow)          # the place: popular core only
+        self.assertIn('org:cowled-wizards', full)             # the realm it comes from
+        self.assertNotIn('org:council-of-six', full)
+        full, shallow = known('FORASTEIRO', 'region:tethyr')
+        self.assertEqual(set(full), {'region:tethyr', 'event:tethyr-reclamation-wars-end'})
+        self.assertEqual(shallow, [])
+
+    def test_traveler_sees_only_the_popular_core(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        store = CampaignStore.open(Path(tmp.name) / 'c.sqlite3', 'lab')
+        self.addCleanup(store.close)
+        council = PACK.get('org:council-of-six')
+        g = {**gen(role='PATRON'), 'standing': 'VIAJANTE', 'origin_region': 'region:amn'}
+        ident = build_identity(npc_id='npc:cre-x', name='Cliente da Taverna', pack=PACK,
+                               place='a Coroa de Cobre', home_region='region:athkatla',
+                               resident=resident(), generated=g)
+        context = build_resident_context(
+            MemoryStore(store), store, Catalog.load(), npc_id='npc:cre-x',
+            display_name='Cliente da Taverna', residence_areas=(), area='AR0406', dead=False,
+            branch_id=ROOT_BRANCH, at_game_time=10, identity=ident, wisdom=18, intelligence=18,
+            also_known=(('org:council-of-six', council.title, council.summary, council.layers),),
+            popular_only_ids=frozenset({'org:council-of-six'})).context
+        text = context.knowledge[0].text
+        self.assertIn(council.layers['POPULAR'], text)
+        self.assertNotIn('tortura', text)
+        self.assertNotIn('décadas', text)
+        self.assertIn('de passagem', system_prompt(context))
+
+
+class OriginClaimTests(unittest.TestCase):
+    """ADR-0120: what a person says about where it is from must match its standing and facts."""
+
+    def context(self, standing, facts=('Você vive em Athkatla e está na Coroa de Cobre.',),
+                staff=False):
+        persona = Persona('npc:x', 'Nobre', (), frozenset({'Nobre'}), '...')
+        return DialogueContext(
+            persona, tuple(Fact(f'F{i}', f'identity:npc:x:{i}', t, 0)
+                           for i, t in enumerate(facts, 1)),
+            frozenset({'Nobre', 'Athkatla', 'Tethyr', 'Amn', 'Candlekeep'}), (),
+            standing=standing, staff=staff)
+
+    def check(self, speech, standing, **kw):
+        raw = json.dumps({'speech': speech, 'used_facts': [], 'unknown': False},
+                         ensure_ascii=False)
+        return any(r.startswith('SELF_CLAIM') for r in
+                   validate_reply(raw, self.context(standing, **kw)).reasons)
+
+    def test_resident_cannot_say_it_is_from_elsewhere(self):
+        self.assertTrue(self.check('Não sou de cá, mas ouvi falar.', 'HABITANTE'))
+        self.assertTrue(self.check('Estou de passagem.', 'HABITANTE'))
+        self.assertFalse(self.check('Moro aqui faz tempo.', 'HABITANTE'))
+
+    def test_traveler_cannot_say_it_lives_here(self):
+        self.assertTrue(self.check('Sou daqui, claro.', 'VIAJANTE'))
+        self.assertTrue(self.check('Sou de aqui.', 'FORASTEIRO'))
+        self.assertFalse(self.check('Não sou daqui, estou de passagem.', 'VIAJANTE'))
+
+    def test_born_here_and_named_origin_need_the_facts(self):
+        self.assertTrue(self.check('Nasci aqui.', 'HABITANTE'))
+        self.assertFalse(self.check('Nasci aqui.', 'HABITANTE',
+                                    facts=('Você nasceu e cresceu aqui.',)))
+        self.assertTrue(self.check('Vim de Tethyr.', 'HABITANTE'))
+        self.assertFalse(self.check('Vim de Tethyr há anos.', 'HABITANTE',
+                                    facts=('Você veio de Tethyr e vive aqui há 9 anos.',)))
+
+    def test_working_here_needs_a_staff_tie(self):
+        self.assertTrue(self.check('Trabalho aqui como carregador.', 'HABITANTE'))
+        self.assertTrue(self.check('Sou empregado da casa.', 'HABITANTE'))
+        self.assertFalse(self.check('Trabalho aqui há anos.', 'HABITANTE', staff=True))
+        self.assertFalse(self.check('Não trabalho aqui, só bebo.', 'HABITANTE'))
+        self.assertFalse(self.check('Sou carregador no porto.', 'HABITANTE'))
+
+    def test_staff_tie_comes_from_the_curated_affiliation(self):
+        curation = SimpleNamespace(occupation='taverneiro da Coroa de Cobre', origin_region=None,
+                                   years_here=None, places_visited=(), self_facts=(),
+                                   affiliations=('place:copper-coronet:STAFF',),
+                                   standing=None)
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        store = CampaignStore.open(Path(tmp.name) / 'c.sqlite3', 'lab')
+        self.addCleanup(store.close)
+
+        def ctx(cur):
+            ident = build_identity(npc_id='npc:cre-bernard', name='Bernard', pack=PACK,
+                                   place='a Coroa de Cobre', home_region='region:athkatla',
+                                   resident=resident(), curation=cur)
+            return build_resident_context(
+                MemoryStore(store), store, Catalog.load(), npc_id='npc:cre-bernard',
+                display_name='Bernard', residence_areas=(), area='AR0406', dead=False,
+                branch_id=ROOT_BRANCH, at_game_time=10, identity=ident).context
+        self.assertTrue(ctx(curation).staff)
+        self.assertFalse(ctx(None).staff)
+
+    def test_companions_are_not_checked(self):
+        self.assertFalse(self.check('Sou de Candlekeep.', None))
+
+
+class LocalAliasTests(unittest.TestCase):
+    """ADR-0120 lab adjustment: "taverna", "cidade" and "reino" mean the place where one is."""
+
+    def test_aliases_where_the_person_is(self):
+        aliases = local_aliases(PACK, 'AR0406')
+        self.assertEqual(aliases['taverna'], 'Coroa de Cobre')
+        self.assertEqual(aliases['cidade'], 'Athkatla')
+        self.assertEqual(aliases['reino'], 'Amn')
+        self.assertEqual(aliases['local'], 'Coroa de Cobre')       # "o dono do local"
+        self.assertEqual(local_aliases(PACK, None), {})
+
+    def test_owner_of_this_tavern_is_heard(self):
+        owner = PACK.get('rel:lehtinan-owns-copper-coronet')
+        aliases = local_aliases(PACK, 'AR0406')
+        known = owner.summary
+        # The name came only from the question, and the speech carries the content: heard.
+        self.assertIsNone(heard(owner, known, 'É Lehtinan.', 'Quem é o dono dessa taverna?',
+                                aliases))
+        # Without the local nouns the question names nothing.
+        self.assertEqual(heard(owner, known, 'É Lehtinan.', 'Quem é o dono dessa taverna?'),
+                         'NOT_SPOKEN')
+        # A bare denial teaches nothing, even with the name in the question.
+        self.assertEqual(heard(owner, known, 'Não sei dizer.', 'Quem é o dono dessa taverna?',
+                               aliases), 'NOT_CONVEYED')
+
+    def test_a_question_name_alone_does_not_add_undeclared_entries(self):
+        held = ['rel:lehtinan-owns-copper-coronet']
+        texts = {e: PACK.get(e).summary for e in held}
+        aliases = local_aliases(PACK, 'AR0406')
+        self.assertEqual(entries_named(PACK, held, 'É Lehtinan.', texts,
+                                       question='Quem é o dono dessa taverna?', aliases=aliases),
+                         [])
+        self.assertEqual(entries_named(PACK, held, 'Lehtinan é o dono desta taverna.', texts,
+                                       aliases=aliases), held)

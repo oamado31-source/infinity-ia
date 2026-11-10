@@ -40,6 +40,7 @@ ALLOWED = frozenset({
     'Infinity_SetArea', 'Infinity_PushMenu', 'Infinity_PopMenu', 'Infinity_FocusTextEdit',
     'Infinity_TextEditHasFocus', 'Infinity_GetClockTicks', 'Infinity_DoFile',
     'EEex_Resource_Fetch', 'EEex_GameState_TogglePause', 'EEex_Key_Hook_AfterEventsPoll',
+    'EEex_Sprite_GetActiveStats',  # read-only: Wisdom/Intelligence of the speaker (ADR-0117)
 })
 
 
@@ -61,6 +62,19 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(req.listeners, ('npc:imoen', 'npc:jaheira'))
         self.assertEqual((req.area, req.game_time, req.input), ('AR0406', 53322, 'TEXT'))
         self.assertEqual(req.speaker_instance, 7)
+        self.assertFalse(req.speaker_party)
+        companion = parse_talk_line(line(speaker={'script': 'Jaheira', 'name': 'Jaheira',
+                                                  'cre': 'jaheira', 'dead': False,
+                                                  'party': True}))
+        self.assertTrue(companion.speaker_party)
+        self.assertEqual(companion.speaker_id, 'npc:jaheira')
+        self.assertEqual((req.speaker_wisdom, req.speaker_intelligence), (None, None))
+        scored = parse_talk_line(line(speaker={'script': 'Minsc', 'name': 'Minsc', 'cre': 'minsc',
+                                               'dead': False, 'party': True, 'wis': 6, 'int': 8}))
+        self.assertEqual((scored.speaker_wisdom, scored.speaker_intelligence), (6, 8))
+        odd = parse_talk_line(line(speaker={'script': 'Minsc', 'name': 'Minsc', 'cre': 'minsc',
+                                            'dead': False, 'wis': 0, 'int': 99}))
+        self.assertEqual((odd.speaker_wisdom, odd.speaker_intelligence), (None, None))
 
     def test_speaker_without_script_and_unreadable_listeners(self):
         req = parse_talk_line(line(speaker={'script': '', 'name': 'Plebeu', 'cre': 'common',
@@ -205,6 +219,17 @@ class ModuleStaticTests(unittest.TestCase):
 
     def test_no_forbidden_capabilities(self):
         self.assertIsNone(FORBIDDEN.search(self.code), FORBIDDEN.search(self.code))
+
+    def test_companions_open_the_box_but_not_the_protagonist(self):
+        self.assertIn('member.portrait == 0 then return nil', self.raw)
+        self.assertIn('party = member ~= nil', self.raw)
+        self.assertIn(''',"party":''', self.raw)
+
+    def test_box_sends_the_speaker_ability_scores(self):
+        self.assertIn('EEex_Sprite_GetActiveStats(object).m_nWIS', self.raw)
+        self.assertIn('EEex_Sprite_GetActiveStats(object).m_nINT', self.raw)
+        self.assertIn(''',"wis":''', self.raw)
+        self.assertIn(''',"int":''', self.raw)
 
     def test_right_click_hook_wraps_and_delegates(self):
         self.assertIn('local infai_events_poll = EEex_Key_Hook_AfterEventsPoll', self.raw)

@@ -2,8 +2,8 @@
 """SPEC-005 canon gate (REQ-CANON-001/002): may this curated entry be treated as canon here?
 
 CANON_OK only when the campaign year matches the partition (and the entry's validity), the region
-has at least one area in this build's inventory, and every source is S0/S1 with the entry checked
-by the maintainer. Anything else is a typed refusal, never a guess.
+has at least one area in this build's inventory, and every source is S0/S1 or an explicitly
+maintainer-curated S4 source attached to CAMPAIGN_CANON. Anything else is a typed refusal.
 """
 from __future__ import annotations
 
@@ -56,7 +56,12 @@ def assess(pack: CanonPack, entry_id: str, *, campaign_year: int,
         reasons.append(entry.verification_status)
     for ref in entry.source_refs:
         source = pack.sources.get(ref.source_id)
-        if source is None or source.source_class not in STRONG_CLASSES:
+        if source is None:
+            reasons.append(f'UNKNOWN_SOURCE:{ref.source_id}')
+        elif source.source_class == 'S4_MAINTAINER_CURATED':
+            if entry.verification_status != 'CAMPAIGN_CANON':
+                reasons.append(f'MAINTAINER_SOURCE_REQUIRES_CAMPAIGN_CANON:{ref.source_id}')
+        elif source.source_class not in STRONG_CLASSES:
             reasons.append(f'WEAK_CLASS:{ref.source_id}')
         elif source.setting_year_dr not in (None, campaign_year) and lo is None and hi is None:
             reasons.append(f'SETTING_YEAR_MISMATCH:{ref.source_id}')

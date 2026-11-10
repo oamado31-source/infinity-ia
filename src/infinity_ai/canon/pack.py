@@ -22,9 +22,14 @@ LAYERS = ('POPULAR', 'INFORMED', 'STUDIED')
 MAX_LAYER = 200
 MAX_SUMMARY = 280
 MAX_QUOTE_WORDS = 15
-KIND_PREFIX = {'REGION': 'region', 'EVENT': 'event', 'ORGANIZATION': 'org', 'CHARACTER': 'char'}
+KIND_PREFIX = {'REGION': 'region', 'EVENT': 'event', 'ORGANIZATION': 'org', 'CHARACTER': 'char',
+               'PLACE': 'place', 'RELATIONSHIP': 'rel'}
 VERIFICATION = {'RESEARCH_ONLY', 'CROSS_REFERENCED', 'SOURCE_CHECKED', 'DISPUTED', 'CAMPAIGN_CANON'}
-SOURCE_CLASSES = {'S0_PRIMARY', 'S1_LICENSED', 'S2_INDEXED', 'S3_COMMUNITY'}
+SOURCE_CLASSES = {'S0_PRIMARY', 'S1_LICENSED', 'S2_INDEXED', 'S3_COMMUNITY', 'S4_MAINTAINER_CURATED'}
+RELATIONSHIP_PREDICATES = frozenset({'OWNER_OF', 'WORKS_AT', 'MANAGES_FOR', 'EMPLOYED_BY',
+    'FREQUENTS', 'MEMBER_OF', 'ALLIED_WITH', 'HOSTILE_TO', 'FAMILY_OF', 'MENTORS',
+    'APPRENTICE_OF', 'REPORTS_TO', 'SERVES'})
+RELATIONSHIP_AUDIENCES = frozenset({'REGIONAL_PUBLIC', 'AFFILIATED', 'EXPLICIT_NPCS'})
 _QUOTED = re.compile(r'"([^"]*)"|“([^”]*)”|«([^»]*)»')
 
 
@@ -67,6 +72,14 @@ class CanonEntry:
     # ADR-0117: the summary's facts split by how hard they are to know (POPULAR / INFORMED /
     # STUDIED), restated in our words; never facts beyond the checked summary.
     layers: Mapping[str, str] = field(default_factory=dict)
+    # ADR-0119: typed graph edge metadata; only RELATIONSHIP entries populate these fields.
+    subject_id: str | None = None
+    predicate: str | None = None
+    object_id: str | None = None
+    context_id: str | None = None
+    audience: str | None = None
+    eligible_affiliations: tuple[str, ...] = ()
+    allowed_npc_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -107,6 +120,40 @@ def _check_entry(doc: dict, year: int, sources: dict[str, Source], name: str) ->
         problems.append(f'{name}: partition year {doc["partition_year_dr"]} in the {year} directory')
     if KIND_PREFIX.get(doc['kind']) != doc['id'].split(':', 1)[0]:
         problems.append(f'{name}: id prefix does not match kind')
+    relation_fields = ('subject_id', 'predicate', 'object_id', 'context_id', 'audience',
+                       'eligible_affiliations', 'allowed_npc_ids')
+    if doc['kind'] == 'RELATIONSHIP':
+        entity_id = re.compile(r'^(npc|region|event|org|char|place):[a-z0-9-]{1,64}$')
+        affiliation_id = re.compile(r'^place:[a-z0-9-]{1,64}:[A-Z][A-Z0-9_]{0,31}$')
+        npc_id = re.compile(r'^npc:[a-z0-9-]{1,64}$')
+        for field_name in ('subject_id', 'object_id'):
+            if not isinstance(doc.get(field_name), str) or not entity_id.fullmatch(doc[field_name]):
+                problems.append(f'{name}: invalid relationship {field_name}')
+        if doc.get('context_id') is not None and (not isinstance(doc['context_id'], str)
+                                                   or not entity_id.fullmatch(doc['context_id'])):
+            problems.append(f'{name}: invalid relationship context_id')
+        if doc.get('predicate') not in RELATIONSHIP_PREDICATES:
+            problems.append(f'{name}: unknown relationship predicate')
+        if doc.get('audience') not in RELATIONSHIP_AUDIENCES:
+            problems.append(f'{name}: unknown relationship audience')
+        affiliations, allowed = doc.get('eligible_affiliations') or [], doc.get('allowed_npc_ids') or []
+        if not isinstance(affiliations, list) or any(not isinstance(x, str) or not affiliation_id.fullmatch(x) for x in affiliations):
+            problems.append(f'{name}: invalid eligible_affiliations')
+        if not isinstance(allowed, list) or any(not isinstance(x, str) or not npc_id.fullmatch(x) for x in allowed):
+            problems.append(f'{name}: invalid allowed_npc_ids')
+        if doc.get('access_scope') == 'COMMON_REGIONAL' and doc.get('audience') != 'REGIONAL_PUBLIC':
+            problems.append(f'{name}: COMMON_REGIONAL relationships must be REGIONAL_PUBLIC')
+        elif doc.get('access_scope') == 'RESTRICTED':
+            if doc.get('audience') == 'AFFILIATED' and not affiliations:
+                problems.append(f'{name}: AFFILIATED relationship needs eligible_affiliations')
+            if doc.get('audience') == 'EXPLICIT_NPCS' and not allowed:
+                problems.append(f'{name}: EXPLICIT_NPCS relationship needs allowed_npc_ids')
+            if doc.get('audience') == 'REGIONAL_PUBLIC':
+                problems.append(f'{name}: restricted relationship cannot be REGIONAL_PUBLIC')
+        elif doc.get('access_scope') not in ('CANON_REFERENCE', 'COMMON_REGIONAL'):
+            problems.append(f'{name}: unsupported relationship access_scope')
+    elif any(field_name in doc for field_name in relation_fields):
+        problems.append(f'{name}: relationship metadata on a non-RELATIONSHIP entry')
     if doc['verification_status'] not in VERIFICATION:
         problems.append(f'{name}: unknown verification status')
     layers = doc.get('knowledge_layers')
@@ -177,7 +224,15 @@ def load_partition(year_dr: int, root: Path = KNOWLEDGE_ROOT) -> CanonPack:
             doc.get('region_id'), tuple(doc['area_resrefs']),
             tuple(SourceRef(r['source_id'], r.get('locator', '')) for r in doc['source_refs']),
             doc['verification_status'], doc['access_scope'],
-            MappingProxyType(dict(doc.get('knowledge_layers') or {})))
+            MappingProxyType(dict(doc.get('knowledge_layers') or {})),
+            doc.get('subject_id'), doc.get('predicate'), doc.get('object_id'),
+            doc.get('context_id'), doc.get('audience'),
+            tuple(doc.get('eligible_affiliations') or ()), tuple(doc.get('allowed_npc_ids') or ()))
+    for entry in entries.values():
+        if entry.kind == 'RELATIONSHIP':
+            for endpoint in (entry.subject_id, entry.object_id, entry.context_id):
+                if endpoint and not endpoint.startswith('npc:') and endpoint not in entries:
+                    problems.append(f'{entry.id}: unresolved relationship endpoint {endpoint}')
     if problems:
         raise CanonError(problems)
     used = sorted({r.source_id for e in entries.values() for r in e.source_refs})

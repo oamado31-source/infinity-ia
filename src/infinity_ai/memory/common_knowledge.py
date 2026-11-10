@@ -185,10 +185,15 @@ def residence_time(pack: CanonPack, events: list[Event], npc_id: str,
 
 
 def _anchor_time(events: list[Event], pin: Event) -> int | None:
+    """Game time the pin counts from: its own, else the last observation before it, else (a pin
+    made on an empty campaign, before the game was observed) the first observation after it."""
     if pin.game_time is not None:
         return pin.game_time
     before = [e.game_time for e in events if e.seq < pin.seq and e.game_time is not None]
-    return max(before) if before else None
+    if before:
+        return max(before)
+    after = [e.game_time for e in events if e.seq > pin.seq and e.game_time is not None]
+    return after[0] if after else None
 
 
 def acquire_common_knowledge(store: CampaignStore, branch_id: str, pack: CanonPack, *,
@@ -289,34 +294,114 @@ class ShareReport:
 _TITLE_WORD = re.compile(r"[A-ZÀ-ÖØ-Þ][\wÀ-ÖØ-öø-ÿ'-]{2,}")
 
 
-def mentioned_in(entry: CanonEntry, speech: str) -> bool:
-    """True when the speech names the entry: any capitalised word of its title (3+ letters)."""
-    words = set(re.findall(r"[\wÀ-ÖØ-öø-ÿ'-]+", speech.lower()))
+# Common nouns that, where the person is, mean the place itself (ADR-0120 lab adjustment):
+# "o dono dessa taverna" names the Copper Coronet; "o reino" names Amn; "a cidade", Athkatla.
+PLACE_NOUNS = ('taverna', 'estalagem', 'hospedaria', 'estabelecimento', 'casa', 'bar', 'local',
+               'lugar')
+CITY_NOUNS = ('cidade',)
+REALM_NOUNS = ('reino', 'país', 'nação')
+_SPOKEN_WORD = re.compile(r"[\wÀ-ÖØ-öø-ÿ'-]+")
+
+
+def local_aliases(pack: CanonPack, area: str | None) -> dict[str, str]:
+    """Common noun -> title of what it means where `area` is: the PLACE entry of the area, the
+    city (most specific pack region with a parent) and the realm (its top region)."""
+    if not area:
+        return {}
+    aliases: dict[str, str] = {}
+    places = sorted(e.title for e in pack.entries.values() if e.kind == 'PLACE'
+                    and area.upper() in {a.upper() for a in e.area_resrefs})
+    if places:
+        aliases.update({noun: places[0] for noun in PLACE_NOUNS})
+    regions = placement_regions(pack, area)
+    chain = region_chain(pack, regions[0]) if regions else []
+    if len(chain) > 1:
+        aliases.update({noun: pack.get(chain[0]).title for noun in CITY_NOUNS})
+    if chain:
+        aliases.update({noun: pack.get(chain[-1]).title for noun in REALM_NOUNS})
+    return aliases
+
+
+def _with_aliases(text: str, aliases: Mapping[str, str] | None) -> str:
+    if not aliases:
+        return text
+    words = {w.lower() for w in _SPOKEN_WORD.findall(text)}
+    return ' '.join([text] + sorted({title for noun, title in aliases.items() if noun in words}))
+
+
+def mentioned_in(entry: CanonEntry, speech: str,
+                 aliases: Mapping[str, str] | None = None) -> bool:
+    """True when the speech names the entry: any capitalised word of its title (3+ letters), or a
+    common noun that means it where the person is (`aliases`, see `local_aliases`)."""
+    words = {w.lower() for w in _SPOKEN_WORD.findall(_with_aliases(speech, aliases))}
     return any(w.lower() in words for w in _TITLE_WORD.findall(entry.title))
 
 
-def identity_entries(pack: CanonPack, *, homeland: str | None, home: str | None,
-                     campaign_year: int, build_areas: frozenset[str] | None) -> list[str]:
-    """ADR-0117: what is public where the NPC comes from and where it lives.
+def identity_knowledge(pack: CanonPack, *, homeland: str | None, home: str | None,
+                       campaign_year: int, build_areas: frozenset[str] | None,
+                       standing: str = 'HABITANTE') -> tuple[list[str], list[str]]:
+    """ADR-0117/0120: what is public where the NPC comes from and where it is, by standing.
 
-    Homeland (identity origin): the region and its sub-regions, as ORIGIN. Home (where it lives):
-    the region and its ancestors, as RESIDENCE. Same eligibility as the other channels
-    (COMMON_REGIONAL, gate CANON_OK; the caller checks the pin). Computed when the person speaks,
-    never stored: a generated identity may be temporary."""
-    out = []
+    Returns (full, popular_only). Homeland (identity origin): the region and its sub-regions, as
+    ORIGIN. Where it is (home): a resident knows the region and its ancestors, as RESIDENCE; a
+    traveler knows only the popular core of the place itself (the home region and below); an
+    outsider knows nothing of it. Same eligibility as the other channels (COMMON_REGIONAL, gate
+    CANON_OK; the caller checks the pin). Computed when the person speaks, never stored."""
+    full, popular = [], []
     for entry in sorted(pack.entries.values(), key=lambda e: e.id):
         if entry.access_scope != COMMON_SCOPE:
             continue
         chain = region_chain(pack, home_region(entry))
+        local = bool(home) and home in chain                  # the place itself and below
         from_homeland = bool(homeland) and _is_region(pack, homeland) and homeland in chain
         from_home = bool(home) and home_region(entry) in region_chain(pack, home)
-        if not (from_homeland or from_home):
+        if standing == 'HABITANTE':
+            bucket = full if (from_homeland or from_home) else None
+        elif local:
+            bucket = popular if standing == 'VIAJANTE' else None
+        else:
+            bucket = full if from_homeland else None
+        if bucket is None:
+            continue
+        gate = assess(pack, entry.id, campaign_year=campaign_year, build_areas=build_areas)
+        if gate.status is CanonStatus.CANON_OK:
+            bucket.append(entry.id)
+    return full, popular
+
+
+def identity_entries(pack: CanonPack, *, homeland: str | None, home: str | None,
+                     campaign_year: int, build_areas: frozenset[str] | None) -> list[str]:
+    """ADR-0117: a resident's homeland and home knowledge (see `identity_knowledge`)."""
+    return identity_knowledge(pack, homeland=homeland, home=home, campaign_year=campaign_year,
+                              build_areas=build_areas)[0]
+
+
+def relationship_entries(pack: CanonPack, *, npc_id: str, affiliations: Iterable[str],
+                         campaign_year: int, build_areas: frozenset[str] | None) -> list[str]:
+    """ADR-0119: restricted relational facts require an explicit NPC affiliation or allowlist,
+    or being one of the relation's parties (subject or object): Lehtinan knows that Bernard runs
+    the Copper Coronet for him.
+
+    Merely being in the same area is never enough. Affiliations are curated and versioned with
+    the NPC identity; every edge still has to pass the campaign-year/build/source canon gate.
+    Public relationships use COMMON_REGIONAL and the existing ORIGIN/RESIDENCE/INQUIRY paths.
+    """
+    held = set(affiliations)
+    out = []
+    for entry in sorted(pack.entries.values(), key=lambda e: e.id):
+        if entry.kind != 'RELATIONSHIP' or entry.access_scope != 'RESTRICTED':
+            continue
+        eligible = npc_id in (entry.subject_id, entry.object_id) or (
+            entry.audience == 'AFFILIATED' and bool(held & set(entry.eligible_affiliations))
+        ) or (
+            entry.audience == 'EXPLICIT_NPCS' and npc_id in entry.allowed_npc_ids
+        )
+        if not eligible:
             continue
         gate = assess(pack, entry.id, campaign_year=campaign_year, build_areas=build_areas)
         if gate.status is CanonStatus.CANON_OK:
             out.append(entry.id)
     return out
-
 
 _WORD = re.compile(r"[\wÀ-ÖØ-öø-ÿ]{4,}")
 _STOP = frozenset({'para', 'como', 'mais', 'muito', 'pela', 'pelo', 'onde', 'quem', 'isso', 'esse',
@@ -326,8 +411,30 @@ _STOP = frozenset({'para', 'como', 'mais', 'muito', 'pela', 'pelo', 'onde', 'que
 
 
 def _content_words(text: str, exclude: str = '') -> set[str]:
-    skip = {w.lower() for w in _WORD.findall(exclude)} | _STOP
+    skip = {w.lower() for w in _WORD.findall(exclude)} | _STOP | _ALIAS_NOUNS
     return {w.lower() for w in _WORD.findall(text)} - skip
+
+
+_ALIAS_NOUNS = frozenset(PLACE_NOUNS + CITY_NOUNS + REALM_NOUNS)
+
+
+def heard(entry: CanonEntry, known_text: str | None, speech: str, question: str = '',
+          aliases: Mapping[str, str] | None = None, minimum: int = 1) -> str | None:
+    """Why listeners did not learn `entry` from this answer, or None when they did.
+
+    The entry must be named in the speech, or in the question it answers ("Quem é o dono dessa
+    taverna?" + "É Lehtinan."), counting the local common nouns (`aliases`). With `known_text`,
+    the speech must also carry some of what the speaker knows: when the name came only from the
+    question, that content must be in the speech itself, so a bare "não sei" teaches nothing."""
+    in_speech = mentioned_in(entry, speech, aliases)
+    in_question = bool(question) and mentioned_in(entry, question, aliases)
+    if not (in_speech or in_question):
+        return 'NOT_SPOKEN'
+    if known_text is None:
+        return None
+    said = f'{speech} {question}' if in_speech else speech
+    shared = _content_words(known_text, entry.title) & _content_words(said, entry.title)
+    return None if len(shared) >= minimum else 'NOT_CONVEYED'
 
 
 def conveyed(entry: CanonEntry, known_text: str, speech: str, minimum: int = 1,
@@ -344,16 +451,19 @@ def conveyed(entry: CanonEntry, known_text: str, speech: str, minimum: int = 1,
 
 
 def entries_named(pack: CanonPack, held: Iterable[str], speech: str,
-                  known_texts: Mapping[str, str] | None = None, question: str = '') -> list[str]:
+                  known_texts: Mapping[str, str] | None = None, question: str = '',
+                  aliases: Mapping[str, str] | None = None) -> list[str]:
     """Entries the speaker holds that the speech names (and, with `known_texts`, conveys),
-    whether or not the model declared them."""
+    whether or not the model declared them. Only the speech itself counts as naming here: a
+    name in the question alone is not enough to add an entry the model did not declare."""
     out = []
     for entry_id in sorted(set(held)):
         entry = pack.get(entry_id)
-        if entry is None or entry.access_scope != COMMON_SCOPE or not mentioned_in(entry, speech):
+        if entry is None or entry.access_scope != COMMON_SCOPE \
+                or not mentioned_in(entry, speech, aliases):
             continue
-        if known_texts is not None and not conveyed(entry, known_texts.get(entry_id, ''), speech,
-                                                    question=question):
+        if known_texts is not None and heard(entry, known_texts.get(entry_id, ''), speech,
+                                             question, aliases) is not None:
             continue
         out.append(entry_id)
     return out
@@ -363,7 +473,8 @@ def share_knowledge(store: CampaignStore, branch_id: str, pack: CanonPack, *, sp
                     listeners: Iterable[str], used_entry_ids: Iterable[str], req_id: str,
                     host_epoch: int, at_game_time: int, speech: str | None = None,
                     also_held: Iterable[str] = (), known_texts: Mapping[str, str] | None = None,
-                    question: str = '', evidence: str = 'LAB_OBSERVED') -> ShareReport:
+                    question: str = '', evidence: str = 'LAB_OBSERVED',
+                    aliases: Mapping[str, str] | None = None) -> ShareReport:
     """INQUIRY (ADR-0116): companions who heard `speaker` use an entry learn that entry.
 
     The speaker must be outside the party (a companion never teaches another companion) and hold
@@ -393,11 +504,10 @@ def share_knowledge(store: CampaignStore, branch_id: str, pack: CanonPack, *, sp
         entry = pack.get(entry_id)
         if entry_id not in held or entry is None or entry.access_scope != COMMON_SCOPE:
             refusals.append(Refusal(speaker, entry_id, 'SPEAKER_DOES_NOT_KNOW'))
-        elif speech is not None and not mentioned_in(entry, speech):
-            refusals.append(Refusal(speaker, entry_id, 'NOT_SPOKEN'))
-        elif speech is not None and known_texts is not None and not conveyed(
-                entry, known_texts.get(entry_id, ''), speech, question=question):
-            refusals.append(Refusal(speaker, entry_id, 'NOT_CONVEYED'))
+        elif speech is not None and (why := heard(
+                entry, known_texts.get(entry_id, '') if known_texts is not None else None,
+                speech, question, aliases)) is not None:
+            refusals.append(Refusal(speaker, entry_id, why))
         else:
             entries.append(entry)
     hearers = []

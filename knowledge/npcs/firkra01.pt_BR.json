@@ -1,0 +1,24 @@
+{
+  "schema": "infinity-ai.npc-identity-curation.v1",
+  "npc_id": "npc:firkra01",
+  "language": "pt_BR",
+  "note": "Lorde Jierdan, como o jogo o apresenta. A ficha do jogo não é humanoide, então o inventário não o conta como habitante; esta curadoria o declara HABITANTE de Athkatla (ADR-0120). Nada sobre a verdadeira natureza dele entra nos fatos.",
+  "standing": "HABITANTE",
+  "occupation": "nobre de Athkatla",
+  "origin_region": null,
+  "years_here": null,
+  "places_visited": [],
+  "self_facts": [],
+  "sources": [
+    {
+      "source_id": "game-data-local",
+      "locator": "AR0406, ator Lorde Jierdan (script name firkra01), colocado pelo jogo na Coroa de Cobre"
+    }
+  ],
+  "curation": {
+    "status": "CHECKED",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-10"
+  },
+  "affiliations": []
+}

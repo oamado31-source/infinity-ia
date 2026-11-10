@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.npc-identity-curation.v1",
+  "npc_id": "npc:salvanas",
+  "language": "pt_BR",
+  "note": "Frequentador curado da Coroa de Cobre (ADR-0119, afiliação REGULAR), para fechar o roteiro S1f da SPEC-007. Raça, classe e alinhamento vêm da ficha do jogo; nada além da frequência à casa é afirmado.",
+  "standing": "HABITANTE",
+  "occupation": null,
+  "origin_region": null,
+  "years_here": null,
+  "places_visited": [],
+  "self_facts": [
+    "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+  ],
+  "sources": [
+    {
+      "source_id": "game-data-local",
+      "locator": "AR0406, ator Salvanas (script name salvanas), colocado pelo jogo na Coroa de Cobre"
+    },
+    {
+      "source_id": "maintainer",
+      "locator": "Afiliação place:copper-coronet:REGULAR como decisão de curadoria do projeto (ADR-0119, item 8), conferida pelo mantenedor em 2026-11-10."
+    }
+  ],
+  "curation": {
+    "status": "CHECKED",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-10"
+  },
+  "affiliations": [
+    "place:copper-coronet:REGULAR"
+  ]
+}

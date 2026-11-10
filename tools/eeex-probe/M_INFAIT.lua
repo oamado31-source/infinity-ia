@@ -64,25 +64,33 @@ local function infai_party_ids()
 	return ids
 end
 
--- Criatura sob o cursor, se for um sprite fora do grupo. Retorna tabela de leitura ou nil.
+-- Criatura sob o cursor: alguem fora do grupo ou um companheiro (retratos 1..5); o protagonista
+-- (retrato 0) nao conversa consigo mesmo. Retorna tabela de leitura ou nil.
 local function infai_speaker_under_cursor()
 	local ok, info = pcall(function()
 		local object = EEex_GameObject_GetUnderCursor()
 		if object == nil or object.m_baseStats == nil then return nil end
-		if infai_party_ids()[object.m_id] ~= nil then return nil end
+		local member = infai_party_ids()[object.m_id]
+		if member ~= nil and member.portrait == 0 then return nil end
 		local script = object.m_scriptName:get()
 		local okcre, cre = pcall(function() return object.m_resref:get() end)
+		-- Sabedoria e Inteligencia da ficha (ADR-0117): profundidade do que a pessoa entende.
+		local okwis, wis = pcall(function() return EEex_Sprite_GetActiveStats(object).m_nWIS end)
+		local okint, int = pcall(function() return EEex_Sprite_GetActiveStats(object).m_nINT end)
 		return {
 			id = object.m_id,
 			script = (type(script) == "string" and script ~= "None") and script or "",
 			name = EEex_Sprite_GetName(object) or "",
 			cre = (okcre and type(cre) == "string") and cre or "",
 			dead = infai_is_dead(object),
+			party = member ~= nil,
+			wis = (okwis and type(wis) == "number") and wis or 0,
+			int = (okint and type(int) == "number") and int or 0,
 			x = object.m_pos.x, y = object.m_pos.y,
 		}
 	end)
 	if ok then
-		if info == nil then infai_debug("sem criatura fora do grupo sob o cursor") end
+		if info == nil then infai_debug("ninguem com quem conversar sob o cursor") end
 		return info
 	end
 	infai_debug("falha ao ler a criatura sob o cursor: " .. tostring(info))
@@ -201,7 +209,10 @@ function INFAI_TALK_Send()
 		',"name":' .. infai_json_string(st.speaker.name) ..
 		',"cre":' .. infai_json_string(st.speaker.cre) ..
 		',"instance":' .. string.format("%d", st.speaker.id) ..
-		',"dead":' .. tostring(st.speaker.dead == true) .. '}' ..
+		',"dead":' .. tostring(st.speaker.dead == true) ..
+		',"party":' .. tostring(st.speaker.party == true) ..
+		',"wis":' .. string.format("%d", st.speaker.wis or 0) ..
+		',"int":' .. string.format("%d", st.speaker.int or 0) .. '}' ..
 		',"text":' .. infai_json_string(text) ..
 		',"listeners":' .. (listeners and infai_json_array(listeners) or "null") .. '}')
 	infai_add_line("Você: " .. text)
@@ -296,7 +307,8 @@ EEex_GameState_AddDestroyedListener(function()
 end)
 
 -- Clique direito: os eventos de mouse passam pelo gancho de eventos do EEex; so o clique direito
--- sobre uma criatura fora do grupo, na tela de mundo e com a caixa fechada, e consumido.
+-- sobre alguem com quem conversar (fora do grupo ou companheiro), na tela de mundo e com a caixa
+-- fechada, e consumido.
 local infai_events_poll = EEex_Key_Hook_AfterEventsPoll
 function EEex_Key_Hook_AfterEventsPoll(event)
 	if INFAI_TALK_RIGHT_CLICK and not INFAI_TALK_State.open then

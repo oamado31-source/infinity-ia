@@ -468,7 +468,11 @@ class DialogueTests(Story):
         self.learn()
         after = self.ctx(10 + DAY)
         texts = {k.fact_id: k.text for k in after.knowledge}
-        self.assertEqual(len(texts), 4)
+        self.assertEqual(len(texts), 6)
+        self.assertIn('canon:place:copper-coronet',
+                      {k.event_id for k in after.knowledge})
+        self.assertIn('canon:rel:lehtinan-owns-copper-coronet',
+                      {k.event_id for k in after.knowledge})
         self.assertTrue(any(t.startswith('Conselho dos Seis:') for t in texts.values()))
         self.assertIn('CONHECIMENTO GERAL:\nK1:', system_prompt(after))
         self.assertTrue({'Amn', 'Athkatla', 'Conselho', 'Seis'} <= after.vocabulary)

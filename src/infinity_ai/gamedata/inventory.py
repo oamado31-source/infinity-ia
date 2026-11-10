@@ -173,6 +173,12 @@ class Resident:
     name_strref: int | None
     allegiance: int
     general: int = 1
+    race: int = 0
+    klass: int = 0
+    gender: int = 0
+    alignment: int = 0
+    wisdom: int = 0
+    intelligence: int = 0
 
 
 @dataclass(frozen=True)
@@ -265,7 +271,8 @@ def build_residents(source: ByteSource, *, language: str, build_fingerprint: str
         by_npc[npc_id] = Resident(npc_id, ident.script_name, prev.cre_resref if prev else cre,
                                   found, strings.get(ident.name_strref) if ident.name_strref
                                   is not None else None, ident.name_strref, ident.allegiance,
-                                  ident.general)
+                                  ident.general, ident.race, ident.klass, ident.gender,
+                                  ident.alignment, ident.wisdom, ident.intelligence)
     stamp = now or datetime.now(timezone.utc).isoformat(timespec='seconds').replace('+00:00', 'Z')
     return ResidentInventory(build_fingerprint, language, tuple(by_npc[k] for k in sorted(by_npc)),
                              tuple(sorted(are_data)), skipped, stamp)
@@ -331,7 +338,10 @@ def load_local_residents(build_fingerprint: str, language: str,
             out[r['npc_id']] = Resident(r['npc_id'], r['script_name'], r['cre_resref'],
                                         tuple(r['areas']), r.get('display_name'),
                                         r.get('name_strref'), int(r['allegiance']),
-                                        int(r.get('general', 1)))
+                                        int(r.get('general', 1)), int(r.get('race', 0)),
+                                        int(r.get('klass', 0)), int(r.get('gender', 0)),
+                                        int(r.get('alignment', 0)), int(r.get('wisdom', 0)),
+                                        int(r.get('intelligence', 0)))
         except (KeyError, TypeError, ValueError):
             continue
     return out

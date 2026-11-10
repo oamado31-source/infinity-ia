@@ -233,6 +233,12 @@ class CreatureIdentity:
     script_name: str      # death variable; '' when unset
     allegiance: int       # EA byte (2 = PC ... 255 = enemy)
     general: int = 1      # GENERAL.IDS (1 = humanoid, 2 = animal, 255 = monster)
+    race: int = 0         # RACE.IDS
+    klass: int = 0        # CLASS.IDS
+    gender: int = 0       # GENDER.IDS (1 = male, 2 = female)
+    alignment: int = 0    # ALIGNMEN.IDS (0x11 LG ... 0x33 CE)
+    wisdom: int = 0       # ability score (0 = not read)
+    intelligence: int = 0  # ability score (0 = not read)
 
 
 def parse_are_actors(data: bytes) -> tuple[AreaActor, ...]:
@@ -265,4 +271,5 @@ def parse_cre_identity(data: bytes) -> CreatureIdentity:
     script = data[0x280:0x2A0].split(b'\0', 1)[0].decode('latin-1').strip()
     if script.lower() == 'none':
         script = ''
-    return CreatureIdentity(_strref(name), script, data[0x270], data[0x271])
+    return CreatureIdentity(_strref(name), script, data[0x270], data[0x271], data[0x272],
+                            data[0x273], data[0x275], data[0x27B], data[0x23B], data[0x23A])

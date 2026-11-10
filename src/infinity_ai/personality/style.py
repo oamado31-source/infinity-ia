@@ -32,3 +32,16 @@ def style_from_profile(profile: dict) -> tuple[str, ...]:
 def orientation_from_profile(profile: dict) -> str:
     alignment = profile["alignment_initial"]
     return f'{ETHICS[alignment["ethical"]]}; {MORALITY[alignment["moral"]]}'
+
+
+# ALIGNMEN.IDS codes in the creature file (game data) -> (ethical, moral) axes.
+GAME_ALIGNMENT = {0x11: ('LAWFUL', 'GOOD'), 0x12: ('LAWFUL', 'NEUTRAL'), 0x13: ('LAWFUL', 'EVIL'),
+                  0x21: ('NEUTRAL', 'GOOD'), 0x22: ('NEUTRAL', 'NEUTRAL'),
+                  0x23: ('NEUTRAL', 'EVIL'), 0x31: ('CHAOTIC', 'GOOD'),
+                  0x32: ('CHAOTIC', 'NEUTRAL'), 0x33: ('CHAOTIC', 'EVIL')}
+
+
+def orientation_from_game_alignment(code: int | None) -> str | None:
+    """ADR-0117: an official NPC keeps the alignment the game gives it (no draw), as orientation."""
+    axes = GAME_ALIGNMENT.get(code) if isinstance(code, int) else None
+    return f'{ETHICS[axes[0]]}; {MORALITY[axes[1]]}' if axes else None

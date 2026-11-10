@@ -41,5 +41,10 @@
       "source_id": "game-data-local",
       "locator": "WORLDMAP (mapa 0): Saradush"
     }
-  ]
+  ],
+  "knowledge_layers": {
+    "POPULAR": "Reino ao sul de Amn que passou anos em guerra.",
+    "INFORMED": "Depois da guerra civil e da reconquista, voltou a ter monarcas em 1369 DR.",
+    "STUDIED": "Tem longa história de invasões, disputas e comércio com Amn; Saradush fica em seu território, no ducado de Suretmarch."
+  }
 }

@@ -19,6 +19,12 @@ _META = re.compile(r'modelo de linguagem|intelig[eê]ncia artificial|\bprompt\b|
                    r'|language model|\bas an ai\b|\b[FK]\d+\b|used_facts', re.I)
 _META_EXACT = re.compile(r'\bIA\b|\bAI\b')  # case-sensitive: "eu ia" is ordinary Portuguese
 _MARKUP = re.compile(r'[<>{}\[\]`*#|]')
+# First-person claims of ownership, rank or kin (ADR-0117 rule 8): only allowed when the
+# person's own FATOS say so.
+_SELF_CLAIM = re.compile(
+    r'\b(?:me pertence|me pertencem|(?:sou|eu sou) (?:o|a) (?:dono|dona|senhor|senhora|chefe|'
+    r'líder|rei|rainha|lorde|capitão|capitã|governante)|(?:meu|minha|meus|minhas) '
+    r'(?:pai|mãe|irmão|irmã|filho|filha|esposa|marido|família|terras|propriedades))\b', re.I)
 _WORD = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ'-]*")
 _BOUNDARY = re.compile(r'[.!?…:"“«—]')
 
@@ -79,6 +85,13 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
         reasons.append('META_TALK')
     if _MARKUP.search(speech):
         reasons.append('MARKUP')
+    claim = _SELF_CLAIM.search(speech)
+    if claim:
+        # The claimed word (dono, lorde, pai, ...) must be in the person's facts or own name.
+        word = claim.group(0).split()[-1].lower()
+        own = ' '.join([f.text for f in context.facts] + [context.persona.display_name]).lower()
+        if word not in own:
+            reasons.append('SELF_CLAIM')
     vocabulary = context.vocabulary | (player_names(player_text) if unknown else frozenset())
     names = _unknown_names(speech, vocabulary)
     if names:

@@ -10,12 +10,16 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import MappingProxyType
 
 KNOWLEDGE_ROOT = Path(__file__).resolve().parents[3] / 'knowledge'
 ENTRY_SCHEMA = 'infinity-ai.canon-entry.v1'
 SOURCE_SCHEMA = 'infinity-ai.source.v1'
+LAYERS = ('POPULAR', 'INFORMED', 'STUDIED')
+MAX_LAYER = 200
 MAX_SUMMARY = 280
 MAX_QUOTE_WORDS = 15
 KIND_PREFIX = {'REGION': 'region', 'EVENT': 'event', 'ORGANIZATION': 'org', 'CHARACTER': 'char'}
@@ -60,6 +64,9 @@ class CanonEntry:
     source_refs: tuple[SourceRef, ...]
     verification_status: str
     access_scope: str
+    # ADR-0117: the summary's facts split by how hard they are to know (POPULAR / INFORMED /
+    # STUDIED), restated in our words; never facts beyond the checked summary.
+    layers: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -102,6 +109,12 @@ def _check_entry(doc: dict, year: int, sources: dict[str, Source], name: str) ->
         problems.append(f'{name}: id prefix does not match kind')
     if doc['verification_status'] not in VERIFICATION:
         problems.append(f'{name}: unknown verification status')
+    layers = doc.get('knowledge_layers')
+    if layers is not None and (not isinstance(layers, dict) or not set(layers) <= set(LAYERS)
+                               or 'POPULAR' not in layers
+                               or not all(isinstance(v, str) and 0 < len(v) <= MAX_LAYER
+                                          for v in layers.values())):
+        problems.append(f'{name}: knowledge_layers must map POPULAR/INFORMED/STUDIED to short text')
     summary = doc['summary']
     if not isinstance(summary, str) or len(summary) > MAX_SUMMARY:
         problems.append(f'{name}: summary longer than {MAX_SUMMARY} characters')
@@ -163,7 +176,8 @@ def load_partition(year_dr: int, root: Path = KNOWLEDGE_ROOT) -> CanonPack:
             doc.get('valid_from_dr'), doc.get('valid_to_dr'), doc['date_precision'],
             doc.get('region_id'), tuple(doc['area_resrefs']),
             tuple(SourceRef(r['source_id'], r.get('locator', '')) for r in doc['source_refs']),
-            doc['verification_status'], doc['access_scope'])
+            doc['verification_status'], doc['access_scope'],
+            MappingProxyType(dict(doc.get('knowledge_layers') or {})))
     if problems:
         raise CanonError(problems)
     used = sorted({r.source_id for e in entries.values() for r in e.source_refs})

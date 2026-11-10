@@ -14,3 +14,6 @@
 - [x] Implementar `FirstContactService` e rota experimental `/v1/encounter-dialogue` com evento gravado e sessão observada.
 - [ ] Desenvolver POC do clique em qualquer ator do BG2:EE (inclusive NPC sem diálogo nativo), identidade/instância e geração real de `NpcDialogueStarted` — **produtor implementado (ADR-0116):** a caixa de diálogo no jogo (F9 sobre a criatura sob o cursor, `tools/eeex-probe/M_INFAIT.lua`) gera `NpcDialogueStarted` sem texto, com `CANDIDATE` + id da instância como token de cena (sem script name) ou `CANONICAL` (com script name, sem sorteio); `src/infinity_ai/personality/in_game.py`, testes em `tests/test_talk.py`. Falta a execução no laboratório.
 - [ ] Executar teste real em laboratório BG2:EE e publicar evidência de interação com pessoas comuns, sem afetar diálogos originais.
+- [x] Camada P0 de identidade (ADR-0117): dados do jogo (raça, classe, gênero, alinhamento, papel no nome), curadoria `knowledge/npcs/` com conferência, geração fechada para genéricos, persistência igual à da personalidade e fatos "SOBRE VOCÊ" no diálogo; `tests/test_identity.py`.
+- [ ] Conferir a curadoria de Bernard e curar os NPCs oficiais da Coroa de Cobre; testar no laboratório (S1f).
+- [ ] Usar o alinhamento da ficha do jogo como `alignment_initial` de NPCs oficiais (hoje só na identidade).

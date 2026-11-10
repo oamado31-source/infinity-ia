@@ -48,7 +48,7 @@ from infinity_ai.bridge.talk import (  # noqa: E402
 )
 from infinity_ai.canon.pack import load_partition, load_sources  # noqa: E402
 from infinity_ai.dialogue.context import (  # noqa: E402
-    RESIDENT_FALLBACK, Catalog, current_companions,
+    RESIDENT_FALLBACK, UNNAMED_AREA, Catalog, current_companions,
 )
 from infinity_ai.dialogue.engine import (  # noqa: E402
     DialogueEngine, DialogueRequest, DialogueStatus, ResidentRequest,
@@ -58,10 +58,17 @@ from infinity_ai.gamedata.inventory import (  # noqa: E402
     load_local_names, load_local_residents, load_local_resrefs,
 )
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
-    DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, residents_as_stays, share_knowledge,
+    DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, entries_named, identity_entries,
+    placement_regions, residents_as_stays, share_knowledge,
 )
+from infinity_ai.canon.pin import PinStatus, check_pin  # noqa: E402
+from infinity_ai.memory.store import MemoryStore  # noqa: E402
 from infinity_ai.personality import (  # noqa: E402
     FirstContactError, FirstContactService, NpcEncounterDialogue,
+)
+from infinity_ai.personality.identity import (  # noqa: E402
+    build_identity, generate_identity, knowledge_tier, layered_text, load_curations,
+    role_from_name,
 )
 from infinity_ai.personality.in_game import (  # noqa: E402
     profile_for, record_dialogue_start, resolve_speaker,
@@ -73,6 +80,7 @@ from lab_ssh import (  # noqa: E402
 )
 
 FIELDS = (AREA_FIELD, GAME_TIME_FIELD, PARTY_FIELD)
+PENDING_WINDOW_MS = 55_000   # the in-game box gives up after 60 s
 MAX_BODY = 4096
 
 
@@ -116,6 +124,7 @@ class Observer(threading.Thread):
         self.build_areas = load_local_resrefs(live_build, args.language)
         self.residents = load_local_residents(live_build, args.language)
         self.stays = residents_as_stays(self.pack, self.residents, live_build)
+        self.curations = load_curations(self.pack)
         self._knowledge_status = None
         self.pin = (pin_build, pin_modpack)
         self.source = TeeLogSource(SshLogSource(ssh, args.game_root))
@@ -202,10 +211,19 @@ class Talker(threading.Thread):
             try:
                 text = self.observer.source.last_text()
                 requests = parse_talk_requests(text) if text else []
-                if self.seen is None:            # requests already in the log are not replayed
+                if self.seen is None:
+                    # Old requests are not replayed, but one the box is still waiting for (same
+                    # session, under the box timeout, never answered) is, e.g. after a restart.
                     if text:
-                        self.seen = {r.req_id for r in requests}
-                else:
+                        snap = parse_latest_snapshot(text)
+                        answered = {json.loads(row[0]).get('req_id') for row in
+                                    store.connection.execute(
+                                        "SELECT payload_json FROM events "
+                                        "WHERE event_type = 'NpcDialogueStarted'")}
+                        self.seen = {r.req_id for r in requests if r.req_id in answered or not (
+                            snap and r.session_seq == snap.session_seq
+                            and 0 <= snap.clock_ms - r.clock_ms <= PENDING_WINDOW_MS)}
+                elif self.observer.snapshot().observed:      # wait for the first observation
                     for req in requests:
                         if req.req_id not in self.seen:
                             self.seen.add(req.req_id)
@@ -219,30 +237,76 @@ class Talker(threading.Thread):
         speaker = resolve_speaker(req, self.observer.residents) or ''
         resident = self.observer.residents.get(speaker)
         areas = resident.areas if resident is not None and speaker in self.observer.stays else ()
-        scope, shared = '-', '-'
+        scope, shared, ident_source, known_by_identity, known_now = '-', '-', '-', [], ()
+        flags: list[str] = []
+        wisdom = intelligence = None
+        tier, known_texts = '-', {}
         if not view.observed or view.branch_id is None or view.game_time is None:
             speech, status, reason, used, granted = RESIDENT_FALLBACK, 'DENIED', 'NO_OBSERVATION', (), ()
         else:
             # SPEC-006: the box request is the dialogue-start observation (no text stored).
             started = record_dialogue_start(store, view.branch_id, req, game_time=view.game_time,
                                             speaker_id=speaker or None)
-            profile, scope = profile_for(store, view.branch_id, started,
-                                         at_game_time=view.game_time,
-                                         world_seed=self.args.world_seed)
+            pack = self.observer.pack
+            homes = placement_regions(pack, req.area) if areas and req.area else []
+            home = homes[0] if homes else None
+            gender = getattr(resident, 'gender', 0)
+
+            def background(generated_id: str) -> dict:   # ADR-0117, generic people only
+                return generate_identity(
+                    npc_id=generated_id, role=role_from_name(req.speaker_name), gender=gender,
+                    home_region=home, pack=pack, world_seed=self.args.world_seed,
+                    campaign_id=store.campaign_id, branch_id=view.branch_id)
+
+            profile, scope, generated = profile_for(
+                store, view.branch_id, started, at_game_time=view.game_time,
+                world_seed=self.args.world_seed, identity_factory=background)
+            place = self.catalog.area(req.area) if home else None
+            identity = build_identity(
+                npc_id=speaker or 'npc:desconhecido', name=req.speaker_name, pack=pack,
+                place=place if place != UNNAMED_AREA else None, home_region=home,
+                resident=resident, curation=self.observer.curations.get(speaker),
+                generated=generated)
+            ident_source = identity.source
+            # ADR-0117: what is public in the homeland and where the person lives (pinned pack).
+            known_by_identity = identity_entries(
+                pack, homeland=identity.origin_region, home=identity.home_region,
+                campaign_year=self.args.campaign_year,
+                build_areas=self.observer.build_areas) \
+                if check_pin(store, view.branch_id, pack) is PinStatus.MATCH else []
+            stored = set(MemoryStore(store).known_canon(speaker, view.branch_id, view.game_time)) \
+                if speaker else set()
+            known_now = tuple(sorted(stored | set(known_by_identity)))
+            also_known = tuple((e, pack.get(e).title, pack.get(e).summary, pack.get(e).layers)
+                               for e in known_now if pack.get(e) is not None)
+            # Wisdom and Intelligence (game data) set how deeply the person knows (ADR-0117).
+            wisdom = getattr(resident, 'wisdom', 0) or None
+            intelligence = getattr(resident, 'intelligence', 0) or None
+            tier_obj = knowledge_tier(wisdom, intelligence)
+            tier = tier_obj.name
+            known_texts = {e: layered_text(pack.get(e).summary, pack.get(e).layers, tier_obj)
+                           for e in known_now if pack.get(e) is not None}
             result = DialogueEngine(store, self.provider, self.catalog).respond_resident(
                 ResidentRequest(speaker, req.speaker_name, req.text, req.area, req.speaker_dead),
                 residence_areas=areas, branch_id=view.branch_id, at_game_time=view.game_time,
-                profile=profile)
+                profile=profile, identity=identity, also_known=also_known, wisdom=wisdom,
+                intelligence=intelligence, game_alignment=getattr(resident, 'alignment', None))
             status, reason = result.status.value, result.reason
+            flags = list(result.flags)
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
             used = tuple(e.split(':', 1)[1] for e in result.used_event_ids
                          if e.startswith('canon:'))
+            if result.status is DialogueStatus.OK and speaker:
+                # The model may name an entry without declaring it: what was said is what was heard.
+                used = tuple(dict.fromkeys(used + tuple(entries_named(
+                    self.observer.pack, known_now, speech, known_texts, question=req.text))))
             granted = ()
             if result.status is DialogueStatus.OK and used and req.listeners:
                 report = share_knowledge(
                     store, view.branch_id, self.observer.pack, speaker=speaker,
                     listeners=req.listeners, used_entry_ids=used, req_id=req.req_id,
-                    host_epoch=req.session_seq, at_game_time=view.game_time, speech=speech)
+                    host_epoch=req.session_seq, at_game_time=view.game_time, speech=speech,
+                    also_held=known_by_identity, known_texts=known_texts, question=req.text)
                 granted = report.granted
                 shared = report.status + ''.join(f' {r.entry_id}:{r.reason}' for r in report.refusals
                                                  if r.reason != 'NOT_A_LISTENER')
@@ -252,7 +316,10 @@ class Talker(threading.Thread):
         put_override_file(self.ssh, self.args.game_root, f'{REPLY_RESREF}.lua',
                           render_reply(req.req_id, speech).encode('utf-8'))
         print(f'{now_iso()} caixa pedido={req.req_id} falante={speaker or "-"} '
-              f'habitante={bool(areas)} perfil={scope} status={status} motivo={reason} '
+              f'habitante={bool(areas)} perfil={scope} identidade={ident_source} '
+              f'wis={wisdom or "-"} int={intelligence or "-"} camada={tier} '
+              f'assuntos={len(known_now)} recusas={flags} '
+              f'status={status} motivo={reason} '
               f'entradas={list(used)} inquiry={shared} '
               f'ouvintes={list(req.listeners) if req.listeners is not None else None}')
         for k in granted:
@@ -396,6 +463,7 @@ def main() -> int:
     print(f'pacote {args.campaign_year} DR {observer.pack.revision[:19]}..., '
           f'areas da build: {len(observer.build_areas or ())}, '
           f'habitantes locais: {len(observer.stays)}, '
+          f'identidades curadas: {len(observer.curations)}, '
           f'limite de residencia: {args.residence_threshold}')
     CampaignStore.open(args.db, args.campaign).close()   # migrate once before the threads open it
     # The reply file must exist when the game starts, or Infinity_DoFile never finds it.

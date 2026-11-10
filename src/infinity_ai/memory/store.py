@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 
 from ..bridge.domain import Audience, Visibility, audience_may_see
 from ..state.store import CampaignStore, LineageStep, StoreError
@@ -45,7 +45,8 @@ _KNOW_FIELDS = ('knowledge_id, npc_id, branch_id, game_time, basis, region_id, e
 def _row_to_knowledge(row: tuple) -> CanonKnowledge:
     snapshot = json.loads(row[11])
     return CanonKnowledge(row[0], row[1], row[2], row[3], KnowledgeBasis(row[4]), row[5], row[6],
-                          row[7], row[8], row[9], row[10], snapshot['title'], snapshot['summary'])
+                          row[7], row[8], row[9], row[10], snapshot['title'], snapshot['summary'],
+                          dict(snapshot.get('layers') or {}))
 
 
 def _row_to_experience(row: tuple) -> NpcExperience:
@@ -223,7 +224,8 @@ class MemoryStore:
     def record_canon_knowledge(self, *, npc_id: str, branch_id: str, game_time: int,
                                basis: KnowledgeBasis, region_id: str, entry_id: str,
                                pack_year_dr: int, pack_revision: str, pin_event_id: str,
-                               trigger_event_id: str, title: str, summary: str
+                               trigger_event_id: str, title: str, summary: str,
+                               layers: Mapping[str, str] | None = None
                                ) -> tuple[CanonKnowledge, bool]:
         """Low-level write; the eligibility rule lives in memory.common_knowledge."""
         if not npc_id or not entry_id or not region_id or not pack_revision:
@@ -235,8 +237,10 @@ class MemoryStore:
                 raise MemoryRuleError(f'{event_id} is not part of this branch')
         key = hashlib.sha256('|'.join((self._store.campaign_id, branch_id, npc_id, entry_id,
                                        basis.value, pack_revision)).encode()).hexdigest()
-        snapshot = json.dumps({'title': title, 'summary': summary}, ensure_ascii=False,
-                              sort_keys=True)
+        snapshot = {'title': title, 'summary': summary}
+        if layers:
+            snapshot['layers'] = dict(layers)
+        snapshot = json.dumps(snapshot, ensure_ascii=False, sort_keys=True)
         cursor = self._conn.execute(
             f'INSERT INTO npc_canon_knowledge ({_KNOW_FIELDS}, campaign_id, idempotency_key, '
             'recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '

@@ -44,5 +44,10 @@
       "locator": "WORLDMAP (mapa 2)"
     }
   ],
-  "verification_status": "SOURCE_CHECKED"
+  "verification_status": "SOURCE_CHECKED",
+  "knowledge_layers": {
+    "POPULAR": "Terra de mercadores, onde o dinheiro vale mais que tudo.",
+    "INFORMED": "Fica no sul da Costa da Espada, na rota de comércio entre o sul e as Terras Centrais.",
+    "STUDIED": "Por estar entre Calimshan e Tethyr, ao sul, e as Terras Centrais, virou um dos grandes centros de comércio de Faerûn."
+  }
 }

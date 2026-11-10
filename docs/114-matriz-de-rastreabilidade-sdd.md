@@ -11,6 +11,7 @@
 | Decisão do mantenedor (2026-11-08) | ADR-0113 / CR-2026-003 | SPEC-001/003/004/005 (etapa 1), SPEC-002 (etapa 2) | S1 single player antes de P4 |
 | Decisão do mantenedor (2026-11-09) | ADR-0114 | SPEC-003/004/005 | S1d: conhecimento comum regional só por canal legítimo |
 | Decisão do mantenedor (2026-11-09) | ADR-0116 | SPEC-003/004/005/006, SPEC-001 (protocolo) | Perguntar a habitantes na caixa do jogo; INQUIRY; habitantes pelos dados do jogo |
+| Decisão do mantenedor (2026-11-10) | ADR-0117 | SPEC-006 (P0), SPEC-004/005 | Identidade do NPC: curadoria > dados do jogo > geração fechada; fatos "SOBRE VOCÊ" |
 | Solicitação do mantenedor (2026-11-09; proposta) | ADR-0115 (PROPOSTO), ADR-0030–0032/0042/0062 | SPEC-006 + integração futura SPEC-003/004/005 | Gerador e primeiro contato sintéticos; alinhamento 3x3; persistência via evento para identidade verificada; clique in-game/POC pendentes |
 | Q13/Q17/Q18/Q21/Q22/Q23 | ADRs anteriores + roadmap | Backlog futuro | Capabilities específicas pendentes |
 

@@ -75,12 +75,15 @@ def build_wmp(maps):
     return b'WMAPV1.0' + struct.pack('<2I', len(maps), 16) + out_maps + out_areas
 
 
-def build_cre(name_strref, script, ea=128, general=1):
+def build_cre(name_strref, script, ea=128, general=1, race=0, klass=0, gender=0, alignment=0,
+              wisdom=0, intelligence=0):
     c = bytearray(0x2D4)
     c[0:8] = b'CRE V1.0'
     struct.pack_into('<I', c, 0x08, name_strref)
     c[0x270] = ea
     c[0x271] = general
+    c[0x272], c[0x273], c[0x275], c[0x27B] = race, klass, gender, alignment
+    c[0x23B], c[0x23A] = wisdom, intelligence
     c[0x280:0x280 + len(script)] = script.encode('latin-1')
     return bytes(c)
 
@@ -206,9 +209,13 @@ class ResidentFormatTests(unittest.TestCase):
         actors = parse_are_actors(build_are([('Bernard', 'BERNAR', None), ('Guard', '', emb)]))
         self.assertEqual([(a.actor_name, a.cre_resref, a.embedded is None) for a in actors],
                          [('Bernard', 'BERNAR', True), ('Guard', '', False)])
-        ident = parse_cre_identity(build_cre(3, 'Bernard', 128, 2))
+        ident = parse_cre_identity(build_cre(3, 'Bernard', 128, 2, race=1, klass=2, gender=1,
+                                             alignment=0x22, wisdom=14, intelligence=16))
+        self.assertEqual((ident.wisdom, ident.intelligence), (14, 16))
         self.assertEqual((ident.name_strref, ident.script_name, ident.allegiance, ident.general),
                          (3, 'Bernard', 128, 2))
+        self.assertEqual((ident.race, ident.klass, ident.gender, ident.alignment),
+                         (1, 2, 1, 0x22))
         self.assertEqual(parse_cre_identity(build_cre(3, 'None')).script_name, '')
         self.assertIsNone(parse_cre_identity(build_cre(NO_STRREF, 'x')).name_strref)
 
@@ -239,7 +246,8 @@ class ResidentInventoryTests(unittest.TestCase):
         docks = build_are([('Viajante', 'TRAVEL', None)])
         (root / 'data' / 'AREAS.bif').write_bytes(build_biff([
             (0, AREA_TYPE, coronet), (1, AREA_TYPE, docks),
-            (2, CRE_TYPE, build_cre(0, 'Bernard')), (3, CRE_TYPE, build_cre(1, ''))]))
+            (2, CRE_TYPE, build_cre(0, 'Bernard', gender=1, alignment=0x22)),
+            (3, CRE_TYPE, build_cre(1, ''))]))
         (root / 'chitin.key').write_bytes(build_key(['data\\AREAS.bif'], [
             ('AR0406', AREA_TYPE, 0, 0), ('AR0300', AREA_TYPE, 0, 1),
             ('BERNAR', CRE_TYPE, 0, 2), ('COMMON', CRE_TYPE, 0, 3)]))

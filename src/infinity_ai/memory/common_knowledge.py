@@ -272,7 +272,7 @@ def acquire_common_knowledge(store: CampaignStore, branch_id: str, pack: CanonPa
                     region_id=region, entry_id=entry.id, pack_year_dr=pack.year_dr,
                     pack_revision=pack.revision, pin_event_id=pin.event_id,
                     trigger_event_id=trigger_event.event_id, title=entry.title,
-                    summary=entry.summary)
+                    summary=entry.summary, layers=entry.layers)
                 if new:
                     granted.append(k)
     return AcquisitionReport('OK', tuple(granted), tuple(refusals), lived)
@@ -295,14 +295,80 @@ def mentioned_in(entry: CanonEntry, speech: str) -> bool:
     return any(w.lower() in words for w in _TITLE_WORD.findall(entry.title))
 
 
+def identity_entries(pack: CanonPack, *, homeland: str | None, home: str | None,
+                     campaign_year: int, build_areas: frozenset[str] | None) -> list[str]:
+    """ADR-0117: what is public where the NPC comes from and where it lives.
+
+    Homeland (identity origin): the region and its sub-regions, as ORIGIN. Home (where it lives):
+    the region and its ancestors, as RESIDENCE. Same eligibility as the other channels
+    (COMMON_REGIONAL, gate CANON_OK; the caller checks the pin). Computed when the person speaks,
+    never stored: a generated identity may be temporary."""
+    out = []
+    for entry in sorted(pack.entries.values(), key=lambda e: e.id):
+        if entry.access_scope != COMMON_SCOPE:
+            continue
+        chain = region_chain(pack, home_region(entry))
+        from_homeland = bool(homeland) and _is_region(pack, homeland) and homeland in chain
+        from_home = bool(home) and home_region(entry) in region_chain(pack, home)
+        if not (from_homeland or from_home):
+            continue
+        gate = assess(pack, entry.id, campaign_year=campaign_year, build_areas=build_areas)
+        if gate.status is CanonStatus.CANON_OK:
+            out.append(entry.id)
+    return out
+
+
+_WORD = re.compile(r"[\wÀ-ÖØ-öø-ÿ]{4,}")
+_STOP = frozenset({'para', 'como', 'mais', 'muito', 'pela', 'pelo', 'onde', 'quem', 'isso', 'esse',
+                   'essa', 'este', 'esta', 'mas', 'não', 'são', 'sobre', 'todo', 'toda', 'tudo',
+                   'aqui', 'você', 'eles', 'elas', 'também', 'ainda', 'depois', 'entre', 'quando',
+                   'cidade', 'terra', 'lugar', 'gente', 'coisa', 'estou', 'sou', 'porque', 'muita'})
+
+
+def _content_words(text: str, exclude: str = '') -> set[str]:
+    skip = {w.lower() for w in _WORD.findall(exclude)} | _STOP
+    return {w.lower() for w in _WORD.findall(text)} - skip
+
+
+def conveyed(entry: CanonEntry, known_text: str, speech: str, minimum: int = 1,
+             question: str = '') -> bool:
+    """The speech names the entry *and* carries some of what the speaker knows about it: at
+    least `minimum` content word of the known text besides the title and generic words. Saying "I'm from
+    Athkatla" names Athkatla but teaches nothing about it. The question the answer replies to
+    counts as context ("Quem governa Amn?" + "O Conselho dos Seis.")."""
+    if not mentioned_in(entry, speech):
+        return False
+    shared = _content_words(known_text, entry.title) & \
+        _content_words(f'{speech} {question}', entry.title)
+    return len(shared) >= minimum
+
+
+def entries_named(pack: CanonPack, held: Iterable[str], speech: str,
+                  known_texts: Mapping[str, str] | None = None, question: str = '') -> list[str]:
+    """Entries the speaker holds that the speech names (and, with `known_texts`, conveys),
+    whether or not the model declared them."""
+    out = []
+    for entry_id in sorted(set(held)):
+        entry = pack.get(entry_id)
+        if entry is None or entry.access_scope != COMMON_SCOPE or not mentioned_in(entry, speech):
+            continue
+        if known_texts is not None and not conveyed(entry, known_texts.get(entry_id, ''), speech,
+                                                    question=question):
+            continue
+        out.append(entry_id)
+    return out
+
+
 def share_knowledge(store: CampaignStore, branch_id: str, pack: CanonPack, *, speaker: str,
                     listeners: Iterable[str], used_entry_ids: Iterable[str], req_id: str,
                     host_epoch: int, at_game_time: int, speech: str | None = None,
-                    evidence: str = 'LAB_OBSERVED') -> ShareReport:
+                    also_held: Iterable[str] = (), known_texts: Mapping[str, str] | None = None,
+                    question: str = '', evidence: str = 'LAB_OBSERVED') -> ShareReport:
     """INQUIRY (ADR-0116): companions who heard `speaker` use an entry learn that entry.
 
     The speaker must be outside the party (a companion never teaches another companion) and hold
-    each entry on this branch now; each listener must be a party member. With `speech`, an entry
+    each entry on this branch now, or know it from its homeland or home (`also_held`, ADR-0117);
+    each listener must be a party member. With `speech`, an entry
     the model claims to have used but the speech never names is refused (`NOT_SPOKEN`): listeners
     only learn what they actually heard. The speech itself is not stored. One `KnowledgeShared`
     event (no player or NPC text) is the trigger;
@@ -320,7 +386,7 @@ def share_knowledge(store: CampaignStore, branch_id: str, pack: CanonPack, *, sp
     if speaker in party:
         return ShareReport('SPEAKER_IN_PARTY', (), (Refusal(speaker, '*', 'SPEAKER_IN_PARTY'),))
     memory = MemoryStore(store)
-    held = memory.known_canon(speaker, branch_id, at_game_time)
+    held = set(memory.known_canon(speaker, branch_id, at_game_time)) | set(also_held)
     refusals: list[Refusal] = []
     entries = []
     for entry_id in dict.fromkeys(used_entry_ids):
@@ -329,6 +395,9 @@ def share_knowledge(store: CampaignStore, branch_id: str, pack: CanonPack, *, sp
             refusals.append(Refusal(speaker, entry_id, 'SPEAKER_DOES_NOT_KNOW'))
         elif speech is not None and not mentioned_in(entry, speech):
             refusals.append(Refusal(speaker, entry_id, 'NOT_SPOKEN'))
+        elif speech is not None and known_texts is not None and not conveyed(
+                entry, known_texts.get(entry_id, ''), speech, question=question):
+            refusals.append(Refusal(speaker, entry_id, 'NOT_CONVEYED'))
         else:
             entries.append(entry)
     hearers = []
@@ -360,7 +429,7 @@ def share_knowledge(store: CampaignStore, branch_id: str, pack: CanonPack, *, sp
                     basis=KnowledgeBasis.INQUIRY, region_id=region, entry_id=entry.id,
                     pack_year_dr=pack.year_dr, pack_revision=pack.revision,
                     pin_event_id=pin.event_id, trigger_event_id=event.event_id,
-                    title=entry.title, summary=entry.summary)
+                    title=entry.title, summary=entry.summary, layers=entry.layers)
                 if new:
                     granted.append(k)
     return ShareReport('OK', tuple(granted), tuple(refusals), event)

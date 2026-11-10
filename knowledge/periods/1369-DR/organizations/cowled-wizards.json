@@ -27,5 +27,10 @@
       "locator": "Livro Três, p. 8"
     }
   ],
-  "verification_status": "SOURCE_CHECKED"
+  "verification_status": "SOURCE_CHECKED",
+  "knowledge_layers": {
+    "POPULAR": "Magos poderosos que controlam quem pode usar magia em Amn; o povo desconfia de magia.",
+    "INFORMED": "Restringem o uso de magia e vigiam magos estrangeiros; têm uma célula em cada cidade.",
+    "STUDIED": "A maior e mais antiga célula da ordem fica em Athkatla."
+  }
 }

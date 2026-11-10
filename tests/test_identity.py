@@ -398,6 +398,19 @@ class DialogueTests(unittest.TestCase):
         self.assertEqual(result.status, DialogueStatus.OK, result.flags)
         self.assertEqual(result.used_event_ids, ('canon:rel:lehtinan-owns-copper-coronet',))
 
+    def test_restricted_relationship_reaches_its_own_prompt_section(self):
+        relation = PACK.get('rel:bernard-manages-copper-coronet')
+        known = ((relation.id, relation.title, relation.summary, relation.layers,
+                  relation.access_scope, relation.subject_id),)
+        raw = json.dumps({'speech': 'Lehtinan é o dono; eu cuido da operação diária desta casa.',
+                          'used_facts': ['K1'], 'unknown': False}, ensure_ascii=False)
+        result = DialogueEngine(self.store, FakeProvider([raw]), Catalog.load()).respond_resident(
+            ResidentRequest('npc:cre-bernard', 'Bernard', 'Quem cuida da operação da Coroa de Cobre?',
+                            'AR0406', False), residence_areas=('AR0406',),
+            branch_id=ROOT_BRANCH, at_game_time=10, also_known=known)
+        self.assertEqual(result.status, DialogueStatus.OK, result.flags)
+        self.assertEqual(result.used_event_ids, ('canon:rel:bernard-manages-copper-coronet',))
+
     def test_self_claims_outside_the_facts_are_refused(self):
         bad = json.dumps({'speech': 'Estou aqui porque a cidade me pertence.', 'used_facts': [],
                           'unknown': False}, ensure_ascii=False)

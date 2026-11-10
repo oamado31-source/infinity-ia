@@ -2,7 +2,7 @@
 
 **Entra (texto nosso, curto, com fonte):**
 - `periods/<ano>-DR/` — partição por ano DR (doc 60a). Uma entrada JSON por fato, entidade PLACE ou relação RELATIONSHIP, schema `src/infinity_ai/canon/schemas/canon_entry_v1.schema.json`. Só o ano pedido é carregado.
-- `sources/` — registro bibliográfico das obras (classe S0–S3, ano da ambientação). Os dados ficam `TO_CONFIRM` até o mantenedor conferir o exemplar.
+- `sources/` — registro bibliográfico das obras (classes S0–S3) e da curadoria explícita do projeto (S4_MAINTAINER_CURATED). S4 não é fonte externa e só fundamenta entradas CAMPAIGN_CANON aprovadas.
 - `personas/`, `areas/` — curadoria provisória da SPEC-004 (traços e nomes escritos por nós).
 - `npcs/` — identidade curada de NPCs oficiais (ADR-0117): ofício, origem, fatos sobre si e afiliações explícitas a lugares (ADR-0119); só vale depois da conferência do mantenedor.
 

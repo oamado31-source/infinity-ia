@@ -343,7 +343,7 @@ def relationship_entries(pack: CanonPack, *, npc_id: str, affiliations: Iterable
             out.append(entry.id)
     return out
 
-(r"[\wÀ-ÖØ-öø-ÿ]{4,}")
+_WORD = re.compile(r"[\wÀ-ÖØ-öø-ÿ]{4,}")
 _STOP = frozenset({'para', 'como', 'mais', 'muito', 'pela', 'pelo', 'onde', 'quem', 'isso', 'esse',
                    'essa', 'este', 'esta', 'mas', 'não', 'são', 'sobre', 'todo', 'toda', 'tudo',
                    'aqui', 'você', 'eles', 'elas', 'também', 'ainda', 'depois', 'entre', 'quando',

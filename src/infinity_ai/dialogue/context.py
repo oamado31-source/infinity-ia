@@ -13,12 +13,16 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
 from ..memory.common_knowledge import BackgroundRegion
-from ..personality.style import orientation_from_profile, style_from_profile
+from ..personality.identity import NpcIdentity, knowledge_tier, layered_text
+from ..personality.style import (
+    orientation_from_game_alignment, orientation_from_profile, style_from_profile,
+)
 from ..memory.model import RecallStatus
 from ..memory.store import MemoryStore
 from ..state.store import CampaignStore
@@ -65,6 +69,8 @@ class DialogueContext:
     knowledge: tuple[Fact, ...] = ()
     resident_of: str | None = None   # set for a person met in the game (ADR-0116): where
     orientation: str | None = None   # SPEC-006 alignment orientation, when a profile applies
+    occupation: str | None = None    # ADR-0117 identity: what the person does, when known
+    manner: str | None = None        # ADR-0117 Wisdom tier: how the person speaks and reasons
 
 
 @dataclass(frozen=True)
@@ -160,7 +166,7 @@ def _render(claim_type: str, payload: dict, catalog: Catalog) -> list[str]:
 
 
 RESIDENT_STYLE = ('direto e desconfiado de estranhos', 'fala como gente da cidade')
-RESIDENT_FALLBACK = 'Hum? Disso eu não sei, forasteiro.'
+RESIDENT_FALLBACK = 'Hum? Disso eu não sei.'
 
 
 def _knowledge_items(memory: MemoryStore, npc_id: str, branch_id: str, at_game_time: int | None,
@@ -183,12 +189,22 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            npc_id: str, display_name: str, residence_areas: tuple[str, ...],
                            area: str | None, dead: bool, branch_id: str,
                            at_game_time: int | None,
-                           profile: dict | None = None) -> ContextResult:
+                           profile: dict | None = None,
+                           identity: NpcIdentity | None = None,
+                           also_known: tuple[tuple[str, str, str, Mapping[str, str]], ...] = (),
+                           wisdom: int | None = None,
+                           intelligence: int | None = None,
+                           game_alignment: int | None = None) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
     e.g. a local placed by the game data) reaches CONHECIMENTO GERAL. A SPEC-006 `profile`, when
-    given, sets the speaking style and the alignment orientation; it never adds facts."""
+    given, sets the speaking style and the alignment orientation; it never adds facts. An ADR-0117
+    `identity` becomes the "SOBRE VOCÊ" facts (F-items): all the person may say about itself.
+    `also_known` = (entry_id, title, summary, layers) the person knows from its homeland or home
+    (ADR-0117), added to CONHECIMENTO GERAL when not already held. Wisdom and Intelligence set
+    how deeply it understands each subject and how it speaks (`knowledge_tier`), not how many
+    subjects it knows."""
     if dead:
         return ContextResult(ContextStatus.DENIED, 'SPEAKER_DEAD')
     if area is None:
@@ -197,16 +213,43 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         return ContextResult(ContextStatus.DENIED, 'NPC_NOT_PRESENT')
     name = display_name.strip() or npc_id.split(':', 1)[-1].capitalize()
     style = style_from_profile(profile) if profile else RESIDENT_STYLE
-    orientation = orientation_from_profile(profile) if profile else None
+    orientation = orientation_from_profile(profile) if profile else \
+        orientation_from_game_alignment(game_alignment)
     persona = Persona(npc_id, name, style, frozenset({name}), RESIDENT_FALLBACK)
     place = catalog.area(area)
-    vocabulary = {name} | {w for w in place.split() if w[:1].isupper()}
-    status, reason, knowledge = _knowledge_items(memory, npc_id, branch_id, at_game_time,
-                                                 vocabulary)
+    vocabulary = {name} | set(name.split()) | {w for w in place.split() if w[:1].isupper()}
+    facts: tuple[Fact, ...] = ()
+    if identity is not None:
+        facts = tuple(Fact(f'F{i}', f'identity:{npc_id}:{i}', text, at_game_time or 0)
+                      for i, text in enumerate(identity.self_facts, 1))
+        for text in identity.self_facts + identity.regions_named:
+            vocabulary |= set(_NAME.findall(text))
+    status, reason, held = memory.recall_common(npc_id=npc_id, branch_id=branch_id,
+                                                at_game_time=at_game_time,
+                                                purpose='npc_dialogue',
+                                                audience='NARRATIVE_CONTEXT')
     if status is not RecallStatus.OK:
         return ContextResult(ContextStatus.DENIED, reason)
+    tier = knowledge_tier(wisdom, intelligence)
+    subjects = {k.entry_id: (k.title, k.summary, k.layers) for k in held}
+    for entry_id, t, s, layers in also_known:
+        learned = subjects.get(entry_id)
+        if learned is None:
+            subjects[entry_id] = (t, s, layers)
+        elif not learned[2] and learned[1] == s:
+            # Learned before layers existed: same checked summary, so its layers restate it.
+            subjects[entry_id] = (learned[0], learned[1], layers)
+    knowledge = []
+    for i, entry_id in enumerate(sorted(subjects)[:MAX_KNOWLEDGE], 1):
+        t, s, layers = subjects[entry_id]
+        text = layered_text(s, layers, tier)
+        knowledge.append(Fact(f'K{i}', f'canon:{entry_id}', f'{t}: {text}', at_game_time or 0))
+        vocabulary |= set(_NAME.findall(t)) | set(_NAME.findall(text))
+    knowledge = tuple(knowledge)
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(
-        persona, (), frozenset(vocabulary), (), knowledge, place, orientation))
+        persona, facts, frozenset(vocabulary), (), knowledge,
+        identity.place if identity and identity.place else place, orientation,
+        identity.occupation if identity else None, tier.style))
 
 
 def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *, npc_id: str,

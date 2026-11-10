@@ -39,7 +39,7 @@ ALLOWED = frozenset({
     'Infinity_GetScreenSize',
     'Infinity_SetArea', 'Infinity_PushMenu', 'Infinity_PopMenu', 'Infinity_FocusTextEdit',
     'Infinity_TextEditHasFocus', 'Infinity_GetClockTicks', 'Infinity_DoFile',
-    'EEex_Resource_Fetch',
+    'EEex_Resource_Fetch', 'EEex_GameState_TogglePause', 'EEex_Key_Hook_AfterEventsPoll',
 })
 
 
@@ -105,7 +105,7 @@ class DialogueStartTests(unittest.TestCase):
     def start(self, req, t=100):
         event = record_dialogue_start(self.store, ROOT_BRANCH, req, game_time=t)
         return event, profile_for(self.store, ROOT_BRANCH, event, at_game_time=t,
-                                  world_seed='lab-seed')
+                                  world_seed='lab-seed')[:2]
 
     def test_generic_person_gets_a_temporary_profile_stable_per_instance(self):
         (event, (profile, scope)) = self.start(self.req())
@@ -205,6 +205,15 @@ class ModuleStaticTests(unittest.TestCase):
 
     def test_no_forbidden_capabilities(self):
         self.assertIsNone(FORBIDDEN.search(self.code), FORBIDDEN.search(self.code))
+
+    def test_right_click_hook_wraps_and_delegates(self):
+        self.assertIn('local infai_events_poll = EEex_Key_Hook_AfterEventsPoll', self.raw)
+        self.assertIn('return infai_events_poll(event)', self.raw)
+        self.assertIn('event.button.button ~= 3', self.raw)
+
+    def test_pause_only_undoes_its_own_pause(self):
+        self.assertEqual(self.code.count('EEex_GameState_TogglePause'), 2)
+        self.assertIn('st.paused_by_box', self.raw)
 
     def test_only_the_reply_resource_is_dropped_from_cache(self):
         self.assertEqual(re.findall(r'EEex_Resource_Fetch\(([^)]*)\)', self.raw), ['"INFAIRSP", "LUA"'])

@@ -23,5 +23,10 @@
       "source_id": "grand-history-of-the-realms",
       "locator": "p. 150, \"1369 DR Year of the Gauntlet\""
     }
-  ]
+  ],
+  "knowledge_layers": {
+    "POPULAR": "A guerra em Tethyr acabou e o reino voltou a ter monarcas.",
+    "INFORMED": "Foram coroados a rainha-monarca Zaranda e o rei Haedrak III.",
+    "STUDIED": "A coroação pôs fim às Guerras de Reconquista de Tethyr."
+  }
 }

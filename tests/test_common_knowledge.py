@@ -21,7 +21,7 @@ from infinity_ai.dialogue.engine import (  # noqa: E402
 )
 from infinity_ai.dialogue.llm import FakeProvider  # noqa: E402
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
-    BackgroundRegion, Residence, acquire_common_knowledge, placement_regions,
+    BackgroundRegion, Residence, acquire_common_knowledge, entries_named, placement_regions,
     residents_as_stays, share_knowledge,
 )
 from infinity_ai.memory.model import KnowledgeBasis  # noqa: E402
@@ -244,6 +244,14 @@ class InquiryTests(Story):
         self.assertEqual(silent.status, 'NOTHING_SHARED')
         self.assertEqual(self.known('npc:imoen'), set())
 
+    def test_named_but_undeclared_entries_count_as_heard(self):
+        held = self.memory.known_canon(BERNARD, ROOT_BRANCH, 200)
+        said = 'Sim, ouvi falar. É o governo de Amn, mas não sou amigo dos políticos.'
+        self.assertEqual(entries_named(PACK, held, said), ['region:amn'])
+        self.assertEqual(entries_named(PACK, held, 'O Conselho dos Seis manda.'),
+                         ['org:council-of-six'])
+        self.assertEqual(entries_named(PACK, ['org:shadow-thieves'], 'Ladrões das Sombras'), [])
+
     def test_speaker_must_know_the_entry(self):
         report = self.share(used=('org:shadow-thieves', 'region:tethyr'))
         self.assertEqual(report.status, 'NOTHING_SHARED')
@@ -450,7 +458,7 @@ class ResidentDialogueTests(Story):
 
     def ctx(self, **over):
         kw = dict(npc_id=BERNARD, display_name='Bernard', residence_areas=('AR0406',),
-                  area='AR0406', dead=False, branch_id=ROOT_BRANCH, at_game_time=200)
+                  area='AR0406', dead=False, branch_id=ROOT_BRANCH, at_game_time=200, wisdom=18)
         kw.update(over)
         return build_resident_context(self.memory, self.store, Catalog.load(), **kw)
 
@@ -468,9 +476,37 @@ class ResidentDialogueTests(Story):
         self.assertEqual(context.facts, ())
         self.assertEqual(len(context.knowledge), 4)
         prompt = system_prompt(context)
-        self.assertIn('Você é Bernard, que está em', prompt)
+        self.assertIn('Você é Bernard e está na Coroa de Cobre', prompt)
         self.assertNotIn('companheiro(a) de viagem', prompt)
         self.assertNotIn('Orientação:', prompt)
+
+    def test_wisdom_sets_depth_not_number_of_subjects(self):
+        self.acquire(110, residents=placed('AR0406'))
+        dull = self.ctx(wisdom=5).context
+        wise = self.ctx(wisdom=18, intelligence=14).context
+        self.assertEqual(len(dull.knowledge), len(wise.knowledge))           # all subjects known
+        council = {k.event_id: k.text for k in dull.knowledge}['canon:org:council-of-six']
+        self.assertEqual(council, 'Conselho dos Seis: É quem governa Amn; ninguém sabe quem são '
+                                  'os seis conselheiros.')
+        deep = {k.event_id: k.text for k in wise.knowledge}['canon:org:council-of-six']
+        self.assertIn('Meisarch', deep)
+        self.assertIn('muito simples', system_prompt(dull))
+        self.assertIn('profundidade', system_prompt(wise))
+
+    def test_knowledge_learned_before_layers_uses_the_same_summary_layers(self):
+        pin = self.store.visible_events(ROOT_BRANCH, 'KnowledgePackPinned')[-1]
+        council = PACK.get('org:council-of-six')
+        self.memory.record_canon_knowledge(
+            npc_id=BERNARD, branch_id=ROOT_BRANCH, game_time=150, basis=KnowledgeBasis.RESIDENCE,
+            region_id='region:athkatla', entry_id=council.id, pack_year_dr=1369,
+            pack_revision=PACK.revision, pin_event_id=pin.event_id, trigger_event_id=pin.event_id,
+            title=council.title, summary=council.summary)                   # no layers stored
+        same = ((council.id, council.title, council.summary, council.layers),)
+        text = self.ctx(wisdom=5, also_known=same).context.knowledge[0].text
+        self.assertEqual(text, f"Conselho dos Seis: {council.layers['POPULAR']}")
+        changed = ((council.id, council.title, 'Outro resumo.', council.layers),)
+        kept = self.ctx(wisdom=5, also_known=changed).context.knowledge[0].text
+        self.assertEqual(kept, 'Conselho dos Seis: Governa Amn há cerca de três décadas.')
 
     def test_profile_sets_style_and_orientation_not_facts(self):
         from infinity_ai.personality import generate_new_npc_profile
@@ -512,7 +548,7 @@ class ResidentDialogueTests(Story):
             ResidentRequest(BERNARD, 'Bernard', 'Quem governa Amn?', 'AR0406', False),
             residence_areas=('AR0406',), branch_id=ROOT_BRANCH, at_game_time=200)
         self.assertEqual(result.status, DialogueStatus.FALLBACK)
-        self.assertEqual(result.speech, 'Hum? Disso eu não sei, forasteiro.')
+        self.assertEqual(result.speech, 'Hum? Disso eu não sei.')
 
 
 if __name__ == '__main__':

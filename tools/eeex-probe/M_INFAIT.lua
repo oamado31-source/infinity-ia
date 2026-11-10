@@ -1,8 +1,9 @@
 -- SPDX-License-Identifier: Apache-2.0
 -- Infinity AI - caixa de dialogo com texto livre (canal INQUIRY, POC da etapa 0).
 --
--- Com o cursor sobre uma criatura fora do grupo, INFAI_TALK_KEY_NAME abre um painel no estilo do
--- dialogo do jogo. Enviar publica no console (espelhado no InfinityLoader.log):
+-- Clique com o botao direito numa criatura fora do grupo (ou INFAI_TALK_KEY_NAME com o cursor
+-- sobre ela) abre um painel no estilo do dialogo do jogo; enquanto ele esta aberto o jogo fica
+-- pausado, como no dialogo nativo (a pausa so e desfeita se foi a caixa que pausou). Enviar publica no console (espelhado no InfinityLoader.log):
 --   INFAI-TALK {"schema":"infinity-ai.talk.v1","req_id":...,"speaker":{...},"text":...,"listeners":[...]}
 -- A resposta volta pelo arquivo override\INFAIRSP.lua, gravado pelo servico, que define so a
 -- tabela INFAI_TALK_Reply = {req_id=..., speech=...}; o painel descarta o cache do recurso e o
@@ -18,6 +19,7 @@ INFAI_TALK_TIMEOUT_MS = 60000
 INFAI_TALK_MAX_TEXT = 500
 INFAI_TALK_MAX_LINES = 40
 INFAI_TALK_STATE_DEAD = 0x800
+INFAI_TALK_RIGHT_CLICK = true    -- abrir com o botao direito sobre a criatura
 INFAI_TALK_DEBUG = true         -- laboratorio: registra teclas e motivos no console (sem texto)
 
 local function infai_debug(msg)
@@ -131,17 +133,34 @@ local function infai_layout()
 	Infinity_SetArea("INFAI_TALK_PTT", x + 16, y + ph - 40, 260, 28)
 end
 
+-- Pausa como o dialogo nativo; so despausa o que a propria caixa pausou.
+local function infai_pause(on)
+	local st = INFAI_TALK_State
+	pcall(function()
+		local paused = worldScreen:CheckIfPaused()
+		if on and not paused then
+			EEex_GameState_TogglePause(false, false)
+			st.paused_by_box = true
+		elseif not on and st.paused_by_box then
+			if paused then EEex_GameState_TogglePause(false, false) end
+			st.paused_by_box = false
+		end
+	end)
+end
+
 function INFAI_TALK_Open()
 	local st = INFAI_TALK_State
-	if st.open then return end
+	if st.open then return false end
 	local speaker = infai_speaker_under_cursor()
-	if speaker == nil then return end
+	if speaker == nil then return false end
 	st.open, st.speaker, st.lines, st.pending = true, speaker, {}, nil
 	INFAI_TALK_Input = ""
 	if speaker.dead then infai_add_line("(" .. speaker.name .. " não pode responder.)") end
 	infai_layout()
 	Infinity_PushMenu("INFAI_TALK_Menu")
 	Infinity_FocusTextEdit("INFAI_TALK_Edit")
+	infai_pause(true)
+	return true
 end
 
 function INFAI_TALK_Close()
@@ -149,6 +168,7 @@ function INFAI_TALK_Close()
 	if not st.open then return end
 	st.open, st.pending = false, nil
 	Infinity_PopMenu("INFAI_TALK_Menu")
+	infai_pause(false)
 end
 
 function INFAI_TALK_Send()
@@ -272,6 +292,27 @@ end)
 
 EEex_GameState_AddDestroyedListener(function()
 	INFAI_TALK_State.open, INFAI_TALK_State.pending = false, nil
+	INFAI_TALK_State.paused_by_box = false
 end)
+
+-- Clique direito: os eventos de mouse passam pelo gancho de eventos do EEex; so o clique direito
+-- sobre uma criatura fora do grupo, na tela de mundo e com a caixa fechada, e consumido.
+local infai_events_poll = EEex_Key_Hook_AfterEventsPoll
+function EEex_Key_Hook_AfterEventsPoll(event)
+	if INFAI_TALK_RIGHT_CLICK and not INFAI_TALK_State.open then
+		local ok, opened = pcall(function()
+			if event.type ~= SDL_EventType.SDL_MOUSEBUTTONDOWN or event.button.button ~= 3 then
+				return false
+			end
+			if worldScreen ~= e:GetActiveEngine() then return false end
+			return INFAI_TALK_Open()
+		end)
+		if ok and opened then
+			infai_debug("aberta pelo clique direito")
+			return true
+		end
+	end
+	return infai_events_poll(event)
+end
 
 infai_debug("modulo carregado; tecla " .. INFAI_TALK_KEY_NAME)

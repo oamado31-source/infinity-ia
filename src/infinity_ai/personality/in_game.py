@@ -13,7 +13,7 @@ Nothing here proves a persistent identity (ADR-0061/0062); `VERIFIED` is never p
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 
 from ..bridge.talk import TalkRequest
 from ..state.store import CampaignStore, Event
@@ -63,13 +63,16 @@ def record_dialogue_start(store: CampaignStore, branch_id: str, req: TalkRequest
 
 
 def profile_for(store: CampaignStore, branch_id: str, event: Event, *, at_game_time: int,
-                world_seed: str) -> tuple[dict | None, str]:
-    """(profile or None, scope/reason): ENCOUNTER profile, CANONICAL (none) or a refusal."""
+                world_seed: str, identity_factory: Callable[[str], dict] | None = None
+                ) -> tuple[dict | None, str, dict | None]:
+    """(profile, scope/reason, generated identity): ENCOUNTER profile with a background from
+    `identity_factory` (ADR-0117), CANONICAL (neither) or a refusal."""
     try:
         contact = FirstContactService(store, world_seed=world_seed).begin(
-            contact_event_id=event.event_id, branch_id=branch_id, at_game_time=at_game_time)
+            contact_event_id=event.event_id, branch_id=branch_id, at_game_time=at_game_time,
+            identity_factory=identity_factory)
     except FirstContactError as exc:
-        return None, f'NO_PROFILE:{exc}'
+        return None, f'NO_PROFILE:{exc}', None
     if contact.status != 'READY':
-        return None, contact.scope
-    return contact.profile, contact.scope
+        return None, contact.scope, None
+    return contact.profile, contact.scope, contact.identity

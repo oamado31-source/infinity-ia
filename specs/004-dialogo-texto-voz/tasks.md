@@ -6,6 +6,7 @@
 - [x] Documentar estados UNKNOWN/erro/fallback e rollback (SPEC-004) — `estados-e-fallback.md`.
 - [ ] Executar POC real em ambiente pinado e registrar evidência — **S1b (diálogo por texto) executada em single player no laboratório ARM64** ([evidência](../../docs/evidence/S1b-2026-11-09-laboratorio-arm64.md)); voz (REQ-VOICE-001..003) e Windows nativo pendentes.
 - [x] Caixa de diálogo dentro do jogo para falar com qualquer pessoa (ADR-0116): `tools/eeex-probe/M_INFAIT.lua` + `INFAITLK.menu`, protocolo `src/infinity_ai/bridge/talk.py`, resposta por `override/INFAIRSP.lua`; testes sintéticos e estáticos. POC no laboratório pendente.
+- [x] Caixa no jogo: abrir com o clique direito sobre a pessoa (F9 continua como alternativa) e pausar o jogo enquanto está aberta, como no diálogo nativo (pedido do mantenedor, 2026-11-10); laboratório pendente.
 - [ ] Validador: aceitar nomes vindos da pergunta do jogador também quando o NPC responde sem se declarar sem conhecimento (evidência S1d).
 - [ ] Voz: push-to-talk + STT local revisável, TTS opcional (ADR-0107 item 2), depois da UI de texto. A caixa do jogo já reserva o botão "aperte para falar" e o campo `input` (`VOICE`).
 - [ ] Revisão de segurança, privacidade, licença e aprovação de merge.

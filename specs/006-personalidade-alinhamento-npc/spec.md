@@ -10,6 +10,10 @@ Cada NPC deve ter um perfil **persistente, individualizado, reproduzível e audi
 
 ## Matriz principal
 
+### Camada P0 — identidade (ADR-0117)
+
+Quem o NPC é: nome, ofício, onde vive, de onde veio e por onde passou. A precedência é curadoria do mantenedor (`knowledge/npcs/`) > dados do jogo (ficha CRE, área, papel no nome) > geração fechada para genéricos (vocabulário de ofícios e só regiões do pacote canônico; nunca pessoas nem acontecimentos). Persiste como a personalidade: `CANONICAL` sem geração, `CANDIDATE` temporária por instância, `VERIFIED` gravada no `NpcPersonalityAssigned`. No diálogo, vira fatos "SOBRE VOCÊ"; o NPC só afirma sobre si o que está neles. Código: `src/infinity_ai/personality/identity.py`.
+
 ### Camada P1 — seis eixos psicológicos (0–100)
 
 A nomenclatura inspira-se nos seis domínios do **HEXACO** (Lee/Ashton; https://www.hexaco.org/scaledescriptions), sem utilizar, reproduzir ou distribuir o questionário HEXACO-PI-R. Os valores são parâmetros **ficcionais**, não escores de teste ou diagnósticos humanos.
@@ -41,7 +45,7 @@ Distinguir `alignment_initial` (origem/curadoria), `alignment_projection` (orien
 
 ### Camada P3 — valores, motivações e vulnerabilidades
 
-Três `values` ordenados (ex.: justiça, poder, tradição, autonomia, comunidade); duas `drives` (ex.: proteção, reconhecimento, descoberta) e duas `vulnerabilities` (ex.: traição, perda, rejeição). O gerador atual escolhe rótulos abstratos, **não inventa biografia, origem, eventos passados, crenças adquiridas ou segredos sobre terceiros**. A curadoria pode acrescentar objetivos, vínculos, tabu, estilo de fala e contradições com justificativa narrativa; são metadados privados com ACL própria.
+Três `values` ordenados (ex.: justiça, poder, tradição, autonomia, comunidade); duas `drives` (ex.: proteção, reconhecimento, descoberta) e duas `vulnerabilities` (ex.: traição, perda, rejeição). O gerador de personalidade escolhe rótulos abstratos e **não inventa eventos passados, crenças adquiridas nem segredos sobre terceiros**. O histórico mínimo (ofício, origem, tempo no lugar, lugares por onde passou) é da camada P0, com vocabulário fechado (ADR-0117). A curadoria pode acrescentar objetivos, vínculos, tabu, estilo de fala e contradições com justificativa narrativa; são metadados privados com ACL própria.
 
 ### Camada P4 — estado dinâmico (futuro)
 

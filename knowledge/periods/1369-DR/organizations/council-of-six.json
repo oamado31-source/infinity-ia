@@ -27,5 +27,10 @@
       "locator": "Livro Dois, p. 7"
     }
   ],
-  "verification_status": "SOURCE_CHECKED"
+  "verification_status": "SOURCE_CHECKED",
+  "knowledge_layers": {
+    "POPULAR": "É quem governa Amn; ninguém sabe quem são os seis conselheiros.",
+    "INFORMED": "Usam só títulos em vez de nomes, e revelar quem são é punido com tortura e morte. Reúnem-se na Casa do Conselho, em Athkatla.",
+    "STUDIED": "Governam Amn há cerca de três décadas; os títulos são Meisarch, Tessarch, Namarch, Iltarch, Pommarch e Dahaunarch."
+  }
 }

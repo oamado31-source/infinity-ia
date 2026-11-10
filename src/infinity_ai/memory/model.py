@@ -2,6 +2,7 @@
 """SPEC-003 NPC memory types (subset of the doc 64 candidate contracts, ADR-0059)."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -98,3 +99,4 @@ class CanonKnowledge:
     trigger_event_id: str
     title: str
     summary: str
+    layers: Mapping[str, str] = field(default_factory=dict)   # ADR-0117, as it was when learned

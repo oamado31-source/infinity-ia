@@ -3,8 +3,12 @@
   "language": "pt_BR",
   "curation_status": "PROVISIONAL",
   "note": "Curadoria provisória para a SPEC-004 (etapa 1). Só nomes de lugar curtos, escritos por nós; nenhum texto do jogo é copiado. A curadoria canônica com fontes é da SPEC-005. Área ausente daqui é apresentada ao NPC como lugar sem nome.",
-  "source_refs": ["observação do mantenedor no laboratório (resref visto pelo probe P2, 2026-11-08)"],
+  "source_refs": [
+    "observação do mantenedor no laboratório (resref visto pelo probe P2, 2026-11-08)",
+    "nome conhecido da taverna de Athkatla, conferido no laboratório (AR0406, 2026-11-10)"
+  ],
   "areas": {
-    "AR0602": "a masmorra de Irenicus"
+    "AR0602": "a masmorra de Irenicus",
+    "AR0406": "a Coroa de Cobre"
   }
 }

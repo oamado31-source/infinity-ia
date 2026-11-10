@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.npc-identity-curation.v1",
+  "npc_id": "npc:cre-bernard",
+  "language": "pt_BR",
+  "note": "Identidade curada (ADR-0117). A terra natal de Bernard não está confirmada; Tethyr foi apenas cenário de teste. Sua residência em Athkatla é obtida do posicionamento em AR0406 e da região do pacote.",
+  "occupation": "taverneiro da Coroa de Cobre",
+  "origin_region": null,
+  "years_here": null,
+  "places_visited": [],
+  "self_facts": [
+    "Você serve bebida no balcão da Coroa de Cobre e conhece bem a freguesia da casa."
+  ],
+  "sources": [
+    {
+      "source_id": "game-data-local",
+      "locator": "AR0406, ator Bernard (BERNARD.CRE), posição junto ao balcão"
+    },
+    {
+      "source_id": "forgotten-realms-wiki",
+      "locator": "Artigo Bernard: Home = Athkatla, Amn; referência atribuída a Baldur's Gate II: Shadows of Amn. Não informa local de nascimento."
+    },
+    {
+      "source_id": "maintainer",
+      "locator": "confirmação em 2026-11-10: Tethyr foi usado apenas como cenário de teste; origem natal não confirmada."
+    }
+  ],
+  "curation": {
+    "status": "CHECKED",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-10"
+  }
+}

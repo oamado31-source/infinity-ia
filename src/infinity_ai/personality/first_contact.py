@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -46,6 +47,7 @@ class FirstContact:
     created: bool
     contact_event_id: str
     reason: str = "OK"
+    identity: dict[str, Any] | None = None   # ADR-0117 generated background (never for CANONICAL)
 
 
 def _required(payload: dict, name: str) -> str:
@@ -86,8 +88,8 @@ class FirstContactService:
         self.world_seed = world_seed
         self.weights = alignment_weights
 
-    def begin(self, *, contact_event_id: str, branch_id: str,
-              at_game_time: int) -> FirstContact:
+    def begin(self, *, contact_event_id: str, branch_id: str, at_game_time: int,
+              identity_factory: Callable[[str], dict] | None = None) -> FirstContact:
         if isinstance(at_game_time, bool) or not isinstance(at_game_time, int) or at_game_time < 0:
             raise FirstContactError("invalid game time")
         event = _at_event(self.store, event_id=contact_event_id,
@@ -132,8 +134,9 @@ class FirstContactService:
                 npc_id=npc_id, campaign_id=self.store.campaign_id,
                 creation_branch_id=branch_id, world_seed=self.world_seed,
                 npc_origin="CREATED", alignment_weights=self.weights)
+            identity = identity_factory(npc_id) if identity_factory else None
             return FirstContact("READY", npc_id, display, profile, "ENCOUNTER",
-                                False, event.event_id)
+                                False, event.event_id, identity=identity)
 
         npc_id = _required(data, "verified_npc_id")
         if not npc_id.startswith("npc:generated:"):
@@ -157,7 +160,8 @@ class FirstContactService:
             if prior.payload.get("npc_id") == npc_id:
                 snapshot = prior.payload["profile"]
                 return FirstContact("READY", npc_id, display, snapshot, "PERSISTENT",
-                                    False, event.event_id)
+                                    False, event.event_id,
+                                    identity=prior.payload.get("identity"))
 
         profile = generate_new_npc_profile(
             npc_id=npc_id, campaign_id=self.store.campaign_id,
@@ -169,9 +173,11 @@ class FirstContactService:
             event_type=_ASSIGNMENT_EVENT, category="CAMPAIGN_FACT",
             game_time=event.game_time,
             payload={"npc_id": npc_id, "profile": profile,
+                     "identity": identity_factory(npc_id) if identity_factory else None,
                      "identity_proof_event_id": proof.event_id,
                      "first_contact_event_id": event.event_id},
             evidence=event.evidence, idempotency_key=key,
             source_observation_id=event.event_id)
         return FirstContact("READY", npc_id, display, assignment.payload["profile"],
-                            "PERSISTENT", created, event.event_id)
+                            "PERSISTENT", created, event.event_id,
+                            identity=assignment.payload.get("identity"))

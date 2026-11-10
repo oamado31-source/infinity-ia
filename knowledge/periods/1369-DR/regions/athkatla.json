@@ -41,5 +41,10 @@
       "locator": "WORLDMAP (mapa 2): distritos com nome no jogo"
     }
   ],
-  "verification_status": "SOURCE_CHECKED"
+  "verification_status": "SOURCE_CHECKED",
+  "knowledge_layers": {
+    "POPULAR": "A capital de Amn, a cidade mais importante do país.",
+    "INFORMED": "É o centro da política e do comércio de Amn; a sede do Conselho dos Seis fica aqui.",
+    "STUDIED": "O poder na cidade é disputado entre o governo oficial e a guilda de ladrões local."
+  }
 }

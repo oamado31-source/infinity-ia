@@ -4,38 +4,179 @@
   "title": "SPEC-005 curated canon entry (one per file, partitioned by DR year)",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "id", "kind", "partition_year_dr", "title", "summary", "valid_from_dr",
-    "valid_to_dr", "date_precision", "region_id", "area_resrefs", "source_refs",
-    "verification_status", "access_scope", "curation"],
+  "required": [
+    "schema",
+    "id",
+    "kind",
+    "partition_year_dr",
+    "title",
+    "summary",
+    "valid_from_dr",
+    "valid_to_dr",
+    "date_precision",
+    "region_id",
+    "area_resrefs",
+    "source_refs",
+    "verification_status",
+    "access_scope",
+    "curation"
+  ],
   "properties": {
-    "schema": {"const": "infinity-ai.canon-entry.v1"},
-    "id": {"type": "string", "pattern": "^(region|event|org|char):[a-z0-9-]{1,64}$"},
-    "kind": {"enum": ["REGION", "EVENT", "ORGANIZATION", "CHARACTER"]},
-    "partition_year_dr": {"type": "integer"},
-    "title": {"type": "string", "minLength": 1, "maxLength": 80},
-    "summary": {"type": "string", "maxLength": 280},
-    "valid_from_dr": {"type": ["integer", "null"]},
-    "valid_to_dr": {"type": ["integer", "null"]},
-    "date_precision": {"enum": ["EXACT_DAY", "MONTH_ONLY", "YEAR_ONLY", "RANGE", "APPROX", "UNKNOWN"]},
-    "region_id": {"type": ["string", "null"], "pattern": "^region:[a-z0-9-]{1,64}$"},
-    "area_resrefs": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z0-9_#-]{1,8}$"}, "uniqueItems": true},
-    "source_refs": {
-      "type": "array", "minItems": 1,
+    "schema": {
+      "const": "infinity-ai.canon-entry.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^(region|event|org|char):[a-z0-9-]{1,64}$"
+    },
+    "kind": {
+      "enum": [
+        "REGION",
+        "EVENT",
+        "ORGANIZATION",
+        "CHARACTER"
+      ]
+    },
+    "partition_year_dr": {
+      "type": "integer"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 280
+    },
+    "valid_from_dr": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "valid_to_dr": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "date_precision": {
+      "enum": [
+        "EXACT_DAY",
+        "MONTH_ONLY",
+        "YEAR_ONLY",
+        "RANGE",
+        "APPROX",
+        "UNKNOWN"
+      ]
+    },
+    "region_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^region:[a-z0-9-]{1,64}$"
+    },
+    "area_resrefs": {
+      "type": "array",
       "items": {
-        "type": "object", "additionalProperties": false, "required": ["source_id", "locator"],
+        "type": "string",
+        "pattern": "^[A-Z0-9_#-]{1,8}$"
+      },
+      "uniqueItems": true
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "locator"
+        ],
         "properties": {
-          "source_id": {"type": "string", "pattern": "^[a-z0-9-]{1,64}$"},
-          "locator": {"type": "string", "maxLength": 120}
+          "source_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]{1,64}$"
+          },
+          "locator": {
+            "type": "string",
+            "maxLength": 120
+          }
         }
       }
     },
-    "verification_status": {"enum": ["RESEARCH_ONLY", "CROSS_REFERENCED", "SOURCE_CHECKED", "DISPUTED", "CAMPAIGN_CANON"]},
-    "access_scope": {"enum": ["CANON_REFERENCE", "COMMON_REGIONAL", "RESTRICTED"]},
+    "verification_status": {
+      "enum": [
+        "RESEARCH_ONLY",
+        "CROSS_REFERENCED",
+        "SOURCE_CHECKED",
+        "DISPUTED",
+        "CAMPAIGN_CANON"
+      ]
+    },
+    "access_scope": {
+      "enum": [
+        "CANON_REFERENCE",
+        "COMMON_REGIONAL",
+        "RESTRICTED"
+      ]
+    },
     "curation": {
-      "type": "object", "additionalProperties": false, "required": ["curated_by", "curated_at", "checked_by", "checked_at"],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "curated_by",
+        "curated_at",
+        "checked_by",
+        "checked_at"
+      ],
       "properties": {
-        "curated_by": {"type": "string"}, "curated_at": {"type": "string"},
-        "checked_by": {"type": ["string", "null"]}, "checked_at": {"type": ["string", "null"]}
+        "curated_by": {
+          "type": "string"
+        },
+        "curated_at": {
+          "type": "string"
+        },
+        "checked_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "checked_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "knowledge_layers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "POPULAR"
+      ],
+      "description": "ADR-0117: the summary's facts by difficulty, restated in our words; no new facts.",
+      "properties": {
+        "POPULAR": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "INFORMED": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "STUDIED": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
       }
     }
   }

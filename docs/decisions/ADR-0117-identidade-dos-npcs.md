@@ -50,8 +50,7 @@ Responsável: mantenedor do projeto, em 2026-11-10.
    - **Cálculo:** é feito na hora da fala e não é gravado, porque a identidade gerada pode ser temporária.
    - **INQUIRY:** o que ele contar a partir disso ensina os ouvintes, como qualquer outra entrada nomeada na fala.
    - **Origem desconhecida:** NPC oficial sem terra natal confirmada mantém `origin_region = null`; hipótese usada em teste não vira biografia canônica. O conhecimento de `RESIDENCE` continua disponível a partir da região onde o jogo o coloca.
-   - **Exceção curada de Bernard:** por decisão explícita do mantenedor, `origin_region = region:tethyr` é mantida como origem de projeto para este perfil. Sua proveniência é `CURATED`; não é apresentada como afirmação independente da fonte externa.
-   - **Motivo:** Bernard está associado à Coroa de Cobre em Athkatla. A referência de personagem registra sua residência em Athkatla, Amn, mas não informa local de nascimento nem aponta outra terra natal. Como não foi encontrado registro contraditório, mantém-se Tethyr conforme a decisão do mantenedor. Assim, residência e origem continuam sendo campos distintos.
+   - **Motivo:** Bernard está associado à Coroa de Cobre em Athkatla. A referência de personagem registra sua residência em Athkatla, Amn, mas não informa local de nascimento. Tethyr foi usado apenas como cenário de teste S1e e não é sua origem confirmada.
 8. **Sabedoria e Inteligência definem a profundidade, não a quantidade** (decisões do mantenedor, 2026-11-10).
    - **O que não muda:** todo assunto que a pessoa sabe continua disponível.
    - **Sabedoria** (ficha CRE; 10 quando desconhecida): define até que nível ela entende cada assunto e como fala.
@@ -83,7 +82,7 @@ Responsável: mantenedor do projeto, em 2026-11-10.
 
 ## Consequências
 
-- Primeira curadoria: Bernard ("taverneiro da Coroa de Cobre"), **CHECKED** pelo mantenedor; `origin_region = region:tethyr` por decisão curatorial do projeto. Isso não significa que a Forgotten Realms Wiki confirme seu nascimento em Tethyr. A residência em Athkatla é obtida do posicionamento em AR0406 e da região correspondente no pacote.
+- Primeira curadoria: Bernard ("taverneiro da Coroa de Cobre"), **CHECKED** pelo mantenedor; `origin_region` permanece `null` por falta de evidência de terra natal. A residência em Athkatla é obtida do posicionamento em AR0406 e da região correspondente no pacote.
 - Testes: `tests/test_identity.py` (papéis, gerador, precedência, curadoria, persistência e diálogo) e ajustes em `tests/test_common_knowledge.py` e `tests/test_gamedata.py`.
 - A SPEC-006 deixa de dizer que o gerador "não inventa biografia". Agora ele gera um histórico **mínimo e fechado**, por esta decisão.
 
@@ -91,6 +90,6 @@ Responsável: mantenedor do projeto, em 2026-11-10.
 
 - Evidência de laboratório: S1f (a registrar).
 - Referência complementar de residência: Forgotten Realms Wiki, artigo Bernard (campo Home: Athkatla, Amn; referência atribuída a *Baldur's Gate II: Shadows of Amn*). A fonte não declara seu local de nascimento: https://forgottenrealms.fandom.com/wiki/Bernard.
-- Tethyr foi usada no teste S1e e mantida como origem curada do perfil de Bernard por decisão do mantenedor; a fonte externa consultada não confirma nem contradiz essa origem. Não atribuir essa informação à Forgotten Realms Wiki.
+- Tethyr foi apenas uma região de teste para a matriz de identidade; não deve ser interpretada como origem canônica de Bernard.
 - Risco: identidade gerada pode contradizer falas nativas do jogo para NPCs sem curadoria; mitigado pela precedência da curadoria e por `CANONICAL` sem geração.
 - Risco: o modelo ainda pode acrescentar detalhes que o validador não detecta (só nomes são checados); mitigado pelas regras 3 e 8 e pelo teste no laboratório.

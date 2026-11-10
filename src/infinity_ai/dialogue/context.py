@@ -193,7 +193,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            at_game_time: int | None,
                            profile: dict | None = None,
                            identity: NpcIdentity | None = None,
-                            also_known: tuple[tuple, ...] = (),
+                           also_known: tuple[tuple, ...] = (),
                            wisdom: int | None = None,
                            intelligence: int | None = None,
                            game_alignment: int | None = None) -> ContextResult:

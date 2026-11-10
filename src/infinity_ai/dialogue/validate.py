@@ -75,7 +75,7 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
         reasons.append('EMPTY')
     if len(speech) > MAX_SPEECH:
         reasons.append('TOO_LONG')
-    known_ids = {f.fact_id for f in context.facts + context.knowledge}
+    known_ids = {f.fact_id for f in context.facts + context.knowledge + context.restricted_knowledge}
     invented = sorted(set(used) - known_ids)
     if invented:
         reasons.append('UNKNOWN_FACT_IDS:' + ','.join(invented))
@@ -89,7 +89,10 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
     if claim:
         # The claimed word (dono, lorde, pai, ...) must be in the person's facts or own name.
         word = claim.group(0).split()[-1].lower()
-        own = ' '.join([f.text for f in context.facts] + [context.persona.display_name]).lower()
+        own_facts = [f.text for f in context.facts]
+        own_facts += [f.text for f in context.restricted_knowledge
+                      if f.subject_id == context.persona.npc_id]
+        own = ' '.join(own_facts + [context.persona.display_name]).lower()
         if word not in own:
             reasons.append('SELF_CLAIM')
     vocabulary = context.vocabulary | (player_names(player_text) if unknown else frozenset())

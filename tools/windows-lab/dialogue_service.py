@@ -6,8 +6,12 @@ the S1 session); an HTTP server bound to the VMware NAT address answers the Wind
 Every request needs the session token. No endpoint writes to the game; transcripts are not
 stored, and the console log carries metadata only (ADR-0107 item 6). After each observation the
 ADR-0114 rule runs on the pinned 1369 DR pack (pin it with pin_canon_pack.py; nothing is acquired
-while the pin does not match). Companions only acquire through a curated origin: time spent in a
-place never teaches a party member.
+while the pin does not match). Companions never learn by time spent in a place. Locals placed by
+the game data know their region's common knowledge (ADR-0116). In the in-game box (M_INFAIT.lua)
+the player can talk to anyone alive: the request is recorded as NpcDialogueStarted, SPEC-006 gives
+the person a profile (temporary for generic people, none for script-named ones), the reply goes
+back through override/INFAIRSP.lua, and companions in earshot learn the entries a local actually
+used (INQUIRY).
 
   export INFINITY_LAB_SSH='ssh -i ~/.ssh/<key> -o IdentitiesOnly=yes -o BatchMode=yes -l "<user>" <vm-ip>'
   python tools/windows-lab/dialogue_service.py --pinned-manifest <manifest.json> --config-out <overlay.json>
@@ -39,20 +43,34 @@ from infinity_ai.bridge.eeex_log import (  # noqa: E402
 )
 from infinity_ai.bridge.manifest import build_fingerprint, modpack_hash  # noqa: E402
 from infinity_ai.bridge.service import ReadOnlyBridge  # noqa: E402
+from infinity_ai.bridge.talk import (  # noqa: E402
+    PLACEHOLDER_REPLY, REPLY_RESREF, parse_talk_requests, render_reply,
+)
 from infinity_ai.canon.pack import load_partition, load_sources  # noqa: E402
-from infinity_ai.dialogue.context import Catalog, current_companions  # noqa: E402
-from infinity_ai.dialogue.engine import DialogueEngine, DialogueRequest  # noqa: E402
+from infinity_ai.dialogue.context import (  # noqa: E402
+    RESIDENT_FALLBACK, Catalog, current_companions,
+)
+from infinity_ai.dialogue.engine import (  # noqa: E402
+    DialogueEngine, DialogueRequest, DialogueStatus, ResidentRequest,
+)
 from infinity_ai.dialogue.llm import OllamaProvider  # noqa: E402
-from infinity_ai.gamedata.inventory import load_local_names, load_local_resrefs  # noqa: E402
-from infinity_ai.personality import (  # noqa: E402
-    FirstContactService, FirstContactError, NpcEncounterDialogue,
+from infinity_ai.gamedata.inventory import (  # noqa: E402
+    load_local_names, load_local_residents, load_local_resrefs,
 )
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
-    DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge,
+    DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, residents_as_stays, share_knowledge,
+)
+from infinity_ai.personality import (  # noqa: E402
+    FirstContactError, FirstContactService, NpcEncounterDialogue,
+)
+from infinity_ai.personality.in_game import (  # noqa: E402
+    profile_for, record_dialogue_start, resolve_speaker,
 )
 from infinity_ai.state.recorder import ObservationRecorder, RecordAction  # noqa: E402
 from infinity_ai.state.store import CampaignStore  # noqa: E402
-from lab_ssh import SshLogSource, live_manifest, now_iso, ssh_from_env  # noqa: E402
+from lab_ssh import (  # noqa: E402
+    SshLogSource, live_manifest, now_iso, put_override_file, ssh_from_env,
+)
 
 FIELDS = (AREA_FIELD, GAME_TIME_FIELD, PARTY_FIELD)
 MAX_BODY = 4096
@@ -68,6 +86,23 @@ class GameView:
     companions: tuple[str, ...] = field(default_factory=tuple)
 
 
+class TeeLogSource:
+    """Keeps the last log text fetched by the observer, so the talk thread needs no extra SSH."""
+
+    def __init__(self, inner) -> None:
+        self._inner, self._lock, self._text = inner, threading.Lock(), ''
+
+    def fetch(self) -> tuple[str, float]:
+        text, age = self._inner.fetch()
+        with self._lock:
+            self._text = text
+        return text, age
+
+    def last_text(self) -> str:
+        with self._lock:
+            return self._text
+
+
 class Observer(threading.Thread):
     """Owns its own DB connection (SQLite connections are per thread)."""
 
@@ -79,9 +114,11 @@ class Observer(threading.Thread):
         self.pack = load_partition(args.campaign_year)
         self.sources = load_sources()
         self.build_areas = load_local_resrefs(live_build, args.language)
+        self.residents = load_local_residents(live_build, args.language)
+        self.stays = residents_as_stays(self.pack, self.residents, live_build)
         self._knowledge_status = None
         self.pin = (pin_build, pin_modpack)
-        self.source = SshLogSource(ssh, args.game_root)
+        self.source = TeeLogSource(SshLogSource(ssh, args.game_root))
         self.adapter = EEexLogAdapter(self.source, campaign_id=args.campaign, branch_id='main',
                                       build_fingerprint=live_build, modpack_hash=live_modpack)
         self.allowlist = Allowlist(pin_build, tuple(
@@ -134,7 +171,7 @@ class Observer(threading.Thread):
         report = acquire_common_knowledge(
             store, branch_id, self.pack, campaign_year=self.args.campaign_year,
             build_areas=self.build_areas, backgrounds=self.catalog.backgrounds(),
-            threshold=self.args.residence_threshold, at_game_time=game_time,
+            residents=self.stays, threshold=self.args.residence_threshold, at_game_time=game_time,
             sources=self.sources)
         if report.status != self._knowledge_status:
             print(f'{now_iso()} conhecimento comum: {report.status}')
@@ -144,7 +181,86 @@ class Observer(threading.Thread):
                   f'base={k.basis.value} regiao={k.region_id} t={k.game_time}')
 
 
-def make_handler(token: str, observer: Observer, catalog: Catalog, args):
+class Talker(threading.Thread):
+    """Answers the in-game box (INFAI-TALK lines) as a local resident and applies INQUIRY."""
+
+    def __init__(self, args, ssh, observer: Observer, catalog: Catalog) -> None:
+        super().__init__(daemon=True)
+        self.args, self.ssh, self.observer, self.catalog = args, ssh, observer, catalog
+        self.provider = OllamaProvider(args.model, base_url=args.ollama_url)
+        self.seen: set[str] | None = None
+        self._lock = threading.Lock()
+        self._last: dict | None = None      # last box exchange, in memory only (overlay fallback)
+
+    def last_exchange(self) -> dict | None:
+        with self._lock:
+            return dict(self._last) if self._last else None
+
+    def run(self) -> None:
+        store = CampaignStore.open(self.args.db, self.args.campaign)
+        while True:
+            try:
+                text = self.observer.source.last_text()
+                requests = parse_talk_requests(text) if text else []
+                if self.seen is None:            # requests already in the log are not replayed
+                    if text:
+                        self.seen = {r.req_id for r in requests}
+                else:
+                    for req in requests:
+                        if req.req_id not in self.seen:
+                            self.seen.add(req.req_id)
+                            self._answer(store, req)
+            except Exception as exc:  # keep answering; one failed request is just logged
+                print(f'{now_iso()} caixa de dialogo falhou: {type(exc).__name__}')
+            time.sleep(0.5)
+
+    def _answer(self, store: CampaignStore, req) -> None:
+        view = self.observer.snapshot()
+        speaker = resolve_speaker(req, self.observer.residents) or ''
+        resident = self.observer.residents.get(speaker)
+        areas = resident.areas if resident is not None and speaker in self.observer.stays else ()
+        scope, shared = '-', '-'
+        if not view.observed or view.branch_id is None or view.game_time is None:
+            speech, status, reason, used, granted = RESIDENT_FALLBACK, 'DENIED', 'NO_OBSERVATION', (), ()
+        else:
+            # SPEC-006: the box request is the dialogue-start observation (no text stored).
+            started = record_dialogue_start(store, view.branch_id, req, game_time=view.game_time,
+                                            speaker_id=speaker or None)
+            profile, scope = profile_for(store, view.branch_id, started,
+                                         at_game_time=view.game_time,
+                                         world_seed=self.args.world_seed)
+            result = DialogueEngine(store, self.provider, self.catalog).respond_resident(
+                ResidentRequest(speaker, req.speaker_name, req.text, req.area, req.speaker_dead),
+                residence_areas=areas, branch_id=view.branch_id, at_game_time=view.game_time,
+                profile=profile)
+            status, reason = result.status.value, result.reason
+            speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
+            used = tuple(e.split(':', 1)[1] for e in result.used_event_ids
+                         if e.startswith('canon:'))
+            granted = ()
+            if result.status is DialogueStatus.OK and used and req.listeners:
+                report = share_knowledge(
+                    store, view.branch_id, self.observer.pack, speaker=speaker,
+                    listeners=req.listeners, used_entry_ids=used, req_id=req.req_id,
+                    host_epoch=req.session_seq, at_game_time=view.game_time, speech=speech)
+                granted = report.granted
+                shared = report.status + ''.join(f' {r.entry_id}:{r.reason}' for r in report.refusals
+                                                 if r.reason != 'NOT_A_LISTENER')
+        with self._lock:
+            self._last = {'req_id': req.req_id, 'speaker': req.speaker_name, 'question': req.text,
+                          'speech': speech}
+        put_override_file(self.ssh, self.args.game_root, f'{REPLY_RESREF}.lua',
+                          render_reply(req.req_id, speech).encode('utf-8'))
+        print(f'{now_iso()} caixa pedido={req.req_id} falante={speaker or "-"} '
+              f'habitante={bool(areas)} perfil={scope} status={status} motivo={reason} '
+              f'entradas={list(used)} inquiry={shared} '
+              f'ouvintes={list(req.listeners) if req.listeners is not None else None}')
+        for k in granted:
+            print(f'{now_iso()} conhecimento comum adquirido: npc={k.npc_id} entrada={k.entry_id} '
+                  f'base={k.basis.value} regiao={k.region_id} t={k.game_time}')
+
+
+def make_handler(token: str, observer: Observer, catalog: Catalog, args, talker=None):
     provider = OllamaProvider(args.model, base_url=args.ollama_url)
 
     class Handler(BaseHTTPRequestHandler):
@@ -180,6 +296,7 @@ def make_handler(token: str, observer: Observer, catalog: Catalog, args):
                 'area': catalog.area(view.area) if view.area else None,
                 'companions': [{'npc_id': n, 'display_name': catalog.display(n)}
                                for n in view.companions],
+                'box': talker.last_exchange() if talker else None,
                 'updated': view.updated})
 
         def do_POST(self) -> None:
@@ -201,7 +318,9 @@ def make_handler(token: str, observer: Observer, catalog: Catalog, args):
             view = observer.snapshot()
             if not view.observed or view.branch_id is None:
                 return self._send(200, {'status': 'DENIED', 'reason': 'NO_OBSERVATION',
-                                        'speech': '', 'display_name': catalog.display(str(npc_id))})
+                                        'speech': '',
+                                        'display_name': catalog.display(npc_id) if npc_id
+                                        else 'Pessoa desconhecida'})
             store = CampaignStore.open(args.db, args.campaign)
             try:
                 if self.path == '/v1/encounter-dialogue':
@@ -276,8 +395,14 @@ def main() -> int:
     observer = Observer(args, ssh, pin_build, pin_modpack, live_build, live_modpack, catalog)
     print(f'pacote {args.campaign_year} DR {observer.pack.revision[:19]}..., '
           f'areas da build: {len(observer.build_areas or ())}, '
+          f'habitantes locais: {len(observer.stays)}, '
           f'limite de residencia: {args.residence_threshold}')
+    CampaignStore.open(args.db, args.campaign).close()   # migrate once before the threads open it
+    # The reply file must exist when the game starts, or Infinity_DoFile never finds it.
+    put_override_file(ssh, args.game_root, f'{REPLY_RESREF}.lua', PLACEHOLDER_REPLY.encode('utf-8'))
     observer.start()
+    talker = Talker(args, ssh, observer, catalog)
+    talker.start()
 
     token = secrets.token_urlsafe(24)
     if args.reuse_token and args.config_out.exists():
@@ -287,7 +412,7 @@ def main() -> int:
     with os.fdopen(fd, 'w', encoding='utf-8') as fh:
         json.dump({'url': f'http://{args.bind}:{args.port}', 'token': token}, fh)
     server = ThreadingHTTPServer((args.bind, args.port), make_handler(
-        token, observer, catalog, args))
+        token, observer, catalog, args, talker))
     print(f'servindo em http://{args.bind}:{args.port} (config do overlay em {args.config_out})')
     try:
         server.serve_forever()
@@ -295,6 +420,8 @@ def main() -> int:
         pass
     finally:
         server.server_close()
+        put_override_file(ssh, args.game_root, f'{REPLY_RESREF}.lua',
+                          PLACEHOLDER_REPLY.encode('utf-8'))
     return 0
 
 

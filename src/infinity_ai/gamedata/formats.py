@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Parsers for Infinity Engine (Enhanced Edition) file formats used by the area inventory.
 
-KEY V1, BIFF V1, TLK V1 and WMP V1.0, following the community documentation (IESDP). Pure
-functions over bytes, strict bounds checks, no writes. Only uncompressed BIFF V1 is supported
-(the format used by the EE games); anything else raises GameDataError.
+KEY V1, BIFF V1, TLK V1, WMP V1.0, ARE V1.0 actors and CRE V1.0 identity, following the
+community documentation (IESDP). Pure functions over bytes, strict bounds checks, no writes. Only
+uncompressed BIFF V1 is supported (the format used by the EE games); anything else raises
+GameDataError.
 """
 from __future__ import annotations
 
@@ -12,6 +13,7 @@ from dataclasses import dataclass
 
 from .source import GameDataError
 
+CRE_TYPE = 0x3F1
 AREA_TYPE = 0x3F2
 WMP_TYPE = 0x3F7
 NO_STRREF = 0xFFFFFFFF
@@ -208,3 +210,59 @@ def parse_wmp(data: bytes) -> tuple[WorldMap, ...]:
             areas.append(WorldMapArea(resref, _strref(caption), _strref(tooltip), flags))
         maps.append(WorldMap(number, _strref(name_strref), tuple(areas)))
     return tuple(maps)
+
+
+# ---- ARE V1.0 (actors) and CRE V1.0 (identity) -------------------------------------------------
+
+ARE_ACTOR_SIZE = 0x110
+CRE_IDENTITY_SIZE = 0x2D4
+ACTOR_CRE_ATTACHED = 0x1
+
+
+@dataclass(frozen=True)
+class AreaActor:
+    actor_name: str
+    cre_resref: str
+    flags: int
+    embedded: bytes | None = None   # CRE stored inside the ARE (flag bit 0), if any
+
+
+@dataclass(frozen=True)
+class CreatureIdentity:
+    name_strref: int | None
+    script_name: str      # death variable; '' when unset
+    allegiance: int       # EA byte (2 = PC ... 255 = enemy)
+    general: int = 1      # GENERAL.IDS (1 = humanoid, 2 = animal, 255 = monster)
+
+
+def parse_are_actors(data: bytes) -> tuple[AreaActor, ...]:
+    _need(data, 0, 0x5C, 'ARE header')
+    if data[:8] != b'AREAV1.0':
+        raise GameDataError('not an ARE V1.0 file')
+    offset, = struct.unpack_from('<I', data, 0x54)
+    count, = struct.unpack_from('<H', data, 0x58)
+    _need(data, offset, ARE_ACTOR_SIZE * count, 'ARE actor table')
+    actors = []
+    for i in range(count):
+        base = offset + ARE_ACTOR_SIZE * i
+        name = data[base:base + 32].split(b'\0', 1)[0].decode('latin-1').strip()
+        flags, = struct.unpack_from('<I', data, base + 0x28)
+        cre = _resref(data[base + 0x80:base + 0x88])
+        embedded = None
+        if flags & ACTOR_CRE_ATTACHED:
+            cre_off, cre_size = struct.unpack_from('<2I', data, base + 0x88)
+            if cre_size >= CRE_IDENTITY_SIZE and cre_off + cre_size <= len(data):
+                embedded = data[cre_off:cre_off + cre_size]
+        actors.append(AreaActor(name, cre, flags, embedded))
+    return tuple(actors)
+
+
+def parse_cre_identity(data: bytes) -> CreatureIdentity:
+    _need(data, 0, CRE_IDENTITY_SIZE, 'CRE header')
+    if data[:8] != b'CRE V1.0':
+        raise GameDataError('not a CRE V1.0 file')
+    name, = struct.unpack_from('<I', data, 0x08)
+    script = data[0x280:0x2A0].split(b'\0', 1)[0].decode('latin-1').strip()
+    if script.lower() == 'none':
+        script = ''
+    return CreatureIdentity(_strref(name), script, data[0x270], data[0x271])

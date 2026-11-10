@@ -116,13 +116,15 @@ class FirstContactService:
                                 False, event.event_id, "USE_CANONICAL_PROFILE")
 
         actor_ref = data.get("actor_instance_token")
-        actor_ref = actor_ref if isinstance(actor_ref, str) and actor_ref.strip() and             len(actor_ref) <= 256 else None
+        actor_ref = actor_ref if isinstance(actor_ref, str) and actor_ref.strip() \
+            and len(actor_ref) <= 256 else None
 
         if state != "VERIFIED":
             # No identity, no cross-session memory. A trusted per-scene actor token
             # permits reuse within one live session; otherwise each dialogue is
             # an independent encounter (never reuse a name/CRE/script reference).
-            token = actor_ref if data.get("token_uniqueness") == "SCENE_VERIFIED"                 else event.event_id
+            token = actor_ref if data.get("token_uniqueness") == "SCENE_VERIFIED" \
+                else event.event_id
             key = _digest(self.store.campaign_id, branch_id, str(event.host_epoch),
                           session, scene, token)
             npc_id = "npc:generated:enc-" + key[:24]
@@ -139,7 +141,8 @@ class FirstContactService:
         proof_id = _required(data, "identity_proof_event_id")
         proof = _at_event(self.store, event_id=proof_id, branch_id=branch_id,
                           at_game_time=event.game_time)
-        if proof.event_type != _PROOF_EVENT or proof.category != "CAMPAIGN_FACT" or                 proof.seq >= event.seq:
+        if proof.event_type != _PROOF_EVENT or proof.category != "CAMPAIGN_FACT" \
+                or proof.seq >= event.seq:
             raise FirstContactError("invalid identity proof event")
         for name, expected in (("npc_id", npc_id), ("session_id", session),
                                ("scene_id", scene), ("actor_instance_token", actor_ref)):

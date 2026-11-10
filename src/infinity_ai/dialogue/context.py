@@ -4,8 +4,10 @@
 REQ-VOICE-005: the context is built from `MemoryStore.recall` (NPC, branch, time, audience
 already enforced) and rendered as numbered facts. Common regional knowledge the NPC acquired
 under ADR-0114 (`MemoryStore.recall_common`) is rendered separately as K-items, from the snapshot
-taken at acquisition; canon the NPC has not acquired never reaches the context. Area codes never reach the text; unknown areas
-are presented as unnamed places. Only companions currently in the party can be talked to.
+taken at acquisition; canon the NPC has not acquired never reaches the context. Area codes never
+reach the text; unknown areas are presented as unnamed places. Companions currently in the party
+are talked to through the overlay; anyone alive met in the game through the in-game box
+(ADR-0116), shaped by a SPEC-006 profile and holding only the common knowledge it acquired.
 """
 from __future__ import annotations
 
@@ -16,6 +18,7 @@ from enum import Enum
 from pathlib import Path
 
 from ..memory.common_knowledge import BackgroundRegion
+from ..personality.style import orientation_from_profile, style_from_profile
 from ..memory.model import RecallStatus
 from ..memory.store import MemoryStore
 from ..state.store import CampaignStore
@@ -60,6 +63,8 @@ class DialogueContext:
     vocabulary: frozenset[str]
     companions: tuple[str, ...]
     knowledge: tuple[Fact, ...] = ()
+    resident_of: str | None = None   # set for a person met in the game (ADR-0116): where
+    orientation: str | None = None   # SPEC-006 alignment orientation, when a profile applies
 
 
 @dataclass(frozen=True)
@@ -154,6 +159,56 @@ def _render(claim_type: str, payload: dict, catalog: Catalog) -> list[str]:
     return []
 
 
+RESIDENT_STYLE = ('direto e desconfiado de estranhos', 'fala como gente da cidade')
+RESIDENT_FALLBACK = 'Hum? Disso eu não sei, forasteiro.'
+
+
+def _knowledge_items(memory: MemoryStore, npc_id: str, branch_id: str, at_game_time: int | None,
+                     vocabulary: set[str]) -> tuple[RecallStatus, str, tuple[Fact, ...]]:
+    status, reason, held = memory.recall_common(npc_id=npc_id, branch_id=branch_id,
+                                                at_game_time=at_game_time,
+                                                purpose='npc_dialogue',
+                                                audience='NARRATIVE_CONTEXT')
+    if status is not RecallStatus.OK:
+        return status, reason, ()
+    knowledge = []
+    for i, k in enumerate(held[:MAX_KNOWLEDGE], 1):
+        knowledge.append(Fact(f'K{i}', f'canon:{k.entry_id}', f'{k.title}: {k.summary}',
+                              k.game_time))
+        vocabulary |= set(_NAME.findall(k.title)) | set(_NAME.findall(k.summary))
+    return status, reason, tuple(knowledge)
+
+
+def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *,
+                           npc_id: str, display_name: str, residence_areas: tuple[str, ...],
+                           area: str | None, dead: bool, branch_id: str,
+                           at_game_time: int | None,
+                           profile: dict | None = None) -> ContextResult:
+    """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
+
+    Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
+    e.g. a local placed by the game data) reaches CONHECIMENTO GERAL. A SPEC-006 `profile`, when
+    given, sets the speaking style and the alignment orientation; it never adds facts."""
+    if dead:
+        return ContextResult(ContextStatus.DENIED, 'SPEAKER_DEAD')
+    if area is None:
+        return ContextResult(ContextStatus.DENIED, 'NPC_NOT_PRESENT')
+    if residence_areas and area.upper() not in {a.upper() for a in residence_areas}:
+        return ContextResult(ContextStatus.DENIED, 'NPC_NOT_PRESENT')
+    name = display_name.strip() or npc_id.split(':', 1)[-1].capitalize()
+    style = style_from_profile(profile) if profile else RESIDENT_STYLE
+    orientation = orientation_from_profile(profile) if profile else None
+    persona = Persona(npc_id, name, style, frozenset({name}), RESIDENT_FALLBACK)
+    place = catalog.area(area)
+    vocabulary = {name} | {w for w in place.split() if w[:1].isupper()}
+    status, reason, knowledge = _knowledge_items(memory, npc_id, branch_id, at_game_time,
+                                                 vocabulary)
+    if status is not RecallStatus.OK:
+        return ContextResult(ContextStatus.DENIED, reason)
+    return ContextResult(ContextStatus.OK, 'OK', DialogueContext(
+        persona, (), frozenset(vocabulary), (), knowledge, place, orientation))
+
+
 def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *, npc_id: str,
                   branch_id: str, at_game_time: int | None) -> ContextResult:
     companions = current_companions(store, branch_id)
@@ -183,16 +238,9 @@ def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *
     numbered = tuple(Fact(f'F{i}', f.event_id, f.text, f.game_time)
                      for i, f in enumerate(facts, 1))
 
-    status, reason, held = memory.recall_common(npc_id=npc_id, branch_id=branch_id,
-                                                at_game_time=at_game_time,
-                                                purpose='npc_dialogue',
-                                                audience='NARRATIVE_CONTEXT')
+    status, reason, knowledge = _knowledge_items(memory, npc_id, branch_id, at_game_time,
+                                                 vocabulary)
     if status is not RecallStatus.OK:
         return ContextResult(ContextStatus.DENIED, reason)
-    knowledge = []
-    for i, k in enumerate(held[:MAX_KNOWLEDGE], 1):
-        knowledge.append(Fact(f'K{i}', f'canon:{k.entry_id}', f'{k.title}: {k.summary}',
-                              k.game_time))
-        vocabulary |= set(_NAME.findall(k.title)) | set(_NAME.findall(k.summary))
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(
-        catalog.persona(npc_id), numbered, frozenset(vocabulary), companions, tuple(knowledge)))
+        catalog.persona(npc_id), numbered, frozenset(vocabulary), companions, knowledge))

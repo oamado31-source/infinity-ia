@@ -1,0 +1,64 @@
+menu
+{
+	name "INFAI_TALK_Menu"
+	modal
+	ignoreEsc
+
+	label
+	{
+		name "INFAI_TALK_Bg"
+		enabled "INFAI_TALK_Tick()"
+		fill 20 16 12 230
+	}
+	label
+	{
+		name "INFAI_TALK_Title"
+		text lua "INFAI_TALK_TitleText()"
+		text style "title"
+		text align left center
+	}
+	text
+	{
+		name "INFAI_TALK_History"
+		text lua "INFAI_TALK_HistoryText()"
+		text style "normal"
+		scrollbar "GUISCRC"
+	}
+	label
+	{
+		name "INFAI_TALK_EditBg"
+		fill 60 52 44 255
+	}
+	edit
+	{
+		name "INFAI_TALK_Edit"
+		var "INFAI_TALK_Input"
+		action "return INFAI_TALK_EditAction()"
+		maxlines 1
+		text style "normal"
+	}
+	text
+	{
+		name "INFAI_TALK_PTT"
+		text "Aperte para falar (em breve)"
+		text style "normal"
+		text color 128 128 128 255
+		text align left center
+	}
+	button
+	{
+		name "INFAI_TALK_Send"
+		text "Enviar"
+		text style "button"
+		fill 90 70 40 255
+		action "INFAI_TALK_Send()"
+	}
+	button
+	{
+		name "INFAI_TALK_Close"
+		text "Sair"
+		text style "button"
+		fill 90 70 40 255
+		action "INFAI_TALK_Close()"
+	}
+}

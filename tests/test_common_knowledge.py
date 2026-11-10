@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
@@ -14,12 +15,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from infinity_ai.canon.pack import KNOWLEDGE_ROOT, load_partition, load_sources  # noqa: E402
 from infinity_ai.canon.pin import pin_pack  # noqa: E402
 from infinity_ai.dialogue.context import Catalog, build_context  # noqa: E402
+from infinity_ai.dialogue.context import build_resident_context  # noqa: E402
 from infinity_ai.dialogue.engine import (  # noqa: E402
-    DialogueEngine, DialogueRequest, DialogueStatus, system_prompt,
+    DialogueEngine, DialogueRequest, DialogueStatus, ResidentRequest, system_prompt,
 )
 from infinity_ai.dialogue.llm import FakeProvider  # noqa: E402
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
-    BackgroundRegion, Residence, acquire_common_knowledge,
+    BackgroundRegion, Residence, acquire_common_knowledge, placement_regions,
+    residents_as_stays, share_knowledge,
 )
 from infinity_ai.memory.model import KnowledgeBasis  # noqa: E402
 from infinity_ai.memory.store import MemoryStore  # noqa: E402
@@ -162,6 +165,124 @@ class ResidenceTests(Story):
             self.store.connection.execute("UPDATE npc_canon_knowledge SET snapshot_json = 'x'")
         with self.assertRaises(Exception):
             self.store.connection.execute('DELETE FROM npc_canon_knowledge')
+
+
+FP = 'sha256:' + 'ab' * 32
+
+
+def placed(*areas, npc=BERNARD):
+    return residents_as_stays(PACK, {npc: SimpleNamespace(areas=areas, cre_resref='BERNAR')}, FP)
+
+
+class EstablishedResidentTests(Story):
+    def test_most_specific_region_for_an_area(self):
+        self.assertEqual(placement_regions(PACK, 'AR0406'), ['region:athkatla'])
+        self.assertEqual(placement_regions(PACK, 'ar0406'), ['region:athkatla'])
+        self.assertEqual(placement_regions(PACK, 'AR0602'), [])
+
+    def test_game_placed_resident_knows_from_the_pin(self):
+        self.see('AR0602', 100)
+        self.assertEqual(self.acquire(150, residents=placed('AR0406')).status, 'NOT_PINNED')
+        self.pin(game_time=200)
+        report = self.acquire(201, residents=placed('AR0406'))
+        self.assertEqual(self.known(BERNARD), CITY)
+        self.assertTrue(all(k.basis is KnowledgeBasis.RESIDENCE and k.game_time == 200
+                            for k in report.granted))
+        self.assertIn('GAME_DATA:AR0406#BERNAR', placed('AR0406')[BERNARD][0].evidence)
+
+    def test_hostile_creatures_are_not_locals(self):
+        monster = {'npc:ogre': SimpleNamespace(areas=('AR0406',), cre_resref='ICMIN01',
+                                               allegiance=255)}
+        self.assertEqual(residents_as_stays(PACK, monster, FP), {})
+        bear = {'npc:cre-beargr': SimpleNamespace(areas=('AR0406',), cre_resref='BEARGR',
+                                                  allegiance=128, general=2)}
+        self.assertEqual(residents_as_stays(PACK, bear, FP), {})
+
+    def test_resident_outside_the_pack_regions_knows_nothing(self):
+        self.see('AR0602', 0)
+        self.pin(game_time=0)
+        self.assertEqual(placed('AR0602'), {})
+        self.acquire(10, residents=placed('AR0602'))
+        self.assertEqual(self.known(BERNARD), set())
+
+
+class InquiryTests(Story):
+    def setUp(self):
+        super().setUp()
+        self.see('AR0406', 100, '["imoen","jaheira","minsc"]')
+        self.pin(game_time=100)
+        self.acquire(110, residents=placed('AR0406'))
+
+    def share(self, used=('org:council-of-six',), listeners=('npc:jaheira', 'npc:imoen'),
+              speaker=BERNARD, req='1-2500-1', at=200, branch=ROOT_BRANCH):
+        return share_knowledge(self.store, branch, PACK, speaker=speaker, listeners=listeners,
+                               used_entry_ids=used, req_id=req, host_epoch=0, at_game_time=at)
+
+    def test_listeners_learn_only_what_was_used(self):
+        report = self.share()
+        self.assertEqual(report.status, 'OK')
+        self.assertEqual(self.known(), {'org:council-of-six'})
+        self.assertEqual(self.known('npc:imoen'), {'org:council-of-six'})
+        self.assertEqual(self.known('npc:minsc'), set())               # out of earshot
+        self.assertTrue(all(k.basis is KnowledgeBasis.INQUIRY for k in report.granted))
+        self.assertEqual(report.event.event_type, 'KnowledgeShared')
+        self.assertNotIn('text', report.event.payload)
+
+    def test_only_entries_named_in_the_speech_are_learned(self):
+        report = share_knowledge(
+            self.store, ROOT_BRANCH, PACK, speaker=BERNARD, listeners=('npc:jaheira',),
+            used_entry_ids=('org:council-of-six', 'org:cowled-wizards'), req_id='1-3000-9',
+            host_epoch=0, at_game_time=200,
+            speech='Quem manda é o Conselho dos Seis, e ninguém sabe quem são.')
+        self.assertEqual(self.known(), {'org:council-of-six'})
+        self.assertIn(('org:cowled-wizards', 'NOT_SPOKEN'),
+                      {(r.entry_id, r.reason) for r in report.refusals})
+        silent = share_knowledge(
+            self.store, ROOT_BRANCH, PACK, speaker=BERNARD, listeners=('npc:imoen',),
+            used_entry_ids=('org:cowled-wizards',), req_id='1-3100-10', host_epoch=0,
+            at_game_time=200, speech='Acha? Eu não acho nada.')
+        self.assertEqual(silent.status, 'NOTHING_SHARED')
+        self.assertEqual(self.known('npc:imoen'), set())
+
+    def test_speaker_must_know_the_entry(self):
+        report = self.share(used=('org:shadow-thieves', 'region:tethyr'))
+        self.assertEqual(report.status, 'NOTHING_SHARED')
+        self.assertEqual({r.reason for r in report.refusals}, {'SPEAKER_DOES_NOT_KNOW'})
+        self.assertEqual(self.known(), set())
+
+    def test_listener_must_be_in_the_party_and_not_the_speaker(self):
+        report = self.share(listeners=('npc:viconia', BERNARD))
+        self.assertEqual(report.status, 'NOTHING_SHARED')
+        self.assertEqual(self.known('npc:viconia'), set())
+
+    def test_a_companion_never_teaches_another(self):
+        self.share()
+        report = self.share(speaker='npc:jaheira', listeners=('npc:minsc',), req='1-2600-2')
+        self.assertEqual(report.status, 'SPEAKER_IN_PARTY')     # Jaheira knows it, still refused
+        self.assertEqual(self.known('npc:minsc'), set())
+
+    def test_idempotent_per_request(self):
+        first = self.share()
+        again = self.share()
+        self.assertEqual(len(first.granted), 2)
+        self.assertEqual(again.granted, ())
+        self.assertEqual(again.event.event_id, first.event.event_id)
+
+    def test_fork_before_the_conversation_does_not_know(self):
+        self.see('AR0406', 300, '["imoen","jaheira","minsc"]')
+        self.share(at=300)
+        child = self.see('AR0406', 250, '["imoen","jaheira","minsc"]', epoch=1).branch_id
+        self.assertNotEqual(child, ROOT_BRANCH)
+        self.assertEqual(self.known(branch=child), set())
+        self.assertEqual(self.known(), {'org:council-of-six'})
+
+    def test_nothing_without_pin(self):
+        other = CampaignStore.open(Path(self.tmp.name) / 'd.sqlite3', 'lab2')
+        self.addCleanup(other.close)
+        report = share_knowledge(other, ROOT_BRANCH, PACK, speaker=BERNARD,
+                                 listeners=('npc:jaheira',), used_entry_ids=('org:council-of-six',),
+                                 req_id='1-1-1', host_epoch=0, at_game_time=1)
+        self.assertEqual(report.status, 'NOT_PINNED')
 
 
 class PinAndRevisionTests(Story):
@@ -319,6 +440,79 @@ class DialogueTests(Story):
                                 branch_id=ROOT_BRANCH, at_game_time=10 + 10 * DAY)
         self.assertEqual(result.status, DialogueStatus.FALLBACK)
         self.assertTrue(any('UNKNOWN_NAMES' in f for f in result.flags))
+
+
+class ResidentDialogueTests(Story):
+    def setUp(self):
+        super().setUp()
+        self.see('AR0406', 100, '["imoen","jaheira"]')
+        self.pin(game_time=100)
+
+    def ctx(self, **over):
+        kw = dict(npc_id=BERNARD, display_name='Bernard', residence_areas=('AR0406',),
+                  area='AR0406', dead=False, branch_id=ROOT_BRANCH, at_game_time=200)
+        kw.update(over)
+        return build_resident_context(self.memory, self.store, Catalog.load(), **kw)
+
+    def test_gates(self):
+        stranger = self.ctx(npc_id='npc:cre-ftown7', display_name='Cliente', residence_areas=())
+        self.assertEqual(stranger.reason, 'OK')                 # anyone alive may talk ...
+        self.assertEqual(stranger.context.knowledge, ())        # ... but knows nothing
+        self.assertEqual(self.ctx(dead=True).reason, 'SPEAKER_DEAD')
+        self.assertEqual(self.ctx(area='AR0300').reason, 'NPC_NOT_PRESENT')
+        self.assertEqual(self.ctx(area=None).reason, 'NPC_NOT_PRESENT')
+
+    def test_resident_prompt_has_only_common_knowledge(self):
+        self.acquire(110, residents=placed('AR0406'))
+        context = self.ctx().context
+        self.assertEqual(context.facts, ())
+        self.assertEqual(len(context.knowledge), 4)
+        prompt = system_prompt(context)
+        self.assertIn('Você é Bernard, que está em', prompt)
+        self.assertNotIn('companheiro(a) de viagem', prompt)
+        self.assertNotIn('Orientação:', prompt)
+
+    def test_profile_sets_style_and_orientation_not_facts(self):
+        from infinity_ai.personality import generate_new_npc_profile
+        profile = generate_new_npc_profile(npc_id='npc:generated:enc-x', campaign_id='lab',
+                                           creation_branch_id=ROOT_BRANCH, world_seed='w',
+                                           npc_origin='CREATED')
+        plain = self.ctx(npc_id='npc:cre-ftown7', display_name='Cliente', residence_areas=())
+        shaped = self.ctx(npc_id='npc:cre-ftown7', display_name='Cliente', residence_areas=(),
+                          profile=profile)
+        self.assertEqual(len(shaped.context.persona.style), 6)
+        self.assertNotEqual(shaped.context.persona.style, plain.context.persona.style)
+        self.assertIn('Orientação:', system_prompt(shaped.context))
+        self.assertEqual(shaped.context.knowledge, ())
+
+    def engine(self, *replies):
+        return DialogueEngine(self.store, FakeProvider([reply(*r) for r in replies]),
+                              Catalog.load())
+
+    def test_answer_reports_the_entries_used_and_teaches_listeners(self):
+        self.acquire(110, residents=placed('AR0406'))
+        council = next(k.fact_id for k in self.ctx().context.knowledge
+                       if k.event_id == 'canon:org:council-of-six')
+        result = self.engine(('Quem manda é o Conselho dos Seis, e ninguém sabe quem são.',
+                              [council])).respond_resident(
+            ResidentRequest(BERNARD, 'Bernard', 'Quem governa Amn?', 'AR0406', False),
+            residence_areas=('AR0406',), branch_id=ROOT_BRANCH, at_game_time=200)
+        self.assertEqual(result.status, DialogueStatus.OK)
+        self.assertEqual(result.used_event_ids, ('canon:org:council-of-six',))
+        used = [e.split(':', 1)[1] for e in result.used_event_ids]
+        share_knowledge(self.store, ROOT_BRANCH, PACK, speaker=BERNARD,
+                        listeners=('npc:jaheira',), used_entry_ids=used, req_id='1-1-1',
+                        host_epoch=0, at_game_time=200)
+        self.assertEqual(self.known(), {'org:council-of-six'})
+        self.assertEqual(self.known('npc:imoen'), set())
+
+    def test_resident_without_knowledge_cannot_name_the_council(self):
+        result = self.engine(('O Conselho dos Seis.', []), ('O Conselho dos Seis.', [])
+                             ).respond_resident(
+            ResidentRequest(BERNARD, 'Bernard', 'Quem governa Amn?', 'AR0406', False),
+            residence_areas=('AR0406',), branch_id=ROOT_BRANCH, at_game_time=200)
+        self.assertEqual(result.status, DialogueStatus.FALLBACK)
+        self.assertEqual(result.speech, 'Hum? Disso eu não sei, forasteiro.')
 
 
 if __name__ == '__main__':

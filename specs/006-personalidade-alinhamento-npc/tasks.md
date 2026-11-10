@@ -8,8 +8,9 @@
 - [x] Testar sinteticamente reabertura de DB e forks antes/depois da atribuição, sem confundir perfis entre ramos.
 - [ ] Curar personalidade e alinhamento de NPCs oficiais com referência conferida e compatibilidade de classe.
 - [x] Integrar perfil-base em um **diálogo genérico de laboratório separado** (texto, estilo, alinhamento inicial, fatos vazios, validador e fallback), sem substituir o DialogueEngine da party.
+- [x] Perfil do primeiro contato aplicado à fala de qualquer pessoa na caixa do jogo (estilo pelos seis eixos e orientação do alinhamento), somado ao conhecimento comum que a pessoa adquiriu (ADR-0114/0116); `build_resident_context(profile=...)`.
 - [ ] Integrar estado dinâmico, crenças e reações à SPEC-004 após aquisição legítima de fatos e memória individual.
 - [ ] Implementar avaliação contextual e auditável da evolução (ADR-0030–0032); preservar `engine_alignment` até autorização/POC.
 - [x] Implementar `FirstContactService` e rota experimental `/v1/encounter-dialogue` com evento gravado e sessão observada.
-- [ ] Desenvolver POC do clique em qualquer ator do BG2:EE (inclusive NPC sem diálogo nativo), identidade/instância e geração real de `NpcDialogueStarted`.
+- [ ] Desenvolver POC do clique em qualquer ator do BG2:EE (inclusive NPC sem diálogo nativo), identidade/instância e geração real de `NpcDialogueStarted` — **produtor implementado (ADR-0116):** a caixa de diálogo no jogo (F9 sobre a criatura sob o cursor, `tools/eeex-probe/M_INFAIT.lua`) gera `NpcDialogueStarted` sem texto, com `CANDIDATE` + id da instância como token de cena (sem script name) ou `CANONICAL` (com script name, sem sorteio); `src/infinity_ai/personality/in_game.py`, testes em `tests/test_talk.py`. Falta a execução no laboratório.
 - [ ] Executar teste real em laboratório BG2:EE e publicar evidência de interação com pessoas comuns, sem afetar diálogos originais.

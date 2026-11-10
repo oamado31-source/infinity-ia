@@ -9,5 +9,6 @@
 - [x] Segundo lote conferido (Tethyr com Saradush ligada à build, fim das Guerras de Reconquista, navios Vemmil, retorno dos exilados); FR3e brasileiro legível registrado.
 - [ ] Próximos lotes: famílias/casas mercantis (*Lands of Intrigue*), Costa da Espada; confirmação bibliográfica.
 - [x] `access_scope` revisado: 6 entradas `COMMON_REGIONAL`, 4 `CANON_REFERENCE`; Copper Coronet (`AR0406`) ligada a Athkatla/Amn (ADR-0114).
+- [x] Inventário local de habitantes (ARE/CRE, ADR-0116): criaturas por área com script name ou CRE, nome do TLK, EA e tipo; gravado só fora do repositório.
 - [ ] REQ-CANON-003 (eventos pessoais N1/N2) e escolha da segunda região.
 - [ ] Revisão de segurança, privacidade, licença e aprovação de merge.

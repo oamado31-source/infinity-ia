@@ -135,6 +135,15 @@ class ResidenceTests(Story):
         self.acquire(2 * DAY + 1, residents=lives(since=DAY + 1))
         self.assertEqual(self.known(BERNARD), CITY)
 
+    def test_pin_on_an_empty_campaign_counts_from_the_first_observation(self):
+        self.pin()                                      # no game time, nothing observed yet
+        self.assertEqual(self.acquire(10, residents=placed('AR0406')).status, 'NO_OBSERVATION')
+        self.see('AR0300', 500)
+        report = self.acquire(510, residents=placed('AR0406'))
+        self.assertEqual(report.status, 'OK')
+        self.assertEqual(self.known(BERNARD), CITY)
+        self.assertTrue(all(k.game_time == 500 for k in report.granted))   # from the first one
+
     def test_pin_without_game_time_anchors_on_the_last_event_before_it(self):
         self.see('AR0300', 0)
         self.pin()
@@ -224,6 +233,16 @@ class RelationshipAccessTests(Story):
         self.assertEqual(staff, ['rel:bernard-manages-copper-coronet'])
         self.assertEqual(regular, ['rel:bernard-manages-copper-coronet'])
         self.assertEqual(stranger, [])
+
+    def test_parties_of_a_restricted_relationship_always_know_it(self):
+        args = dict(campaign_year=1369, build_areas=BUILD)
+        owner = relationship_entries(PACK, npc_id='npc:lehtinan', affiliations=(), **args)
+        bernard_uncurated = relationship_entries(PACK, npc_id='npc:cre-bernard', affiliations=(),
+                                                 **args)
+        patron = relationship_entries(PACK, npc_id='npc:cre-ftown7', affiliations=(), **args)
+        self.assertEqual(owner, ['rel:bernard-manages-copper-coronet'])        # the object
+        self.assertEqual(bernard_uncurated, ['rel:bernard-manages-copper-coronet'])  # subject
+        self.assertEqual(patron, [])
 
     def test_restricted_relationship_is_not_shareable_by_default(self):
         self.see('AR0406', 100, '["imoen","jaheira"]')
@@ -476,6 +495,27 @@ class DialogueTests(Story):
         self.assertTrue(any(t.startswith('Conselho dos Seis:') for t in texts.values()))
         self.assertIn('CONHECIMENTO GERAL:\nK1:', system_prompt(after))
         self.assertTrue({'Amn', 'Athkatla', 'Conselho', 'Seis'} <= after.vocabulary)
+
+    def test_companion_ability_scores_set_the_depth_in_the_box(self):
+        self.learn()
+        def council(**scores):
+            ctx = build_context(self.memory, self.store, Catalog.load(), npc_id='npc:jaheira',
+                                branch_id=ROOT_BRANCH, at_game_time=10 + DAY, **scores).context
+            text = next(k.text for k in ctx.knowledge if k.event_id == 'canon:org:council-of-six')
+            return ctx, text
+        # Overlay (no scores): the whole checked summary, as before.
+        ctx, full = council()
+        self.assertIn('três décadas', full)
+        self.assertIsNone(ctx.manner)
+        # Box, low Wisdom and Intelligence: only the popular core, rudimentary manner.
+        ctx, low = council(wisdom=6, intelligence=8)
+        self.assertNotIn('décadas', low)
+        self.assertNotIn('Meisarch', low)
+        self.assertNotIn('Meisarch', ctx.vocabulary)
+        self.assertIn('Como você fala e pensa:', system_prompt(ctx))
+        # A studious companion reaches the studied layer.
+        _, studied = council(wisdom=14, intelligence=17)
+        self.assertIn('três décadas', studied)
 
     def test_engine_maps_k_ids_and_rejects_raw_ids(self):
         self.learn()

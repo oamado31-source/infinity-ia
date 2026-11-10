@@ -44,6 +44,9 @@ class TalkRequest:
     text: str
     listeners: tuple[str, ...] | None   # companion ids (`npc:<script>`), None = could not read
     speaker_instance: int | None = None  # engine object id: unique in this session and area
+    speaker_party: bool = False          # a companion in the party (talks as a companion)
+    speaker_wisdom: int | None = None    # ability scores from the creature (ADR-0117 tier);
+    speaker_intelligence: int | None = None  # None = not read
 
     @property
     def speaker_id(self) -> str | None:
@@ -53,6 +56,13 @@ class TalkRequest:
         if self.speaker_cre and not self.speaker_cre.startswith('*'):
             return f'npc:cre-{self.speaker_cre.lower()}'
         return None          # '*XXXX' needs the area's residents to resolve (in_game)
+
+
+def _ability(value: object) -> int | None:
+    """An AD&D ability score (1..25); anything else (0 = not read) is unknown."""
+    if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 25:
+        return None
+    return value
 
 
 def _int(value: object) -> int | None:
@@ -100,7 +110,8 @@ def parse_talk_line(line: str) -> TalkRequest | None:
         listeners = tuple(sorted({f'npc:{n.lower()}' for n in listeners}))
     return TalkRequest(req_id, session_seq, clock_ms, area, _int(doc.get('game_time')),
                        doc['input'], script, name, cre, dead, text.strip(), listeners,
-                       _int(speaker.get('instance')))
+                       _int(speaker.get('instance')), speaker.get('party') is True,
+                       _ability(speaker.get('wis')), _ability(speaker.get('int')))
 
 
 def parse_talk_requests(text: str) -> list[TalkRequest]:

@@ -430,6 +430,25 @@ class DialogueTests(unittest.TestCase):
             residence_areas=(), branch_id=ROOT_BRANCH, at_game_time=10)
         self.assertEqual(result.status, DialogueStatus.OK, result.flags)
 
+    def test_public_fact_about_oneself_can_be_claimed(self):
+        owner = PACK.get('rel:lehtinan-owns-copper-coronet')
+        self.assertIsNotNone(owner)
+        also = ((owner.id, owner.title, owner.summary, owner.layers, owner.access_scope,
+                 owner.subject_id),)
+        context = build_resident_context(
+            MemoryStore(self.store), self.store, Catalog.load(), npc_id='npc:lehtinan',
+            display_name='Lehtinan', residence_areas=(), area='AR0406', dead=False,
+            branch_id=ROOT_BRANCH, at_game_time=10, also_known=also).context
+        k = context.knowledge[0]
+        self.assertIn(f'{k.fact_id}: (sobre você)', system_prompt(context))
+        reply = json.dumps({'speech': 'Sim, eu sou o dono desta casa.', 'used_facts': [k.fact_id],
+                            'unknown': False}, ensure_ascii=False)
+        result = DialogueEngine(self.store, FakeProvider([reply]), Catalog.load()
+                                ).respond_resident(
+            ResidentRequest('npc:lehtinan', 'Lehtinan', 'Você é o dono?', 'AR0406', False),
+            residence_areas=(), branch_id=ROOT_BRANCH, at_game_time=10, also_known=also)
+        self.assertEqual(result.status, DialogueStatus.OK, result.flags)
+
     def test_official_npc_speaks_with_its_game_alignment(self):
         context = build_resident_context(
             MemoryStore(self.store), self.store, Catalog.load(), npc_id='npc:lehtinan',

@@ -90,7 +90,7 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
         # The claimed word (dono, lorde, pai, ...) must be in the person's facts or own name.
         word = claim.group(0).split()[-1].lower()
         own_facts = [f.text for f in context.facts]
-        own_facts += [f.text for f in context.restricted_knowledge
+        own_facts += [f.text for f in context.knowledge + context.restricted_knowledge
                       if f.subject_id == context.persona.npc_id]
         own = ' '.join(own_facts + [context.persona.display_name]).lower()
         if word not in own:

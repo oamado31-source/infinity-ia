@@ -185,10 +185,15 @@ def residence_time(pack: CanonPack, events: list[Event], npc_id: str,
 
 
 def _anchor_time(events: list[Event], pin: Event) -> int | None:
+    """Game time the pin counts from: its own, else the last observation before it, else (a pin
+    made on an empty campaign, before the game was observed) the first observation after it."""
     if pin.game_time is not None:
         return pin.game_time
     before = [e.game_time for e in events if e.seq < pin.seq and e.game_time is not None]
-    return max(before) if before else None
+    if before:
+        return max(before)
+    after = [e.game_time for e in events if e.seq > pin.seq and e.game_time is not None]
+    return after[0] if after else None
 
 
 def acquire_common_knowledge(store: CampaignStore, branch_id: str, pack: CanonPack, *,
@@ -320,7 +325,9 @@ def identity_entries(pack: CanonPack, *, homeland: str | None, home: str | None,
 
 def relationship_entries(pack: CanonPack, *, npc_id: str, affiliations: Iterable[str],
                          campaign_year: int, build_areas: frozenset[str] | None) -> list[str]:
-    """ADR-0119: restricted relational facts require an explicit NPC affiliation or allowlist.
+    """ADR-0119: restricted relational facts require an explicit NPC affiliation or allowlist,
+    or being one of the relation's parties (subject or object): Lehtinan knows that Bernard runs
+    the Copper Coronet for him.
 
     Merely being in the same area is never enough. Affiliations are curated and versioned with
     the NPC identity; every edge still has to pass the campaign-year/build/source canon gate.
@@ -331,7 +338,7 @@ def relationship_entries(pack: CanonPack, *, npc_id: str, affiliations: Iterable
     for entry in sorted(pack.entries.values(), key=lambda e: e.id):
         if entry.kind != 'RELATIONSHIP' or entry.access_scope != 'RESTRICTED':
             continue
-        eligible = (
+        eligible = npc_id in (entry.subject_id, entry.object_id) or (
             entry.audience == 'AFFILIATED' and bool(held & set(entry.eligible_affiliations))
         ) or (
             entry.audience == 'EXPLICIT_NPCS' and npc_id in entry.allowed_npc_ids

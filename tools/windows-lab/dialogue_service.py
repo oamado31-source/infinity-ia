@@ -220,6 +220,7 @@ class Talker(threading.Thread):
                                     store.connection.execute(
                                         "SELECT payload_json FROM events "
                                         "WHERE event_type = 'NpcDialogueStarted'")}
+                        answered |= self._answered_companions()
                         self.seen = {r.req_id for r in requests if r.req_id in answered or not (
                             snap and r.session_seq == snap.session_seq
                             and 0 <= snap.clock_ms - r.clock_ms <= PENDING_WINDOW_MS)}
@@ -228,9 +229,29 @@ class Talker(threading.Thread):
                         if req.req_id not in self.seen:
                             self.seen.add(req.req_id)
                             self._answer(store, req)
+                            if req.speaker_party:
+                                self._remember_companion(req.req_id)
             except Exception as exc:  # keep answering; one failed request is just logged
                 print(f'{now_iso()} caixa de dialogo falhou: {type(exc).__name__}')
             time.sleep(0.5)
+
+    def _answered_path(self) -> Path:
+        # A companion's turn records no event (no first contact), so answered ids are kept in a
+        # local side file next to the campaign database: no text, only request ids.
+        return Path(self.args.db).expanduser().with_suffix('.talk-answered.txt')
+
+    def _answered_companions(self) -> set[str]:
+        try:
+            return set(self._answered_path().read_text(encoding='utf-8').split())
+        except OSError:
+            return set()
+
+    def _remember_companion(self, req_id: str) -> None:
+        try:
+            with self._answered_path().open('a', encoding='utf-8') as f:
+                f.write(req_id + '\n')
+        except OSError:
+            pass
 
     def _answer(self, store: CampaignStore, req) -> None:
         view = self.observer.snapshot()
@@ -244,6 +265,19 @@ class Talker(threading.Thread):
         tier, known_texts = '-', {}
         if not view.observed or view.branch_id is None or view.game_time is None:
             speech, status, reason, used, granted = RESIDENT_FALLBACK, 'DENIED', 'NO_OBSERVATION', (), ()
+        elif req.speaker_party:
+            # A companion in the box talks exactly as in the overlay: party memories and what it
+            # learned (SPEC-004); no first contact, no INQUIRY (a companion never teaches another).
+            # ADR-0117: its Wisdom/Intelligence (sent by the box) set the depth, as for residents.
+            wisdom, intelligence = req.speaker_wisdom, req.speaker_intelligence
+            if wisdom or intelligence:
+                tier = knowledge_tier(wisdom, intelligence).name
+            result = DialogueEngine(store, self.provider, self.catalog).respond(
+                DialogueRequest(speaker, req.text), branch_id=view.branch_id,
+                at_game_time=view.game_time, wisdom=wisdom, intelligence=intelligence)
+            status, reason, flags = result.status.value, result.reason, list(result.flags)
+            speech = result.speech or self.catalog.persona(speaker).fallback
+            used, granted, scope = (), (), 'COMPANHEIRO'
         else:
             # SPEC-006: the box request is the dialogue-start observation (no text stored).
             started = record_dialogue_start(store, view.branch_id, req, game_time=view.game_time,

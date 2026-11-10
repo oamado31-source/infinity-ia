@@ -87,8 +87,22 @@ class KnowledgeTierTests(unittest.TestCase):
         self.assertEqual(knowledge_tier(9, 18).studied, 'FULL')
         self.assertEqual(knowledge_tier(18, 12).studied, 'FULL')
         self.assertEqual(knowledge_tier(18, 8).studied, 'NONE')             # wise but unlettered
-        self.assertTrue(knowledge_tier(9, 14).informed)
-        self.assertIn('Meisarch', self.text(9, 14))
+        self.assertFalse(knowledge_tier(9, 14).informed)                 # INT does not grant INFORMED
+        self.assertIn('Meisarch', self.text(9, 14))                     # INT grants STUDIED partial
+        self.assertNotIn('tortura', self.text(9, 14))                   # INFORMED remains locked
+
+    def test_intelligence_can_unlock_studied_without_wisdom_or_informed(self):
+        tier = knowledge_tier(5, 17)
+        self.assertEqual(tier.level, 1)
+        self.assertFalse(tier.informed)
+        self.assertEqual(tier.studied, 'FULL')
+        popular = self.COUNCIL.layers['POPULAR']
+        studied = self.COUNCIL.layers['STUDIED']
+        self.assertEqual(layered_text(self.COUNCIL.summary, self.COUNCIL.layers, tier),
+                         f'{popular} {studied}')
+        self.assertNotIn('tortura', layered_text(self.COUNCIL.summary, self.COUNCIL.layers, tier))
+        self.assertEqual(layered_text(self.COUNCIL.summary, self.COUNCIL.layers,
+                                      knowledge_tier(5, 10)), popular)
 
     def test_entry_without_layers_splits_the_summary(self):
         tier = knowledge_tier(9)
@@ -142,6 +156,18 @@ class BuildTests(unittest.TestCase):
         self.assertIn('Você é humano.', ident.self_facts)
         self.assertIn('Você tem treino de ladrão.', ident.self_facts)
         self.assertFalse(any('veio de' in f or 'passou por' in f for f in ident.self_facts))
+
+    def test_unknown_curated_origin_does_not_fall_back_to_generated_history(self):
+        cur = SimpleNamespace(occupation='taverneiro da Coroa de Cobre', origin_region=None,
+                              years_here=None, places_visited=(),
+                              self_facts=('Você serve bebida no balcão.',))
+        ident = build_identity(npc_id='npc:cre-bernard', name='Bernard', pack=PACK,
+                               place='a Coroa de Cobre', home_region='region:athkatla',
+                               resident=resident(), curation=cur, generated=gen())
+        self.assertIsNone(ident.origin_region)
+        self.assertNotIn('origin', ident.provenance)
+        self.assertFalse(any('veio de' in f or 'passou por' in f for f in ident.self_facts))
+        self.assertIn('Você vive na Coroa de Cobre, em Athkatla.', ident.self_facts)
 
     def test_generated_background_names_only_pack_regions(self):
         ident = build_identity(npc_id='npc:cre-ftown7', name='Cliente da Taverna', pack=PACK,

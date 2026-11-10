@@ -309,7 +309,7 @@ class Talker(threading.Thread):
             if result.status is DialogueStatus.OK and shareable and req.listeners:
                 report = share_knowledge(
                     store, view.branch_id, self.observer.pack, speaker=speaker,
-                    listeners=req.listeners, used_entry_ids=shareable, req_id=req.req_id
+                    listeners=req.listeners, used_entry_ids=shareable, req_id=req.req_id,
                     host_epoch=req.session_seq, at_game_time=view.game_time, speech=speech,
                     also_held=known_by_identity, known_texts=known_texts, question=req.text)
                 granted = report.granted

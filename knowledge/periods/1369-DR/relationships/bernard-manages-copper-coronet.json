@@ -22,14 +22,14 @@
   "source_refs": [
     {
       "source_id": "maintainer-curation",
-      "locator": "Decisão explícita do mantenedor em 2026-11-10: detalhes operacionais da Coroa de Cobre ficam restritos a funcionários e frequentadores regulares."
+      "locator": "ADR-0119, item 8: política de acesso aprovada pelo mantenedor em 2026-11-10."
     }
   ],
   "verification_status": "CAMPAIGN_CANON",
   "access_scope": "RESTRICTED",
   "knowledge_layers": {
     "POPULAR": "Bernard cuida do funcionamento da Coroa de Cobre para Lehtinan.",
-    "INFORMED": "Ele coordena o atendimento e a operação cotidiana da taverna."
+    "INFORMED": "Bernard coordena o atendimento e a operação cotidiana da taverna."
   },
   "curation": {
     "curated_by": "mantenedor",

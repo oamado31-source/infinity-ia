@@ -249,16 +249,21 @@ class InquiryTests(Story):
         self.acquire(110, residents=placed('AR0406'))
 
     def share(self, used=('org:council-of-six',), listeners=('npc:jaheira', 'npc:imoen'),
-              speaker=BERNARD, req='1-2500-1', at=200, branch=ROOT_BRANCH, speech=None):
+              speaker=BERNARD, req='1-2500-1', at=200, branch=ROOT_BRANCH, speech=None,
+              known_texts=None):
         return share_knowledge(self.store, branch, PACK, speaker=speaker, listeners=listeners,
                                used_entry_ids=used, req_id=req, host_epoch=0, at_game_time=at,
-                               speech=speech)
+                               speech=speech, known_texts=known_texts)
 
     def test_public_owner_relationship_can_be_shared_by_inquiry(self):
-        report = self.share(used=('rel:lehtinan-owns-copper-coronet',), req='owner-1',
-                            speech='Lehtinan é o dono da Coroa de Cobre.')
+        entry_id = 'rel:lehtinan-owns-copper-coronet'
+        speech = 'Lehtinan é o dono da Coroa de Cobre.'
+        known_texts = {entry_id: PACK.get(entry_id).layers['POPULAR']}
+        self.assertEqual(entries_named(PACK, (entry_id,), speech, known_texts), [entry_id])
+        report = self.share(used=(entry_id,), req='owner-1', speech=speech,
+                            known_texts=known_texts)
         self.assertEqual(report.status, 'OK')
-        self.assertIn('rel:lehtinan-owns-copper-coronet', self.known('npc:jaheira'))
+        self.assertIn(entry_id, self.known('npc:jaheira'))
         self.assertTrue(all(k.basis is KnowledgeBasis.INQUIRY for k in report.granted))
 
     def test_listeners_learn_only_what_was_used(self):

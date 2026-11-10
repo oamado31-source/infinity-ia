@@ -28,6 +28,7 @@ POLICY = 'spec-006-identity-v1'
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CURATION_DIR = ROOT / 'knowledge' / 'npcs'
 MAX_FACT = 200
+AFFILIATION_PATTERN = re.compile(r'^place:[a-z0-9-]{1,64}:[A-Z][A-Z0-9_]{0,31}$')
 
 GAME_DATA, CURATED, GENERATED = 'GAME_DATA', 'CURATED', 'GENERATED'
 
@@ -181,6 +182,7 @@ class Curation:
     years_here: int | None
     places_visited: tuple[str, ...]
     self_facts: tuple[str, ...]
+    affiliations: tuple[str, ...] = ()
 
 
 def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[str, Curation]:
@@ -197,11 +199,17 @@ def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[s
             continue
         facts = tuple(f for f in doc.get('self_facts') or () if isinstance(f, str)
                       and 0 < len(f) <= MAX_FACT)
+        raw_affiliations = doc.get('affiliations') or []
+        if not isinstance(raw_affiliations, list) or any(
+                not isinstance(a, str) or not AFFILIATION_PATTERN.fullmatch(a)
+                for a in raw_affiliations):
+            continue
         years = doc.get('years_here')
         out[doc['npc_id']] = Curation(
             doc['npc_id'], doc.get('occupation'), doc.get('origin_region'),
             years if isinstance(years, int) and years > 0 else None,
-            tuple(doc.get('places_visited') or ()), facts)
+            tuple(doc.get('places_visited') or ()), facts,
+            tuple(sorted(set(raw_affiliations))))
     return out
 
 

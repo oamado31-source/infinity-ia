@@ -1,0 +1,33 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:copper-coronet",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Coroa de Cobre",
+  "summary": "A Coroa de Cobre é uma taverna de Athkatla.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [
+    "AR0406"
+  ],
+  "source_refs": [
+    {
+      "source_id": "game-data-local",
+      "locator": "AR0406, posicionamento local de Bernard junto ao balcão"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A Coroa de Cobre é uma taverna de Athkatla.",
+    "INFORMED": "É um estabelecimento frequentado por moradores, viajantes e aventureiros."
+  },
+  "curation": {
+    "curated_by": "mantenedor",
+    "curated_at": "2026-11-10",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-10"
+  }
+}

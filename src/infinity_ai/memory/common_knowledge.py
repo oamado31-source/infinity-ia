@@ -318,7 +318,32 @@ def identity_entries(pack: CanonPack, *, homeland: str | None, home: str | None,
     return out
 
 
-_WORD = re.compile(r"[\wÀ-ÖØ-öø-ÿ]{4,}")
+def relationship_entries(pack: CanonPack, *, npc_id: str, affiliations: Iterable[str],
+                         campaign_year: int, build_areas: frozenset[str] | None) -> list[str]:
+    """ADR-0119: restricted relational facts require an explicit NPC affiliation or allowlist.
+
+    Merely being in the same area is never enough. Affiliations are curated and versioned with
+    the NPC identity; every edge still has to pass the campaign-year/build/source canon gate.
+    Public relationships use COMMON_REGIONAL and the existing ORIGIN/RESIDENCE/INQUIRY paths.
+    """
+    held = set(affiliations)
+    out = []
+    for entry in sorted(pack.entries.values(), key=lambda e: e.id):
+        if entry.kind != 'RELATIONSHIP' or entry.access_scope != 'RESTRICTED':
+            continue
+        eligible = (
+            entry.audience == 'AFFILIATED' and bool(held & set(entry.eligible_affiliations))
+        ) or (
+            entry.audience == 'EXPLICIT_NPCS' and npc_id in entry.allowed_npc_ids
+        )
+        if not eligible:
+            continue
+        gate = assess(pack, entry.id, campaign_year=campaign_year, build_areas=build_areas)
+        if gate.status is CanonStatus.CANON_OK:
+            out.append(entry.id)
+    return out
+
+(r"[\wÀ-ÖØ-öø-ÿ]{4,}")
 _STOP = frozenset({'para', 'como', 'mais', 'muito', 'pela', 'pelo', 'onde', 'quem', 'isso', 'esse',
                    'essa', 'este', 'esta', 'mas', 'não', 'são', 'sobre', 'todo', 'toda', 'tudo',
                    'aqui', 'você', 'eles', 'elas', 'também', 'ainda', 'depois', 'entre', 'quando',

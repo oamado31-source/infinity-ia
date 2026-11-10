@@ -59,7 +59,7 @@ from infinity_ai.gamedata.inventory import (  # noqa: E402
 )
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
     DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, entries_named, identity_entries,
-    placement_regions, residents_as_stays, share_knowledge,
+    placement_regions, relationship_entries, residents_as_stays, share_knowledge,
 )
 from infinity_ai.canon.pin import PinStatus, check_pin  # noqa: E402
 from infinity_ai.memory.store import MemoryStore  # noqa: E402
@@ -237,7 +237,8 @@ class Talker(threading.Thread):
         speaker = resolve_speaker(req, self.observer.residents) or ''
         resident = self.observer.residents.get(speaker)
         areas = resident.areas if resident is not None and speaker in self.observer.stays else ()
-        scope, shared, ident_source, known_by_identity, known_now = '-', '-', '-', [], ()
+        scope, shared, ident_source = '-', '-', '-'
+        known_by_identity, known_by_relationship, known_now = [], [], ()
         flags: list[str] = []
         wisdom = intelligence = None
         tier, known_texts = '-', {}
@@ -262,21 +263,23 @@ class Talker(threading.Thread):
                 store, view.branch_id, started, at_game_time=view.game_time,
                 world_seed=self.args.world_seed, identity_factory=background)
             place = self.catalog.area(req.area) if home else None
+            curation = self.observer.curations.get(speaker)
             identity = build_identity(
                 npc_id=speaker or 'npc:desconhecido', name=req.speaker_name, pack=pack,
                 place=place if place != UNNAMED_AREA else None, home_region=home,
-                resident=resident, curation=self.observer.curations.get(speaker),
-                generated=generated)
+                resident=resident, curation=curation, generated=generated)
             ident_source = identity.source
-            # ADR-0117: what is public in the homeland and where the person lives (pinned pack).
-            known_by_identity = identity_entries(
-                pack, homeland=identity.origin_region, home=identity.home_region,
-                campaign_year=self.args.campaign_year,
-                build_areas=self.observer.build_areas) \
-                if check_pin(store, view.branch_id, pack) is PinStatus.MATCH else []
+            # ADR-0117: public knowledge from homeland/home; ADR-0119: private edges by affiliation.
+            if check_pin(store, view.branch_id, pack) is PinStatus.MATCH:
+                known_by_identity = identity_entries(
+                    pack, homeland=identity.origin_region, home=identity.home_region,
+                    campaign_year=self.args.campaign_year, build_areas=self.observer.build_areas)
+                known_by_relationship = relationship_entries(
+                    pack, npc_id=speaker, affiliations=curation.affiliations if curation else (),
+                    campaign_year=self.args.campaign_year, build_areas=self.observer.build_areas)
             stored = set(MemoryStore(store).known_canon(speaker, view.branch_id, view.game_time)) \
                 if speaker else set()
-            known_now = tuple(sorted(stored | set(known_by_identity)))
+            known_now = tuple(sorted(stored | set(known_by_identity) | set(known_by_relationship)))
             also_known = tuple((e, pack.get(e).title, pack.get(e).summary, pack.get(e).layers)
                                for e in known_now if pack.get(e) is not None)
             # Wisdom and Intelligence (game data) set how deeply the person knows (ADR-0117).
@@ -301,10 +304,12 @@ class Talker(threading.Thread):
                 used = tuple(dict.fromkeys(used + tuple(entries_named(
                     self.observer.pack, known_now, speech, known_texts, question=req.text))))
             granted = ()
-            if result.status is DialogueStatus.OK and used and req.listeners:
+            shareable = tuple(e for e in used if pack.get(e) is not None
+                              and pack.get(e).access_scope == 'COMMON_REGIONAL')
+            if result.status is DialogueStatus.OK and shareable and req.listeners:
                 report = share_knowledge(
                     store, view.branch_id, self.observer.pack, speaker=speaker,
-                    listeners=req.listeners, used_entry_ids=used, req_id=req.req_id,
+                    listeners=req.listeners, used_entry_ids=shareable, req_id=req.req_id
                     host_epoch=req.session_seq, at_game_time=view.game_time, speech=speech,
                     also_held=known_by_identity, known_texts=known_texts, question=req.text)
                 granted = report.granted

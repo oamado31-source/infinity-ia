@@ -216,6 +216,7 @@ class CurationFileTests(unittest.TestCase):
         curation = load_curations(PACK)['npc:cre-bernard']
         self.assertEqual(curation.occupation, 'taverneiro da Coroa de Cobre')
         self.assertEqual(curation.origin_region, 'region:tethyr')
+        self.assertEqual(curation.affiliations, ('place:copper-coronet:STAFF',))
 
 
 BUILD = frozenset(a for e in PACK.entries.values() for a in e.area_resrefs)
@@ -227,7 +228,8 @@ class HomelandAndHomeTests(unittest.TestCase):
                                  campaign_year=1369, build_areas=BUILD)
         self.assertEqual(set(known), {'region:tethyr', 'event:tethyr-reclamation-wars-end',
                                       'region:athkatla', 'region:amn', 'org:council-of-six',
-                                      'org:cowled-wizards'})
+                                      'org:cowled-wizards', 'place:copper-coronet',
+                                      'rel:lehtinan-owns-copper-coronet'})
         self.assertNotIn('org:shadow-thieves', known)                      # not common
         countryside = identity_entries(PACK, homeland=None, home='region:amn',
                                        campaign_year=1369, build_areas=BUILD)
@@ -383,6 +385,18 @@ class DialogueTests(unittest.TestCase):
             also_known=(('region:tethyr', tethyr.title, tethyr.summary, tethyr.layers),)).context
         self.assertEqual([k.event_id for k in context.knowledge], ['canon:region:tethyr'])
         self.assertIn('K1: Tethyr:', system_prompt(context))
+
+    def test_public_relationship_reaches_resident_dialogue(self):
+        relation = PACK.get('rel:lehtinan-owns-copper-coronet')
+        known = ((relation.id, relation.title, relation.summary, relation.layers),)
+        raw = json.dumps({'speech': 'Lehtinan é o dono da Coroa de Cobre.',
+                          'used_facts': ['K1'], 'unknown': False}, ensure_ascii=False)
+        result = DialogueEngine(self.store, FakeProvider([raw]), Catalog.load()).respond_resident(
+            ResidentRequest('npc:cre-bernard', 'Bernard', 'Quem é o dono da Coroa de Cobre?',
+                            'AR0406', False), residence_areas=('AR0406',),
+            branch_id=ROOT_BRANCH, at_game_time=10, also_known=known)
+        self.assertEqual(result.status, DialogueStatus.OK, result.flags)
+        self.assertEqual(result.used_event_ids, ('canon:rel:lehtinan-owns-copper-coronet',))
 
     def test_self_claims_outside_the_facts_are_refused(self):
         bad = json.dumps({'speech': 'Estou aqui porque a cidade me pertence.', 'used_facts': [],

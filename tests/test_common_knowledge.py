@@ -21,8 +21,8 @@ from infinity_ai.dialogue.engine import (  # noqa: E402
 )
 from infinity_ai.dialogue.llm import FakeProvider  # noqa: E402
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
-    BackgroundRegion, Residence, acquire_common_knowledge, entries_named, placement_regions,
-    residents_as_stays, share_knowledge,
+    BackgroundRegion, Residence, acquire_common_knowledge, entries_named, identity_entries,
+    placement_regions, relationship_entries, residents_as_stays, share_knowledge,
 )
 from infinity_ai.memory.model import KnowledgeBasis  # noqa: E402
 from infinity_ai.memory.store import MemoryStore  # noqa: E402
@@ -33,7 +33,8 @@ from test_recorder import obs, party  # noqa: E402
 PACK = load_partition(1369)
 BUILD = frozenset(a for e in PACK.entries.values() for a in e.area_resrefs) | {'AR0602'}
 DAY = 7200
-CITY = {'region:amn', 'region:athkatla', 'org:council-of-six', 'org:cowled-wizards'}
+CITY = {'region:amn', 'region:athkatla', 'org:council-of-six', 'org:cowled-wizards',
+        'place:copper-coronet', 'rel:lehtinan-owns-copper-coronet'}
 
 
 def reply(speech, used=(), unknown=False):
@@ -205,6 +206,40 @@ class EstablishedResidentTests(Story):
         self.acquire(10, residents=placed('AR0602'))
         self.assertEqual(self.known(BERNARD), set())
 
+class RelationshipAccessTests(Story):
+    def test_public_relationship_is_known_in_athkatla(self):
+        known = identity_entries(PACK, homeland=None, home='region:athkatla',
+                                  campaign_year=1369, build_areas=BUILD)
+        self.assertIn('place:copper-coronet', known)
+        self.assertIn('rel:lehtinan-owns-copper-coronet', known)
+
+    def test_operational_relationship_requires_curated_affiliation(self):
+        args = dict(campaign_year=1369, build_areas=BUILD)
+        staff = relationship_entries(PACK, npc_id=BERNARD,
+                                     affiliations=('place:copper-coronet:STAFF',), **args)
+        regular = relationship_entries(PACK, npc_id='npc:cre-regular01',
+                                       affiliations=('place:copper-coronet:REGULAR',), **args)
+        stranger = relationship_entries(PACK, npc_id='npc:cre-stranger',
+                                         affiliations=(), **args)
+        self.assertEqual(staff, ['rel:bernard-manages-copper-coronet'])
+        self.assertEqual(regular, ['rel:bernard-manages-copper-coronet'])
+        self.assertEqual(stranger, [])
+
+    def test_restricted_relationship_is_not_shareable_by_default(self):
+        self.see('AR0406', 100, '["imoen","jaheira"]')
+        self.pin(game_time=100)
+        report = share_knowledge(
+            self.store, ROOT_BRANCH, PACK, speaker=BERNARD, listeners=('npc:jaheira',),
+            used_entry_ids=('rel:bernard-manages-copper-coronet',), req_id='rel-private-1',
+            host_epoch=0, at_game_time=200,
+            speech='Bernard cuida da operação da Coroa de Cobre para Lehtinan.',
+            also_held=('rel:bernard-manages-copper-coronet',))
+        self.assertEqual(report.status, 'NOTHING_SHARED')
+        self.assertIn(('rel:bernard-manages-copper-coronet', 'SPEAKER_DOES_NOT_KNOW'),
+                      {(r.entry_id, r.reason) for r in report.refusals})
+
+
+
 
 class InquiryTests(Story):
     def setUp(self):
@@ -214,9 +249,17 @@ class InquiryTests(Story):
         self.acquire(110, residents=placed('AR0406'))
 
     def share(self, used=('org:council-of-six',), listeners=('npc:jaheira', 'npc:imoen'),
-              speaker=BERNARD, req='1-2500-1', at=200, branch=ROOT_BRANCH):
+              speaker=BERNARD, req='1-2500-1', at=200, branch=ROOT_BRANCH, speech=None):
         return share_knowledge(self.store, branch, PACK, speaker=speaker, listeners=listeners,
-                               used_entry_ids=used, req_id=req, host_epoch=0, at_game_time=at)
+                               used_entry_ids=used, req_id=req, host_epoch=0, at_game_time=at,
+                               speech=speech)
+
+    def test_public_owner_relationship_can_be_shared_by_inquiry(self):
+        report = self.share(used=('rel:lehtinan-owns-copper-coronet',), req='owner-1',
+                            speech='Lehtinan é o dono da Coroa de Cobre.')
+        self.assertEqual(report.status, 'OK')
+        self.assertIn('rel:lehtinan-owns-copper-coronet', self.known('npc:jaheira'))
+        self.assertTrue(all(k.basis is KnowledgeBasis.INQUIRY for k in report.granted))
 
     def test_listeners_learn_only_what_was_used(self):
         report = self.share()

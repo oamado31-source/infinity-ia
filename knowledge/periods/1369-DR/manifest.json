@@ -6,8 +6,10 @@
     "regions",
     "events",
     "organizations",
-    "characters"
+    "characters",
+    "places",
+    "relationships"
   ],
   "validation_status": "SECOND_BATCH_CHECKED",
-  "note": "Partição de 1369 DR (ADR-0013, ADR-0109). Entradas RESEARCH_ONLY nunca são afirmadas como fato; SOURCE_CHECKED exige conferência do mantenedor com obra e página."
+  "note": "Partição de 1369 DR (ADR-0013, ADR-0109). Entradas RESEARCH_ONLY nunca são afirmadas como fato; SOURCE_CHECKED exige conferência do mantenedor com obra e página. Relações tipadas e lugares entram na mesma revisão pinada do pacote (ADR-0119)."
 }

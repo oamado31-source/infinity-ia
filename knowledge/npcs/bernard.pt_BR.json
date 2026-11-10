@@ -28,5 +28,8 @@
     "status": "CHECKED",
     "checked_by": "mantenedor",
     "checked_at": "2026-11-10"
-  }
+  },
+  "affiliations": [
+    "place:copper-coronet:STAFF"
+  ]
 }

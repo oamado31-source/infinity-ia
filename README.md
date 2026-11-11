@@ -21,6 +21,16 @@ Cada modo terá seus próprios arquivos de campanha. No Living World, a cronolog
 
 O projeto está em fase de especificação e validação técnica. Num laboratório Windows 11 ARM64, a sequência **BG2:EE limpo → EEex → ponte somente leitura** já foi validada em single player. As próximas etapas são memória de NPC, persistência e diálogo, ainda em single player; o multiplayer vem depois. Este repositório ainda não oferece uma versão jogável.
 
+## Painel local de desenvolvimento (macOS)
+
+O repositório inclui um painel web leve para operar Git, rodar a suíte de testes, consultar logs e iniciar/parar o serviço de diálogo do laboratório BG2:EE. Para abrir, dê duplo clique em **INICIAR_PAINEL.command** (macOS) ou, na raiz do repositório, execute:
+
+~~~bash
+python3 tools/local-panel/server.py
+~~~
+
+A interface abre em http://127.0.0.1:8766 e roda **somente no computador local**, sem dependências Python adicionais. Configurações, logs e bancos de campanha ficam fora do repositório. Consulte o [manual do painel](tools/local-panel/README.md) para configurar o SSH da VM e as campanhas de teste.
+
 ## Acompanhar e contribuir
 
 Use as [Issues](https://github.com/oamado31-source/infinity-ia/issues) para registrar problemas reproduzíveis ou propostas concretas e as [Discussions](https://github.com/oamado31-source/infinity-ia/discussions) para conversar sobre design e arquitetura. Para propor uma mudança no repositório, abra um pull request descrevendo o objetivo e os testes ou evidências de validação.

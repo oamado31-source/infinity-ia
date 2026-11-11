@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import socket
 import sqlite3
 import sys
 import tempfile
@@ -63,6 +64,24 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(len(commands), 6)
         self.assertTrue(all(isinstance(c, list) and len(c) >= 2 for c in commands))
         self.assertTrue(all("--shell" not in c for c in commands))
+
+    def test_lab_preflight_rejects_occupied_port(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as owner:
+            owner.bind(("127.0.0.1", 0))
+            owner.listen()
+            with self.assertRaisesRegex(ValueError, "já ocupada"):
+                panel.check_lab_port("127.0.0.1", owner.getsockname()[1])
+
+    def test_lab_bind_failure_is_checked_before_vm_override(self):
+        source = (ROOT / "tools" / "windows-lab" /
+                  "dialogue_service.py").read_text(encoding="utf-8")
+        main = source.split("\ndef main() -> int:", 1)[1]
+        self.assertLess(main.index("if not matches:"),
+                        main.index("server = ThreadingHTTPServer"))
+        self.assertLess(main.index("server = ThreadingHTTPServer"),
+                        main.index("put_override_file("))
+        self.assertLess(main.index("server = ThreadingHTTPServer"),
+                        main.index("observer.start()"))
 
     def test_pin_requires_running_matching_laboratory(self):
         manager = panel.Panel()

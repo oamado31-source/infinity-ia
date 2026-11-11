@@ -235,6 +235,30 @@ class Panel:
         self.service_campaign: str | None = None
         self.service_started: str | None = None
         self.service_status = "stopped"
+        self.load_job_history()
+
+    def load_job_history(self) -> None:
+        """Show the most recent task logs after the panel itself is restarted."""
+        candidates = sorted(LOGS.glob("job-*.log"), key=lambda p: p.stat().st_mtime)
+        for path in candidates[-40:]:
+            ident = path.stem.removeprefix("job-")
+            if not SAFE_JOB.fullmatch(ident):
+                continue
+            try:
+                with path.open("r", encoding="utf-8", errors="replace") as f:
+                    first = f.readline().strip()
+                recent = tail(path, 6000)
+                match = re.match(r"^\[([^\]]+)\] (.+)$", first)
+                started = match.group(1) if match else datetime.fromtimestamp(
+                    path.stat().st_mtime, timezone.utc).isoformat(timespec="seconds")
+                label = match.group(2) if match else "Tarefa arquivada"
+                finish = re.search(r"Finalizado: código (\d+)", recent)
+                code = int(finish.group(1)) if finish else None
+                status = "ok" if code == 0 else ("error" if code is not None or "ERRO:" in recent
+                                                 else "interrupted")
+                self.jobs[ident] = Job(ident, "archived", label, started, status, None, code)
+            except OSError:
+                continue
 
     def write_log(self, path: Path, line: str) -> None:
         if path.name == "service.log" and path.exists() and path.stat().st_size > 2_000_000:

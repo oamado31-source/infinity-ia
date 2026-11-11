@@ -35,7 +35,7 @@ DEFAULT_PORT = 8766
 BRANCH = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,90}$")
 CAMPAIGN = re.compile(r"^lab-[a-z0-9-]{1,48}$")
 HOST_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,180}$")
-USER_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,80}$")
+USER_NAME = re.compile(r"^(?=.{1,80}$)[A-Za-z0-9_.-]+(?: [A-Za-z0-9_.-]+)*$")
 MODEL = re.compile(r"^[A-Za-z0-9._:/-]{1,100}$")
 SAFE_JOB = re.compile(r"^[a-f0-9]{16}$")
 MAX_INPUT = 8192

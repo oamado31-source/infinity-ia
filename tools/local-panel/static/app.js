@@ -189,7 +189,7 @@ async function loadLog() {
   const result = await api(url);
   const output = el("log-content");
   if (result.text !== lastLogText) {
-    const scroll = output.parentElement;
+    const scroll = output;
     const nearBottom = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 95;
     output.textContent = result.text || (logKind === "service" ? "O serviço ainda não gerou logs." : "Aguardando saída do comando...");
     if (nearBottom || lastLogText === null) scroll.scrollTop = scroll.scrollHeight;
@@ -317,7 +317,7 @@ el("copy-log").addEventListener("click", async () => {
   }
 });
 el("scroll-log").addEventListener("click", () => {
-  const terminal = el("log-content").parentElement;
+  const terminal = el("log-content");
   terminal.scrollTop = terminal.scrollHeight;
 });
 select(".navlink").forEach((link) => {

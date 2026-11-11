@@ -164,7 +164,10 @@ class LocalHttpTests(unittest.TestCase):
             with urlopen(req, timeout=5) as response:
                 return response.status, response.read().decode("utf-8")
         except HTTPError as error:
-            return error.code, error.read().decode("utf-8")
+            try:
+                return error.code, error.read().decode("utf-8")
+            finally:
+                error.close()
 
     def test_main_page_and_static_assets(self):
         code, html = self.request("/")

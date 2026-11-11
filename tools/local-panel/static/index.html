@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Infinity AI — Painel Local</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <script nonce="__NONCE__">window.PANEL_TOKEN = __TOKEN_JSON__;</script>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="Página inicial">
+        <span class="brand-icon">∞</span>
+        <span><strong>INFINITY AI</strong><small>DEV CONTROL</small></span>
+      </a>
+      <nav aria-label="Seções do painel">
+        <a href="#overview" class="navlink active">◉ <span>Visão geral</span></a>
+        <a href="#repository" class="navlink">⑂ <span>Repositório</span></a>
+        <a href="#tests" class="navlink">✓ <span>Validação</span></a>
+        <a href="#laboratory" class="navlink">▧ <span>Laboratório</span></a>
+        <a href="#logs" class="navlink">▤ <span>Logs</span></a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="secure-label"><span class="dot"></span> Apenas no seu Mac</div>
+        <p>Localhost · Sem serviços de nuvem</p>
+        <div class="mini-version">Painel experimental v0.1</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar" id="overview">
+        <div class="breadcrumb">Workspace <span>/</span> Infinity AI <span>/</span> Operações</div>
+        <div class="topbar-right">
+          <span id="connection" class="connection">● Conectado</span>
+          <button type="button" class="icon-button" id="refresh" aria-label="Atualizar dados" title="Atualizar dados">↻</button>
+        </div>
+      </header>
+
+      <div class="page">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">CENTRO DE DESENVOLVIMENTO</div>
+            <h1>O seu laboratório, <em>em um só lugar.</em></h1>
+            <p>Atualize a cópia local, execute validações e acompanhe o BG2:EE sem digitar os mesmos comandos no Terminal.</p>
+          </div>
+          <div class="hero-accent" aria-hidden="true">∞</div>
+        </div>
+
+        <div class="metrics" aria-label="Estado atual">
+          <div class="metric">
+            <div class="metric-title">BRANCH ATIVA</div>
+            <strong class="metric-value mono" id="metric-branch">—</strong>
+            <span class="metric-hint" id="metric-clean">Consultando repositório…</span>
+          </div>
+          <div class="metric">
+            <div class="metric-title">ÚLTIMO COMMIT</div>
+            <strong class="metric-value mono" id="metric-commit">—</strong>
+            <span class="metric-hint">Histórico Git local</span>
+          </div>
+          <div class="metric">
+            <div class="metric-title">TAREFA</div>
+            <strong class="metric-value" id="metric-task">Inativo</strong>
+            <span class="metric-hint" id="metric-task-hint">Nenhuma em execução</span>
+          </div>
+          <div class="metric">
+            <div class="metric-title">LABORATÓRIO</div>
+            <strong class="metric-value" id="metric-lab">Parado</strong>
+            <span class="metric-hint" id="metric-lab-hint">Campanha isolada</span>
+          </div>
+        </div>
+
+        <div class="content-grid">
+          <section class="panel" id="repository">
+            <div class="panel-header">
+              <div><div class="eyebrow">01 / CÓDIGO-FONTE</div><h2>Repositório Git</h2></div>
+              <span class="pill neutral" id="git-pill">Aguardando</span>
+            </div>
+            <p class="panel-description">Operações seguras: apenas fetch, troca de branch e atualização fast-forward. Não há botões de push, merge, reset ou descarte.</p>
+            <div class="field">
+              <label for="branch-select">Selecionar branch remota</label>
+              <div class="field-row">
+                <select id="branch-select" aria-label="Selecionar branch"><option value="">Consultando...</option></select>
+                <button type="button" id="switch-branch" class="button outline">Trocar</button>
+              </div>
+            </div>
+            <div class="buttons">
+              <button type="button" class="button secondary" data-action="fetch">Buscar atualizações</button>
+              <button type="button" class="button secondary" data-action="pull">Atualizar branch</button>
+              <button type="button" class="button primary" data-action="sync">Sincronizar agora <span>↗</span></button>
+            </div>
+            <div class="detail"><span>STATUS GIT</span><pre id="git-detail">—</pre></div>
+          </section>
+
+          <section class="panel" id="tests">
+            <div class="panel-header">
+              <div><div class="eyebrow">02 / QUALIDADE</div><h2>Testes automatizados</h2></div>
+              <span class="pill neutral" id="python-pill">Python —</span>
+            </div>
+            <p class="panel-description">Os mesmos comandos da suíte local e do GitHub Actions, executados no ambiente virtual <code>.venv</code> quando disponível.</p>
+            <button type="button" class="button subtle full" data-action="setup">Preparar ambiente / instalar dependências <span>↓</span></button>
+            <div class="test-grid">
+              <button type="button" class="test-button" data-action="identity"><span class="test-glyph">◇</span><span><b>Identidade</b><small>NPCs, WIS / INT</small></span><span class="arrow">↗</span></button>
+              <button type="button" class="test-button" data-action="tests"><span class="test-glyph">◎</span><span><b>Suíte principal</b><small>Testes de Python</small></span><span class="arrow">↗</span></button>
+              <button type="button" class="test-button" data-action="chronology"><span class="test-glyph">◷</span><span><b>Cronologia</b><small>Consistência temporal</small></span><span class="arrow">↗</span></button>
+              <button type="button" class="test-button" data-action="syntax"><span class="test-glyph">⌘</span><span><b>Compilação</b><small>Verificação de sintaxe</small></span><span class="arrow">↗</span></button>
+              <button type="button" class="test-button" data-action="adrs"><span class="test-glyph">▣</span><span><b>Proteção ADRs</b><small>Histórico imutável</small></span><span class="arrow">↗</span></button>
+              <button type="button" class="test-button" data-action="public"><span class="test-glyph">☷</span><span><b>Arquivos públicos</b><small>Higiene do repositório</small></span><span class="arrow">↗</span></button>
+            </div>
+            <button type="button" class="button primary full validate" data-action="all">▶ Executar validação completa</button>
+          </section>
+        </div>
+
+        <section class="panel lab-panel" id="laboratory">
+          <div class="panel-header">
+            <div><div class="eyebrow">03 / BG2:EE + EEEX</div><h2>Laboratório local</h2></div>
+            <span class="pill neutral" id="lab-pill">Serviço parado</span>
+          </div>
+          <p class="panel-description">Use uma campanha <code>lab-*</code> e seu próprio banco SQLite. O serviço acessa a VM Windows pelo SSH configurado e mantém os logs disponíveis nesta interface.</p>
+          <div class="lab-layout">
+            <form id="config-form" autocomplete="off">
+              <div class="input-grid">
+                <div class="field">
+                  <label for="campaign">Campanha de laboratório</label>
+                  <input id="campaign" name="campaign" placeholder="lab-s1f" spellcheck="false" required>
+                </div>
+                <div class="field">
+                  <label for="model">Modelo Ollama</label>
+                  <input id="model" name="model" placeholder="qwen3:8b" spellcheck="false" required>
+                </div>
+                <div class="field wide">
+                  <label for="manifest">Caminho absoluto do manifesto P2 (.json)</label>
+                  <input id="manifest" name="manifest" placeholder="/Users/.../manifesto.json" spellcheck="false">
+                </div>
+                <div class="field">
+                  <label for="ssh-host">Host ou IP da VM (SSH)</label>
+                  <input id="ssh-host" name="ssh_host" placeholder="192.168.x.x ou alias-ssh" spellcheck="false">
+                </div>
+                <div class="field">
+                  <label for="ssh-user">Usuário SSH</label>
+                  <input id="ssh-user" name="ssh_user" placeholder="usuario" spellcheck="false">
+                </div>
+                <div class="field wide">
+                  <label for="ssh-key">Chave SSH (opcional; caminho local)</label>
+                  <input id="ssh-key" name="ssh_key" placeholder="~/.ssh/id_ed25519" spellcheck="false">
+                </div>
+              </div>
+              <div class="form-footer">
+                <span class="hint" id="ssh-hint">SSH pode ser herdado do Terminal ou configurado aqui.</span>
+                <button type="submit" class="button outline">Salvar configuração</button>
+              </div>
+            </form>
+            <div class="lab-actions">
+              <div class="lab-state"><span class="orb" id="lab-orb"></span><div><strong id="lab-state-text">Desligado</strong><small id="lab-state-detail">Nenhum processo gerenciado</small></div></div>
+              <button type="button" class="button primary full" id="start-lab">▶ Iniciar serviço de diálogo</button>
+              <button type="button" class="button outline full" id="stop-lab">■ Parar serviço</button>
+              <div class="divider"></div>
+              <button type="button" class="button subtle full" id="pin-lab">◇ Registrar pin canônico (1369 DR)</button>
+              <p class="fineprint">O pin só é permitido após uma observação com tempo de jogo válido. O serviço não deve ser iniciado duas vezes.</p>
+              <div class="config-location" id="lab-path">Banco: ~/.infinity-ai/campaigns/lab-s1f.sqlite3</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel log-panel" id="logs">
+          <div class="panel-header">
+            <div><div class="eyebrow">04 / OBSERVABILIDADE</div><h2>Console e logs</h2></div>
+            <span class="pill neutral" id="job-pill">Sem tarefas</span>
+          </div>
+          <div class="terminal-toolbar">
+            <div class="terminal-tabs">
+              <button type="button" class="tab active" data-log="job">Comandos</button>
+              <button type="button" class="tab" data-log="service">BG2:EE / Serviço</button>
+            </div>
+            <div class="terminal-actions">
+              <select id="job-select" aria-label="Selecionar log de tarefa"></select>
+              <button type="button" id="copy-log" class="small-button">Copiar</button>
+              <button type="button" id="scroll-log" class="small-button">Final ↓</button>
+            </div>
+          </div>
+          <div class="terminal"><div class="terminal-heading"><span class="light"></span> infinity-ai / local-panel <span id="log-state">—</span></div><pre id="log-content">Os logs aparecerão aqui após você executar uma tarefa.</pre></div>
+          <p class="footnote" id="log-location">Os arquivos de log são guardados fora do repositório.</p>
+        </section>
+
+        <footer class="footer">Infinity AI · Desenvolvimento local · Operações explicitamente autorizadas pelo usuário</footer>
+      </div>
+    </main>
+  </div>
+  <div class="toast" role="status" aria-live="polite" id="toast" hidden></div>
+  <script defer src="/static/app.js"></script>
+</body>
+</html>

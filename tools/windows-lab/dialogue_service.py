@@ -511,7 +511,12 @@ def main() -> int:
     ssh = ssh_from_env('INFINITY_LAB_SSH')
     live = live_manifest(ssh, args.game_root, out_name='s1b-live-manifest.json')
     live_build, live_modpack = build_fingerprint(live), modpack_hash(live)
-    print(f'live matches pinned: {(live_build, live_modpack) == (pin_build, pin_modpack)}')
+    matches = (live_build, live_modpack) == (pin_build, pin_modpack)
+    print(f'live matches pinned: {matches}')
+    if not matches:
+        print('Manifesto P2 diferente da instalação atual; início do laboratório bloqueado.',
+              file=sys.stderr)
+        return 2
 
     game_names = load_local_names(live_build, args.language)
     print(f'nomes de area do jogo (inventario local): {len(game_names)}')
@@ -522,31 +527,48 @@ def main() -> int:
           f'habitantes locais: {len(observer.stays)}, '
           f'identidades curadas: {len(observer.curations)}, '
           f'limite de residencia: {args.residence_threshold}')
-    CampaignStore.open(args.db, args.campaign).close()   # migrate once before the threads open it
-    # The reply file must exist when the game starts, or Infinity_DoFile never finds it.
-    put_override_file(ssh, args.game_root, f'{REPLY_RESREF}.lua', PLACEHOLDER_REPLY.encode('utf-8'))
-    observer.start()
     talker = Talker(args, ssh, observer, catalog)
-    talker.start()
-
     token = secrets.token_urlsafe(24)
     if args.reuse_token and args.config_out.exists():
         token = json.loads(args.config_out.read_text(encoding='utf-8'))['token']
-    args.config_out.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(args.config_out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, 'w', encoding='utf-8') as fh:
-        json.dump({'url': f'http://{args.bind}:{args.port}', 'token': token}, fh)
-    server = ThreadingHTTPServer((args.bind, args.port), make_handler(
-        token, observer, catalog, args, talker))
-    print(f'servindo em http://{args.bind}:{args.port} (config do overlay em {args.config_out})')
+
+    # Claim the HTTP address before touching the VM override or launching worker threads.
+    # Otherwise a second instance can overwrite a running instance's reply file and then
+    # crash with EADDRINUSE; the existing service should remain untouched.
     try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+        server = ThreadingHTTPServer((args.bind, args.port), make_handler(
+            token, observer, catalog, args, talker))
+    except OSError as exc:
+        print(f'Não foi possível abrir http://{args.bind}:{args.port}: {exc}. '
+              f'Confira o processo com lsof -nP -iTCP:{args.port} -sTCP:LISTEN',
+              file=sys.stderr)
+        return 2
+
+    override_set = False
+    try:
+        CampaignStore.open(args.db, args.campaign).close()  # migrate before worker threads
+        # The reply file must exist when the game starts, or Infinity_DoFile never finds it.
         put_override_file(ssh, args.game_root, f'{REPLY_RESREF}.lua',
                           PLACEHOLDER_REPLY.encode('utf-8'))
+        override_set = True
+        observer.start()
+        talker.start()
+
+        args.config_out.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(args.config_out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, 'w', encoding='utf-8') as fh:
+            json.dump({'url': f'http://{args.bind}:{args.port}', 'token': token}, fh)
+        print(f'servindo em http://{args.bind}:{args.port} '
+              f'(config do overlay em {args.config_out})')
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass
+    finally:
+        server.server_close()
+        if override_set:
+            put_override_file(ssh, args.game_root, f'{REPLY_RESREF}.lua',
+                              PLACEHOLDER_REPLY.encode('utf-8'))
     return 0
 
 

@@ -12,13 +12,7 @@ python3 tools/local-panel/server.py
 
 O navegador abre automaticamente em **http://127.0.0.1:8766**. Deixe a janela do Terminal que iniciou o painel aberta. Depois disso, os comandos comuns podem ser disparados pelos botões.
 
-Opcional: para abrir com duplo clique pelo Finder, faça uma única vez:
-
-~~~bash
-chmod +x INICIAR_PAINEL.command
-~~~
-
-Depois use o arquivo INICIAR_PAINEL.command na raiz do repositório. Para usar outra porta: python3 tools/local-panel/server.py --port 8767.
+Para abrir com duplo clique pelo Finder, use **INICIAR_PAINEL.command** na raiz do repositório. Ele já é distribuído como executável pelo Git, sem necessidade de chmod. Para usar outra porta: python3 tools/local-panel/server.py --port 8767.
 
 ## Recursos
 

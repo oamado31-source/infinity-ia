@@ -323,6 +323,10 @@ class Panel:
                     ("syntax", "identity", "tests", "chronology", "adrs", "public")), [])
         if action == "pin":
             cfg = read_settings()
+            if not self.service_running():
+                raise ValueError("Inicie o serviço de diálogo e aguarde uma observação antes do pin.")
+            if self.service_campaign != cfg["campaign"]:
+                raise ValueError("Campanha configurada difere da campanha do serviço ativo.")
             db, _ = lab_paths(cfg)
             checked_game_time(db, cfg["campaign"])
             lab_env(cfg)

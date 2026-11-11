@@ -511,7 +511,12 @@ def main() -> int:
     ssh = ssh_from_env('INFINITY_LAB_SSH')
     live = live_manifest(ssh, args.game_root, out_name='s1b-live-manifest.json')
     live_build, live_modpack = build_fingerprint(live), modpack_hash(live)
-    print(f'live matches pinned: {(live_build, live_modpack) == (pin_build, pin_modpack)}')
+    matches = (live_build, live_modpack) == (pin_build, pin_modpack)
+    print(f'live matches pinned: {matches}')
+    if not matches:
+        print('Manifesto P2 diferente da instalação atual; início do laboratório bloqueado.',
+              file=sys.stderr)
+        return 2
 
     game_names = load_local_names(live_build, args.language)
     print(f'nomes de area do jogo (inventario local): {len(game_names)}')

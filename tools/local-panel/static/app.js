@@ -127,7 +127,7 @@ function renderStatus(data) {
   el("switch-branch").disabled = busy || running || !g.branches || !g.branches.length;
   el("start-lab").disabled = busy || running;
   el("stop-lab").disabled = !running;
-  el("pin-lab").disabled = busy;
+  el("pin-lab").disabled = busy || !running;
   text("lab-path", "Banco: ~/.infinity-ai/campaigns/" + data.config.campaign + ".sqlite3");
   text("ssh-hint", data.config.ssh_host ? "SSH configurado no painel" : data.ssh_inherited ? "SSH herdado do Terminal" : "Configure o SSH antes de iniciar o laboratório.");
   text("log-location", "Arquivos locais de log: " + data.logs_dir);

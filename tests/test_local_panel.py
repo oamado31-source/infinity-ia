@@ -40,7 +40,7 @@ class ValidationTests(unittest.TestCase):
     def test_config_whitelist_and_no_arbitrary_ssh_command(self):
         accepted = panel.settings_validate({
             "campaign": "lab-s1f", "model": "qwen3:8b",
-            "ssh_host": "labvm", "ssh_user": "tester", "ssh_key": "~/.ssh/id_ed25519",
+            "ssh_host": "labvm", "ssh_user": "otavio amado", "ssh_key": "~/.ssh/id_ed25519",
         })
         self.assertTrue(accepted["ssh_key"].endswith(".ssh/id_ed25519"))
         for bad in (

@@ -81,6 +81,27 @@ class ValidationTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 panel.checked_game_time(db, "lab-other")
 
+    def test_job_logs_remain_accessible_after_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            logs = base / "logs"
+            logs.mkdir()
+            ident = "a" * 16
+            (logs / ("job-" + ident + ".log")).write_text(
+                "[2026-11-10T20:00:00+00:00] Testes de identidade\n"
+                "$ python -m unittest discover\n"
+                "Ran 42 tests\n"
+                "[2026-11-10T20:00:03+00:00] Finalizado: código 0\n",
+                encoding="utf-8",
+            )
+            with mock.patch.multiple(panel, DATA=base, LOGS=logs,
+                                     CONFIG_PATH=base / "config.json"):
+                restarted = panel.Panel()
+                job = restarted.jobs[ident]
+                self.assertEqual(job.status, "ok")
+                self.assertEqual(job.label, "Testes de identidade")
+                self.assertEqual(job.code, 0)
+
     def test_settings_are_stored_only_outside_repository(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

@@ -7,12 +7,14 @@ Python standard library only. No shell execution and no arbitrary command endpoi
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import os
 import re
 import secrets
 import shlex
 import signal
+import socket
 import sqlite3
 import subprocess
 import sys
@@ -194,6 +196,32 @@ def checked_game_time(db: Path, campaign: str) -> int:
     if not isinstance(last, int) or last < 0:
         raise ValueError("Ainda não há observação com tempo de jogo. Carregue um save e aguarde o serviço.")
     return last
+
+
+def check_lab_port(bind: str = "192.168.150.1", port: int = 8765) -> None:
+    """Check whether the VM-facing port can be bound before running remote setup.
+
+    The dialogue service binds the same address with SO_REUSEADDR; this is advisory,
+    because another process might still claim the port between probe and startup.
+    The service itself performs the authoritative bind before any VM writes.
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            probe.bind((bind, port))
+        except OSError as exc:
+            if exc.errno == errno.EADDRINUSE:
+                raise ValueError(
+                    f"Porta {port} já ocupada em {bind}. Pode haver outro serviço do "
+                    f"Infinity em execução. Consulte: lsof -nP -iTCP:{port} -sTCP:LISTEN. "
+                    "Não encerre o processo sem identificá-lo."
+                ) from exc
+            if exc.errno == errno.EADDRNOTAVAIL:
+                raise ValueError(
+                    f"Endereço {bind} não está disponível neste Mac. "
+                    "Confira o adaptador de rede da VM."
+                ) from exc
+            raise ValueError(f"Não foi possível reservar {bind}:{port}: {exc}") from exc
 
 
 def tail(path: Path, limit: int = 180_000) -> str:
@@ -405,6 +433,7 @@ class Panel:
             if not isinstance(data, dict):
                 raise ValueError("Manifesto deve conter um objeto JSON.")
             env = lab_env(cfg)
+            check_lab_port()
             CAMPAIGNS.mkdir(parents=True, exist_ok=True, mode=0o700)
             command = [test_python(), "-u", "tools/windows-lab/dialogue_service.py",
                        "--pinned-manifest", str(manifest), "--config-out", str(overlay),

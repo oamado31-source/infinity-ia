@@ -64,6 +64,11 @@ class ValidationTests(unittest.TestCase):
         self.assertTrue(all(isinstance(c, list) and len(c) >= 2 for c in commands))
         self.assertTrue(all("--shell" not in c for c in commands))
 
+    def test_pin_requires_running_matching_laboratory(self):
+        manager = panel.Panel()
+        with self.assertRaisesRegex(ValueError, "Inicie o serviço"):
+            manager.job_commands("pin", {})
+
     def test_empty_campaign_cannot_get_pin_without_game_time(self):
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / "lab.sqlite3"

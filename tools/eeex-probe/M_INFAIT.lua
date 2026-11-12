@@ -70,15 +70,15 @@ local function infai_party_ids()
 	return ids
 end
 
--- Lider do grupo selecionado no momento em que a caixa abre. E apenas um candidato a iniciador:
--- a semantica do motor precisa ser comparada com o personagem que efetivamente inicia a conversa.
+-- EEex 1.1.0 expoe o ID do lider selecionado; resolvemos o objeto via retratos 0..5.
+-- O resultado e apenas candidato a iniciador; validar contra dialogos nativos no laboratorio.
 local function infai_selected_leader()
 	local ok, info = pcall(function()
-		local selected = EEex_Sprite_GetSelected()
-		if selected == nil then return nil end
-		local id = selected.m_id
+		local id = EEex_Sprite_GetSelectedID()
+		if type(id) ~= "number" or id < 0 then return nil end
 		local member = infai_party_ids()[id]
-		if member == nil then return nil end -- summons/outros atores selecionados nao sao PCs da party
+		if member == nil then return nil end
+		local selected = member.sprite
 		local script = selected.m_scriptName:get()
 		local okchr, chr = pcall(function() return EEex_Sprite_GetActiveStats(selected).m_nCHR end)
 		local okbase, chrbase = pcall(function() return selected.m_baseStats.m_CHRBase end)

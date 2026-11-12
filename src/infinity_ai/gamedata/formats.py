@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Parsers for Infinity Engine (Enhanced Edition) file formats used by the area inventory.
 
-KEY V1, BIFF V1, TLK V1, WMP V1.0, ARE V1.0 actors and CRE V1.0 identity, following the
+KEY V1, BIFF V1, TLK V1, WMP V1.0, ARE V1.0 actors and CRE V1.0 identity/social fields, following the
 community documentation (IESDP). Pure functions over bytes, strict bounds checks, no writes. Only
 uncompressed BIFF V1 is supported (the format used by the EE games); anything else raises
 GameDataError.
@@ -239,6 +239,9 @@ class CreatureIdentity:
     alignment: int = 0    # ALIGNMEN.IDS (0x11 LG ... 0x33 CE)
     wisdom: int = 0       # ability score (0 = not read)
     intelligence: int = 0  # ability score (0 = not read)
+    charisma_base: int = 0  # raw CRE byte at 0x23E; 0 is preserved as source data
+    morale_default: int = 0  # raw CRE byte at 0x23F; not runtime current morale or AD&D check target
+    morale_break_base: int = 0  # raw CRE byte at 0x240; engine threshold, not AD&D Morale
 
 
 def parse_are_actors(data: bytes) -> tuple[AreaActor, ...]:
@@ -272,4 +275,5 @@ def parse_cre_identity(data: bytes) -> CreatureIdentity:
     if script.lower() == 'none':
         script = ''
     return CreatureIdentity(_strref(name), script, data[0x270], data[0x271], data[0x272],
-                            data[0x273], data[0x275], data[0x27B], data[0x23B], data[0x23A])
+                            data[0x273], data[0x275], data[0x27B], data[0x23B], data[0x23A],
+                            data[0x23E], data[0x23F], data[0x240])

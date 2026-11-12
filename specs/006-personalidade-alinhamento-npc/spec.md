@@ -2,7 +2,7 @@
 
 **Status:** PROPOSTA para revisão do mantenedor (2026-11-09). O gerador inicial e seus testes são **somente sintéticos**; não há integração com jogo, memória persistida, LLM ou ações mecânicas.
 **Origem:** solicitação do mantenedor em 2026-11-09 para individualizar NPCs, integrar alinhamento de AD&D e documentar perfis.
-**Governança:** ADR-0115 (proposto); ADR-0018, ADR-0030/0031/0032, ADR-0042/0059/0062/0113/0114; SPEC-003 (memória e save), SPEC-004 (fala/personas), SPEC-005 (cânone).
+**Governança:** ADR-0115 (proposto), ADR-0122 (proposto); ADR-0018, ADR-0030/0031/0032, ADR-0042/0059/0062/0113/0114/0116/0117/0119/0120; SPEC-003 (memória e save), SPEC-004 (fala/personas), SPEC-005 (cânone).
 
 ## Objetivo
 
@@ -68,13 +68,54 @@ Emoções temporárias, relações por observador, memórias, crenças, estresse
 - **Persistência ainda pendente:** o orquestrador deverá gravar o snapshot uma vez em registro append-only, com idempotência e prova de identidade. Recarregar save, trocar versão ou reabrir sessão **nunca** deve rerrolar um NPC já criado. Ramo filho herda perfil anterior ao fork; NPC novo criado após fork tem identidade/ramo próprio; evitar colisões.
 - O gerador sozinho não garante identidade nem armazenamento: estes são gates futuros do serviço de criação, sob ADR-0062 e SPEC-003.
 
-## Reação: contrato futuro, não comportamento atualmente implementado
+## Reação social e moral: contrato futuro (ADR-0122; não implementado)
 
-`evento confirmado → exposição/ACL → crença e memória do NPC → perfil-base + estado atual + relação → regras de prioridades/limites → proposta narrativa validada → fala local via SPEC-004`.
+A reação deverá seguir o fluxo:
 
-Exemplo hipotético: uma autoridade local exige que o grupo denuncie um inocente. Um NPC Leal e Bom pode tentar contestar a ordem por vias institucionais; outro Caótico e Bom pode desobedecer e proteger a vítima; um Leal e Mau pode explorar a ordem em benefício próprio. **Nenhuma fala ou ação é garantida por um rótulo isolado**: o NPC precisa saber do incidente, ter motivos e avaliar riscos. O eixo moral e o ético não substituem personalidade, crenças nem autoria causal.
+evento confirmado → exposição/ACL → crenças e memórias legítimas → perfil-base + estado atual + relação → solução contextual → Reaction Table 59 quando houver incerteza → Morale Check somente quando houver gatilho → política de comportamento validada → fala local via SPEC-004.
 
-Fala, recusa, comércio, mudança de facção, deserção, combate, assassinato, revelação de segredo ou alteração do jogo têm *gates diferentes*. LLM só ajuda a formular texto; o host tem autoridade mecânica e ações HIGH exigem aprovação.
+### Separação dos mecanismos
+
+1. **Solução contextual:** primeira opção. Se fatos, scripts, objetivos e personalidade já determinarem uma reação coerente, não rolar dados.
+2. **Reaction nativa do BG2:EE:** Reaction() usa a escala nativa 10 + rmodchr + rmodrep. É um sinal do motor, não a Table 59. Não converter em categorias nem combinar com novos modificadores até validar sua leitura e calibração na build pinada.
+3. **Encounter Reaction (AD&D 2e, DMG Table 59):** quando a disposição permanecer incerta, rolar 2d10, escolher a coluna segundo a conduta observável dos personagens jogadores (FRIENDLY, INDIFFERENT, THREATENING, HOSTILE) e aplicar os modificadores pertinentes. Resultados: FLIGHT, FRIENDLY, INDIFFERENT, CAUTIOUS, THREATENING, HOSTILE. Ajuste positivo de reação por Carisma melhora o resultado (subtrai-se o bônus positivo do total); não contar Carisma/reputação duas vezes quando já incorporados no sinal nativo.
+4. **Morale Check (AD&D 2e, DMG Tables 49–50 e capítulo de NPCs):** rolar 2d10 apenas diante de gatilho relevante. Total igual ou inferior à moral modificada = mantém a determinação; total maior = falha e toma uma resposta contextual (ceder à tentação, evitar, recuar, fugir, render-se ou outra saída coerente). Falhar diante de uma tentação significa ceder à tentação relevante, não necessariamente confessar ou agir de imediato.
+5. **Personalidade, alinhamento e relações:** influenciam a escolha contextual, a interpretação e a expressão da disposição; não são substitutos uns dos outros.
+
+### Influência de P1–P4
+
+- **P1 (HEXACO ficcional):** influencia tom, expressividade, paciência, cautela, franqueza e a coerência psicológica da resistência. Não converter diretamente pontos HEXACO em modificadores AD&D sem uma tabela própria, versionada, calibrada e testada.
+- **P2 (alinhamento AD&D):** aplica modificadores oficiais apenas quando a tabela e o contexto os autorizarem. Lawful/Chaotic e Good/Evil não são rótulos automáticos de simpatia ou hostilidade. Não duplicar Lawful/Chaotic entre Table 50 e Table 71; UNKNOWN não recebe modificador inventado.
+- **P3 (valores, motivações e vulnerabilidades):** informa quais tentações, ameaças e conflitos têm significado para o NPC, somente se os dados estiverem em seu perfil autorizado.
+- **P4 (relações, memória e estado):** tratamento recebido, confiança, lealdade e experiências podem influenciar o resultado quando registrados e visíveis no ramo; reutilizar ADR-0119 e SPEC-003.
+
+O valor-base de moral deve vir de estatística efetiva do motor, CRE local validado ou categoria DMG comprovada. Morale Break não deve ser tratado automaticamente como o valor de moral AD&D. Se a proveniência ou categoria não estiver resolvida, não inventar um número: usar solução contextual ou MORALE_UNRESOLVED. As seções/tabelas do DMG para criaturas e para NPCs associados a personagens têm contextos diferentes; não criar um valor universal para todo habitante, empregado ou trabalhador.
+
+### Gatilhos e estabilidade
+
+Gatilhos possíveis para Morale Check incluem perigo claramente superior, perdas relevantes, líder derrotado, tarefa heroicamente perigosa, tentação (suborno, oportunidade de roubo, injustiça, vingança ou conflito com empregador), retaguarda e rendição quando as condições se aplicarem. Não rolar em toda ameaça, pergunta ou tentativa de persuasão. O DMG recomenda não deixar os dados sobrepor lógica e drama.
+
+A disposição da Table 59 fica estável durante o mesmo episódio de interação. Não rerrolar a cada pergunta. Nova avaliação exige novo encontro ou mudança contextual relevante. Um Morale Check é idempotente por gatilho; repetição da mesma requisição não produz uma nova rolagem.
+
+### Identidade, eventos e autoridade
+
+- NPCs CANDIDATE/efêmeros mantêm a avaliação somente no escopo seguro da instância/sessão/cena; não criam identidade, relação ou memória persistente.
+- NPCs VERIFIED seguem os gates de identidade, ramo e eventos da SPEC-003/ADR-0061/0062/0119.
+- Eventos candidatos: NpcEncounterReactionResolved e NpcMoraleCheckResolved; categoria, visibilidade e persistência serão validadas com SPEC-003 antes da implementação.
+- Registrar tabela/versão, gatilho, dados rolados, modificadores, proveniência do valor-base e resultado. Não registrar texto de diálogo desnecessário.
+- Não executar Morale Check para personagens controlados pelos jogadores.
+- Scripts, quests, banters e diálogos nativos prevalecem. Nenhuma reação autoriza escrita em CRE, alteração de engine_alignment, reputação, save ou ação mecânica.
+- Código determinístico escolhe gatilho, calcula modificadores, rola e registra. A LLM recebe a disposição já resolvida e apenas formula a fala a partir do conhecimento autorizado; não decide dados, moral, fatos ou ações.
+
+### Limites técnicos atuais
+
+O parser CRE atual expõe alinhamento, Sabedoria e Inteligência, mas ainda não expõe Carisma (CRE 0x23E), Morale (0x23F) ou Morale Break (0x240). Na memória do EEex, EEex_Sprite_GetActiveStats retorna CDerivedStats e permite ler m_nCHR e m_nMoraleBreak; essa estrutura não possui m_nMorale. A moral atual é lida em CCreatureFileHeader.m_morale, por sprite.m_baseStats.m_morale; o mesmo objeto expõe m_moraleBreak e m_CHRBase. O valor de Morale do motor é estado atual e não deve ser automaticamente tratado como a pontuação de Morale do AD&D 2e. A caixa de diálogo deverá enviar esses valores como observações read-only, mantendo origem e semântica separadas.
+ 
+EEex_Sprite_GetSelectedID() (disponível no EEex 1.1.0) retorna o ID do líder do grupo atualmente selecionado, não uma prova automática do personagem que iniciou a interação. O ID deverá ser resolvido contra os retratos da party e registrado como selected_leader candidato, com retrato, identidade de instância e Carisma-base/ativo. A correspondência com o personagem efetivamente usado pelo motor deverá ser validada na build BG2:EE pinada antes de qualquer modificador de Carisma ser aplicado.
+
+Exemplo hipotético: uma autoridade local exige que o grupo denuncie um inocente. Um NPC Leal e Bom pode tentar contestar a ordem por vias institucionais; outro Caótico e Bom pode desobedecer e proteger a vítima; um Leal e Mau pode explorar a ordem em benefício próprio. A disposição pode modular a fala, mas o NPC precisa conhecer o incidente, ter motivos e avaliar riscos. Nenhum rótulo isolado garante uma fala ou ação.
+
+Fala, recusa, comércio, mudança de facção, deserção, combate, assassinato, revelação de segredo ou alteração do jogo têm gates diferentes. LLM só ajuda a formular texto; o host tem autoridade mecânica e ações HIGH exigem aprovação.
 
 ## Requisitos EARS e critérios de aceite
 

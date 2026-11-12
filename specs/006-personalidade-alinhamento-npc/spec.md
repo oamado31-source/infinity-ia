@@ -109,7 +109,9 @@ A disposição da Table 59 fica estável durante o mesmo episódio de interaçã
 
 ### Limites técnicos atuais
 
-O parser CRE atual expõe alinhamento, Sabedoria e Inteligência, mas ainda não expõe Carisma, Morale ou Morale Break. A leitura desses campos no CRE e em EEex_Sprite_GetActiveStats, assim como a observação confiável do personagem iniciador, exige POC na build BG2:EE pinada. Até essa validação, os valores não podem ser presumidos.
+O parser CRE atual expõe alinhamento, Sabedoria e Inteligência, mas ainda não expõe Carisma (CRE 0x23E), Morale (0x23F) ou Morale Break (0x240). Na memória do EEex, EEex_Sprite_GetActiveStats retorna CDerivedStats e permite ler m_nCHR e m_nMoraleBreak; essa estrutura não possui m_nMorale. A moral atual é lida em CCreatureFileHeader.m_morale, por sprite.m_baseStats.m_morale; o mesmo objeto expõe m_moraleBreak e m_CHRBase. O valor de Morale do motor é estado atual e não deve ser automaticamente tratado como a pontuação de Morale do AD&D 2e. A caixa de diálogo deverá enviar esses valores como observações read-only, mantendo origem e semântica separadas.
+ 
+EEex_Sprite_GetSelected() retorna o líder do grupo atualmente selecionado, não uma prova automática do personagem que iniciou a interação. A caixa deverá registrá-lo como selected_leader candidato, com retrato, identidade de instância e Carisma-base/ativo. A correspondência com o personagem efetivamente usado pelo motor deverá ser validada na build BG2:EE pinada antes de qualquer modificador de Carisma ser aplicado.
 
 Exemplo hipotético: uma autoridade local exige que o grupo denuncie um inocente. Um NPC Leal e Bom pode tentar contestar a ordem por vias institucionais; outro Caótico e Bom pode desobedecer e proteger a vítima; um Leal e Mau pode explorar a ordem em benefício próprio. A disposição pode modular a fala, mas o NPC precisa conhecer o incidente, ter motivos e avaliar riscos. Nenhum rótulo isolado garante uma fala ou ação.
 

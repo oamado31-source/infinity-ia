@@ -41,7 +41,7 @@ ALLOWED = frozenset({
     'Infinity_TextEditHasFocus', 'Infinity_GetClockTicks', 'Infinity_DoFile',
     'EEex_Resource_Fetch', 'EEex_GameState_TogglePause', 'EEex_Key_Hook_AfterEventsPoll',
     'EEex_Sprite_GetActiveStats',  # read-only: active creature stats
-    'EEex_Sprite_GetSelected',  # read-only: selected group leader candidate (ADR-0122)
+    'EEex_Sprite_GetSelectedID',  # read-only: selected group leader ID (EEex 1.1.0+, ADR-0122)
 })
 
 
@@ -272,7 +272,7 @@ class ModuleStaticTests(unittest.TestCase):
         self.assertIn(''',"engine_morale_current":''', self.raw)
 
     def test_box_captures_selected_leader_as_candidate_not_proven_initiator(self):
-        self.assertIn('EEex_Sprite_GetSelected()', self.raw)
+        self.assertIn('EEex_Sprite_GetSelectedID()', self.raw)
         self.assertIn('local member = infai_party_ids()[id]', self.raw)
         self.assertIn('if member == nil then return nil', self.raw)
         self.assertIn('local selected_leader = infai_selected_leader()', self.raw)

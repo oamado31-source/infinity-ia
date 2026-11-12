@@ -45,7 +45,7 @@ A caixa de diálogo também envia, no evento `INFAI-TALK`, observações opciona
 - `engine_morale_break_active`: `EEex_Sprite_GetActiveStats(sprite).m_nMoraleBreak`.
 - `engine_morale_break_base`: `sprite.m_baseStats.m_moraleBreak`.
 
-Também envia `selected_leader`, obtido por `EEex_Sprite_GetSelected()`, somente quando o líder selecionado corresponde a um dos retratos da party. O objeto contém script/name, id da instância, índice do retrato e Carisma-base/ativo. **É um candidato a iniciador, não prova de quem efetivamente iniciou o diálogo**; a semântica precisa ser validada na build pinada.
+Também envia `selected_leader`, obtido pelo ID retornado por `EEex_Sprite_GetSelectedID()` (API disponível no EEex 1.1.0), resolvido contra os retratos 0–5 da party. O campo é emitido somente quando o ID corresponde a um retrato da party. O objeto contém script/name, id da instância, índice do retrato e Carisma-base/ativo. **É um candidato a iniciador, não prova de quem efetivamente iniciou o diálogo**; a semântica precisa ser validada na build pinada.
 
 `m_morale` não pertence a `CDerivedStats`; é lido de `CCreatureFileHeader`. Não confundir a moral atual do motor com o valor-base de Morale do AD&D 2e. Morale Break é um limiar próprio do motor, não uma substituição automática para Morale AD&D.
 

@@ -23,7 +23,7 @@
 ## Reação social e moral — ADR-0122 (proposta; sem implementação ainda)
 
 - [ ] Revisar/aprovar ADR-0122 e resolver as decisões abertas de calibração antes de implementar.
-- [ ] Validar na build BG2:EE pinada os campos CRE Carisma, Morale e Morale Break e a leitura read-only dos valores ativos por EEex.
+- [ ] Validar na build BG2:EE pinada os campos CRE Carisma (0x23E), Morale (0x23F) e Morale Break (0x240); comparar m_nCHR/m_nMoraleBreak via EEex_Sprite_GetActiveStats com m_CHRBase/m_morale/m_moraleBreak via m_baseStats, sem equiparar Morale do motor à pontuação AD&D sem calibração.
 - [ ] Investigar Reaction(), rmodchr.2da e rmodrep.2da; estabelecer se o valor nativo pode ser observado e como evitar dupla aplicação de Carisma/reputação.
 - [ ] Definir fonte/categoria do valor-base de moral para NPCs canônicos, genéricos e pessoas comuns; não assumir que todo trabalhador é hireling.
 - [ ] Definir classificação determinística da conduta do jogador e obter o personagem iniciador por observação confiável; sem evidência, não inventar Carisma.

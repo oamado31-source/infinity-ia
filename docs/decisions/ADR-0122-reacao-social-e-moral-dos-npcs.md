@@ -126,9 +126,10 @@ Nenhum componente desta ADR pode escrever em CRE, alterar engine_alignment, repu
 ## Evidências técnicas e lacunas atuais
 
 - A documentação do Infinity Engine descreve o trigger Reaction() como 10 + rmodchr + rmodrep; o recurso rmodchr.2da associa modificadores à Carisma. Isso confirma a existência do mecanismo nativo, mas não prova que o Infinity já consegue ler seu valor numérico em runtime.
-- A documentação CRE V1.0 identifica Carisma em 0x23E, Morale em 0x23F e Morale Break em 0x240. O parser atual de src/infinity_ai/gamedata/formats.py lê identidade, alinhamento, Sabedoria e Inteligência, mas ainda não expõe esses três campos.
-- O probe atual usa leitura de Sabedoria e Inteligência. A leitura efetiva de Carisma, Morale e Morale Break por EEex_Sprite_GetActiveStats ainda precisa ser testada na build BG2:EE pinada.
-- A observação atual de NpcDialogueStarted não comprova necessariamente qual personagem do grupo iniciou a interação. Sem esse dado confiável, não aplicar ajuste de Carisma de um personagem escolhido por suposição.
+- O formato CRE V1.0 em disco documenta Carisma em 0x23E, Morale em 0x23F e Morale Break em 0x240. O parser de src/infinity_ai/gamedata/formats.py ainda não expõe esses três bytes.
+- As estruturas em memória do EEex não devem ser confundidas com offsets do CRE em disco. CDerivedStatsTemplate expõe Carisma ativo (m_nCHR) e Morale Break ativo (m_nMoraleBreak), mas não contém m_nMorale. CCreatureFileHeader expõe m_CHRBase, m_morale e m_moraleBreak; o mantenedor do EEex esclareceu que m_morale representa a moral atual do ator. Portanto, a leitura proposta é m_nCHR/m_nMoraleBreak via EEex_Sprite_GetActiveStats(sprite) e m_morale/m_moraleBreak via sprite.m_baseStats.
+- O probe de diálogo atual lê Sabedoria e Inteligência do alvo. A extensão read-only deverá comparar Carisma-base/ativo, Morale atual e Morale Break-base/ativo na build BG2:EE pinada. Morale do motor não será presumido equivalente ao valor de Morale usado no Morale Check do AD&D 2e.
+- EEex_Sprite_GetSelected() retorna o líder do grupo atualmente selecionado (maior slot de retrato/menor índice, ou criatura selecionada primeiro). Isso fornece um selected_leader candidato, não prova por si só qual personagem efetivamente iniciou a interação. A caixa atual identifica o NPC-alvo e ouvintes, mas ainda não envia esse candidato; a correspondência deverá ser validada no laboratório antes de aplicar Carisma.
 
 ## Alternativas consideradas
 
@@ -170,3 +171,7 @@ Nenhum componente desta ADR pode escrever em CRE, alterar engine_alignment, repu
 - IESDP, BGEE script triggers, Reaction(): https://gibberlings3.github.io/iesdp/scripting/triggers/bgeetriggers.htm
 - IESDP, CRE V1.0 file format: https://argent77.github.io/iesdp/file_formats/ie_formats/cre_v1.htm
 - IESDP, BGEE 2DA file index (rmodchr e rmodrep): https://gibberlings3.github.io/iesdp/files/2da/2da_bgee/index.htm
+- EEex, CDerivedStatsTemplate: https://eeex-docs.readthedocs.io/en/latest/EE%20Game%20Structures%20(x64)/CD/
+- EEex, CCreatureFileHeader: https://eeex-docs.readthedocs.io/en/latest/EE%20Game%20Structures%20(x64)/CC/
+- EEex, EEex_Sprite_GetSelected / EEex_Sprite_GetActiveStats: https://github.com/Bubb13/EEex/blob/master/EEex/copy/EEex_scripts/EEex_Sprite.lua
+- EEex maintainer clarification that CCreatureFileHeader.m_morale is current morale: https://forums.beamdog.com/discussion/71798/mod-eeex-v1-3-0/p43

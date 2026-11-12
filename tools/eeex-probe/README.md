@@ -33,3 +33,30 @@ Para remover: apague os dois arquivos do `override\` e volte `LogFile=` ao valor
 - **Garantias:** não altera variáveis, diário, diálogos nem save. `tests/test_talk.py` verifica a allowlist de funções do motor e que o único arquivo lido é a resposta.
 
 Cópia para a VM: `python tools/windows-lab/talk_poc.py --deploy` (depois, reabrir o jogo). O serviço `dialogue_service.py` responde aos pedidos; `talk_poc.py` sem argumentos só responde com eco, sem modelo.
+
+
+## Diagnóstico read-only de atributos sociais (ADR-0122, POC)
+
+A caixa de diálogo também envia, no evento `INFAI-TALK`, observações opcionais do alvo:
+
+- `chr_active`: `EEex_Sprite_GetActiveStats(sprite).m_nCHR`.
+- `chr_base`: `sprite.m_baseStats.m_CHRBase`.
+- `engine_morale_current`: `sprite.m_baseStats.m_morale` (estado atual do motor).
+- `engine_morale_break_active`: `EEex_Sprite_GetActiveStats(sprite).m_nMoraleBreak`.
+- `engine_morale_break_base`: `sprite.m_baseStats.m_moraleBreak`.
+
+Também envia `selected_leader`, obtido por `EEex_Sprite_GetSelected()`, somente quando o líder selecionado corresponde a um dos retratos da party. O objeto contém script/name, id da instância, índice do retrato e Carisma-base/ativo. **É um candidato a iniciador, não prova de quem efetivamente iniciou o diálogo**; a semântica precisa ser validada na build pinada.
+
+`m_morale` não pertence a `CDerivedStats`; é lido de `CCreatureFileHeader`. Não confundir a moral atual do motor com o valor-base de Morale do AD&D 2e. Morale Break é um limiar próprio do motor, não uma substituição automática para Morale AD&D.
+
+Os valores são diagnósticos apenas: não alteram a seleção, não decidem Reaction Table 59 ou Morale Check e não são usados como modificadores pela DialogueEngine. Falhas de leitura resultam em `null`, sem valores presumidos. O serviço imprime os campos para comparação no laboratório.
+
+### Roteiro de validação
+
+1. Atualize a branch de POC, copie os arquivos do probe com `python tools/windows-lab/talk_poc.py --deploy` e reabra o jogo pela cópia P1 pinada.
+2. Com um save descartável, selecione cada personagem da party individualmente; abra a caixa sobre o mesmo NPC e envie uma pergunta curta.
+3. Repita com grupos de personagens selecionados e registre `selected_leader`, retrato e Carisma. Compare com o personagem que o motor efetivamente usa para iniciar um diálogo nativo equivalente.
+4. Compare Carisma-base/ativo e Morale Break-base/ativo do NPC; repita com um ator cujo Morale varie durante o jogo, se disponível.
+5. Registre versão/build, modpack hash e saída do serviço. Se não for possível provar o iniciador, mantenha o campo desconhecido e não aplique modificador de Carisma.
+
+O teste é read-only. Não salve por cima de saves de uso normal, não instale o probe na cópia P0 e não altere scripts, reputação, quests ou estado do jogo.

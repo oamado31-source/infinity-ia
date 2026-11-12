@@ -18,3 +18,19 @@
 - [ ] Conferir a curadoria de Bernard e curar os NPCs oficiais da Coroa de Cobre; testar no laboratório (S1f).
 - [ ] Usar o alinhamento da ficha do jogo como `alignment_initial` de NPCs oficiais (hoje só na identidade).
 - [x] Estatuto local (ADR-0120): HABITANTE, VIAJANTE (só o popular do lugar) e FORASTEIRO (nada do lugar), por curadoria ou sorteio conforme o papel; validador de origem; `tests/test_identity.py`. Falta testar no laboratório.
+
+
+## Reação social e moral — ADR-0122 (proposta; sem implementação ainda)
+
+- [ ] Revisar/aprovar ADR-0122 e resolver as decisões abertas de calibração antes de implementar.
+- [ ] Validar na build BG2:EE pinada os campos CRE Carisma, Morale e Morale Break e a leitura read-only dos valores ativos por EEex.
+- [ ] Investigar Reaction(), rmodchr.2da e rmodrep.2da; estabelecer se o valor nativo pode ser observado e como evitar dupla aplicação de Carisma/reputação.
+- [ ] Definir fonte/categoria do valor-base de moral para NPCs canônicos, genéricos e pessoas comuns; não assumir que todo trabalhador é hireling.
+- [ ] Definir classificação determinística da conduta do jogador e obter o personagem iniciador por observação confiável; sem evidência, não inventar Carisma.
+- [ ] Implementar EncounterReactionResolver puro para Table 59, com cobertura das quatro colunas, seis resultados, modificadores e sinal correto de Carisma.
+- [ ] Implementar MoraleResolver puro para gatilhos, 2d10, moral-base, modificadores, resultado contextual e MORALE_UNRESOLVED.
+- [ ] Implementar InteractionDisposition e DialogueBehaviorPolicy, integrando P1–P4 sem conversões numéricas HEXACO improvisadas.
+- [ ] Definir e testar eventos idempotentes NpcEncounterReactionResolved e NpcMoraleCheckResolved conforme SPEC-003, incluindo save/load/fork e isolamento de NPC efêmero.
+- [ ] Integrar a disposição resolvida ao contexto da SPEC-004; a LLM apenas expressa o resultado, sem decidir dados ou alterar estado.
+- [ ] Testar no laboratório S1f com Bernard e perfis contrastantes, incluindo tentação/conflito de lealdade, sem afetar scripts, quests, diálogos nativos ou save.
+- [ ] Publicar evidência da POC BG2:EE/EEex, leitura read-only e zero mutação não autorizada.

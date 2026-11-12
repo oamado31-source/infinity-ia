@@ -65,8 +65,21 @@ def main() -> int:
                           if not req.speaker_dead else '(eco) ...')
                 put_override_file(ssh, args.game_root, f'{REPLY_RESREF}.lua',
                          render_reply(req.req_id, speech).encode('utf-8'))
+                leader = req.selected_leader
+                leader_label = "-"
+                if leader is not None:
+                    leader_chr = leader.charisma_active if leader.charisma_active is not None else "-"
+                    leader_label = (f'{leader.script_name or leader.display_name}@p{leader.portrait_index}'
+                                    f':chr={leader_chr}')
+                chr_active = req.speaker_charisma_active if req.speaker_charisma_active is not None else "-"
+                morale = (req.speaker_engine_morale_current
+                          if req.speaker_engine_morale_current is not None else "-")
+                morale_break = (req.speaker_engine_morale_break_active
+                                if req.speaker_engine_morale_break_active is not None else "-")
                 print(f'{now_iso()} pedido={req.req_id} falante={req.speaker_script or "-"} '
                       f'morto={req.speaker_dead} area={req.area} t={req.game_time} '
+                      f'chr_ativo={chr_active} morale_engine_atual={morale} '
+                      f'morale_break_engine_ativo={morale_break} selected_leader={leader_label} '
                       f'ouvintes={list(req.listeners) if req.listeners is not None else None} '
                       f'resposta_gravada_em={int((time.monotonic() - started) * 1000)}ms')
             time.sleep(args.interval)

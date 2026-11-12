@@ -100,8 +100,14 @@ def _selected_party_leader(value: object) -> SelectedPartyLeader | None:
     script, name = value.get('script'), value.get('name')
     instance = _int(value.get('instance'))
     portrait = _bounded_int(value.get('portrait'), 0, 5)
-    if not isinstance(script, str) or (script and not _SCRIPT_NAME.fullmatch(script)) \\
-            or not isinstance(name, str) or len(name) > 64 or instance is None or portrait is None:
+    if (
+        not isinstance(script, str)
+        or (script and not _SCRIPT_NAME.fullmatch(script))
+        or not isinstance(name, str)
+        or len(name) > 64
+        or instance is None
+        or portrait is None
+    ):
         return None
     return SelectedPartyLeader(script, name, instance, portrait,
                                _ability(value.get('chr_active')), _ability(value.get('chr_base')))

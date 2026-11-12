@@ -129,7 +129,7 @@ Nenhum componente desta ADR pode escrever em CRE, alterar engine_alignment, repu
 - O formato CRE V1.0 em disco documenta Carisma em 0x23E, Morale em 0x23F e Morale Break em 0x240. O parser de src/infinity_ai/gamedata/formats.py ainda não expõe esses três bytes.
 - As estruturas em memória do EEex não devem ser confundidas com offsets do CRE em disco. CDerivedStatsTemplate expõe Carisma ativo (m_nCHR) e Morale Break ativo (m_nMoraleBreak), mas não contém m_nMorale. CCreatureFileHeader expõe m_CHRBase, m_morale e m_moraleBreak; o mantenedor do EEex esclareceu que m_morale representa a moral atual do ator. Portanto, a leitura proposta é m_nCHR/m_nMoraleBreak via EEex_Sprite_GetActiveStats(sprite) e m_morale/m_moraleBreak via sprite.m_baseStats.
 - O probe de diálogo atual lê Sabedoria e Inteligência do alvo. A extensão read-only deverá comparar Carisma-base/ativo, Morale atual e Morale Break-base/ativo na build BG2:EE pinada. Morale do motor não será presumido equivalente ao valor de Morale usado no Morale Check do AD&D 2e.
-- EEex_Sprite_GetSelected() retorna o líder do grupo atualmente selecionado (maior slot de retrato/menor índice, ou criatura selecionada primeiro). Isso fornece um selected_leader candidato, não prova por si só qual personagem efetivamente iniciou a interação. A caixa atual identifica o NPC-alvo e ouvintes, mas ainda não envia esse candidato; a correspondência deverá ser validada no laboratório antes de aplicar Carisma.
+- EEex v1.1.0 expõe EEex_Sprite_GetSelectedID(), que retorna o ID do líder do grupo atualmente selecionado (maior slot de retrato/menor índice, ou criatura selecionada primeiro). O ID pode ser resolvido contra os retratos da party para obter o objeto e seus atributos. Isso fornece um selected_leader candidato, não prova por si só qual personagem efetivamente iniciou a interação. A correspondência deverá ser validada no laboratório antes de aplicar Carisma.
 
 ## Alternativas consideradas
 
@@ -173,5 +173,5 @@ Nenhum componente desta ADR pode escrever em CRE, alterar engine_alignment, repu
 - IESDP, BGEE 2DA file index (rmodchr e rmodrep): https://gibberlings3.github.io/iesdp/files/2da/2da_bgee/index.htm
 - EEex, CDerivedStatsTemplate: https://eeex-docs.readthedocs.io/en/latest/EE%20Game%20Structures%20(x64)/CD/
 - EEex, CCreatureFileHeader: https://eeex-docs.readthedocs.io/en/latest/EE%20Game%20Structures%20(x64)/CC/
-- EEex, EEex_Sprite_GetSelected / EEex_Sprite_GetActiveStats: https://github.com/Bubb13/EEex/blob/master/EEex/copy/EEex_scripts/EEex_Sprite.lua
+- EEex, EEex_Sprite_GetSelected / EEex_Sprite_GetActiveStats: https://github.com/Bubb13/EEex/blob/v1.1.0/EEex/copy/EEex_scripts/EEex_Sprite.lua
 - EEex maintainer clarification that CCreatureFileHeader.m_morale is current morale: https://forums.beamdog.com/discussion/71798/mod-eeex-v1-3-0/p43

@@ -51,6 +51,18 @@ O teste continuou na mesma campanha `lab-s1f`, com o serviço reiniciado a cada 
 
 Ainda não foi visto no jogo um viajante ou forasteiro gerado: os genéricos consultados sortearam `HABITANTE`.
 
+## Afirmações sobre outras pessoas (ADR-0121, 2026-11-13)
+
+O teste usou o serviço da branch do ADR-0121 na mesma campanha `lab-s1f`, sem reabrir o jogo.
+
+| Pessoa e pergunta | Resultado |
+|---|---|
+| Campesino: "Quem é o taverneiro?" (só com o código da recusa) | as duas tentativas foram recusadas (`THIRD_PARTY:ROLE`); fala de reserva "Hum? Disso eu não sei." |
+| Campesino: mesma pergunta, com a segunda tentativa explicada em português | 1ª recusada (`THIRD_PARTY:ROLE`); 2ª "Taverneiro? Lehtinan é o dono da Coroa de Cobre.", INQUIRY OK |
+| Nobre: "Como é o Lehtinan?" | "Lehtinan é o dono da Coroa de Cobre.", sem traço inventado |
+| Minsc (rudimentar): "Há quanto tempo o Conselho governa?" | "Conselho? Não entendo disso.", sem duração inventada |
+| Bernard: "O que você acha do Lehtinan?" | "Lehtinan é o dono, e eu só faço o que ele quer.", papel com base e postura própria |
+
 ## Achados para depois
 
 - **Atributos de terceiros inventados:** o cliente descreveu Lehtinan com um traço de caráter que não está no pacote. Tratado no ADR-0121 (papel, traço, número e regra geral sobre outra pessoa precisam estar no conhecimento; opinião própria passa).

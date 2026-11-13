@@ -26,11 +26,12 @@ Responsável: mantenedor do projeto, em 2026-11-10.
      - "há muito tempo" passa;
    - `THIRD_PARTY:GENERAL`: regra geral ("governa quem tem dinheiro"), que passa só quando algo que a pessoa sabe a sustenta. "A riqueza vale mais que tudo", de Amn, sustenta essa frase.
 3. **Prompt:** a regra 3 passa a dizer que a opinião própria pode aparecer, dita como opinião, e que papel, traço, número, tempo ou regra geral sobre outra pessoa só valem se estiverem nas seções.
-4. **Sem efeito no jogo:** a regra só aceita ou recusa falas; não altera dados, diálogos nem save.
+4. **Segunda tentativa explicada.** Quando uma fala é recusada, o modelo recebe na nova tentativa o motivo em português e o que fazer, sem os códigos internos. Exemplo para `THIRD_PARTY:ROLE`: "você deu a alguém um papel ou função que não está no que você sabe; diga que não sabe isso, ou fale só do que sabe sobre essa pessoa". No S1f, com só o código, o Campesino repetiu o erro e caiu na fala de reserva.
+5. **Sem efeito no jogo:** a regra só aceita ou recusa falas; não altera dados, diálogos nem save.
 
 ## Consequências
 
-- **Código:** `src/infinity_ai/dialogue/claims.py` (`third_party_claim`), chamado por `validate_reply`.
+- **Código:** `src/infinity_ai/dialogue/claims.py` (`third_party_claim`), chamado por `validate_reply`; `retry_hint` em `validate.py`, usado pelo `DialogueEngine` na nova tentativa.
 - **Testes:** `tests/test_third_party.py`, com os casos reais do S1f e as respostas já aprovadas, que continuam passando.
 
 ## Riscos e limites

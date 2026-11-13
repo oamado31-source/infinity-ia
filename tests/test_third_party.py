@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT / 'src'))
 
 from infinity_ai.dialogue.claims import third_party_claim  # noqa: E402
 from infinity_ai.dialogue.context import DialogueContext, Fact, Persona  # noqa: E402
-from infinity_ai.dialogue.validate import validate_reply  # noqa: E402
+from infinity_ai.dialogue.validate import retry_hint, validate_reply  # noqa: E402
 
 OWNER = ('Proprietário da Coroa de Cobre: Lehtinan é o proprietário da Coroa de Cobre, uma '
          'taverna de Athkatla.')
@@ -85,6 +85,51 @@ class ThirdPartyTests(unittest.TestCase):
                           'unknown': False}, ensure_ascii=False)
         self.assertIn('THIRD_PARTY:ROLE', validate_reply(raw, context(OWNER)).reasons)
 
+
+
+class RetryHintTests(unittest.TestCase):
+    """The retry explains what to fix in Portuguese, without internal codes."""
+
+    def test_hint_explains_each_refusal(self):
+        hint = retry_hint(('THIRD_PARTY:ROLE',))
+        self.assertIn('papel ou função que não está no que você sabe', hint)
+        self.assertIn('diga que não sabe', hint)
+        self.assertNotIn('THIRD_PARTY', hint)
+        self.assertIn('trabalha', retry_hint(('SELF_CLAIM:WORK',)))
+        self.assertIn('posse, cargo ou parentesco', retry_hint(('SELF_CLAIM',)))
+        self.assertIn('(Gorion, Khalid)', retry_hint(('UNKNOWN_NAMES:Gorion,Khalid',)))
+        both = retry_hint(('UNKNOWN_FACT_IDS:F6', 'THIRD_PARTY:NUMBER'))
+        self.assertIn('cite só ids', both)
+        self.assertIn('número, idade ou tempo', both)
+        self.assertIn('não seguiu as regras', retry_hint(('ALGO_NOVO',)))
+
+    def test_engine_sends_the_hint_on_retry(self):
+        import tempfile
+        from infinity_ai.dialogue.context import Catalog
+        from infinity_ai.dialogue.engine import DialogueEngine, ResidentRequest
+        from infinity_ai.dialogue.llm import FakeProvider
+        from infinity_ai.state.store import ROOT_BRANCH, CampaignStore
+        good = json.dumps({'speech': 'Não trabalho aqui, só passo.', 'used_facts': [],
+                           'unknown': False}, ensure_ascii=False)
+        with tempfile.TemporaryDirectory() as d:
+            store = CampaignStore.open(Path(d) / 'c.sqlite3', 'lab')
+            try:
+                provider = FakeProvider([
+                    json.dumps({'speech': 'O taverneiro é Garoll.', 'used_facts': [],
+                                'unknown': False}, ensure_ascii=False), good])
+                engine = DialogueEngine(store, provider, Catalog.load())
+                result = engine.respond_resident(
+                    ResidentRequest('npc:cre-x', 'Campesino(a)', 'Quem é o taverneiro?',
+                                    'AR0406', False),
+                    residence_areas=(), branch_id=ROOT_BRANCH, at_game_time=10)
+            finally:
+                store.close()
+        self.assertEqual(len(provider.calls), 2)
+        retry = provider.calls[1][-1]['content']
+        self.assertTrue(retry.startswith('A resposta anterior foi recusada:'), retry)
+        self.assertNotIn('THIRD_PARTY', retry)
+        self.assertNotIn('UNKNOWN_NAMES', retry)
+        self.assertEqual(result.speech, 'Não trabalho aqui, só passo.')
 
 if __name__ == '__main__':
     unittest.main()

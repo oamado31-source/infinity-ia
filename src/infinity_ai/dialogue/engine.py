@@ -20,7 +20,7 @@ from .context import (
 )
 from .llm import LlmError, LlmProvider
 from ..personality.identity import em
-from .validate import validate_reply
+from .validate import retry_hint, validate_reply
 
 MAX_PLAYER_TEXT = 500
 # ADR-0120: how the person relates to the place where the player met it.
@@ -216,7 +216,6 @@ class DialogueEngine:
             flags.extend(f'attempt{attempt + 1}:{r}' for r in verdict.reasons)
             messages = messages[:2] + [{
                 'role': 'system',
-                'content': 'A resposta anterior foi recusada (' + ', '.join(verdict.reasons) +
-                           '). Responda de novo seguindo todas as regras.'}]
+                'content': retry_hint(verdict.reasons)}]
         return done(DialogueStatus.FALLBACK, context.persona.fallback, 'VALIDATION_FAILED',
                     context, flags=tuple(flags))

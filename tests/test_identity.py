@@ -589,13 +589,13 @@ class OriginClaimTests(unittest.TestCase):
     """ADR-0120: what a person says about where it is from must match its standing and facts."""
 
     def context(self, standing, facts=('Você vive em Athkatla e está na Coroa de Cobre.',),
-                staff=False, home_names=()):
+                staff=False, home_names=(), resident_of=None):
         persona = Persona('npc:x', 'Nobre', (), frozenset({'Nobre'}), '...')
         return DialogueContext(
             persona, tuple(Fact(f'F{i}', f'identity:npc:x:{i}', t, 0)
                            for i, t in enumerate(facts, 1)),
             frozenset({'Nobre', 'Athkatla', 'Tethyr', 'Amn', 'Candlekeep'}), (),
-            standing=standing, staff=staff, home_names=home_names)
+            resident_of=resident_of, standing=standing, staff=staff, home_names=home_names)
 
     def check(self, speech, standing, **kw):
         raw = json.dumps({'speech': speech, 'used_facts': [], 'unknown': False},
@@ -627,6 +627,16 @@ class OriginClaimTests(unittest.TestCase):
         self.assertFalse(self.check('Trabalho aqui há anos.', 'HABITANTE', staff=True))
         self.assertFalse(self.check('Não trabalho aqui, só bebo.', 'HABITANTE'))
         self.assertFalse(self.check('Sou carregador no porto.', 'HABITANTE'))
+
+    def test_working_at_the_named_place_needs_a_staff_tie(self):
+        # CR-2026-005: found by the dialogue test set ("Trabalho na Coroa de Cobre, sim.").
+        here = {'resident_of': 'a Coroa de Cobre'}
+        self.assertTrue(self.check('Trabalho na Coroa de Cobre, sim.', 'HABITANTE', **here))
+        self.assertFalse(self.check('Trabalho na Coroa de Cobre.', 'HABITANTE', staff=True,
+                                    **here))
+        self.assertFalse(self.check('Não trabalho na Coroa de Cobre.', 'HABITANTE', **here))
+        self.assertFalse(self.check('Trabalho na cidade, perto da Coroa de Cobre.', 'HABITANTE',
+                                    **here))
 
     def test_staff_tie_comes_from_the_curated_affiliation(self):
         curation = SimpleNamespace(occupation='taverneiro da Coroa de Cobre', origin_region=None,

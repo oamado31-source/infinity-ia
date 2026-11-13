@@ -67,6 +67,15 @@ def _unknown_names(speech: str, vocabulary: frozenset[str]) -> list[str]:
     return found
 
 
+def _works_at_place(speech: str, context: DialogueContext) -> bool:
+    """CR-2026-005: "trabalho na Coroa de Cobre" names the place where the person is."""
+    place = re.sub(r'^(?:[ao]s?)\s+', '', context.resident_of or '', flags=re.I).strip()
+    if not place:
+        return False
+    return bool(re.search(r'(?<!não )\btrabalho\s+(?:aqui\s+)?(?:n[ao]s?|em)\s+(?:[ao]s?\s+)?'
+                          + re.escape(place) + r'\b', speech, re.I))
+
+
 def _origin_contradicts(speech: str, context: DialogueContext) -> str | None:
     """ADR-0120: which claim about where the person is from contradicts its standing or facts
     ("não sou daqui" from a resident, "moro aqui" from a traveler, "nasci aqui" or "vim de X"
@@ -79,7 +88,7 @@ def _origin_contradicts(speech: str, context: DialogueContext) -> str | None:
         return 'HOME'
     if _BORN_CLAIM.search(speech) and 'nasceu' not in facts:
         return 'BORN'
-    if _WORK_CLAIM.search(speech) and not context.staff:
+    if not context.staff and (_WORK_CLAIM.search(speech) or _works_at_place(speech, context)):
         return 'WORK'
     # CR-2026-004: a resident may also say it is from where it lives or a region containing it
     # ("sou de Amn" while living in Athkatla); any other place must be in its own facts.

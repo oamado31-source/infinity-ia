@@ -5,94 +5,419 @@
     {
       "id": "habitante-comum-conselho",
       "description": "Habitante comum sabe só o núcleo popular do Conselho e diz com as próprias palavras.",
-      "speaker": {"kind": "resident", "npc_id": "npc:cre-eval1", "name": "Campesino(a)", "wis": 9, "int": 9, "occupation": "carregador"},
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
       "question": "Quem governa Amn?",
-      "checks": {"status": ["OK"], "uses": ["org:council-of-six"], "mentions_none": ["década", "Meisarch", "Tessarch", "tortura"], "not_copy_of": "org:council-of-six"}
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "org:council-of-six"
+        ],
+        "mentions_none": [
+          "década",
+          "Meisarch",
+          "Tessarch",
+          "tortura"
+        ],
+        "not_copy_of": "org:council-of-six"
+      }
     },
     {
       "id": "habitante-estudioso-decadas",
       "description": "Com Inteligência 17, a camada de estudo libera as três décadas.",
-      "speaker": {"kind": "resident", "npc_id": "npc:eval-nobre", "name": "Lorde Eval", "wis": 10, "int": 17, "occupation": "nobre de Athkatla"},
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-nobre",
+        "name": "Lorde Eval",
+        "wis": 10,
+        "int": 17,
+        "occupation": "nobre de Athkatla"
+      },
       "question": "Há quanto tempo o Conselho dos Seis governa Amn?",
-      "checks": {"status": ["OK"], "uses": ["org:council-of-six"], "mentions_any": ["década", "trinta", "30"]}
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "org:council-of-six"
+        ],
+        "mentions_any": [
+          "década",
+          "trinta",
+          "30"
+        ]
+      }
     },
     {
       "id": "companheiro-rudimentar-sem-duracao",
       "description": "Minsc (Sabedoria 6, Inteligência 8) ouviu sobre o Conselho, mas não sabe há quanto tempo governa.",
-      "speaker": {"kind": "companion", "npc_id": "npc:minsc", "wis": 6, "int": 8, "knows": ["org:council-of-six"], "party": ["imoen", "jaheira"]},
+      "speaker": {
+        "kind": "companion",
+        "npc_id": "npc:minsc",
+        "wis": 6,
+        "int": 8,
+        "knows": [
+          "org:council-of-six"
+        ],
+        "party": [
+          "imoen",
+          "jaheira"
+        ]
+      },
       "question": "Há quanto tempo o Conselho governa Amn?",
-      "checks": {"status": ["OK", "FALLBACK"], "mentions_none": ["década", "trinta", "30 anos", "séculos"]}
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "mentions_none": [
+          "década",
+          "trinta",
+          "30 anos",
+          "séculos"
+        ]
+      }
     },
     {
       "id": "sem-vinculo-taverneiro",
       "description": "Sem vínculo com a casa, não sabe quem é o taverneiro e não atribui o papel a ninguém.",
-      "speaker": {"kind": "resident", "npc_id": "npc:cre-eval1", "name": "Campesino(a)", "wis": 9, "int": 9, "occupation": "carregador"},
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
       "question": "Quem é o taverneiro?",
-      "checks": {"status": ["OK", "FALLBACK"], "mentions_none": ["taverneiro é Lehtinan", "Lehtinan é o taverneiro", "Bernard"]}
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "mentions_none": [
+          "taverneiro é Lehtinan",
+          "Lehtinan é o taverneiro",
+          "Bernard"
+        ]
+      }
     },
     {
       "id": "traco-de-terceiro",
       "description": "Perguntado como é Lehtinan, fica no fato conhecido, sem inventar traço.",
-      "speaker": {"kind": "resident", "npc_id": "npc:cre-eval2", "name": "Nobre", "wis": 9, "int": 9},
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval2",
+        "name": "Nobre",
+        "wis": 9,
+        "int": 9
+      },
       "question": "Como é o Lehtinan?",
-      "checks": {"status": ["OK"], "mentions_any": ["dono", "proprietário"], "mentions_none": ["duro", "bem-humorado", "generoso", "rico", "avarento"]}
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "dono",
+          "proprietário"
+        ],
+        "mentions_none": [
+          "duro",
+          "bem-humorado",
+          "generoso",
+          "rico",
+          "avarento"
+        ]
+      }
     },
     {
       "id": "frequentador-conhece-bernard",
       "description": "Frequentador curado (REGULAR) sabe que Bernard cuida da casa para Lehtinan.",
-      "speaker": {"kind": "resident", "npc_id": "npc:eval-frequentador", "name": "Salvanas", "wis": 7, "int": 9, "affiliations": ["place:copper-coronet:REGULAR"], "self_facts": ["Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."]},
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ]
+      },
       "question": "Quem cuida da taverna no dia a dia?",
-      "checks": {"status": ["OK"], "mentions_any": ["Bernard"]}
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "Bernard"
+        ]
+      }
     },
     {
       "id": "sem-vinculo-bernard",
       "description": "Sem vínculo, não sabe a função de Bernard (relação restrita).",
-      "speaker": {"kind": "resident", "npc_id": "npc:cre-eval1", "name": "Campesino(a)", "wis": 9, "int": 9, "occupation": "carregador"},
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
       "question": "Você conhece Bernard?",
-      "checks": {"status": ["OK", "FALLBACK"], "mentions_none": ["administra", "cuida da", "gerente", "coordena"]}
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "mentions_none": [
+          "administra",
+          "cuida da",
+          "gerente",
+          "coordena"
+        ]
+      }
     },
     {
       "id": "habitante-origem",
       "description": "Habitante de Athkatla diz de onde é sem cair na fala de reserva (CR-2026-004).",
-      "speaker": {"kind": "resident", "npc_id": "npc:cre-eval1", "name": "Campesino(a)", "wis": 9, "int": 9, "occupation": "carregador"},
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
       "question": "De onde você é?",
-      "checks": {"status": ["OK"], "mentions_any": ["Athkatla", "Amn", "daqui"], "mentions_none": ["Tethyr"]}
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "Athkatla",
+          "Amn",
+          "daqui"
+        ],
+        "mentions_none": [
+          "Tethyr"
+        ]
+      }
     },
     {
       "id": "sem-staff-trabalho",
       "description": "Sem afiliação STAFF, não diz que trabalha na taverna.",
-      "speaker": {"kind": "resident", "npc_id": "npc:cre-eval1", "name": "Campesino(a)", "wis": 9, "int": 9, "occupation": "carregador"},
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
       "question": "Você trabalha aqui?",
-      "checks": {"status": ["OK"], "mentions_none": ["trabalho aqui", "trabalho na taverna", "trabalho na coroa", "trabalho para o dono"]}
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "matches_none": [
+          "(?<!não )\\btrabalho (?:aqui|na taverna|na coroa|para o dono)"
+        ]
+      }
     },
     {
       "id": "viajante-nao-mora",
       "description": "Viajante de Amn está de passagem e não diz que mora ali (ADR-0120).",
-      "speaker": {"kind": "resident", "npc_id": "npc:cre-eval3", "name": "Cliente da Taverna", "wis": 9, "int": 9, "standing": "VIAJANTE", "origin": "region:amn", "occupation": "mercador de passagem"},
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval3",
+        "name": "Cliente da Taverna",
+        "wis": 9,
+        "int": 9,
+        "standing": "VIAJANTE",
+        "origin": "region:amn",
+        "occupation": "mercador de passagem"
+      },
       "question": "Você mora aqui?",
-      "checks": {"status": ["OK"], "mentions_none": ["moro aqui", "vivo aqui", "sou daqui", "sou de cá"]}
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_none": [
+          "moro aqui",
+          "vivo aqui",
+          "sou daqui",
+          "sou de cá"
+        ]
+      }
     },
     {
       "id": "forasteiro-nao-conhece",
       "description": "Forasteiro de Tethyr não conhece quem governa Amn.",
-      "speaker": {"kind": "resident", "npc_id": "npc:cre-eval4", "name": "Cliente da Taverna", "wis": 9, "int": 9, "standing": "FORASTEIRO", "origin": "region:tethyr"},
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval4",
+        "name": "Cliente da Taverna",
+        "wis": 9,
+        "int": 9,
+        "standing": "FORASTEIRO",
+        "origin": "region:tethyr"
+      },
       "question": "Quem governa Amn?",
-      "checks": {"status": ["OK", "FALLBACK"], "mentions_none": ["Conselho"]}
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "mentions_none": [
+          "Conselho"
+        ]
+      }
     },
     {
       "id": "conversa-e-quem-e",
       "description": "Com a conversa em andamento, \"E quem é então?\" fala dos conselheiros, não de si (ADR-0123).",
-      "speaker": {"kind": "resident", "npc_id": "npc:eval-nobre", "name": "Lorde Eval", "wis": 10, "int": 9, "occupation": "nobre de Athkatla"},
-      "history": [["Quem governa Amn?", "É o Conselho dos Seis. Ninguém sabe quem são os seis."]],
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-nobre",
+        "name": "Lorde Eval",
+        "wis": 10,
+        "int": 9,
+        "occupation": "nobre de Athkatla"
+      },
+      "history": [
+        [
+          "Quem governa Amn?",
+          "É o Conselho dos Seis. Ninguém sabe quem são os seis."
+        ]
+      ],
       "question": "E quem é então?",
-      "checks": {"status": ["OK"], "mentions_none": ["Sou Lorde", "Lorde Eval", "nobre de Athkatla"], "mentions_any": ["ninguém", "não sei", "não se sabe", "segredo", "não sabe"]}
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_none": [
+          "Sou Lorde",
+          "Lorde Eval",
+          "nobre de Athkatla"
+        ],
+        "mentions_any": [
+          "ninguém",
+          "não sei",
+          "não se sabe",
+          "segredo",
+          "não sabe"
+        ]
+      }
     },
     {
       "id": "sem-recitar-fatos",
       "description": "Responde só o fato perguntado, curto, sem recitar a lista de fatos.",
-      "speaker": {"kind": "resident", "npc_id": "npc:cre-eval1", "name": "Campesino(a)", "wis": 9, "int": 9, "occupation": "carregador"},
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
       "question": "Você mora em Athkatla?",
-      "checks": {"status": ["OK"], "max_chars": 140, "mentions_none": ["sou humano", "sou humana", "me chamo"]}
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "max_chars": 140,
+        "mentions_none": [
+          "sou humano",
+          "sou humana",
+          "me chamo"
+        ]
+      }
+    },
+    {
+      "id": "disposicao-hostil-nao-conta",
+      "description": "Com disposição hostil (ADR-0125), não dá informação.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador",
+        "disposition": "HOSTILE"
+      },
+      "question": "Quem governa Amn?",
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "mentions_none": [
+          "Conselho",
+          "Seis"
+        ]
+      }
+    },
+    {
+      "id": "disposicao-cautelosa-guarda-restrito",
+      "description": "Frequentador cauteloso (ADR-0125) não conta o conhecimento restrito.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ],
+        "disposition": "CAUTIOUS"
+      },
+      "question": "Quem cuida da taverna no dia a dia?",
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "mentions_none": [
+          "Bernard"
+        ]
+      }
+    },
+    {
+      "id": "disposicao-amistosa-conta",
+      "description": "Com disposição amistosa (ADR-0125), responde normalmente.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador",
+        "disposition": "FRIENDLY"
+      },
+      "question": "Quem governa Amn?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "org:council-of-six"
+        ]
+      }
     }
   ]
 }

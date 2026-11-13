@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import difflib
 import json
+import re
 import math
 import tempfile
 from dataclasses import dataclass
@@ -29,6 +30,7 @@ from ..memory.common_knowledge import (
 )
 from ..memory.model import KnowledgeBasis
 from ..memory.store import MemoryStore
+from ..personality.reaction import DISPOSITIONS
 from ..personality.identity import (
     STANDINGS, build_identity, knowledge_tier, layered_text, popular_only,
 )
@@ -41,8 +43,8 @@ from .llm import LlmProvider
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CASES = ROOT / 'tests' / 'dialogue_eval' / 'cases.pt_BR.json'
 CASES_SCHEMA = 'infinity-ai.dialogue-eval-cases.v1'
-CHECK_KEYS = frozenset({'status', 'uses', 'mentions_any', 'mentions_none', 'unknown',
-                        'max_chars', 'not_copy_of', 'first_try'})
+CHECK_KEYS = frozenset({'status', 'uses', 'mentions_any', 'mentions_none', 'matches_none',
+                        'unknown', 'max_chars', 'not_copy_of', 'first_try'})
 KINDS = ('resident', 'companion')
 COPY_LIMIT = 0.85
 GAME_TIME = 1000
@@ -122,6 +124,8 @@ def _check_case(case: Case, pack: CanonPack) -> None:
     s = case.speaker
     if s.get('kind') not in KINDS or not str(s.get('npc_id', '')).startswith('npc:'):
         raise CaseError(f'{where}: speaker kind/npc_id')
+    if s.get('disposition') is not None and s['disposition'] not in DISPOSITIONS:
+        raise CaseError(f'{where}: unknown disposition {s["disposition"]}')
     if s.get('standing') is not None and s['standing'] not in STANDINGS:
         raise CaseError(f'{where}: unknown standing {s["standing"]}')
     for region in (s.get('home'), s.get('origin')):
@@ -157,6 +161,9 @@ def check_answer(case: Case, pack: CanonPack, response: DialogueResponse) -> tup
     for w in c.get('mentions_none') or ():
         if w.lower() in low:
             failures.append(f'citou "{w}"')
+    for pattern in c.get('matches_none') or ():       # regex, e.g. a claim but not its denial
+        if re.search(pattern, speech, re.I):
+            failures.append(f'casou /{pattern}/')
     if 'unknown' in c and response.unknown is not c['unknown']:
         failures.append(f'unknown={response.unknown}')
     if c.get('max_chars') and len(speech) > c['max_chars']:
@@ -217,7 +224,8 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
         ResidentRequest(npc_id, name, case.question, area, False), residence_areas=(area,),
         branch_id=ROOT_BRANCH, at_game_time=GAME_TIME, identity=identity,
         also_known=also_known, wisdom=s.get('wis'), intelligence=s.get('int'),
-        popular_only_ids=shallow_ids, history=case.history)
+        popular_only_ids=shallow_ids, history=case.history,
+        disposition=s.get('disposition'))
 
 
 def _envelope(field_name: str, value: str) -> ObservationEnvelope:

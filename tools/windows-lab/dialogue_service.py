@@ -75,6 +75,7 @@ from infinity_ai.personality.identity import (  # noqa: E402
     HABITANTE, build_identity, generate_identity, knowledge_tier, layered_text, load_curations,
     popular_only, role_from_name,
 )
+from infinity_ai.personality.reaction import reaction_for  # noqa: E402
 from infinity_ai.personality.in_game import (  # noqa: E402
     profile_for, record_dialogue_start, resolve_speaker,
 )
@@ -278,6 +279,7 @@ class Talker(threading.Thread):
         flags: list[str] = []
         wisdom = intelligence = None
         tier, known_texts, standing = '-', {}, '-'
+        reaction = None
         # ADR-0124: earlier conversations with the player (ids and game time only).
         memory_key = npc_key(speaker, stable=bool(req.speaker_party or req.speaker_script
                                                    or curation is not None),
@@ -359,12 +361,22 @@ class Talker(threading.Thread):
             known_texts = {e: layered_text(pack.get(e).summary, pack.get(e).layers,
                                            popular_only(tier_obj) if e in shallow else tier_obj)
                            for e in known_now if pack.get(e) is not None}
+            # ADR-0125: the encounter reaction, once per person per session, decided by code.
+            leader = req.selected_leader
+            reaction = reaction_for(
+                store, view.branch_id, key=memory_key or speaker, session=req.session_seq,
+                opening_text=req.text,
+                charisma=leader.charisma_active if leader is not None else None,
+                charisma_of=(leader.script_name or leader.display_name)
+                if leader is not None else '',
+                world_seed=self.args.world_seed, game_time=view.game_time)
             result = DialogueEngine(store, self.provider, self.catalog).respond_resident(
                 ResidentRequest(speaker, req.speaker_name, req.text, req.area, req.speaker_dead),
                 residence_areas=areas, branch_id=view.branch_id, at_game_time=view.game_time,
                 profile=profile, identity=identity, also_known=also_known, wisdom=wisdom,
                 intelligence=intelligence, game_alignment=getattr(resident, 'alignment', None),
-                popular_only_ids=shallow, history=history, recall_lines=lines)
+                popular_only_ids=shallow, history=history, recall_lines=lines,
+                disposition=reaction.disposition if reaction is not None else None)
             status, reason = result.status.value, result.reason
             flags = list(result.flags)
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
@@ -415,7 +427,9 @@ class Talker(threading.Thread):
         morale_break_base = (req.speaker_engine_morale_break_base
                              if req.speaker_engine_morale_break_base is not None else "-")
         print(f'{now_iso()} caixa pedido={req.req_id} falante={speaker or "-"} '
-              f'turno={turn or "-"} lembra={earlier.conversations} habitante={bool(areas)} estatuto={standing} perfil={scope} '
+              f'turno={turn or "-"} lembra={earlier.conversations} '
+              f'reacao={reaction.summary() if reaction is not None else "-"} '
+              f'habitante={bool(areas)} estatuto={standing} perfil={scope} '
               f'identidade={ident_source} '
               f'wis={wisdom or "-"} int={intelligence or "-"} camada={tier} '
               f'chr_ativo={chr_active} chr_base={chr_base} '

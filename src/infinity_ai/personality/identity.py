@@ -208,6 +208,7 @@ class Curation:
     self_facts: tuple[str, ...]
     affiliations: tuple[str, ...] = ()
     standing: str | None = None          # ADR-0120; None = not curated (game data decides)
+    morale: int | None = None            # ADR-0126: curated base morale (2..20), else Table 49
 
 
 def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[str, Curation]:
@@ -232,12 +233,16 @@ def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[s
         standing = doc.get('standing')
         if standing is not None and standing not in STANDINGS:
             continue
+        morale = doc.get('morale')
+        if morale is not None and (isinstance(morale, bool) or not isinstance(morale, int)
+                                   or not 2 <= morale <= 20):
+            continue
         years = doc.get('years_here')
         out[doc['npc_id']] = Curation(
             doc['npc_id'], doc.get('occupation'), doc.get('origin_region'),
             years if isinstance(years, int) and years > 0 else None,
             tuple(doc.get('places_visited') or ()), facts,
-            tuple(sorted(set(raw_affiliations))), standing)
+            tuple(sorted(set(raw_affiliations))), standing, morale)
     return out
 
 

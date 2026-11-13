@@ -30,6 +30,7 @@ from ..memory.common_knowledge import (
 )
 from ..memory.model import KnowledgeBasis
 from ..memory.store import MemoryStore
+from ..personality.morale import HOLD, TRIGGERS, YIELD
 from ..personality.reaction import DISPOSITIONS
 from ..personality.identity import (
     STANDINGS, build_identity, knowledge_tier, layered_text, popular_only,
@@ -126,6 +127,9 @@ def _check_case(case: Case, pack: CanonPack) -> None:
         raise CaseError(f'{where}: speaker kind/npc_id')
     if s.get('disposition') is not None and s['disposition'] not in DISPOSITIONS:
         raise CaseError(f'{where}: unknown disposition {s["disposition"]}')
+    m = s.get('morale')
+    if m is not None and (m.get('trigger') not in TRIGGERS or m.get('outcome') not in (HOLD, YIELD)):
+        raise CaseError(f'{where}: morale needs a known trigger and HOLD or YIELD')
     if s.get('standing') is not None and s['standing'] not in STANDINGS:
         raise CaseError(f'{where}: unknown standing {s["standing"]}')
     for region in (s.get('home'), s.get('origin')):
@@ -225,7 +229,8 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
         branch_id=ROOT_BRANCH, at_game_time=GAME_TIME, identity=identity,
         also_known=also_known, wisdom=s.get('wis'), intelligence=s.get('int'),
         popular_only_ids=shallow_ids, history=case.history,
-        disposition=s.get('disposition'))
+        disposition=s.get('disposition'),
+        morale=(s['morale']['trigger'], s['morale']['outcome']) if s.get('morale') else None)
 
 
 def _envelope(field_name: str, value: str) -> ObservationEnvelope:

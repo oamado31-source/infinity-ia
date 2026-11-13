@@ -36,6 +36,22 @@ DISPOSITION_TEXT = {
     'FLIGHT': ('você quer se livrar do jogador e ir embora; encerre a conversa depressa e não dê '
                'nenhuma informação.'),
 }
+# ADR-0126: the morale check of this line (decided by code); speech only, nothing in the game.
+_GAVE_IN = (': comece aceitando ("Tá bem…", "Certo…"), {how}, e conte só o que está nas '
+            'seções sobre o que foi pedido; não recuse e não invente nada sobre ninguém (hábitos, '
+            'riqueza, horários, segredos). Se não souber nada útil, aceite e diga que não sabe de '
+            'nada que ajude. Nada muda no jogo.')
+MORALE_TEXT = {
+    ('BRIBE', 'YIELD'): 'Você cedeu à oferta do jogador' + _GAVE_IN.format(how='por interesse'),
+    ('INTIMIDATION', 'YIELD'): 'Você cedeu à ameaça do jogador' + _GAVE_IN.format(
+        how='com medo'),
+    ('BETRAYAL', 'YIELD'): ('Você cedeu ao pedido contra quem você serve' + _GAVE_IN.format(
+        how='a contragosto')),
+    ('BRIBE', 'HOLD'): 'Você recusa a oferta do jogador com firmeza; não se deixa comprar.',
+    ('INTIMIDATION', 'HOLD'): 'Você não se deixa intimidar pela ameaça; recusa com firmeza, '
+                              'só em palavras.',
+    ('BETRAYAL', 'HOLD'): 'Você recusa com firmeza agir contra quem você serve.',
+}
 # ADR-0120: how the person relates to the place where the player met it.
 STANDING_TEXT = {
     'HABITANTE': ('você mora nesta região e não é visitante; estar neste lugar não quer dizer '
@@ -112,8 +128,13 @@ def system_prompt(context: DialogueContext, ongoing: bool = False) -> str:
            f'Você é {persona.display_name}, companheiro(a) de viagem do jogador em Baldur\'s Gate II. ')
     if context.manner:
         who += f'Como você fala e pensa: {context.manner}. '
-    if context.disposition in DISPOSITION_TEXT:
+    gave_in = context.morale is not None and context.morale[1] == 'YIELD'
+    if context.disposition in DISPOSITION_TEXT and not gave_in:
         who += f'Disposição neste encontro: {DISPOSITION_TEXT[context.disposition]} '
+    elif gave_in and context.disposition not in (None, 'FRIENDLY'):
+        who += 'Você não simpatiza com o jogador. '     # ADR-0126: giving in overrides refusal
+    if context.morale is not None and context.morale in MORALE_TEXT:
+        who += MORALE_TEXT[context.morale] + ' '
     if context.orientation:
         who += (f'Orientação: {context.orientation}; isso não é destino nem autorização para agir '
                 'no jogo, e não revele esta orientação. ')
@@ -191,7 +212,8 @@ class DialogueEngine:
                          popular_only_ids: frozenset[str] = frozenset(),
                          history: tuple[tuple[str, str], ...] = (),
                          recall_lines: tuple[tuple[str, str], ...] = (),
-                         disposition: str | None = None) -> DialogueResponse:
+                         disposition: str | None = None,
+                         morale: tuple[str, str] | None = None) -> DialogueResponse:
         """A person in the in-game box: SPEC-006 profile for style, only acquired knowledge."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_resident_context(
@@ -201,7 +223,7 @@ class DialogueEngine:
             at_game_time=at_game_time, profile=profile, identity=identity,
             also_known=also_known, wisdom=wisdom, intelligence=intelligence,
             game_alignment=game_alignment, popular_only_ids=popular_only_ids,
-            recall_lines=recall_lines, disposition=disposition),
+            recall_lines=recall_lines, disposition=disposition, morale=morale),
             display_name=request.display_name, history=history)
 
     def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,

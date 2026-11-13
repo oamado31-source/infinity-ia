@@ -76,6 +76,7 @@ class DialogueContext:
     restricted_knowledge: tuple[Fact, ...] = ()  # ADR-0119: role/affiliation-bound facts
     standing: str | None = None      # ADR-0120: HABITANTE, VIAJANTE or FORASTEIRO (residents)
     staff: bool = False              # ADR-0119/0120: a curated STAFF tie to a place (may say it works there)
+    home_names: tuple[str, ...] = ()  # CR-2026-004: a resident may say it is from these places
 
 
 @dataclass(frozen=True)
@@ -274,7 +275,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         persona, facts, frozenset(vocabulary), (), tuple(knowledge),
         identity.place if identity and identity.place else place, orientation,
         identity.occupation if identity else None, tier.style, tuple(restricted), standing,
-        any(a.endswith(':STAFF') for a in identity.affiliations) if identity else False))
+        any(a.endswith(':STAFF') for a in identity.affiliations) if identity else False,
+        identity.home_names if identity else ()))
 
 
 def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *, npc_id: str,

@@ -39,8 +39,8 @@ _WORK_CLAIM = re.compile(
     r'da taverna|desta taverna))\b', re.I)
 _BORN_CLAIM = re.compile(r'(?<!não )\b(?:nasci|cresci) aqui\b', re.I)
 _ORIGIN_CLAIM = re.compile(
-    r"\b(?i:sou de|vim de|venho de|nasci em|sou natural de)\s+(?:[ao]s? )?"
-    r"([A-ZÀ-Ý][\w'-]+)")
+    r"\b(?P<verb>(?i:sou de|vim de|venho de|nasci em|sou natural de))\s+(?:[ao]s? )?"
+    r"(?P<place>[A-ZÀ-Ý][\w'-]+)")
 _WORD = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ'-]*")
 _BOUNDARY = re.compile(r'[.!?…:"“«—]')
 
@@ -81,8 +81,16 @@ def _origin_contradicts(speech: str, context: DialogueContext) -> str | None:
         return 'BORN'
     if _WORK_CLAIM.search(speech) and not context.staff:
         return 'WORK'
-    if any(m.group(1).lower() not in facts for m in _ORIGIN_CLAIM.finditer(speech)):
-        return 'ORIGIN'
+    # CR-2026-004: a resident may also say it is from where it lives or a region containing it
+    # ("sou de Amn" while living in Athkatla); any other place must be in its own facts.
+    # Saying where one was born or came from still needs its facts, unless it was born here.
+    home = {n.lower() for n in context.home_names}
+    born_here = 'nasceu' in facts
+    for m in _ORIGIN_CLAIM.finditer(speech):
+        place, verb = m.group('place').lower(), m.group('verb').lower()
+        lives_there = place in home and (verb == 'sou de' or born_here)
+        if place not in facts and not lives_there:
+            return 'ORIGIN'
     return None
 
 

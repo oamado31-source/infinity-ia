@@ -88,6 +88,11 @@ class CheckerTests(unittest.TestCase):
         self.assertTrue(any(f.startswith('copiou a camada')
                             for f in check_answer(council, PACK, copied)))
 
+    def test_regex_check_tells_a_claim_from_its_denial(self):
+        work = case(self.cases, 'sem-staff-trabalho')
+        denial = ask(work, PACK, FakeProvider([reply('Não trabalho aqui, só passo.')]))
+        self.assertEqual(check_answer(work, PACK, denial), ())
+
     def test_case_result_needs_two_of_three(self):
         council = case(self.cases, 'habitante-comum-conselho')
         slip = reply('O Conselho dos Seis; quem revela os nomes acaba na tortura.')

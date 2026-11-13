@@ -32,6 +32,7 @@ ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_PERSONA_DIR = ROOT / 'knowledge' / 'personas'
 DEFAULT_AREA_NAMES = ROOT / 'knowledge' / 'areas' / 'bg2ee-area-names.pt_BR.json'
 UNNAMED_AREA = 'um lugar que você não sabe nomear'
+CLOSED_DISPOSITIONS = frozenset({'THREATENING', 'HOSTILE', 'FLIGHT'})   # ADR-0125: tells nothing
 MAX_FACTS = 20
 MAX_KNOWLEDGE = 12
 _NAME = re.compile(r"[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ'-]*")
@@ -77,6 +78,7 @@ class DialogueContext:
     standing: str | None = None      # ADR-0120: HABITANTE, VIAJANTE or FORASTEIRO (residents)
     staff: bool = False              # ADR-0119/0120: a curated STAFF tie to a place (may say it works there)
     home_names: tuple[str, ...] = ()  # CR-2026-004: a resident may say it is from these places
+    disposition: str | None = None    # ADR-0125: encounter reaction (FRIENDLY .. HOSTILE, FLIGHT)
 
 
 @dataclass(frozen=True)
@@ -228,7 +230,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            intelligence: int | None = None,
                            game_alignment: int | None = None,
                            popular_only_ids: frozenset[str] = frozenset(),
-                           recall_lines: tuple[tuple[str, str], ...] = ()) -> ContextResult:
+                           recall_lines: tuple[tuple[str, str], ...] = (),
+                           disposition: str | None = None) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
@@ -288,8 +291,13 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
             subjects[entry_id] = (learned[0], learned[1], new_layers, learned[3],
                                   learned[4] or subject_id)
     knowledge, restricted = [], []
+    # ADR-0125: what the person is willing to tell in this encounter, decided by code.
+    tells_public = disposition not in CLOSED_DISPOSITIONS
+    tells_restricted = tells_public and disposition != 'CAUTIOUS'
     for i, entry_id in enumerate(sorted(subjects)[:MAX_KNOWLEDGE], 1):
         t, s, layers, scope, subject_id = subjects[entry_id]
+        if not (tells_restricted if scope == 'RESTRICTED' else tells_public):
+            continue
         learned_here = entry_id in popular_only_ids and not any(
             k.entry_id == entry_id for k in held)
         text = layered_text(s, layers, shallow if learned_here else tier)
@@ -301,7 +309,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         identity.place if identity and identity.place else place, orientation,
         identity.occupation if identity else None, tier.style, tuple(restricted), standing,
         any(a.endswith(':STAFF') for a in identity.affiliations) if identity else False,
-        identity.home_names if identity else ()))
+        identity.home_names if identity else (), disposition))
 
 
 def _with_recall(facts: tuple[Fact, ...], lines: tuple[tuple[str, str], ...],

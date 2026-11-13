@@ -18,3 +18,4 @@
 - [ ] Conferir a curadoria de Bernard e curar os NPCs oficiais da Coroa de Cobre; testar no laboratório (S1f).
 - [ ] Usar o alinhamento da ficha do jogo como `alignment_initial` de NPCs oficiais (hoje só na identidade).
 - [x] Estatuto local (ADR-0120): HABITANTE, VIAJANTE (só o popular do lugar) e FORASTEIRO (nada do lugar), por curadoria ou sorteio conforme o papel; validador de origem; `tests/test_identity.py`. Falta testar no laboratório.
+- [x] Reação de encontro (ADR-0125, primeira fatia do ADR-0122): Tabela 59 + ajuste de Carisma do selecionado, uma vez por NPC por sessão, evento sem texto, disposição limitando o que o NPC conta; `tests/test_reaction.py`. Teste de moral fica para a segunda fatia.

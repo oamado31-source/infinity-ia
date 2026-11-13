@@ -61,6 +61,10 @@ class ThirdPartyTests(unittest.TestCase):
         self.assertEqual(third_party_claim(speech, context(COUNCIL_POPULAR)), 'NUMBER')
         self.assertIsNone(third_party_claim(speech, context(COUNCIL_STUDIED)))
         self.assertIsNone(third_party_claim('Governam Amn há muito tempo.', context(COUNCIL_POPULAR)))
+        # CR-2026-006: "acho" does not make a number or a duration acceptable.
+        self.assertEqual(third_party_claim('O Conselho governa Amn há séculos, eu acho.',
+                                           context(COUNCIL_POPULAR)), 'NUMBER')
+        self.assertIsNone(third_party_claim('Acho que Lehtinan é um cara duro.', context(OWNER)))
         twenty = ('Você vive em Athkatla e está na Coroa de Cobre.', 'Você vive aqui há 20 anos.')
         twelve = ('Você vive em Athkatla e está na Coroa de Cobre.', 'Você vive aqui há 12 anos.')
         self.assertIsNone(third_party_claim('Vivo aqui há 20 anos.', context(facts=twenty)))

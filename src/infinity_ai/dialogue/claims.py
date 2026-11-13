@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """ADR-0121: what an NPC states about someone else must be in what it knows about them.
 
-An opinion of the speaker passes ("Cruel!", "acho que ele é duro", "não confio nele"); what is
+An opinion of the speaker passes ("Cruel!", "acho que ele é duro", "não confio nele"), except
+for numbers and durations, which need the knowledge even when hedged (CR-2026-006); what is
 stated as a fact about another person or group does not, unless the speaker's own context says
 it: a role ("o taverneiro é Lehtinan"), a trait ("Lehtinan? Cara duro"), a number or a duration
 ("governam há décadas", "vivo aqui há 20 anos") or a general rule ("governa quem tem dinheiro").
@@ -141,8 +142,7 @@ def third_party_claim(speech: str, context: DialogueContext) -> str | None:
     for m in _NUMBER.finditer(speech):
         n, unit = m.group('n').lower(), (m.group('unit') or '').lower()
         sentence = s.sentence(m.start())
-        if s.opinion(m.start()):
-            continue
+        # CR-2026-006: a number or a duration is not made true by "acho" ("há séculos, eu acho").
         names = s.names_in(sentence)
         if names:
             base = s.base(names)

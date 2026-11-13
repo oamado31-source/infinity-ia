@@ -23,6 +23,19 @@ from ..personality.identity import em
 from .validate import retry_hint, validate_reply
 
 MAX_PLAYER_TEXT = 500
+# ADR-0125: the encounter reaction (decided by code) as behaviour; speech only, no game action.
+DISPOSITION_TEXT = {
+    'FRIENDLY': 'você simpatizou com o jogador; conte o que sabe com boa vontade.',
+    'INDIFFERENT': 'você não tem interesse no jogador; responda curto, sem se estender.',
+    'CAUTIOUS': ('você desconfia do jogador; responda só o que foi perguntado, com reserva, e '
+                 'não conte nada além.'),
+    'THREATENING': ('você está irritado e não vai ajudar o jogador; recuse com aspereza, só em '
+                    'palavras, e não dê nenhuma informação.'),
+    'HOSTILE': ('você é hostil ao jogador; recuse-se a ajudar, mostre o desagrado só em palavras '
+                'e não dê nenhuma informação.'),
+    'FLIGHT': ('você quer se livrar do jogador e ir embora; encerre a conversa depressa e não dê '
+               'nenhuma informação.'),
+}
 # ADR-0120: how the person relates to the place where the player met it.
 STANDING_TEXT = {
     'HABITANTE': ('você mora nesta região e não é visitante; estar neste lugar não quer dizer '
@@ -99,6 +112,8 @@ def system_prompt(context: DialogueContext, ongoing: bool = False) -> str:
            f'Você é {persona.display_name}, companheiro(a) de viagem do jogador em Baldur\'s Gate II. ')
     if context.manner:
         who += f'Como você fala e pensa: {context.manner}. '
+    if context.disposition in DISPOSITION_TEXT:
+        who += f'Disposição neste encontro: {DISPOSITION_TEXT[context.disposition]} '
     if context.orientation:
         who += (f'Orientação: {context.orientation}; isso não é destino nem autorização para agir '
                 'no jogo, e não revele esta orientação. ')
@@ -175,7 +190,8 @@ class DialogueEngine:
                          game_alignment: int | None = None,
                          popular_only_ids: frozenset[str] = frozenset(),
                          history: tuple[tuple[str, str], ...] = (),
-                         recall_lines: tuple[tuple[str, str], ...] = ()) -> DialogueResponse:
+                         recall_lines: tuple[tuple[str, str], ...] = (),
+                         disposition: str | None = None) -> DialogueResponse:
         """A person in the in-game box: SPEC-006 profile for style, only acquired knowledge."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_resident_context(
@@ -185,7 +201,8 @@ class DialogueEngine:
             at_game_time=at_game_time, profile=profile, identity=identity,
             also_known=also_known, wisdom=wisdom, intelligence=intelligence,
             game_alignment=game_alignment, popular_only_ids=popular_only_ids,
-            recall_lines=recall_lines), display_name=request.display_name, history=history)
+            recall_lines=recall_lines, disposition=disposition),
+            display_name=request.display_name, history=history)
 
     def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,
                   display_name: str = '',

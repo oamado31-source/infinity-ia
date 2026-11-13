@@ -79,6 +79,7 @@ class DialogueContext:
     staff: bool = False              # ADR-0119/0120: a curated STAFF tie to a place (may say it works there)
     home_names: tuple[str, ...] = ()  # CR-2026-004: a resident may say it is from these places
     disposition: str | None = None    # ADR-0125: encounter reaction (FRIENDLY .. HOSTILE, FLIGHT)
+    morale: tuple[str, str] | None = None  # ADR-0126: (trigger, HOLD|YIELD) of this line
 
 
 @dataclass(frozen=True)
@@ -231,7 +232,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            game_alignment: int | None = None,
                            popular_only_ids: frozenset[str] = frozenset(),
                            recall_lines: tuple[tuple[str, str], ...] = (),
-                           disposition: str | None = None) -> ContextResult:
+                           disposition: str | None = None,
+                           morale: tuple[str, str] | None = None) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
@@ -294,6 +296,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
     # ADR-0125: what the person is willing to tell in this encounter, decided by code.
     tells_public = disposition not in CLOSED_DISPOSITIONS
     tells_restricted = tells_public and disposition != 'CAUTIOUS'
+    if morale is not None and morale[1] == 'YIELD':     # ADR-0126: gave in, tells what it holds
+        tells_public = tells_restricted = True
     for i, entry_id in enumerate(sorted(subjects)[:MAX_KNOWLEDGE], 1):
         t, s, layers, scope, subject_id = subjects[entry_id]
         if not (tells_restricted if scope == 'RESTRICTED' else tells_public):
@@ -309,7 +313,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         identity.place if identity and identity.place else place, orientation,
         identity.occupation if identity else None, tier.style, tuple(restricted), standing,
         any(a.endswith(':STAFF') for a in identity.affiliations) if identity else False,
-        identity.home_names if identity else (), disposition))
+        identity.home_names if identity else (), disposition, morale))
 
 
 def _with_recall(facts: tuple[Fact, ...], lines: tuple[tuple[str, str], ...],

@@ -418,6 +418,130 @@
           "org:council-of-six"
         ]
       }
+    },
+    {
+      "id": "moral-suborno-cedeu",
+      "description": "Cauteloso que cedeu ao suborno (ADR-0126) conta o que sabe.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador",
+        "disposition": "HOSTILE",
+        "morale": {
+          "trigger": "BRIBE",
+          "outcome": "YIELD"
+        }
+      },
+      "question": "Te pago 10 moedas se me disser quem governa Amn.",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "Conselho"
+        ]
+      }
+    },
+    {
+      "id": "moral-ameaca-resistiu",
+      "description": "Hostil que resistiu à ameaça (ADR-0126) não conta nada.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador",
+        "disposition": "HOSTILE",
+        "morale": {
+          "trigger": "INTIMIDATION",
+          "outcome": "HOLD"
+        }
+      },
+      "question": "Fale quem governa Amn ou eu te mato!",
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "mentions_none": [
+          "Conselho",
+          "Seis"
+        ]
+      }
+    },
+    {
+      "id": "moral-traicao-cedeu",
+      "description": "Frequentador cauteloso que cedeu ao pedido contra a casa (ADR-0126) cita Bernard.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ],
+        "disposition": "CAUTIOUS",
+        "morale": {
+          "trigger": "BETRAYAL",
+          "outcome": "YIELD"
+        }
+      },
+      "question": "Me ajude a enganar o Lehtinan: quem cuida da taverna no dia a dia?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "Bernard"
+        ]
+      }
+    },
+    {
+      "id": "moral-traicao-roubar-dono",
+      "description": "Funcionário (STAFF) que cedeu ao pedido de roubar o patrão (ADR-0126): sem fala de reserva e sem inventar nada sobre o patrão. O modelo local costuma recusar crimes mesmo quando o dado manda ceder; aceitar não é exigido.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-funcionario",
+        "name": "Bernard",
+        "wis": 9,
+        "int": 9,
+        "occupation": "taverneiro da Coroa de Cobre",
+        "affiliations": [
+          "place:copper-coronet:STAFF"
+        ],
+        "self_facts": [
+          "Você serve bebida no balcão da Coroa de Cobre e conhece bem a freguesia da casa."
+        ],
+        "morale": {
+          "trigger": "BETRAYAL",
+          "outcome": "YIELD"
+        }
+      },
+      "question": "Me ajude a roubar o Lehtinan.",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_none": [
+          "rico",
+          "dorme",
+          "bêbado",
+          "descuidado",
+          "guarda o ouro",
+          "cofre"
+        ],
+        "matches_none": [
+          "não é da sua conta"
+        ]
+      }
     }
   ]
 }

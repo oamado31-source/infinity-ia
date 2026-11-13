@@ -22,6 +22,7 @@ import argparse
 import hmac
 import json
 import os
+import re
 import secrets
 import sys
 import threading
@@ -74,6 +75,9 @@ from infinity_ai.personality import (  # noqa: E402
 from infinity_ai.personality.identity import (  # noqa: E402
     HABITANTE, build_identity, generate_identity, knowledge_tier, layered_text, load_curations,
     popular_only, role_from_name,
+)
+from infinity_ai.personality.morale import (  # noqa: E402
+    base_morale, classify_trigger, ethical_axis, modifiers, morale_for,
 )
 from infinity_ai.personality.reaction import reaction_for  # noqa: E402
 from infinity_ai.personality.in_game import (  # noqa: E402
@@ -279,7 +283,7 @@ class Talker(threading.Thread):
         flags: list[str] = []
         wisdom = intelligence = None
         tier, known_texts, standing = '-', {}, '-'
-        reaction = None
+        reaction = check = None
         # ADR-0124: earlier conversations with the player (ids and game time only).
         memory_key = npc_key(speaker, stable=bool(req.speaker_party or req.speaker_script
                                                    or curation is not None),
@@ -370,13 +374,36 @@ class Talker(threading.Thread):
                 charisma_of=(leader.script_name or leader.display_name)
                 if leader is not None else '',
                 world_seed=self.args.world_seed, game_time=view.game_time)
+            # ADR-0126: a bribe, a threat or a request against someone it is tied to calls for
+            # a morale check (once per trigger per person per session), decided by code.
+            # Ties: the other parties of relations it is part of or affiliated to (ADR-0119);
+            # a public fact everyone knows ("Lehtinan owns the tavern") is not a tie.
+            own = {w.lower() for w in req.speaker_name.split()}
+            tied = set(known_by_relationship) | {
+                e for e in known_now if pack.get(e) is not None
+                and pack.get(e).kind == 'RELATIONSHIP'
+                and speaker in (pack.get(e).subject_id, pack.get(e).object_id)}
+            ties = sorted({w for e in tied for w in re.findall(
+                r"[A-ZÀ-Ý][\wÀ-ÿ'-]{2,}", f'{pack.get(e).title} {pack.get(e).summary}')
+                if w.lower() not in own})
+            trigger = classify_trigger(req.text, ties)
+            if trigger is not None:
+                check = morale_for(
+                    store, view.branch_id, key=memory_key or speaker, session=req.session_seq,
+                    trigger=trigger,
+                    base=base_morale(role_from_name(req.speaker_name),
+                                     curation.morale if curation is not None else None),
+                    mods=modifiers(ethical=ethical_axis(getattr(resident, 'alignment', None),
+                                                        profile), text=req.text),
+                    world_seed=self.args.world_seed, game_time=view.game_time)
             result = DialogueEngine(store, self.provider, self.catalog).respond_resident(
                 ResidentRequest(speaker, req.speaker_name, req.text, req.area, req.speaker_dead),
                 residence_areas=areas, branch_id=view.branch_id, at_game_time=view.game_time,
                 profile=profile, identity=identity, also_known=also_known, wisdom=wisdom,
                 intelligence=intelligence, game_alignment=getattr(resident, 'alignment', None),
                 popular_only_ids=shallow, history=history, recall_lines=lines,
-                disposition=reaction.disposition if reaction is not None else None)
+                disposition=reaction.disposition if reaction is not None else None,
+                morale=(check.trigger, check.outcome) if check is not None else None)
             status, reason = result.status.value, result.reason
             flags = list(result.flags)
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
@@ -429,6 +456,7 @@ class Talker(threading.Thread):
         print(f'{now_iso()} caixa pedido={req.req_id} falante={speaker or "-"} '
               f'turno={turn or "-"} lembra={earlier.conversations} '
               f'reacao={reaction.summary() if reaction is not None else "-"} '
+              f'moral={check.summary() if check is not None else "-"} '
               f'habitante={bool(areas)} estatuto={standing} perfil={scope} '
               f'identidade={ident_source} '
               f'wis={wisdom or "-"} int={intelligence or "-"} camada={tier} '

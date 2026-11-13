@@ -11,6 +11,7 @@ import json
 import re
 from dataclasses import dataclass
 
+from .claims import third_party_claim
 from .context import DialogueContext
 
 MAX_SPEECH = 400
@@ -38,8 +39,8 @@ _WORK_CLAIM = re.compile(
     r'da taverna|desta taverna))\b', re.I)
 _BORN_CLAIM = re.compile(r'(?<!não )\b(?:nasci|cresci) aqui\b', re.I)
 _ORIGIN_CLAIM = re.compile(
-    r"\b(?i:sou de|vim de|venho de|nasci em|sou natural de)\s+(?:[ao]s? )?"
-    r"([A-ZÀ-Ý][\w'-]+)")
+    r"\b(?P<verb>(?i:sou de|vim de|venho de|nasci em|sou natural de))\s+(?:[ao]s? )?"
+    r"(?P<place>[A-ZÀ-Ý][\w'-]+)")
 _WORD = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ'-]*")
 _BOUNDARY = re.compile(r'[.!?…:"“«—]')
 
@@ -80,8 +81,16 @@ def _origin_contradicts(speech: str, context: DialogueContext) -> str | None:
         return 'BORN'
     if _WORK_CLAIM.search(speech) and not context.staff:
         return 'WORK'
-    if any(m.group(1).lower() not in facts for m in _ORIGIN_CLAIM.finditer(speech)):
-        return 'ORIGIN'
+    # CR-2026-004: a resident may also say it is from where it lives or a region containing it
+    # ("sou de Amn" while living in Athkatla); any other place must be in its own facts.
+    # Saying where one was born or came from still needs its facts, unless it was born here.
+    home = {n.lower() for n in context.home_names}
+    born_here = 'nasceu' in facts
+    for m in _ORIGIN_CLAIM.finditer(speech):
+        place, verb = m.group('place').lower(), m.group('verb').lower()
+        lives_there = place in home and (verb == 'sou de' or born_here)
+        if place not in facts and not lives_there:
+            return 'ORIGIN'
     return None
 
 
@@ -90,6 +99,55 @@ def player_names(player_text: str | None) -> frozenset[str]:
     if not player_text:
         return frozenset()
     return frozenset(w for w in _WORD.findall(player_text) if w[0].isupper())
+
+
+# What to fix, in plain Portuguese, for the retry (a bare code like "THIRD_PARTY:ROLE" taught the
+# model nothing in the S1f lab, and it repeated the same mistake).
+_RETRY_HINTS = (
+    ('NOT_JSON', 'responda só com o JSON pedido'),
+    ('NOT_OBJECT', 'responda só com o JSON pedido'),
+    ('BAD_SHAPE', 'use exatamente os campos speech, used_facts e unknown'),
+    ('EMPTY', 'a fala não pode ficar vazia'),
+    ('TOO_LONG', 'fale em no máximo 3 frases curtas'),
+    ('UNKNOWN_FACT_IDS', 'em used_facts, cite só ids que aparecem nas seções (F… ou K…)'),
+    ('RAW_CODE', 'não fale de códigos nem identificadores'),
+    ('META_TALK', 'não fale de regras, ids, sistema nem de ser uma inteligência artificial'),
+    ('MARKUP', 'não use símbolos de formatação'),
+    ('SELF_CLAIM:AWAY', 'você mora aqui: não diga que é de fora nem que está de passagem'),
+    ('SELF_CLAIM:HOME', 'você não mora aqui: não diga que é daqui nem que mora aqui'),
+    ('SELF_CLAIM:BORN', 'não diga que nasceu aqui; isso não está nos seus FATOS'),
+    ('SELF_CLAIM:WORK', 'você não trabalha neste lugar: não diga que trabalha aqui nem para o dono'),
+    ('SELF_CLAIM:ORIGIN', 'não diga de onde veio além do que está nos seus FATOS'),
+    ('SELF_CLAIM', 'sobre você, não afirme posse, cargo ou parentesco que não está nos seus FATOS'),
+    ('THIRD_PARTY:ROLE', 'você deu a alguém um papel ou função que não está no que você sabe; '
+                         'diga que não sabe isso, ou fale só do que sabe sobre essa pessoa'),
+    ('THIRD_PARTY:TRAIT', 'você descreveu alguém com uma característica que não está no que '
+                          'você sabe; diga só o que sabe, ou deixe claro que é a sua opinião '
+                          '("acho que…")'),
+    ('THIRD_PARTY:NUMBER', 'você citou um número, idade ou tempo que não está no que você sabe; '
+                           'não dê números nem durações que não estão nas seções'),
+    ('THIRD_PARTY:GENERAL', 'você afirmou uma regra geral sem base no que sabe; fale só do que '
+                            'está nas seções, ou deixe claro que é a sua opinião'),
+    ('UNKNOWN_NAMES', 'você citou nomes que não estão no que você sabe ({names}); não os use, ou '
+                      'diga que não os conhece'),
+)
+
+
+def retry_hint(reasons: tuple[str, ...]) -> str:
+    """The retry message: what was wrong, in words the model can act on (no internal codes)."""
+    hints: list[str] = []
+    for reason in reasons:
+        for code, text in _RETRY_HINTS:
+            if reason == code or reason.startswith(code + ':') or (
+                    code in ('UNKNOWN_FACT_IDS', 'UNKNOWN_NAMES') and reason.startswith(code)):
+                names = reason.split(':', 1)[1].replace(',', ', ') if ':' in reason else ''
+                hint = text.format(names=names)
+                if hint not in hints:
+                    hints.append(hint)
+                break
+    detail = '; '.join(hints) if hints else 'ela não seguiu as regras'
+    return ('A resposta anterior foi recusada: ' + detail +
+            '. Responda de novo, em personagem, seguindo todas as regras.')
 
 
 def validate_reply(raw: str, context: DialogueContext, player_text: str | None = None) -> Verdict:
@@ -132,6 +190,9 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
     why = _origin_contradicts(speech, context) if context.standing else None
     if why:
         reasons.append(f'SELF_CLAIM:{why}')      # the log shows which claim was refused
+    other = third_party_claim(speech, context)   # ADR-0121: facts about someone else
+    if other:
+        reasons.append(f'THIRD_PARTY:{other}')
     vocabulary = context.vocabulary | (player_names(player_text) if unknown else frozenset())
     names = _unknown_names(speech, vocabulary)
     if names:

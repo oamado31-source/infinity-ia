@@ -25,6 +25,7 @@ _RESREF = re.compile(r'[A-Za-z0-9_#-]{1,8}')
 _SCRIPT_NAME = re.compile(r'[A-Za-z0-9_#-]{1,32}')
 _REQ_ID = re.compile(r'[0-9]{1,10}-[0-9]{1,12}-[0-9]{1,8}')
 # Saved games replace the first letter of an area actor's CRE resref with '*'.
+_CONV = re.compile(r'\d{1,15}-\d{1,15}')     # ADR-0123: "<session>-<clock_ms>" per box opening
 _CRE = re.compile(r'(?=.{1,8}$)\*?[A-Za-z0-9_#-]+')
 INPUTS = frozenset({'TEXT', 'VOICE'})
 
@@ -64,6 +65,7 @@ class TalkRequest:
     speaker_engine_morale_break_active: int | None = None
     speaker_engine_morale_break_base: int | None = None
     selected_leader: SelectedPartyLeader | None = None  # candidate only; validate in pinned lab
+    conversation_id: str | None = None   # ADR-0123: one per box opening; None = old box
 
     @property
     def speaker_id(self) -> str | None:
@@ -166,6 +168,8 @@ def parse_talk_line(line: str) -> TalkRequest | None:
         speaker_engine_morale_break_base=_bounded_int(
             speaker.get('engine_morale_break_base'), 0, 20),
         selected_leader=_selected_party_leader(doc.get('selected_leader')),
+        conversation_id=conv if isinstance(conv := doc.get('conv'), str)
+        and _CONV.fullmatch(conv) else None,
     )
 
 

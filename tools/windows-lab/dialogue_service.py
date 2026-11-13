@@ -53,6 +53,7 @@ from infinity_ai.dialogue.context import (  # noqa: E402
 from infinity_ai.dialogue.engine import (  # noqa: E402
     DialogueEngine, DialogueRequest, DialogueStatus, ResidentRequest,
 )
+from infinity_ai.dialogue.conversation import ConversationMemory  # noqa: E402
 from infinity_ai.dialogue.llm import OllamaProvider  # noqa: E402
 from infinity_ai.gamedata.inventory import (  # noqa: E402
     load_local_names, load_local_residents, load_local_resrefs,
@@ -201,6 +202,7 @@ class Talker(threading.Thread):
         self.seen: set[str] | None = None
         self._lock = threading.Lock()
         self._last: dict | None = None      # last box exchange, in memory only (overlay fallback)
+        self.conversations = ConversationMemory()   # ADR-0123: turns of open boxes, RAM only
 
     def last_exchange(self) -> dict | None:
         with self._lock:
@@ -258,6 +260,11 @@ class Talker(threading.Thread):
         view = self.observer.snapshot()
         speaker = resolve_speaker(req, self.observer.residents) or ''
         resident = self.observer.residents.get(speaker)
+        # ADR-0123: earlier turns of this box opening; the previous question helps INQUIRY tell
+        # what "e quem é então?" refers to.
+        conv_key = speaker or f'name:{req.speaker_name}'
+        history = self.conversations.history(req.conversation_id, conv_key)
+        question = ' '.join(filter(None, (history[-1][0] if history else '', req.text)))
         areas = resident.areas if resident is not None and speaker in self.observer.stays else ()
         curation = self.observer.curations.get(speaker)
         if not areas and resident is not None and curation is not None \
@@ -279,7 +286,8 @@ class Talker(threading.Thread):
                 tier = knowledge_tier(wisdom, intelligence).name
             result = DialogueEngine(store, self.provider, self.catalog).respond(
                 DialogueRequest(speaker, req.text), branch_id=view.branch_id,
-                at_game_time=view.game_time, wisdom=wisdom, intelligence=intelligence)
+                at_game_time=view.game_time, wisdom=wisdom, intelligence=intelligence,
+                history=history)
             status, reason, flags = result.status.value, result.reason, list(result.flags)
             speech = result.speech or self.catalog.persona(speaker).fallback
             used, granted, scope = (), (), 'COMPANHEIRO'
@@ -341,7 +349,7 @@ class Talker(threading.Thread):
                 residence_areas=areas, branch_id=view.branch_id, at_game_time=view.game_time,
                 profile=profile, identity=identity, also_known=also_known, wisdom=wisdom,
                 intelligence=intelligence, game_alignment=getattr(resident, 'alignment', None),
-                popular_only_ids=shallow)
+                popular_only_ids=shallow, history=history)
             status, reason = result.status.value, result.reason
             flags = list(result.flags)
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
@@ -351,7 +359,7 @@ class Talker(threading.Thread):
             if result.status is DialogueStatus.OK and speaker:
                 # The model may name an entry without declaring it: what was said is what was heard.
                 used = tuple(dict.fromkeys(used + tuple(entries_named(
-                    self.observer.pack, known_now, speech, known_texts, question=req.text,
+                    self.observer.pack, known_now, speech, known_texts, question=question,
                     aliases=aliases))))
             granted = ()
             shareable = tuple(e for e in used if pack.get(e) is not None
@@ -361,11 +369,12 @@ class Talker(threading.Thread):
                     store, view.branch_id, self.observer.pack, speaker=speaker,
                     listeners=req.listeners, used_entry_ids=shareable, req_id=req.req_id,
                     host_epoch=req.session_seq, at_game_time=view.game_time, speech=speech,
-                    also_held=known_by_identity, known_texts=known_texts, question=req.text,
+                    also_held=known_by_identity, known_texts=known_texts, question=question,
                     aliases=aliases)
                 granted = report.granted
                 shared = report.status + ''.join(f' {r.entry_id}:{r.reason}' for r in report.refusals
                                                  if r.reason != 'NOT_A_LISTENER')
+        turn = self.conversations.add(req.conversation_id, conv_key, req.text, speech)
         with self._lock:
             self._last = {'req_id': req.req_id, 'speaker': req.speaker_name, 'question': req.text,
                           'speech': speech}
@@ -386,7 +395,7 @@ class Talker(threading.Thread):
         morale_break_base = (req.speaker_engine_morale_break_base
                              if req.speaker_engine_morale_break_base is not None else "-")
         print(f'{now_iso()} caixa pedido={req.req_id} falante={speaker or "-"} '
-              f'habitante={bool(areas)} estatuto={standing} perfil={scope} '
+              f'turno={turn or "-"} habitante={bool(areas)} estatuto={standing} perfil={scope} '
               f'identidade={ident_source} '
               f'wis={wisdom or "-"} int={intelligence or "-"} camada={tier} '
               f'chr_ativo={chr_active} chr_base={chr_base} '

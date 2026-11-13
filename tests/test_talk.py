@@ -76,6 +76,10 @@ class ParseTests(unittest.TestCase):
         odd = parse_talk_line(line(speaker={'script': 'Minsc', 'name': 'Minsc', 'cre': 'minsc',
                                             'dead': False, 'wis': 0, 'int': 99}))
         self.assertEqual((odd.speaker_wisdom, odd.speaker_intelligence), (None, None))
+        self.assertIsNone(req.conversation_id)                       # old box: no conversation
+        conv = parse_talk_line(line(conv='0-123456'))
+        self.assertEqual(conv.conversation_id, '0-123456')
+        self.assertIsNone(parse_talk_line(line(conv='abc; drop')).conversation_id)
 
     def test_social_stats_and_selected_leader_are_observations_only(self):
         req = parse_talk_line(line(
@@ -257,6 +261,10 @@ class ModuleStaticTests(unittest.TestCase):
         self.assertIn('member.portrait == 0 then return nil', self.raw)
         self.assertIn('party = member ~= nil', self.raw)
         self.assertIn(''',"party":''', self.raw)
+
+    def test_box_sends_a_conversation_id_per_opening(self):
+        self.assertIn('st.conv = string.format("%d-%d"', self.raw)
+        self.assertIn(''',"conv":''', self.raw)
 
     def test_box_sends_the_speaker_ability_scores(self):
         self.assertIn('EEex_Sprite_GetActiveStats(object).m_nWIS', self.raw)

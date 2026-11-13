@@ -1,0 +1,172 @@
+# SPDX-License-Identifier: Apache-2.0
+"""ADR-0121: what an NPC states about someone else must be in what it knows about them.
+
+An opinion of the speaker passes ("Cruel!", "acho que ele é duro", "não confio nele"); what is
+stated as a fact about another person or group does not, unless the speaker's own context says
+it: a role ("o taverneiro é Lehtinan"), a trait ("Lehtinan? Cara duro"), a number or a duration
+("governam há décadas", "vivo aqui há 20 anos") or a general rule ("governa quem tem dinheiro").
+
+Local Portuguese patterns, checked against the context texts that mention the name, with a small
+curated synonym table (our own words). Pronouns ("ele é o dono") are not resolved, and
+paraphrases outside these patterns are not caught: this narrows invention, it does not prove
+truth.
+"""
+from __future__ import annotations
+
+import re
+from collections.abc import Iterable
+
+from .context import DialogueContext
+
+# Synonym groups: a claim word is backed when any word of its group appears (written by us).
+_GROUPS = (
+    ('dono', 'dona', 'donos', 'proprietário', 'proprietária'),
+    ('taverneiro', 'taverneira', 'taberneiro', 'gerente', 'administrador', 'administradora',
+     'administra', 'cuida', 'coordena'),
+    ('conselheiro', 'conselheira', 'conselheiros', 'conselho'),
+    ('governante', 'governantes', 'governa', 'governam', 'governo'),
+    ('chefe', 'líder', 'lidera', 'comanda'),
+    ('guarda', 'guardas', 'vigia'),
+    ('dinheiro', 'ouro', 'riqueza', 'rico', 'rica', 'ricos', 'ricas', 'moedas'),
+    ('poder', 'poderoso', 'poderosa', 'poderosos'),
+)
+SYNONYMS: dict[str, tuple[str, ...]] = {w: group for group in _GROUPS for w in group}
+
+ROLE_WORDS = frozenset({
+    'dono', 'dona', 'proprietário', 'proprietária', 'taverneiro', 'taverneira', 'taberneiro',
+    'gerente', 'administrador', 'administradora', 'guarda', 'capitão', 'capitã', 'chefe',
+    'líder', 'conselheiro', 'conselheira', 'governante', 'rei', 'rainha', 'senhor', 'senhora',
+    'patrão', 'patroa', 'sócio', 'sócia', 'pai', 'mãe', 'irmão', 'irmã', 'filho', 'filha',
+    'esposa', 'marido'})
+_FILLER = frozenset({
+    'o', 'a', 'os', 'as', 'um', 'uma', 'de', 'do', 'da', 'dos', 'das', 'que', 'quem', 'muito',
+    'muita', 'bem', 'mais', 'meio', 'bastante', 'tão', 'aqui', 'lá', 'daqui', 'sim', 'não', 'só',
+    'e', 'mas', 'também', 'sempre', 'ainda', 'cara', 'homem', 'mulher', 'sujeito', 'sujeita',
+    'tipo', 'pessoa', 'velho', 'velha', 'gente', 'em', 'no', 'na', 'por', 'pra', 'para', 'com'})
+_NUMBER_WORDS = {'uma': '1', 'um': '1', 'duas': '2', 'dois': '2', 'três': '3', 'quatro': '4',
+                 'cinco': '5', 'seis': '6', 'sete': '7', 'oito': '8', 'nove': '9', 'dez': '10',
+                 'vinte': '20', 'trinta': '30', 'quarenta': '40', 'cinquenta': '50', 'cem': '100'}
+_UNITS = ('década', 'ano', 'século', 'mes')
+
+_CAP = r"[A-ZÀ-Ý][\wÀ-ÿ'-]+"
+_LOW = r"[a-zà-ÿ][\wà-ÿ-]*"
+_ROLE_PATTERNS = (
+    re.compile(rf"(?P<name>{_CAP})\s*,?\s+(?i:é|era)\s+(?i:o\s+|a\s+|um\s+|uma\s+)?(?P<role>{_LOW})"),
+    re.compile(rf"\b(?i:o|a)\s+(?P<role>{_LOW})(?:\s+(?i:daqui|da casa|desta casa|da taverna|"
+               rf"dessa taverna|desta taverna|do lugar|do local|deste lugar))?\s+(?i:é|era)\s+"
+               rf"(?i:o\s+|a\s+)?(?P<name>{_CAP})"),
+    re.compile(rf"(?P<name>{_CAP}),\s+(?i:o|a)\s+(?P<role>{_LOW})"),
+)
+_TRAIT_PATTERNS = (
+    re.compile(rf"(?P<name>{_CAP})\s*,?\s+(?i:é|era|anda|está)\s+(?P<rest>(?:{_LOW}\s*){{1,4}})"),
+    re.compile(rf"(?P<name>{_CAP})\s*[?:,!.…]\s*(?i:um\s+|uma\s+)?(?i:cara|homem|mulher|sujeito|"
+               rf"tipo|pessoa)\s+(?P<rest>(?:{_LOW}\s*){{1,3}})"),
+)
+_NUMBER = re.compile(
+    r"\b(?:há|faz)\s+(?:mais de\s+|uns\s+|umas\s+|cerca de\s+|quase\s+)?"
+    r"(?P<n>\d+|uma|um|duas|dois|três|quatro|cinco|seis|sete|oito|nove|dez|vinte|trinta|"
+    r"quarenta|cinquenta|cem|séculos|décadas|anos|meses)\b\s*(?P<unit>anos|décadas|séculos|"
+    r"meses|ano|década|século|mês)?", re.I)
+_FIRST_PERSON = re.compile(r"\b(?:moro|vivo|estou|trabalho|sou|cheguei|vim)\b", re.I)
+_GENERAL = (
+    re.compile(r"\b(?:governa|governam|manda|mandam|comanda|comandam)\s+quem\s+(?P<rest>[^.!?…]+)",
+               re.I),
+    re.compile(r"\bquem\s+(?:tem|tiver|possui)\s+(?P<rest>[\wà-ÿ]+)\s+(?:manda|governa|comanda)",
+               re.I),
+)
+_OPINION = re.compile(r"\b(?:acho|achamos|pra mim|para mim|na minha opinião|não confio|"
+                      r"não gosto|parece|parecem|dizem que)\b", re.I)
+_SENTENCE = re.compile(r"[^.!?…]+[.!?…]*")
+
+
+def _forms(word: str) -> tuple[str, ...]:
+    return SYNONYMS.get(word.lower(), (word.lower(),))
+
+
+def _backed(word: str, base: str) -> bool:
+    """`word` (or a synonym) appears in `base`, allowing plural/gender endings."""
+    for form in _forms(word):
+        stem = form[:max(4, len(form) - 3)] if len(form) > 5 else form   # governado ~ governa
+        if re.search(r'\b' + re.escape(stem), base):
+            return True
+    return False
+
+
+class _Speech:
+    def __init__(self, speech: str, context: DialogueContext) -> None:
+        self.speech = speech
+        self.sentences = [(m.start(), m.end()) for m in _SENTENCE.finditer(speech)]
+        own = {w.lower() for w in context.persona.display_name.split()}
+        self.known = {w.lower() for w in context.vocabulary} - own
+        items = context.facts + context.knowledge + context.restricted_knowledge
+        self.texts = [f.text.lower() for f in items]
+        self.facts = ' '.join(f.text.lower() for f in context.facts)
+
+    def sentence(self, pos: int) -> str:
+        return next((self.speech[a:b] for a, b in self.sentences if a <= pos < b), self.speech)
+
+    def opinion(self, pos: int) -> bool:
+        return bool(_OPINION.search(self.sentence(pos)))
+
+    def is_known(self, name: str) -> bool:
+        return name.lower() in self.known
+
+    def base(self, names: Iterable[str]) -> str:
+        names = [n.lower() for n in names]
+        return ' '.join(t for t in self.texts if any(n in t for n in names))
+
+    def names_in(self, text: str) -> list[str]:
+        return [w for w in re.findall(_CAP, text) if self.is_known(w)]
+
+
+def third_party_claim(speech: str, context: DialogueContext) -> str | None:
+    """The first unbacked claim about someone else ('ROLE', 'TRAIT', 'NUMBER', 'GENERAL')."""
+    s = _Speech(speech, context)
+    for pattern in _ROLE_PATTERNS:
+        for m in pattern.finditer(speech):
+            role, name = m.group('role').lower(), m.group('name')
+            if role in ROLE_WORDS and s.is_known(name) and not s.opinion(m.start('role')) \
+                    and not _backed(role, s.base([name])):
+                return 'ROLE'
+    for pattern in _TRAIT_PATTERNS:
+        for m in pattern.finditer(speech):
+            name = m.group('name')
+            words = [w for w in m.group('rest').lower().split() if w not in _FILLER]
+            trait = words[0] if words else None
+            if trait is None or trait in ROLE_WORDS or not s.is_known(name) \
+                    or s.opinion(m.start('rest')):
+                continue
+            if not _backed(trait, s.base([name])):
+                return 'TRAIT'
+    for m in _NUMBER.finditer(speech):
+        n, unit = m.group('n').lower(), (m.group('unit') or '').lower()
+        sentence = s.sentence(m.start())
+        if s.opinion(m.start()):
+            continue
+        names = s.names_in(sentence)
+        if names:
+            base = s.base(names)
+        elif _FIRST_PERSON.search(sentence):
+            base = s.facts
+        else:
+            names = s.names_in(speech)          # "Eles governam há décadas": the speech's subject
+            if not names:
+                continue
+            base = s.base(names)
+        if n.isdigit() or n in _NUMBER_WORDS:
+            digits = n if n.isdigit() else _NUMBER_WORDS[n]
+            if not (re.search(r'\b' + digits + r'\b', base) or re.search(r'\b' + n + r'\b', base)):
+                return 'NUMBER'
+        else:                                    # "há décadas", "há séculos"
+            if not any(u in base for u in _UNITS if n.startswith(u) or unit.startswith(u)):
+                return 'NUMBER'
+    everything = ' '.join(s.texts)
+    for pattern in _GENERAL:
+        for m in pattern.finditer(speech):
+            if s.opinion(m.start()):
+                continue
+            words = [w for w in re.findall(r'[\wà-ÿ]{4,}', m.group('rest').lower())
+                     if w not in _FILLER]
+            if words and not any(_backed(w, everything) for w in words):
+                return 'GENERAL'
+    return None

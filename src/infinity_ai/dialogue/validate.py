@@ -11,6 +11,7 @@ import json
 import re
 from dataclasses import dataclass
 
+from .claims import third_party_claim
 from .context import DialogueContext
 
 MAX_SPEECH = 400
@@ -132,6 +133,9 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
     why = _origin_contradicts(speech, context) if context.standing else None
     if why:
         reasons.append(f'SELF_CLAIM:{why}')      # the log shows which claim was refused
+    other = third_party_claim(speech, context)   # ADR-0121: facts about someone else
+    if other:
+        reasons.append(f'THIRD_PARTY:{other}')
     vocabulary = context.vocabulary | (player_names(player_text) if unknown else frozenset())
     names = _unknown_names(speech, vocabulary)
     if names:

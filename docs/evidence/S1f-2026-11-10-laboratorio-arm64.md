@@ -53,8 +53,8 @@ Ainda não foi visto no jogo um viajante ou forasteiro gerado: os genéricos con
 
 ## Achados para depois
 
-- **Atributos de terceiros inventados:** o cliente descreveu Lehtinan com um traço de caráter que não está no pacote. O validador só confere nomes e afirmações sobre si.
+- **Atributos de terceiros inventados:** o cliente descreveu Lehtinan com um traço de caráter que não está no pacote. Tratado no ADR-0121 (papel, traço, número e regra geral sobre outra pessoa precisam estar no conhecimento; opinião própria passa).
 - **Exemplos nas regras 2, 7 e 8:** restaurados (ADR-0120, item 8), com o pedido de usar só o fato que responde à pergunta.
 - **Viajante e forasteiro gerados:** ainda não apareceram no jogo; falar com mais clientes da taverna.
-- **Opiniões inventadas:** Jierdan disse que "governa quem tem dinheiro". Opiniões e atributos de terceiros continuam fora do validador.
+- **Opiniões inventadas:** Jierdan disse que "governa quem tem dinheiro". Pelo ADR-0121, essa regra geral passa para quem conhece Amn ("a riqueza vale mais que tudo") e é recusada para quem não conhece.
 - **Carregar o save não recarrega a caixa:** o motor só lê o módulo quando o jogo abre. Depois de enviar a caixa, é preciso fechar e abrir o jogo.

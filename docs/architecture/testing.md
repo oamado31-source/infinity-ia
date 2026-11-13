@@ -19,4 +19,12 @@
 - PR checks: unittest+syntax/JSON+ADR append-only+arquivo proibido/segredo, sem credenciais de escrita.
 
 
+**Regressão de fala com o modelo local (fora do CI):**
+- **O que é:** `tools/dialogue-eval/run_eval.py` roda os casos de `tests/dialogue_eval/cases.pt_BR.json` contra o Ollama local, com as mesmas configurações do serviço de laboratório.
+- **Critério:** cada caso roda 3 vezes e passa com 2 acertos.
+- **Quando:** é rodado à mão antes de cada PR que mexa em prompt, validador ou contexto, e sai com erro se algum caso falhar.
+- **Relatório:** com as falas, fica em `~/.infinity-ai/dialogue-eval/`, fora do repositório.
+- **No CI:** `tests/test_dialogue_eval.py` confere só que os casos estão bem formados e que o verificador funciona com um modelo falso.
+- **Limite:** não substitui a evidência no jogo.
+
 **SPEC-006 — estado:** testes sintéticos de geração de perfis, primeiro diálogo com habitantes comuns, isolamento por cena/sessão, identidade incerta, perfil verificado por evento de prova e persistência em ramos. API de laboratório `/v1/encounter-dialogue` está preparada; o gatilho real passa a ser a caixa de diálogo no jogo do ADR-0116 (`INFAI-TALK` → `NpcDialogueStarted` → perfil → fala com conhecimento adquirido), **ainda não executada no laboratório**. Antes de marcar como POC aprovada, registrar prova na instalação BG2:EE pinada, coexistência com diálogos canônicos, caso de dois NPCs de mesmo nome, identificador efêmero, manipulação de tempo/scene, save/load/fork e ausência de alterações não autorizadas.

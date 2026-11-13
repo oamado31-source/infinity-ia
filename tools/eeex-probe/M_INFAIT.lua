@@ -27,7 +27,8 @@ local function infai_debug(msg)
 end
 
 INFAI_TALK_State = INFAI_TALK_State or {
-	open = false, speaker = nil, lines = {}, pending = nil, sent_at = 0, next_poll = 0, n = 0,
+	open = false, speaker = nil, selected_leader = nil, lines = {}, pending = nil,
+	sent_at = 0, next_poll = 0, n = 0,
 }
 INFAI_TALK_Input = ""
 
@@ -44,6 +45,11 @@ local function infai_json_array(list)
 	local parts = {}
 	for _, v in ipairs(list) do table.insert(parts, infai_json_string(v)) end
 	return "[" .. table.concat(parts, ",") .. "]"
+end
+
+local function infai_json_number(value)
+	if type(value) ~= "number" or value ~= math.floor(value) then return "null" end
+	return string.format("%d", value)
 end
 
 local function infai_is_dead(sprite)
@@ -64,6 +70,32 @@ local function infai_party_ids()
 	return ids
 end
 
+-- EEex 1.1.0 expoe o ID do lider selecionado; resolvemos o objeto via retratos 0..5.
+-- O resultado e apenas candidato a iniciador; validar contra dialogos nativos no laboratorio.
+local function infai_selected_leader()
+	local ok, info = pcall(function()
+		local id = EEex_Sprite_GetSelectedID()
+		if type(id) ~= "number" or id < 0 then return nil end
+		local member = infai_party_ids()[id]
+		if member == nil then return nil end
+		local selected = member.sprite
+		local script = selected.m_scriptName:get()
+		local okchr, chr = pcall(function() return EEex_Sprite_GetActiveStats(selected).m_nCHR end)
+		local okbase, chrbase = pcall(function() return selected.m_baseStats.m_CHRBase end)
+		return {
+			id = id,
+			script = (type(script) == "string" and script ~= "None") and script or "",
+			name = EEex_Sprite_GetName(selected) or "",
+			portrait = member.portrait,
+			chr_active = (okchr and type(chr) == "number") and chr or nil,
+			chr_base = (okbase and type(chrbase) == "number") and chrbase or nil,
+		}
+	end)
+	if ok then return info end
+	infai_debug("falha ao ler lider selecionado: " .. tostring(info))
+	return nil
+end
+
 -- Criatura sob o cursor: alguem fora do grupo ou um companheiro (retratos 1..5); o protagonista
 -- (retrato 0) nao conversa consigo mesmo. Retorna tabela de leitura ou nil.
 local function infai_speaker_under_cursor()
@@ -77,6 +109,11 @@ local function infai_speaker_under_cursor()
 		-- Sabedoria e Inteligencia da ficha (ADR-0117): profundidade do que a pessoa entende.
 		local okwis, wis = pcall(function() return EEex_Sprite_GetActiveStats(object).m_nWIS end)
 		local okint, int = pcall(function() return EEex_Sprite_GetActiveStats(object).m_nINT end)
+		local okchr, chr = pcall(function() return EEex_Sprite_GetActiveStats(object).m_nCHR end)
+		local okchrbase, chrbase = pcall(function() return object.m_baseStats.m_CHRBase end)
+		local okmorale, morale = pcall(function() return object.m_baseStats.m_morale end)
+		local okmbreak, mbreak = pcall(function() return EEex_Sprite_GetActiveStats(object).m_nMoraleBreak end)
+		local okmbreakbase, mbreakbase = pcall(function() return object.m_baseStats.m_moraleBreak end)
 		return {
 			id = object.m_id,
 			script = (type(script) == "string" and script ~= "None") and script or "",
@@ -86,6 +123,11 @@ local function infai_speaker_under_cursor()
 			party = member ~= nil,
 			wis = (okwis and type(wis) == "number") and wis or 0,
 			int = (okint and type(int) == "number") and int or 0,
+			chr_active = (okchr and type(chr) == "number") and chr or nil,
+			chr_base = (okchrbase and type(chrbase) == "number") and chrbase or nil,
+			engine_morale_current = (okmorale and type(morale) == "number") and morale or nil,
+			engine_morale_break_active = (okmbreak and type(mbreak) == "number") and mbreak or nil,
+			engine_morale_break_base = (okmbreakbase and type(mbreakbase) == "number") and mbreakbase or nil,
 			x = object.m_pos.x, y = object.m_pos.y,
 		}
 	end)
@@ -161,7 +203,9 @@ function INFAI_TALK_Open()
 	if st.open then return false end
 	local speaker = infai_speaker_under_cursor()
 	if speaker == nil then return false end
-	st.open, st.speaker, st.lines, st.pending = true, speaker, {}, nil
+	local selected_leader = infai_selected_leader()
+	st.open, st.speaker, st.selected_leader, st.lines, st.pending =
+		true, speaker, selected_leader, {}, nil
 	-- ADR-0123: um id por abertura da caixa; a conversa vale enquanto ela estiver aberta.
 	st.conv = string.format("%d-%d", (INFAI_P2_State and INFAI_P2_State.session_seq) or 0,
 		Infinity_GetClockTicks())
@@ -177,7 +221,7 @@ end
 function INFAI_TALK_Close()
 	local st = INFAI_TALK_State
 	if not st.open then return end
-	st.open, st.pending = false, nil
+	st.open, st.pending, st.selected_leader = false, nil, nil
 	Infinity_PopMenu("INFAI_TALK_Menu")
 	infai_pause(false)
 end
@@ -190,6 +234,16 @@ function INFAI_TALK_Send()
 	if not st.open or st.pending ~= nil or text == "" or st.speaker.dead then return end
 	if #text > INFAI_TALK_MAX_TEXT then text = string.sub(text, 1, INFAI_TALK_MAX_TEXT) end
 	local listeners = infai_listeners(st.speaker)
+	local selected = st.selected_leader
+	local selected_leader_json = "null"
+	if selected ~= nil then
+		selected_leader_json = '{"script":' .. infai_json_string(selected.script) ..
+			',"name":' .. infai_json_string(selected.name) ..
+			',"instance":' .. string.format("%d", selected.id) ..
+			',"portrait":' .. string.format("%d", selected.portrait) ..
+			',"chr_active":' .. infai_json_number(selected.chr_active) ..
+			',"chr_base":' .. infai_json_number(selected.chr_base) .. '}'
+	end
 	local area, game_time = nil, nil
 	pcall(function()
 		local a = EEex_Area_GetVisible()
@@ -216,7 +270,13 @@ function INFAI_TALK_Send()
 		',"dead":' .. tostring(st.speaker.dead == true) ..
 		',"party":' .. tostring(st.speaker.party == true) ..
 		',"wis":' .. string.format("%d", st.speaker.wis or 0) ..
-		',"int":' .. string.format("%d", st.speaker.int or 0) .. '}' ..
+		',"int":' .. string.format("%d", st.speaker.int or 0) ..
+		',"chr_active":' .. infai_json_number(st.speaker.chr_active) ..
+		',"chr_base":' .. infai_json_number(st.speaker.chr_base) ..
+		',"engine_morale_current":' .. infai_json_number(st.speaker.engine_morale_current) ..
+		',"engine_morale_break_active":' .. infai_json_number(st.speaker.engine_morale_break_active) ..
+		',"engine_morale_break_base":' .. infai_json_number(st.speaker.engine_morale_break_base) .. '}' ..
+		',"selected_leader":' .. selected_leader_json ..
 		',"text":' .. infai_json_string(text) ..
 		',"listeners":' .. (listeners and infai_json_array(listeners) or "null") .. '}')
 	infai_add_line("Você: " .. text)
@@ -308,6 +368,7 @@ end)
 EEex_GameState_AddDestroyedListener(function()
 	INFAI_TALK_State.open, INFAI_TALK_State.pending = false, nil
 	INFAI_TALK_State.paused_by_box = false
+	INFAI_TALK_State.selected_leader = nil
 end)
 
 -- Clique direito: os eventos de mouse passam pelo gancho de eventos do EEex; so o clique direito

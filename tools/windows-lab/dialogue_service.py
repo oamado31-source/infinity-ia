@@ -380,10 +380,27 @@ class Talker(threading.Thread):
                           'speech': speech}
         put_override_file(self.ssh, self.args.game_root, f'{REPLY_RESREF}.lua',
                           render_reply(req.req_id, speech).encode('utf-8'))
+        leader = req.selected_leader
+        leader_label = "-"
+        if leader is not None:
+            leader_chr = leader.charisma_active if leader.charisma_active is not None else "-"
+            leader_label = (f'{leader.script_name or leader.display_name}@p{leader.portrait_index}'
+                            f':chr={leader_chr}')
+        chr_active = req.speaker_charisma_active if req.speaker_charisma_active is not None else "-"
+        chr_base = req.speaker_charisma_base if req.speaker_charisma_base is not None else "-"
+        morale = (req.speaker_engine_morale_current
+                  if req.speaker_engine_morale_current is not None else "-")
+        morale_break = (req.speaker_engine_morale_break_active
+                        if req.speaker_engine_morale_break_active is not None else "-")
+        morale_break_base = (req.speaker_engine_morale_break_base
+                             if req.speaker_engine_morale_break_base is not None else "-")
         print(f'{now_iso()} caixa pedido={req.req_id} falante={speaker or "-"} '
               f'turno={turn or "-"} habitante={bool(areas)} estatuto={standing} perfil={scope} '
               f'identidade={ident_source} '
               f'wis={wisdom or "-"} int={intelligence or "-"} camada={tier} '
+              f'chr_ativo={chr_active} chr_base={chr_base} '
+              f'morale_engine_atual={morale} morale_break_ativo={morale_break} '
+              f'morale_break_base={morale_break_base} selected_leader={leader_label} '
               f'assuntos={len(known_now)} recusas={flags} '
               f'status={status} motivo={reason} '
               f'entradas={list(used)} inquiry={shared} '

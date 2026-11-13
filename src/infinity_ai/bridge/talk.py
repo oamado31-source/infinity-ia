@@ -31,6 +31,17 @@ INPUTS = frozenset({'TEXT', 'VOICE'})
 
 
 @dataclass(frozen=True)
+class SelectedPartyLeader:
+    """Selected group leader observed at box-open time; not proof of the actual dialogue initiator."""
+    script_name: str
+    display_name: str
+    instance_id: int
+    portrait_index: int
+    charisma_active: int | None
+    charisma_base: int | None
+
+
+@dataclass(frozen=True)
 class TalkRequest:
     req_id: str
     session_seq: int
@@ -48,6 +59,12 @@ class TalkRequest:
     speaker_party: bool = False          # a companion in the party (talks as a companion)
     speaker_wisdom: int | None = None    # ability scores from the creature (ADR-0117 tier);
     speaker_intelligence: int | None = None  # None = not read
+    speaker_charisma_active: int | None = None
+    speaker_charisma_base: int | None = None
+    speaker_engine_morale_current: int | None = None  # engine state; not AD&D Morale rating
+    speaker_engine_morale_break_active: int | None = None
+    speaker_engine_morale_break_base: int | None = None
+    selected_leader: SelectedPartyLeader | None = None  # candidate only; validate in pinned lab
     conversation_id: str | None = None   # ADR-0123: one per box opening; None = old box
 
     @property
@@ -71,6 +88,31 @@ def _int(value: object) -> int | None:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         return None
     return value
+
+
+def _bounded_int(value: object, minimum: int, maximum: int) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, int) or not minimum <= value <= maximum:
+        return None
+    return value
+
+
+def _selected_party_leader(value: object) -> SelectedPartyLeader | None:
+    if not isinstance(value, dict):
+        return None
+    script, name = value.get('script'), value.get('name')
+    instance = _int(value.get('instance'))
+    portrait = _bounded_int(value.get('portrait'), 0, 5)
+    if (
+        not isinstance(script, str)
+        or (script and not _SCRIPT_NAME.fullmatch(script))
+        or not isinstance(name, str)
+        or len(name) > 64
+        or instance is None
+        or portrait is None
+    ):
+        return None
+    return SelectedPartyLeader(script, name, instance, portrait,
+                               _ability(value.get('chr_active')), _ability(value.get('chr_base')))
 
 
 def parse_talk_line(line: str) -> TalkRequest | None:
@@ -110,12 +152,25 @@ def parse_talk_line(line: str) -> TalkRequest | None:
                 isinstance(n, str) and _SCRIPT_NAME.fullmatch(n) and n != 'None' for n in listeners):
             return None
         listeners = tuple(sorted({f'npc:{n.lower()}' for n in listeners}))
-    return TalkRequest(req_id, session_seq, clock_ms, area, _int(doc.get('game_time')),
-                       doc['input'], script, name, cre, dead, text.strip(), listeners,
-                       _int(speaker.get('instance')), speaker.get('party') is True,
-                       _ability(speaker.get('wis')), _ability(speaker.get('int')),
-                       conv if isinstance(conv := doc.get('conv'), str)
-                       and _CONV.fullmatch(conv) else None)
+    return TalkRequest(
+        req_id=req_id, session_seq=session_seq, clock_ms=clock_ms, area=area,
+        game_time=_int(doc.get('game_time')), input=doc['input'],
+        speaker_script=script, speaker_name=name, speaker_cre=cre, speaker_dead=dead,
+        text=text.strip(), listeners=listeners,
+        speaker_instance=_int(speaker.get('instance')), speaker_party=speaker.get('party') is True,
+        speaker_wisdom=_ability(speaker.get('wis')),
+        speaker_intelligence=_ability(speaker.get('int')),
+        speaker_charisma_active=_ability(speaker.get('chr_active')),
+        speaker_charisma_base=_ability(speaker.get('chr_base')),
+        speaker_engine_morale_current=_bounded_int(speaker.get('engine_morale_current'), 0, 20),
+        speaker_engine_morale_break_active=_bounded_int(
+            speaker.get('engine_morale_break_active'), 0, 20),
+        speaker_engine_morale_break_base=_bounded_int(
+            speaker.get('engine_morale_break_base'), 0, 20),
+        selected_leader=_selected_party_leader(doc.get('selected_leader')),
+        conversation_id=conv if isinstance(conv := doc.get('conv'), str)
+        and _CONV.fullmatch(conv) else None,
+    )
 
 
 def parse_talk_requests(text: str) -> list[TalkRequest]:

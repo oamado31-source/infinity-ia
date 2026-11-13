@@ -76,7 +76,7 @@ def build_wmp(maps):
 
 
 def build_cre(name_strref, script, ea=128, general=1, race=0, klass=0, gender=0, alignment=0,
-              wisdom=0, intelligence=0):
+              wisdom=0, intelligence=0, charisma=0, morale=0, morale_break=0):
     c = bytearray(0x2D4)
     c[0:8] = b'CRE V1.0'
     struct.pack_into('<I', c, 0x08, name_strref)
@@ -84,6 +84,7 @@ def build_cre(name_strref, script, ea=128, general=1, race=0, klass=0, gender=0,
     c[0x271] = general
     c[0x272], c[0x273], c[0x275], c[0x27B] = race, klass, gender, alignment
     c[0x23B], c[0x23A] = wisdom, intelligence
+    c[0x23E], c[0x23F], c[0x240] = charisma, morale, morale_break
     c[0x280:0x280 + len(script)] = script.encode('latin-1')
     return bytes(c)
 
@@ -210,8 +211,14 @@ class ResidentFormatTests(unittest.TestCase):
         self.assertEqual([(a.actor_name, a.cre_resref, a.embedded is None) for a in actors],
                          [('Bernard', 'BERNAR', True), ('Guard', '', False)])
         ident = parse_cre_identity(build_cre(3, 'Bernard', 128, 2, race=1, klass=2, gender=1,
-                                             alignment=0x22, wisdom=14, intelligence=16))
+                                             alignment=0x22, wisdom=14, intelligence=16,
+                                             charisma=17, morale=12, morale_break=6))
         self.assertEqual((ident.wisdom, ident.intelligence), (14, 16))
+        self.assertEqual((ident.charisma_base, ident.morale_default, ident.morale_break_base),
+                         (17, 12, 6))
+        zeroed = parse_cre_identity(build_cre(4, 'ZeroStats'))
+        self.assertEqual((zeroed.charisma_base, zeroed.morale_default, zeroed.morale_break_base),
+                         (0, 0, 0))
         self.assertEqual((ident.name_strref, ident.script_name, ident.allegiance, ident.general),
                          (3, 'Bernard', 128, 2))
         self.assertEqual((ident.race, ident.klass, ident.gender, ident.alignment),

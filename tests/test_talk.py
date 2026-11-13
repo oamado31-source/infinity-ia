@@ -40,7 +40,8 @@ ALLOWED = frozenset({
     'Infinity_SetArea', 'Infinity_PushMenu', 'Infinity_PopMenu', 'Infinity_FocusTextEdit',
     'Infinity_TextEditHasFocus', 'Infinity_GetClockTicks', 'Infinity_DoFile',
     'EEex_Resource_Fetch', 'EEex_GameState_TogglePause', 'EEex_Key_Hook_AfterEventsPoll',
-    'EEex_Sprite_GetActiveStats',  # read-only: Wisdom/Intelligence of the speaker (ADR-0117)
+    'EEex_Sprite_GetActiveStats',  # read-only: active creature stats
+    'EEex_Sprite_GetSelectedID',  # read-only: selected group leader ID (EEex 1.1.0+, ADR-0122)
 })
 
 
@@ -79,6 +80,38 @@ class ParseTests(unittest.TestCase):
         conv = parse_talk_line(line(conv='0-123456'))
         self.assertEqual(conv.conversation_id, '0-123456')
         self.assertIsNone(parse_talk_line(line(conv='abc; drop')).conversation_id)
+
+    def test_social_stats_and_selected_leader_are_observations_only(self):
+        req = parse_talk_line(line(
+            speaker={'script': 'Bernard', 'name': 'Bernard', 'cre': 'bernar', 'instance': 7,
+                     'dead': False, 'chr_active': 16, 'chr_base': 15,
+                     'engine_morale_current': 12, 'engine_morale_break_active': 5,
+                     'engine_morale_break_base': 6},
+            selected_leader={'script': 'CHARNAME', 'name': 'Charname', 'instance': 1,
+                             'portrait': 0, 'chr_active': 18, 'chr_base': 18},
+        ))
+        self.assertEqual((req.speaker_charisma_active, req.speaker_charisma_base), (16, 15))
+        self.assertEqual((req.speaker_engine_morale_current,
+                          req.speaker_engine_morale_break_active,
+                          req.speaker_engine_morale_break_base), (12, 5, 6))
+        self.assertEqual(req.selected_leader.script_name, 'CHARNAME')
+        self.assertEqual(req.selected_leader.portrait_index, 0)
+        self.assertEqual((req.selected_leader.charisma_active,
+                          req.selected_leader.charisma_base), (18, 18))
+
+    def test_unavailable_or_out_of_range_social_values_remain_unknown(self):
+        req = parse_talk_line(line(
+            speaker={'script': 'Bernard', 'name': 'Bernard', 'cre': 'bernar',
+                     'dead': False, 'chr_active': 26, 'engine_morale_current': 21,
+                     'engine_morale_break_active': -1},
+            selected_leader={'script': 'CHARNAME', 'name': 'Charname', 'instance': 1,
+                             'portrait': 6, 'chr_active': 18, 'chr_base': 18},
+        ))
+        self.assertIsNotNone(req)
+        self.assertIsNone(req.speaker_charisma_active)
+        self.assertIsNone(req.speaker_engine_morale_current)
+        self.assertIsNone(req.speaker_engine_morale_break_active)
+        self.assertIsNone(req.selected_leader)
 
     def test_speaker_without_script_and_unreadable_listeners(self):
         req = parse_talk_line(line(speaker={'script': '', 'name': 'Plebeu', 'cre': 'common',
@@ -236,8 +269,22 @@ class ModuleStaticTests(unittest.TestCase):
     def test_box_sends_the_speaker_ability_scores(self):
         self.assertIn('EEex_Sprite_GetActiveStats(object).m_nWIS', self.raw)
         self.assertIn('EEex_Sprite_GetActiveStats(object).m_nINT', self.raw)
+        self.assertIn('EEex_Sprite_GetActiveStats(object).m_nCHR', self.raw)
+        self.assertIn('object.m_baseStats.m_CHRBase', self.raw)
+        self.assertIn('object.m_baseStats.m_morale', self.raw)
+        self.assertIn('EEex_Sprite_GetActiveStats(object).m_nMoraleBreak', self.raw)
+        self.assertIn('object.m_baseStats.m_moraleBreak', self.raw)
         self.assertIn(''',"wis":''', self.raw)
         self.assertIn(''',"int":''', self.raw)
+        self.assertIn(''',"chr_active":''', self.raw)
+        self.assertIn(''',"engine_morale_current":''', self.raw)
+
+    def test_box_captures_selected_leader_as_candidate_not_proven_initiator(self):
+        self.assertIn('EEex_Sprite_GetSelectedID()', self.raw)
+        self.assertIn('local member = infai_party_ids()[id]', self.raw)
+        self.assertIn('if member == nil then return nil', self.raw)
+        self.assertIn('local selected_leader = infai_selected_leader()', self.raw)
+        self.assertIn('selected_leader_json', self.raw)
 
     def test_right_click_hook_wraps_and_delegates(self):
         self.assertIn('local infai_events_poll = EEex_Key_Hook_AfterEventsPoll', self.raw)

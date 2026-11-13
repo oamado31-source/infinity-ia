@@ -77,7 +77,7 @@ class DialogueResponse:
                 'unknown': self.unknown, 'model': self.model, 'latency_ms': self.latency_ms}
 
 
-def system_prompt(context: DialogueContext) -> str:
+def system_prompt(context: DialogueContext, ongoing: bool = False) -> str:
     persona = context.persona
     style = '; '.join(persona.style) or 'natural e breve'
     facts = '\n'.join(f'{f.fact_id}: {f.text}' for f in context.facts) or \
@@ -134,6 +134,10 @@ def system_prompt(context: DialogueContext) -> str:
         '"Você é rico?" sem fato sobre isso → {"speech": "Isso não é da sua conta.", '
         '"used_facts": [], "unknown": true}.\n'
         '9. CONHECIMENTO RESTRITO vem de um vínculo, função ou acesso específico. Use-o apenas quando presente nesta seção; não diga que todos os habitantes sabem disso nem transforme-o em fato público.\n'
+        + ('10. As mensagens anteriores são esta mesma conversa: use-as para entender a pergunta '
+           '("ele", "e então?", "e o outro?"), não repita o que você já disse e não trate o que o '
+           'jogador afirmou como fato; só FATOS, CONHECIMENTO GERAL e CONHECIMENTO RESTRITO valem '
+           'como fatos.\n' if ongoing else '') +
         f'FATOS:\n{facts}\n'
         f'CONHECIMENTO GERAL:\n{general}\n'
         f'CONHECIMENTO RESTRITO:\n{restricted}\n'
@@ -152,12 +156,14 @@ class DialogueEngine:
 
     def respond(self, request: DialogueRequest, *, branch_id: str,
                 at_game_time: int | None, wisdom: int | None = None,
-                intelligence: int | None = None) -> DialogueResponse:
+                intelligence: int | None = None,
+                history: tuple[tuple[str, str], ...] = ()) -> DialogueResponse:
         """A companion in the party (overlay, or the in-game box with its ability scores)."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_context(
             self._memory, self._store, self._catalog, npc_id=npc_id, branch_id=branch_id,
-            at_game_time=at_game_time, wisdom=wisdom, intelligence=intelligence))
+            at_game_time=at_game_time, wisdom=wisdom, intelligence=intelligence),
+            history=history)
 
     def respond_resident(self, request: ResidentRequest, *, residence_areas: tuple[str, ...],
                          branch_id: str, at_game_time: int | None,
@@ -165,7 +171,8 @@ class DialogueEngine:
                          also_known: tuple = (), wisdom: int | None = None,
                          intelligence: int | None = None,
                          game_alignment: int | None = None,
-                         popular_only_ids: frozenset[str] = frozenset()) -> DialogueResponse:
+                         popular_only_ids: frozenset[str] = frozenset(),
+                         history: tuple[tuple[str, str], ...] = ()) -> DialogueResponse:
         """A person in the in-game box: SPEC-006 profile for style, only acquired knowledge."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_resident_context(
@@ -175,10 +182,11 @@ class DialogueEngine:
             at_game_time=at_game_time, profile=profile, identity=identity,
             also_known=also_known, wisdom=wisdom, intelligence=intelligence,
             game_alignment=game_alignment, popular_only_ids=popular_only_ids),
-            display_name=request.display_name)
+            display_name=request.display_name, history=history)
 
     def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,
-                  display_name: str = '') -> DialogueResponse:
+                  display_name: str = '',
+                  history: tuple[tuple[str, str], ...] = ()) -> DialogueResponse:
         started = self._clock()
         text = player_text if isinstance(player_text, str) else ''
         text = text.strip()
@@ -198,8 +206,13 @@ class DialogueEngine:
         context = built.context
         fact_events = {f.fact_id: f.event_id for f in context.facts + context.knowledge + context.restricted_knowledge}
 
-        messages = [{'role': 'system', 'content': system_prompt(context)},
-                    {'role': 'user', 'content': text}]
+        # ADR-0123: earlier turns of this conversation as chat turns; the player's words stay in
+        # the user role, never in the system prompt.
+        earlier = [m for asked, said in history for m in (
+            {'role': 'user', 'content': asked}, {'role': 'assistant', 'content': said})]
+        messages = [{'role': 'system', 'content': system_prompt(context, bool(history))},
+                    *earlier, {'role': 'user', 'content': text}]
+        base = len(messages)
         flags: list[str] = []
         for attempt in range(MAX_ATTEMPTS):
             try:
@@ -214,7 +227,7 @@ class DialogueEngine:
                             used_event_ids=tuple(fact_events[f] for f in verdict.used_facts),
                             flags=tuple(flags), unknown=verdict.unknown)
             flags.extend(f'attempt{attempt + 1}:{r}' for r in verdict.reasons)
-            messages = messages[:2] + [{
+            messages = messages[:base] + [{
                 'role': 'system',
                 'content': retry_hint(verdict.reasons)}]
         return done(DialogueStatus.FALLBACK, context.persona.fallback, 'VALIDATION_FAILED',

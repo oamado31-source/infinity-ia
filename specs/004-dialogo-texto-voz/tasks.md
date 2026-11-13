@@ -9,5 +9,6 @@
 - [x] Caixa no jogo: abrir com o clique direito sobre a pessoa (F9 continua como alternativa) e pausar o jogo enquanto está aberta, como no diálogo nativo (pedido do mantenedor, 2026-11-10); laboratório pendente.
 - [ ] Validador: aceitar nomes vindos da pergunta do jogador também quando o NPC responde sem se declarar sem conhecimento (evidência S1d).
 - [x] Validador: afirmações sobre outras pessoas (papel, traço, número, regra geral) precisam estar no conhecimento de quem fala; opinião própria passa (ADR-0121); `tests/test_third_party.py`. Testado no laboratório S1f em 2026-11-13, com a segunda tentativa explicada em português.
+- [x] Memória da conversa enquanto a caixa está aberta (ADR-0123): últimos 4 turnos só na RAM do serviço, como turnos de chat; `tests/test_conversation.py`. Testado no laboratório S1f em 2026-11-13.
 - [ ] Voz: push-to-talk + STT local revisável, TTS opcional (ADR-0107 item 2), depois da UI de texto. A caixa do jogo já reserva o botão "aperte para falar" e o campo `input` (`VOICE`).
 - [ ] Revisão de segurança, privacidade, licença e aprovação de merge.

@@ -25,6 +25,7 @@ _RESREF = re.compile(r'[A-Za-z0-9_#-]{1,8}')
 _SCRIPT_NAME = re.compile(r'[A-Za-z0-9_#-]{1,32}')
 _REQ_ID = re.compile(r'[0-9]{1,10}-[0-9]{1,12}-[0-9]{1,8}')
 # Saved games replace the first letter of an area actor's CRE resref with '*'.
+_CONV = re.compile(r'\d{1,15}-\d{1,15}')     # ADR-0123: "<session>-<clock_ms>" per box opening
 _CRE = re.compile(r'(?=.{1,8}$)\*?[A-Za-z0-9_#-]+')
 INPUTS = frozenset({'TEXT', 'VOICE'})
 
@@ -47,6 +48,7 @@ class TalkRequest:
     speaker_party: bool = False          # a companion in the party (talks as a companion)
     speaker_wisdom: int | None = None    # ability scores from the creature (ADR-0117 tier);
     speaker_intelligence: int | None = None  # None = not read
+    conversation_id: str | None = None   # ADR-0123: one per box opening; None = old box
 
     @property
     def speaker_id(self) -> str | None:
@@ -111,7 +113,9 @@ def parse_talk_line(line: str) -> TalkRequest | None:
     return TalkRequest(req_id, session_seq, clock_ms, area, _int(doc.get('game_time')),
                        doc['input'], script, name, cre, dead, text.strip(), listeners,
                        _int(speaker.get('instance')), speaker.get('party') is True,
-                       _ability(speaker.get('wis')), _ability(speaker.get('int')))
+                       _ability(speaker.get('wis')), _ability(speaker.get('int')),
+                       conv if isinstance(conv := doc.get('conv'), str)
+                       and _CONV.fullmatch(conv) else None)
 
 
 def parse_talk_requests(text: str) -> list[TalkRequest]:

@@ -162,6 +162,9 @@ function INFAI_TALK_Open()
 	local speaker = infai_speaker_under_cursor()
 	if speaker == nil then return false end
 	st.open, st.speaker, st.lines, st.pending = true, speaker, {}, nil
+	-- ADR-0123: um id por abertura da caixa; a conversa vale enquanto ela estiver aberta.
+	st.conv = string.format("%d-%d", (INFAI_P2_State and INFAI_P2_State.session_seq) or 0,
+		Infinity_GetClockTicks())
 	INFAI_TALK_Input = ""
 	if speaker.dead then infai_add_line("(" .. speaker.name .. " não pode responder.)") end
 	infai_layout()
@@ -200,6 +203,7 @@ function INFAI_TALK_Send()
 	print("INFAI-TALK {" ..
 		'"schema":' .. infai_json_string(INFAI_TALK_SCHEMA) ..
 		',"req_id":' .. infai_json_string(req_id) ..
+		',"conv":' .. infai_json_string(st.conv or "") ..
 		',"session_seq":' .. session ..
 		',"clock_ms":' .. string.format("%d", now) ..
 		',"area":' .. (area and infai_json_string(area) or "null") ..

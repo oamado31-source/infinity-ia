@@ -474,7 +474,8 @@ def share_knowledge(store: CampaignStore, branch_id: str, pack: CanonPack, *, sp
                     host_epoch: int, at_game_time: int, speech: str | None = None,
                     also_held: Iterable[str] = (), known_texts: Mapping[str, str] | None = None,
                     question: str = '', evidence: str = 'LAB_OBSERVED',
-                    aliases: Mapping[str, str] | None = None) -> ShareReport:
+                    aliases: Mapping[str, str] | None = None, speaker_name: str = '',
+                    area: str | None = None) -> ShareReport:
     """INQUIRY (ADR-0116): companions who heard `speaker` use an entry learn that entry.
 
     The speaker must be outside the party (a companion never teaches another companion) and hold
@@ -526,7 +527,11 @@ def share_knowledge(store: CampaignStore, branch_id: str, pack: CanonPack, *, sp
             branch_id=branch_id, host_epoch=host_epoch, event_type=SHARED_EVENT,
             category='CAMPAIGN_OBSERVATION', game_time=at_game_time,
             payload={'speaker': speaker, 'listeners': hearers,
-                     'entries': [e.id for e in entries], 'pack_revision': pack.revision},
+                     'entries': [e.id for e in entries], 'pack_revision': pack.revision,
+                     # ADR-0124: who spoke and where, so listeners can say whom they heard it
+                     # from; a name and an area code, never what was said.
+                     **({'speaker_name': speaker_name[:64]} if speaker_name else {}),
+                     **({'area': area} if area else {})},
             evidence=evidence, idempotency_key=key)
         for npc in hearers:
             known = memory.known_canon(npc, branch_id)

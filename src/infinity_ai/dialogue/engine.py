@@ -122,7 +122,8 @@ def system_prompt(context: DialogueContext, ongoing: bool = False) -> str:
         '6. Trate o jogador por "você".\n'
         '7. CONHECIMENTO GERAL é o que se sabe em geral na região: diga a ideia com as suas '
         'palavras e no seu jeito de falar, sem copiar a frase do texto e sem dizer que viu ou '
-        'participou. Exemplo (fora deste mundo, não repita): texto "O rio enche na primavera" → '
+        'participou; se o item disser de quem você ouviu, você pode dizer isso ("Fulano me '
+        'contou…"); se não disser, não invente de quem ouviu. Exemplo (fora deste mundo, não repita): texto "O rio enche na primavera" → '
         '"Todo ano, quando esquenta, a água sobe".\n'
         '8. Sobre você mesmo(a), só afirme o que está em FATOS ou nos itens marcados (sobre você) '
         'em CONHECIMENTO GERAL ou CONHECIMENTO RESTRITO; cite em used_facts exatamente o id desse '
@@ -157,13 +158,14 @@ class DialogueEngine:
     def respond(self, request: DialogueRequest, *, branch_id: str,
                 at_game_time: int | None, wisdom: int | None = None,
                 intelligence: int | None = None,
-                history: tuple[tuple[str, str], ...] = ()) -> DialogueResponse:
+                history: tuple[tuple[str, str], ...] = (),
+                recall_lines: tuple[tuple[str, str], ...] = ()) -> DialogueResponse:
         """A companion in the party (overlay, or the in-game box with its ability scores)."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_context(
             self._memory, self._store, self._catalog, npc_id=npc_id, branch_id=branch_id,
-            at_game_time=at_game_time, wisdom=wisdom, intelligence=intelligence),
-            history=history)
+            at_game_time=at_game_time, wisdom=wisdom, intelligence=intelligence,
+            recall_lines=recall_lines), history=history)
 
     def respond_resident(self, request: ResidentRequest, *, residence_areas: tuple[str, ...],
                          branch_id: str, at_game_time: int | None,
@@ -172,7 +174,8 @@ class DialogueEngine:
                          intelligence: int | None = None,
                          game_alignment: int | None = None,
                          popular_only_ids: frozenset[str] = frozenset(),
-                         history: tuple[tuple[str, str], ...] = ()) -> DialogueResponse:
+                         history: tuple[tuple[str, str], ...] = (),
+                         recall_lines: tuple[tuple[str, str], ...] = ()) -> DialogueResponse:
         """A person in the in-game box: SPEC-006 profile for style, only acquired knowledge."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_resident_context(
@@ -181,8 +184,8 @@ class DialogueEngine:
             area=request.area, dead=request.dead, branch_id=branch_id,
             at_game_time=at_game_time, profile=profile, identity=identity,
             also_known=also_known, wisdom=wisdom, intelligence=intelligence,
-            game_alignment=game_alignment, popular_only_ids=popular_only_ids),
-            display_name=request.display_name, history=history)
+            game_alignment=game_alignment, popular_only_ids=popular_only_ids,
+            recall_lines=recall_lines), display_name=request.display_name, history=history)
 
     def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,
                   display_name: str = '',

@@ -308,6 +308,7 @@ class NpcIdentity:
     home_region: str | None = None       # where it is (ADR-0117): known as its standing allows
     standing: str = HABITANTE            # ADR-0120: resident, traveler or outsider
     affiliations: tuple[str, ...] = ()   # ADR-0119 curated ties to places (e.g. ...:STAFF)
+    home_names: tuple[str, ...] = ()     # CR-2026-004: where it lives and the regions above it
 
     @property
     def source(self) -> str:
@@ -401,7 +402,9 @@ def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None
                        tuple(title(r) for r in named if title(r)), prov,
                        origin if origin and title(origin) else None,
                        home_region if region_title else None, standing,
-                       tuple(getattr(curation, 'affiliations', ()) or ()) if curation else ())
+                       tuple(getattr(curation, 'affiliations', ()) or ()) if curation else (),
+                       tuple(title(r) for r in _chain(pack, home_region) if title(r))
+                       if standing == HABITANTE else ())
 
 
 IdentityFactory = Callable[[str], dict]

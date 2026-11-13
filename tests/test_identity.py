@@ -589,13 +589,13 @@ class OriginClaimTests(unittest.TestCase):
     """ADR-0120: what a person says about where it is from must match its standing and facts."""
 
     def context(self, standing, facts=('Você vive em Athkatla e está na Coroa de Cobre.',),
-                staff=False):
+                staff=False, home_names=()):
         persona = Persona('npc:x', 'Nobre', (), frozenset({'Nobre'}), '...')
         return DialogueContext(
             persona, tuple(Fact(f'F{i}', f'identity:npc:x:{i}', t, 0)
                            for i, t in enumerate(facts, 1)),
             frozenset({'Nobre', 'Athkatla', 'Tethyr', 'Amn', 'Candlekeep'}), (),
-            standing=standing, staff=staff)
+            standing=standing, staff=staff, home_names=home_names)
 
     def check(self, speech, standing, **kw):
         raw = json.dumps({'speech': speech, 'used_facts': [], 'unknown': False},
@@ -648,6 +648,28 @@ class OriginClaimTests(unittest.TestCase):
                 branch_id=ROOT_BRANCH, at_game_time=10, identity=ident).context
         self.assertTrue(ctx(curation).staff)
         self.assertFalse(ctx(None).staff)
+
+    def test_a_resident_may_say_it_is_from_the_regions_it_lives_in(self):
+        # CR-2026-004: living in Athkatla, "sou de Amn" is true; another origin still needs facts.
+        home = ('Athkatla', 'Amn')
+        self.assertFalse(self.check('Sou de Amn, claro.', 'HABITANTE', home_names=home))
+        self.assertFalse(self.check('Sou de Athkatla.', 'HABITANTE', home_names=home))
+        self.assertTrue(self.check('Sou de Amn, claro.', 'HABITANTE'))       # no home known
+        self.assertTrue(self.check('Vim de Tethyr.', 'HABITANTE', home_names=home))
+        self.assertTrue(self.check('Nasci em Amn.', 'HABITANTE', home_names=home))
+        self.assertFalse(self.check('Nasci em Amn.', 'HABITANTE', home_names=home,
+                                    facts=('Você vive em Athkatla e está na Coroa de Cobre.',
+                                           'Você nasceu e cresceu aqui.')))
+
+    def test_home_names_come_from_the_identity_of_residents_only(self):
+        def ident(standing):
+            g = {**gen(role='PATRON'), 'standing': standing, 'origin_region': 'region:amn',
+                 'born_here': False, 'years_here': None}
+            return build_identity(npc_id='npc:cre-x', name='Cliente da Taverna', pack=PACK,
+                                  place='a Coroa de Cobre', home_region='region:athkatla',
+                                  resident=resident(), generated=g)
+        self.assertEqual(ident('HABITANTE').home_names, ('Athkatla', 'Amn'))
+        self.assertEqual(ident('VIAJANTE').home_names, ())
 
     def test_companions_are_not_checked(self):
         self.assertFalse(self.check('Sou de Candlekeep.', None))

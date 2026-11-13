@@ -17,10 +17,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
-from ..memory.common_knowledge import BackgroundRegion
+from ..memory.common_knowledge import SHARED_EVENT, BackgroundRegion
 from ..memory.model import KnowledgeBasis
-from ..personality.identity import (HABITANTE, KnowledgeTier, NpcIdentity, knowledge_tier,
-                                    layered_text, popular_only)
+from ..personality.identity import (HABITANTE, KnowledgeTier, NpcIdentity, em,
+                                    knowledge_tier, layered_text, popular_only)
 from ..personality.style import (
     orientation_from_game_alignment, orientation_from_profile, style_from_profile,
 )
@@ -175,10 +175,27 @@ RESIDENT_STYLE = ('direto e desconfiado de estranhos', 'fala como gente da cidad
 RESIDENT_FALLBACK = 'Hum? Disso eu não sei.'
 
 
+def _heard_from(entry_id: str, npc_id: str, shared: list, catalog: Catalog | None) -> str:
+    """" (você ouviu isso de Bernard, na Coroa de Cobre)": the latest time this companion heard
+    the entry from someone whose name was recorded (ADR-0124), or '' (older records)."""
+    for event in reversed(shared):
+        payload = event.payload
+        name = (payload.get('speaker_name') or '').strip()
+        if name and entry_id in (payload.get('entries') or ()) \
+                and npc_id in (payload.get('listeners') or ()):
+            area = payload.get('area')
+            place = catalog.area(area) if catalog is not None and area else UNNAMED_AREA
+            where = '' if place == UNNAMED_AREA else f', {em(place)}'
+            return f' (você ouviu isso de {name}{where})'
+    return ''
+
+
 def _knowledge_items(memory: MemoryStore, npc_id: str, branch_id: str, at_game_time: int | None,
-                     vocabulary: set[str], tier: KnowledgeTier | None = None
+                     vocabulary: set[str], tier: KnowledgeTier | None = None,
+                     store: CampaignStore | None = None, catalog: Catalog | None = None
                      ) -> tuple[RecallStatus, str, tuple[Fact, ...]]:
-    """What the companion acquired; with a known `tier` (ADR-0117), only the layers it reaches."""
+    """What the companion acquired; with a known `tier` (ADR-0117), only the layers it reaches.
+    ADR-0124: what it heard by INQUIRY says from whom and where, when the record has it."""
     status, reason, held = memory.recall_common(npc_id=npc_id, branch_id=branch_id,
                                                 at_game_time=at_game_time,
                                                 purpose='npc_dialogue',
@@ -186,9 +203,15 @@ def _knowledge_items(memory: MemoryStore, npc_id: str, branch_id: str, at_game_t
     if status is not RecallStatus.OK:
         return status, reason, ()
     knowledge = []
+    shared = [e for e in store.visible_events(branch_id, SHARED_EVENT)
+              if at_game_time is None or e.game_time is None or e.game_time <= at_game_time] \
+        if store is not None else []
     for i, k in enumerate(held[:MAX_KNOWLEDGE], 1):
         text = layered_text(k.summary, k.layers, tier) if tier is not None else k.summary
-        knowledge.append(Fact(f'K{i}', f'canon:{k.entry_id}', f'{k.title}: {text}',
+        source = _heard_from(k.entry_id, npc_id, shared, catalog)
+        if source:
+            vocabulary |= set(_NAME.findall(source))
+        knowledge.append(Fact(f'K{i}', f'canon:{k.entry_id}', f'{k.title}{source}: {text}',
                               k.game_time))
         vocabulary |= set(_NAME.findall(k.title)) | set(_NAME.findall(text))
     return status, reason, tuple(knowledge)
@@ -204,7 +227,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            wisdom: int | None = None,
                            intelligence: int | None = None,
                            game_alignment: int | None = None,
-                           popular_only_ids: frozenset[str] = frozenset()) -> ContextResult:
+                           popular_only_ids: frozenset[str] = frozenset(),
+                           recall_lines: tuple[tuple[str, str], ...] = ()) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
@@ -235,6 +259,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                       for i, text in enumerate(identity.self_facts, 1))
         for text in identity.self_facts + identity.regions_named:
             vocabulary |= set(_NAME.findall(text))
+    facts = _with_recall(facts, recall_lines, at_game_time, vocabulary)   # ADR-0124
     # ADR-0120: a traveler or outsider was placed here by the game, but does not live here: its
     # game-placed RESIDENCE does not count (what it heard by INQUIRY or brought from home does).
     standing = identity.standing if identity is not None else HABITANTE
@@ -279,9 +304,20 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         identity.home_names if identity else ()))
 
 
+def _with_recall(facts: tuple[Fact, ...], lines: tuple[tuple[str, str], ...],
+                 at_game_time: int | None, vocabulary: set[str]) -> tuple[Fact, ...]:
+    """ADR-0124: earlier conversations with the player as more "SOBRE VOCÊ" facts."""
+    out = list(facts)
+    for event_id, text in lines:
+        out.append(Fact(f'F{len(out) + 1}', event_id, text, at_game_time or 0))
+        vocabulary |= set(_NAME.findall(text))
+    return tuple(out)
+
+
 def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *, npc_id: str,
                   branch_id: str, at_game_time: int | None, wisdom: int | None = None,
-                  intelligence: int | None = None) -> ContextResult:
+                  intelligence: int | None = None,
+                  recall_lines: tuple[tuple[str, str], ...] = ()) -> ContextResult:
     """A companion in the party. When the game sends its Wisdom/Intelligence (in-game box), the
     ADR-0117 matrix sets how deeply it understands what it learned and how it speaks; without
     them (overlay) the whole checked summary is used, as before."""
@@ -311,10 +347,11 @@ def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *
     facts = facts[-MAX_FACTS:]
     numbered = tuple(Fact(f'F{i}', f.event_id, f.text, f.game_time)
                      for i, f in enumerate(facts, 1))
+    numbered = _with_recall(numbered, recall_lines, at_game_time, vocabulary)
 
     tier = knowledge_tier(wisdom, intelligence) if wisdom or intelligence else None
     status, reason, knowledge = _knowledge_items(memory, npc_id, branch_id, at_game_time,
-                                                 vocabulary, tier)
+                                                 vocabulary, tier, store, catalog)
     if status is not RecallStatus.OK:
         return ContextResult(ContextStatus.DENIED, reason)
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(

@@ -55,6 +55,9 @@ from infinity_ai.dialogue.engine import (  # noqa: E402
 )
 from infinity_ai.dialogue.conversation import ConversationMemory  # noqa: E402
 from infinity_ai.dialogue.llm import OllamaProvider  # noqa: E402
+from infinity_ai.dialogue.recall import (  # noqa: E402
+    NO_RECALL, npc_key, recall, recall_lines, record_turn,
+)
 from infinity_ai.gamedata.inventory import (  # noqa: E402
     load_local_names, load_local_residents, load_local_resrefs,
 )
@@ -275,6 +278,16 @@ class Talker(threading.Thread):
         flags: list[str] = []
         wisdom = intelligence = None
         tier, known_texts, standing = '-', {}, '-'
+        # ADR-0124: earlier conversations with the player (ids and game time only).
+        memory_key = npc_key(speaker, stable=bool(req.speaker_party or req.speaker_script
+                                                   or curation is not None),
+                             session_seq=req.session_seq, instance=req.speaker_instance)
+        earlier = recall(store, view.branch_id, memory_key, at_game_time=view.game_time,
+                         exclude_conversation=req.conversation_id) \
+            if view.branch_id is not None else NO_RECALL
+        pack_now = self.observer.pack
+        lines = recall_lines(earlier, {e: pack_now.get(e).title for e in earlier.subjects
+                                       if pack_now.get(e) is not None}, view.game_time)
         if not view.observed or view.branch_id is None or view.game_time is None:
             speech, status, reason, used, granted = RESIDENT_FALLBACK, 'DENIED', 'NO_OBSERVATION', (), ()
         elif req.speaker_party:
@@ -287,10 +300,12 @@ class Talker(threading.Thread):
             result = DialogueEngine(store, self.provider, self.catalog).respond(
                 DialogueRequest(speaker, req.text), branch_id=view.branch_id,
                 at_game_time=view.game_time, wisdom=wisdom, intelligence=intelligence,
-                history=history)
+                history=history, recall_lines=lines)
             status, reason, flags = result.status.value, result.reason, list(result.flags)
             speech = result.speech or self.catalog.persona(speaker).fallback
-            used, granted, scope = (), (), 'COMPANHEIRO'
+            used = tuple(e.split(':', 1)[1] for e in result.used_event_ids
+                         if e.startswith('canon:'))
+            granted, scope = (), 'COMPANHEIRO'
         else:
             # SPEC-006: the box request is the dialogue-start observation (no text stored).
             started = record_dialogue_start(store, view.branch_id, req, game_time=view.game_time,
@@ -349,7 +364,7 @@ class Talker(threading.Thread):
                 residence_areas=areas, branch_id=view.branch_id, at_game_time=view.game_time,
                 profile=profile, identity=identity, also_known=also_known, wisdom=wisdom,
                 intelligence=intelligence, game_alignment=getattr(resident, 'alignment', None),
-                popular_only_ids=shallow, history=history)
+                popular_only_ids=shallow, history=history, recall_lines=lines)
             status, reason = result.status.value, result.reason
             flags = list(result.flags)
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
@@ -370,11 +385,16 @@ class Talker(threading.Thread):
                     listeners=req.listeners, used_entry_ids=shareable, req_id=req.req_id,
                     host_epoch=req.session_seq, at_game_time=view.game_time, speech=speech,
                     also_held=known_by_identity, known_texts=known_texts, question=question,
-                    aliases=aliases)
+                    aliases=aliases, speaker_name=req.speaker_name, area=req.area)
                 granted = report.granted
                 shared = report.status + ''.join(f' {r.entry_id}:{r.reason}' for r in report.refusals
                                                  if r.reason != 'NOT_A_LISTENER')
         turn = self.conversations.add(req.conversation_id, conv_key, req.text, speech)
+        if view.branch_id is not None and view.game_time is not None and status != 'DENIED':
+            record_turn(store, view.branch_id, key=memory_key, speaker_id=speaker,
+                        conversation_id=req.conversation_id, req_id=req.req_id,
+                        entries=used if status == 'OK' else (), game_time=view.game_time,
+                        host_epoch=req.session_seq)
         with self._lock:
             self._last = {'req_id': req.req_id, 'speaker': req.speaker_name, 'question': req.text,
                           'speech': speech}
@@ -395,7 +415,7 @@ class Talker(threading.Thread):
         morale_break_base = (req.speaker_engine_morale_break_base
                              if req.speaker_engine_morale_break_base is not None else "-")
         print(f'{now_iso()} caixa pedido={req.req_id} falante={speaker or "-"} '
-              f'turno={turn or "-"} habitante={bool(areas)} estatuto={standing} perfil={scope} '
+              f'turno={turn or "-"} lembra={earlier.conversations} habitante={bool(areas)} estatuto={standing} perfil={scope} '
               f'identidade={ident_source} '
               f'wis={wisdom or "-"} int={intelligence or "-"} camada={tier} '
               f'chr_ativo={chr_active} chr_base={chr_base} '

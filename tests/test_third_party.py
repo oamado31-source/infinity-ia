@@ -102,6 +102,36 @@ class ThirdPartyTests(unittest.TestCase):
             with self.subTest(speech=speech):
                 self.assertIsNone(third_party_claim(speech, ctx))
 
+    def test_player_names_pass_without_the_unknown_flag(self):
+        """S1d: 'Amn' from the question was refused because unknown was false."""
+        def reasons(speech, question, unknown=False):
+            raw = json.dumps({'speech': speech, 'used_facts': [], 'unknown': unknown},
+                             ensure_ascii=False)
+            return validate_reply(raw, context(OWNER), question).reasons
+        for speech, question in (('Não sei quem governa Amn.', 'Quem governa Amn?'),
+                                 ('Gorion? Nunca ouvi esse nome por aqui.', 'Você conhece Gorion?'),
+                                 ('Pergunte ao Lehtinan sobre Gorion.', 'Conhece o Gorion?'),
+                                 ('Gorion? Não confio em quem eu não conheço.', 'E o Gorion?')):
+            with self.subTest(speech=speech):
+                self.assertEqual(reasons(speech, question), ())
+        # Still refused: names the player did not write, and facts about a person one does not know.
+        self.assertIn('UNKNOWN_NAMES:Khalid', reasons('Gorion? Amigo do Khalid.', 'E o Gorion?'))
+        for speech in ('Gorion? É o mago da fortaleza.', 'Gorion é muito rico.',
+                       'Gorion? Não fala muito, mas é gentil.', 'Gorion vive aqui há 20 anos.',
+                       'Ah, o Gorion está lá fora.', 'Gorion? Saiu cedo hoje.'):
+            with self.subTest(speech=speech):
+                self.assertTrue(any(r.startswith('THIRD_PARTY') for r in
+                                    reasons(speech, 'Quem é Gorion?')), speech)
+                self.assertTrue(any(r.startswith('THIRD_PARTY') for r in
+                                    reasons(speech, 'Quem é Gorion?', unknown=True)), speech)
+
+    def test_question_words_are_not_names(self):
+        from infinity_ai.dialogue.validate import player_names
+        self.assertEqual(player_names('Quem governa Amn? Você sabe, Bernard?'),
+                         frozenset({'Amn', 'Bernard'}))
+        self.assertEqual(player_names('Lehtinan é rico?'), frozenset({'Lehtinan'}))
+        self.assertEqual(player_names(None), frozenset())
+
     def test_validator_reports_the_rule(self):
         raw = json.dumps({'speech': 'O taverneiro é Lehtinan.', 'used_facts': [],
                           'unknown': False}, ensure_ascii=False)
@@ -125,6 +155,7 @@ class RetryHintTests(unittest.TestCase):
         self.assertIn('número, idade ou tempo', both)
         self.assertIn('não seguiu as regras', retry_hint(('ALGO_NOVO',)))
         self.assertIn('repetiu a pergunta', retry_hint(('ECHO',)))
+        self.assertIn('não conhece essa pessoa', retry_hint(('THIRD_PARTY:STRANGER',)))
 
     def test_echo_of_the_question_is_refused(self):
         def raw(speech):

@@ -28,7 +28,7 @@
 
 ## Validação da saída (risco baixo: fala de personagem)
 
-Recusa: JSON fora do formato; fala vazia ou > 400 caracteres; `used_facts` com ids que não foram fornecidos; códigos crus (`AR0602`, ids internos, `npc:`); metalinguagem (modelo de linguagem, prompt, sistema, IA); marcação; **nomes próprios fora do vocabulário do contexto** (persona, grupo, nomes de área). Quando o NPC admite não saber (`unknown = true`), pode repetir nomes que o próprio jogador escreveu ("Rogê Galê? Nunca ouvi falar."), nunca outros.
+Recusa: JSON fora do formato; fala vazia ou > 400 caracteres; `used_facts` com ids que não foram fornecidos; códigos crus (`AR0602`, ids internos, `npc:`); metalinguagem (modelo de linguagem, prompt, sistema, IA); marcação; **nomes próprios fora do vocabulário do contexto** (persona, grupo, nomes de área). O NPC pode repetir nomes que o próprio jogador escreveu, com ou sem `unknown` (CR-2026-008), nunca outros. Se o nome não está em nada do que ele sabe, a fala precisa dizer que não conhece a pessoa, mandar perguntar a outro, recusar o assunto ou ser opinião ("Rogê Galê? Nunca ouvi falar."); "Ah, o Galê está na taverna." é recusada (`THIRD_PARTY:STRANGER`).
 
 **Limites conhecidos (não detectados):**
 - nome inventado no **início** de frase (não dá para separar de palavra comum sem dicionário);

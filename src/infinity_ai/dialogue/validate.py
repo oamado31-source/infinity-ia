@@ -104,11 +104,23 @@ def _origin_contradicts(speech: str, context: DialogueContext) -> str | None:
     return None
 
 
+# Capitalised at the start of a question, but not names ("Quem governa Amn?").
+_NOT_NAMES = frozenset({
+    'quem', 'que', 'qual', 'quais', 'onde', 'como', 'quando', 'quanto', 'quantos', 'quantas',
+    'por', 'porque', 'o', 'a', 'os', 'as', 'um', 'uma', 'e', 'eu', 'você', 'vocês', 'voce', 'tu',
+    'ele', 'ela', 'eles', 'elas', 'nós', 'me', 'se', 'te', 'meu', 'minha', 'seu', 'sua', 'de', 'do',
+    'da', 'em', 'no', 'na', 'para', 'pra', 'com', 'sabe', 'conhece', 'conte', 'diga', 'fale',
+    'oi', 'olá', 'ola', 'ei', 'bom', 'boa', 'então', 'mas', 'não', 'sim', 'isso', 'isto', 'aqui',
+    'tem', 'há', 'já', 'ainda', 'também', 'só', 'agora', 'senhor', 'senhora', 'amigo', 'amiga'})
+
+
 def player_names(player_text: str | None) -> frozenset[str]:
-    """Capitalised words the player wrote (an NPC may echo them only while admitting ignorance)."""
+    """Names the player wrote. The NPC may repeat them (CR-2026-008), but any claim about one of
+    them still needs backing in what the NPC knows (`third_party_claim`)."""
     if not player_text:
         return frozenset()
-    return frozenset(w for w in _WORD.findall(player_text) if w[0].isupper())
+    return frozenset(w for w in _WORD.findall(player_text)
+                     if w[0].isupper() and w.lower() not in _NOT_NAMES)
 
 
 # What to fix, in plain Portuguese, for the retry (a bare code like "THIRD_PARTY:ROLE" taught the
@@ -139,6 +151,9 @@ _RETRY_HINTS = (
                            'não dê números nem durações que não estão nas seções'),
     ('THIRD_PARTY:GENERAL', 'você afirmou uma regra geral sem base no que sabe; fale só do que '
                             'está nas seções, ou deixe claro que é a sua opinião'),
+    ('THIRD_PARTY:STRANGER', 'você falou de alguém que não está no que você sabe como se o '
+                             'conhecesse; diga que não conhece essa pessoa, sem inventar nada sobre '
+                             'ela'),
     ('UNKNOWN_NAMES', 'você citou nomes que não estão no que você sabe ({names}); não os use, ou '
                       'diga que não os conhece'),
 )
@@ -213,10 +228,11 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
     why = _origin_contradicts(speech, context) if context.standing else None
     if why:
         reasons.append(f'SELF_CLAIM:{why}')      # the log shows which claim was refused
-    other = third_party_claim(speech, context)   # ADR-0121: facts about someone else
+    asked = player_names(player_text)
+    other = third_party_claim(speech, context, asked)   # ADR-0121: facts about someone else
     if other:
         reasons.append(f'THIRD_PARTY:{other}')
-    vocabulary = context.vocabulary | (player_names(player_text) if unknown else frozenset())
+    vocabulary = context.vocabulary | asked       # CR-2026-008: with or without `unknown`
     names = _unknown_names(speech, vocabulary)
     if names:
         reasons.append('UNKNOWN_NAMES:' + ','.join(sorted(set(names))))

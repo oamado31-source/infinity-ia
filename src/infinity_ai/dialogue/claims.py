@@ -59,6 +59,22 @@ _ROLE_PATTERNS = (
                rf"(?i:o\s+|a\s+)?(?P<name>{_CAP})"),
     re.compile(rf"(?P<name>{_CAP}),\s+(?i:o|a)\s+(?P<role>{_LOW})"),
 )
+# Someone the player named and the speaker knows nothing about: any "X é o/um <noun>" is a claim,
+# not only the role words above ("Gorion? É o mago da fortaleza.").
+_STRANGER_ROLE = (
+    re.compile(rf"(?P<name>{_CAP})\s*,?\s+(?i:é|era)\s+(?i:o|a|um|uma)\s+(?P<role>{_LOW})"),
+    re.compile(rf"(?P<name>{_CAP}),\s+(?i:o|a|um|uma)\s+(?P<role>{_LOW})"),
+    re.compile(rf"(?P<name>{_CAP})\s*[?:!.…]\s*(?i:é|era)\s+(?i:o|a|um|uma)\s+(?P<role>{_LOW})"),
+)
+_NOT_A_ROLE = frozenset({'nome', 'que', 'quem', 'qual', 'mistério'})
+# A stranger may be named only while saying one does not know them, sending the player to someone
+# else, refusing to talk, or giving an opinion; "Ah, o Galê está na taverna." is invented.
+_IGNORANCE = re.compile(
+    r"\b(?:não sei|sei lá|nunca ouvi|não ouvi|nunca vi|não vi|não conheço|nunca conheci|"
+    r"desconheço|não faço (?:a menor )?ideia|não tenho (?:a menor )?ideia|não lembro|"
+    r"não me lembro|ninguém sabe|ninguém conhece|não sei dizer|não posso dizer|"
+    r"pergunt\w*|procur\w*|fale com|fala com|não falo|não vou (?:falar|dizer|contar)|"
+    r"não digo|não conto|não é da sua conta|não te interessa|não interessa)\b", re.I)
 _TRAIT_PATTERNS = (
     re.compile(rf"(?P<name>{_CAP})\s*,?\s+(?i:é|era|anda|está)\s+(?P<rest>(?:{_LOW}\s*){{1,4}})"),
     re.compile(rf"(?P<name>{_CAP})\s*[?:,!.…]\s*(?i:um\s+|uma\s+)?(?i:cara|homem|mulher|sujeito|"
@@ -116,14 +132,19 @@ def _backed(word: str, base: str) -> bool:
 
 
 class _Speech:
-    def __init__(self, speech: str, context: DialogueContext) -> None:
+    def __init__(self, speech: str, context: DialogueContext,
+                 asked: Iterable[str] = ()) -> None:
         self.speech = speech
         self.sentences = [(m.start(), m.end()) for m in _SENTENCE.finditer(speech)]
         own = {w.lower() for w in context.persona.display_name.split()}
-        self.known = {w.lower() for w in context.vocabulary} - own
+        asked = {w.lower() for w in asked} - own
+        self.known = ({w.lower() for w in context.vocabulary} | asked) - own
         items = context.facts + context.knowledge + context.restricted_knowledge
         self.texts = [f.text.lower() for f in items]
         self.facts = ' '.join(f.text.lower() for f in context.facts)
+        # Names the player wrote that are in nothing the speaker knows (not even the vocabulary).
+        vocabulary = {w.lower() for w in context.vocabulary}
+        self.strangers = {n for n in asked - vocabulary if not self.base([n])}
 
     def sentence(self, pos: int) -> str:
         return next((self.speech[a:b] for a, b in self.sentences if a <= pos < b), self.speech)
@@ -173,9 +194,23 @@ def _carried_trait(s: _Speech, m: re.Match) -> bool:
     return not _backed(claim, s.base([name]))
 
 
-def third_party_claim(speech: str, context: DialogueContext) -> str | None:
-    """The first unbacked claim about someone else ('ROLE', 'TRAIT', 'NUMBER', 'GENERAL')."""
-    s = _Speech(speech, context)
+def third_party_claim(speech: str, context: DialogueContext,
+                      asked: Iterable[str] = ()) -> str | None:
+    """The first unbacked claim about someone else ('ROLE', 'STRANGER', 'TRAIT', 'NUMBER',
+    'GENERAL').
+
+    `asked` are the names the player wrote: the speaker may repeat them, but a claim about one of
+    them still needs backing in what the speaker knows (CR-2026-008)."""
+    s = _Speech(speech, context, asked)
+    for pattern in _STRANGER_ROLE:
+        for m in pattern.finditer(speech):
+            if m.group('name').lower() in s.strangers and \
+                    m.group('role').lower() not in _NOT_A_ROLE and not s.opinion(m.start('role')):
+                return 'ROLE'
+    named = [n for n in s.strangers if re.search(rf"(?<![\wÀ-ÿ]){re.escape(n)}(?![\wÀ-ÿ])",
+                                                 speech, re.I)]
+    if named and not (_IGNORANCE.search(speech) or _OPINION.search(speech)):
+        return 'STRANGER'
     for pattern in _ROLE_PATTERNS:
         for m in pattern.finditer(speech):
             role, name = m.group('role').lower(), m.group('name')

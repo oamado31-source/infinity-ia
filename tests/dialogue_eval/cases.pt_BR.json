@@ -284,6 +284,27 @@
       }
     },
     {
+      "id": "nome-desconhecido-do-jogador",
+      "description": "CR-2026-008: repete o nome que o jogador escreveu sem inventar nada sobre a pessoa.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval9",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9
+      },
+      "question": "Você viu o Gorion por aqui?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "matches_none": [
+          "(?<!não )(?<!nunca )\\b(?:vi|conheço|conheci)\\b(?! ninguém)",
+          "Gorion (?:está|esteve|estava|é|era|saiu|foi|mora|vive)\\b"
+        ]
+      }
+    },
+    {
       "id": "conversa-e-quem-e",
       "description": "Com a conversa em andamento, \"E quem é então?\" fala dos conselheiros, não de si (ADR-0123).",
       "speaker": {

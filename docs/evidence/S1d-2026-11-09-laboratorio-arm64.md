@@ -33,7 +33,7 @@ Com a regra final, os companheiros deste teste não teriam aprendido nada (teste
 
 - Unidade de `game_time`: medir um descanso real numa estalagem (alugando o quarto).
 - ~~Observador: ignorar picos de tempo durante a troca de área, em vez de criar ramo.~~ Diagnóstico errado; ver *Correção de 2026-11-14*.
-- Validador: aceitar nomes vindos da pergunta do jogador também quando o NPC responde sem se declarar sem conhecimento.
+- Validador: aceitar nomes vindos da pergunta do jogador também quando o NPC responde sem se declarar sem conhecimento. Feito no CR-2026-008.
 - Canal `INQUIRY`: observar a conversa do jogo com um habitante e o tema perguntado.
 - Reverter o `Debug Mode` no `baldur.lua` da VM com o jogo fechado.
 - Os registros `REGIONAL_EXPOSURE` ficam no banco `lab-s1` como evidência; novas rodadas usam outra campanha.

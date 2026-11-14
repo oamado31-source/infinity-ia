@@ -130,12 +130,15 @@ class ValidateTests(Campaign):
                 self.assertIn(reason, v.reasons)
 
     def test_player_names_only_echoed_when_admitting_ignorance(self):
+        """CR-2026-008: the speech must admit it, with or without the `unknown` flag."""
         asked = 'E Rogê Galê? Onde está?'
-        echo = validate_reply(reply('Rogê Galê? Nunca ouvi falar de Galê.', [], True),
-                              self.context, asked)
-        self.assertTrue(echo.ok, echo.reasons)
-        claim = validate_reply(reply('Ah, o Galê está na taverna.', [], False), self.context, asked)
-        self.assertIn('UNKNOWN_NAMES:Galê', claim.reasons)
+        for flag in (True, False):
+            echo = validate_reply(reply('Rogê Galê? Nunca ouvi falar de Galê.', [], flag),
+                                  self.context, asked)
+            self.assertTrue(echo.ok, echo.reasons)
+            claim = validate_reply(reply('Ah, o Galê está na taverna.', [], flag), self.context,
+                                   asked)
+            self.assertIn('THIRD_PARTY:STRANGER', claim.reasons)
         stranger = validate_reply(reply('Não sei, pergunte ao Gorion.', [], True), self.context, asked)
         self.assertIn('UNKNOWN_NAMES:Gorion', stranger.reasons)
 

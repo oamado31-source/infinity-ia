@@ -327,9 +327,13 @@ class Talker(threading.Thread):
                     home_region=home, pack=pack, world_seed=self.args.world_seed,
                     campaign_id=store.campaign_id, branch_id=view.branch_id)
 
+            # CR-2026-010: an official NPC with a checked curation but no script name (Bernard)
+            # keeps the alignment of its game sheet; generic people still draw theirs.
             profile, scope, generated = profile_for(
                 store, view.branch_id, started, at_game_time=view.game_time,
-                world_seed=self.args.world_seed, identity_factory=background)
+                world_seed=self.args.world_seed, identity_factory=background,
+                game_alignment=getattr(resident, 'alignment', None)
+                if curation is not None else None)
             place = self.catalog.area(req.area) if home else None
             identity = build_identity(
                 npc_id=speaker or 'npc:desconhecido', name=req.speaker_name, pack=pack,

@@ -59,7 +59,8 @@ def _validated_weights(weights: Mapping[str, float] | None) -> dict[str, float]:
 
 def generate_new_npc_profile(*, npc_id: str, campaign_id: str, creation_branch_id: str,
                              world_seed: str, npc_origin: str,
-                             alignment_weights: Mapping[str, float] | None = None) -> dict:
+                             alignment_weights: Mapping[str, float] | None = None,
+                             fixed_alignment: str | None = None) -> dict:
     """Generate a reproducible creation snapshot; caller owns identity + persistence gates.
 
     Alignment is independently weighted: HEXACO traits do not mechanically imply Good/Evil
@@ -73,6 +74,8 @@ def generate_new_npc_profile(*, npc_id: str, campaign_id: str, creation_branch_i
             raise ValueError("npc_id, campaign_id, creation_branch_id and world_seed required")
     if not npc_id.startswith("npc:generated:") or len(npc_id) <= len("npc:generated:"):
         raise ValueError("new NPC ids must use npc:generated: namespace")
+    if fixed_alignment is not None and fixed_alignment not in ALIGNMENT_AXES:
+        raise ValueError("fixed_alignment must be one of the nine alignment codes")
     weights = _validated_weights(alignment_weights)
     seed_text = json.dumps([POLICY, world_seed, campaign_id, creation_branch_id, npc_id],
                            ensure_ascii=False, separators=(",", ":"))
@@ -85,6 +88,11 @@ def generate_new_npc_profile(*, npc_id: str, campaign_id: str, creation_branch_i
         if draw < cumulative:
             selected = code
             break
+    # CR-2026-010: a curated official NPC keeps the alignment of its game sheet. The draw above
+    # still runs, so traits, values and drives stay the same as without it.
+    provenance = "GENERATED"
+    if fixed_alignment is not None:
+        selected, provenance = fixed_alignment, "GAME_DATA"
     ethical, moral = ALIGNMENT_AXES[selected]
     return {
         "schema": SCHEMA,
@@ -96,7 +104,7 @@ def generate_new_npc_profile(*, npc_id: str, campaign_id: str, creation_branch_i
                              "creation_branch_id": creation_branch_id},
         "hexaco": traits,
         "alignment_initial": {"code": selected, "ethical": ethical, "moral": moral,
-                              "provenance": "GENERATED"},
+                              "provenance": provenance},
         "values": rng.sample(VALUES, 3),
         "drives": rng.sample(DRIVES, 2),
         "vulnerabilities": rng.sample(VULNERABILITIES, 2),

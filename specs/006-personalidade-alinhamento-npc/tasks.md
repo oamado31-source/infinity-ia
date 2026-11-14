@@ -16,7 +16,7 @@
 - [ ] Executar teste real em laboratório BG2:EE e publicar evidência de interação com pessoas comuns, sem afetar diálogos originais.
 - [x] Camada P0 de identidade (ADR-0117): dados do jogo (raça, classe, gênero, alinhamento, papel no nome), curadoria `knowledge/npcs/` com conferência, geração fechada para genéricos, persistência igual à da personalidade e fatos "SOBRE VOCÊ" no diálogo; `tests/test_identity.py`.
 - [ ] Conferir a curadoria de Bernard e curar os NPCs oficiais da Coroa de Cobre; testar no laboratório (S1f).
-- [ ] Usar o alinhamento da ficha do jogo como `alignment_initial` de NPCs oficiais (hoje só na identidade).
+- [x] Usar o alinhamento da ficha do jogo como `alignment_initial` de NPCs oficiais (hoje só na identidade). Com script name, já valia (`CANONICAL`); com curadoria e sem script name (Bernard), [CR-2026-010](../../docs/change-requests/CR-2026-010-alinhamento-da-ficha-para-oficiais-curados.md), `provenance: GAME_DATA`.
 - [x] Estatuto local (ADR-0120): HABITANTE, VIAJANTE (só o popular do lugar) e FORASTEIRO (nada do lugar), por curadoria ou sorteio conforme o papel; validador de origem; `tests/test_identity.py`. Falta testar no laboratório.
 - [x] Reação de encontro (ADR-0125, primeira fatia do ADR-0122): Tabela 59 + ajuste de Carisma do selecionado, uma vez por NPC por sessão, evento sem texto, disposição limitando o que o NPC conta; `tests/test_reaction.py`. Teste de moral fica para a segunda fatia.
 - [x] Teste de moral no diálogo (ADR-0126, segunda fatia do ADR-0122): suborno, intimidação e traição de vínculo; Tabela 49 pelo papel e Tabela 50 (alinhamento, trato); uma vez por gatilho por sessão; ceder conta o que a disposição escondia; `tests/test_morale.py`.

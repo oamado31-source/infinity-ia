@@ -63,14 +63,15 @@ def record_dialogue_start(store: CampaignStore, branch_id: str, req: TalkRequest
 
 
 def profile_for(store: CampaignStore, branch_id: str, event: Event, *, at_game_time: int,
-                world_seed: str, identity_factory: Callable[[str], dict] | None = None
-                ) -> tuple[dict | None, str, dict | None]:
+                world_seed: str, identity_factory: Callable[[str], dict] | None = None,
+                game_alignment: int | None = None) -> tuple[dict | None, str, dict | None]:
     """(profile, scope/reason, generated identity): ENCOUNTER profile with a background from
-    `identity_factory` (ADR-0117), CANONICAL (neither) or a refusal."""
+    `identity_factory` (ADR-0117), CANONICAL (neither) or a refusal. `game_alignment` is the game
+    sheet's alignment of a curated official NPC (CR-2026-010)."""
     try:
         contact = FirstContactService(store, world_seed=world_seed).begin(
             contact_event_id=event.event_id, branch_id=branch_id, at_game_time=at_game_time,
-            identity_factory=identity_factory)
+            identity_factory=identity_factory, game_alignment=game_alignment)
     except FirstContactError as exc:
         return None, f'NO_PROFILE:{exc}', None
     if contact.status != 'READY':

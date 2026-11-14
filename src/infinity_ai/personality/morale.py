@@ -76,8 +76,10 @@ def ethical_axis(game_alignment: int | None = None, profile: dict | None = None)
     return axes[0] if axes else None
 
 
-def modifiers(*, ethical: str | None, text: str) -> tuple[tuple[str, int], ...]:
-    """Table 50 modifiers that apply; each one at most once."""
+def modifiers(*, ethical: str | None, text: str,
+              trigger: str | None = None) -> tuple[tuple[str, int], ...]:
+    """Table 50 modifiers that apply; each one at most once. An intimidation is always poor
+    treatment, even when its words are not in the conduct rules ("Conte ou te machuco")."""
     out = []
     if ethical == 'LAWFUL':
         out.append(('lawful', 1))
@@ -86,7 +88,7 @@ def modifiers(*, ethical: str | None, text: str) -> tuple[tuple[str, int], ...]:
     conduct = classify_conduct(text)
     if conduct == FRIENDLY:
         out.append(('favored', 2))
-    elif conduct in (THREATENING, HOSTILE):
+    elif conduct in (THREATENING, HOSTILE) or trigger == INTIMIDATION:
         out.append(('poorly_treated', -4))
     return tuple(out)
 

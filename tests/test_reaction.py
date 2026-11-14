@@ -54,6 +54,7 @@ class TableTests(unittest.TestCase):
         self.assertEqual(classify_conduct('Me diga agora, senão vai se arrepender.'),
                          'THREATENING')
         self.assertEqual(classify_conduct('Seu idiota, fale logo!'), 'HOSTILE')
+        self.assertEqual(classify_conduct('Conte ou te machuco.'), 'THREATENING')
         self.assertEqual(classify_conduct(''), 'INDIFFERENT')
 
 

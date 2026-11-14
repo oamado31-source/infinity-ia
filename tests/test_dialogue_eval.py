@@ -102,6 +102,14 @@ class CheckerTests(unittest.TestCase):
         self.assertTrue(run_case(council, PACK, FakeProvider(
             [reply('É o Conselho dos Seis.')] * 3), runs=3).passed)
 
+    def test_each_answer_is_timed(self):
+        council = case(self.cases, 'habitante-comum-conselho')
+        result = run_case(council, PACK, FakeProvider([reply('É o Conselho dos Seis.')] * 2),
+                          runs=2)
+        self.assertTrue(all(r.seconds >= 0 for r in result.runs))
+        self.assertEqual(result.max_seconds, max(r.seconds for r in result.runs))
+        self.assertGreaterEqual(result.max_seconds, result.mean_seconds)
+
 
 if __name__ == '__main__':
     unittest.main()

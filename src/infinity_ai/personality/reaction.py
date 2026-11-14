@@ -53,7 +53,7 @@ _HOSTILE = re.compile(r'\b(?:vou te matar|vou matar|morra|morre|maldit[oa]|idiot
                       r'te arrebent|te esfaque|te mato)\b')
 _THREAT = re.compile(r'\b(?:senão|se não\b.*\b(?:vai|vou)|é melhor você|ou então|ou vai se|'
                      r'ou eu|te aviso|estou avisando|vai se arrepender|não me faça|me diga agora|'
-                     r'fale logo|desembucha)')
+                     r'fale logo|desembucha|te machuc|vou te ferir|te quebr|cortar sua|corto sua)')
 _FRIENDLY = re.compile(r'\b(?:olá|ola|oi|bom dia|boa tarde|boa noite|saudações|por favor|'
                        r'obrigad[oa]|com licença|amig[oa]|prazer|perdão|desculpe|gentil)\b')
 

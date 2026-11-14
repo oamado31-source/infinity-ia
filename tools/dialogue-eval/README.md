@@ -4,7 +4,7 @@ Conjunto fixo de perguntas com o comportamento esperado de cada NPC, para pegar 
 
 ## Como rodar
 
-Com o Ollama local no ar e o modelo `qwen3:8b` instalado (o comando nunca encerra nem reinicia o Ollama):
+Com o Ollama local no ar e o modelo `qwen3:30b-a3b` instalado (padrão desde o CR-2026-007; o comando nunca encerra nem reinicia o Ollama):
 
 ```bash
 .venv/bin/python tools/dialogue-eval/run_eval.py
@@ -13,9 +13,10 @@ Com o Ollama local no ar e o modelo `qwen3:8b` instalado (o comando nunca encerr
 - **Opções:**
   - `--case <id>`: roda só um caso (pode repetir);
   - `--runs N`: número de rodadas (padrão 3);
-  - `--model`;
+  - `--model` (por exemplo `qwen3:8b`, para comparar);
+  - `--timeout`: segundos por pedido ao modelo (padrão 30, como no serviço);
   - `--ollama-url`.
-- **Tempo:** cerca de 1 minuto para os 13 casos.
+- **Tempo:** cerca de 2 minutos para os 20 casos. A tabela mostra o tempo médio e o máximo de cada caso, e o fim mostra a média e o p90 de todas as respostas (com as novas tentativas, sem o carregamento do modelo, que é feito antes por um pedido de aquecimento).
 - **Resultado:** o comando sai com erro (código 1) se algum caso não passar. Rode antes de abrir um PR que mexa em prompt, validador ou contexto.
 
 ## Como ler

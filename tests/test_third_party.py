@@ -56,6 +56,24 @@ class ThirdPartyTests(unittest.TestCase):
                                             context(COUNCIL_POPULAR)))
         self.assertIsNone(third_party_claim('A Coroa de Cobre é uma taverna de Athkatla.', ctx))
 
+    def test_trait_with_the_subject_left_out(self):
+        """qwen3:30b-a3b, 2026-11-14: traits in a later clause without the name."""
+        ctx = context(OWNER)
+        for speech in ('Lehtinan? Dono da taverna. Não fala muito, mas é bom com os clientes.',
+                       'Lehtinan? Dono da Coroa. Não fala muito com os clientes.',
+                       'Lehtinan é o dono. Ele bebe demais.',
+                       'O dono é Lehtinan, mas é avarento.'):
+            with self.subTest(speech=speech):
+                self.assertEqual(third_party_claim(speech, ctx), 'TRAIT')
+        for speech in ('Lehtinan? Dono da taverna. Não me importo com ele.',
+                       'É Lehtinan. É o que sei.',
+                       'Lehtinan é o dono. Fala com ele.',
+                       'Lehtinan é o dono. Acho que é avarento.',
+                       'Não falo muito com ninguém. Lehtinan é o dono.',
+                       'Moro em Athkatla. É bom aqui.'):
+            with self.subTest(speech=speech):
+                self.assertIsNone(third_party_claim(speech, ctx))
+
     def test_numbers_follow_what_one_knows(self):
         speech = 'Amn é governado pelo Conselho dos Seis! Eles decidem tudo há décadas!'
         self.assertEqual(third_party_claim(speech, context(COUNCIL_POPULAR)), 'NUMBER')
@@ -106,6 +124,18 @@ class RetryHintTests(unittest.TestCase):
         self.assertIn('cite só ids', both)
         self.assertIn('número, idade ou tempo', both)
         self.assertIn('não seguiu as regras', retry_hint(('ALGO_NOVO',)))
+        self.assertIn('repetiu a pergunta', retry_hint(('ECHO',)))
+
+    def test_echo_of_the_question_is_refused(self):
+        def raw(speech):
+            return json.dumps({'speech': speech, 'used_facts': [], 'unknown': False},
+                              ensure_ascii=False)
+        ctx = context(COUNCIL_POPULAR)
+        self.assertIn('ECHO', validate_reply(raw('E quem é então?'), ctx, 'E quem é então?').reasons)
+        self.assertIn('ECHO', validate_reply(raw('E quem é, então?!'), ctx, 'e quem é então').reasons)
+        self.assertNotIn('ECHO', validate_reply(raw('Quem governa? O Conselho dos Seis.'), ctx,
+                                                'Quem governa?').reasons)
+        self.assertNotIn('ECHO', validate_reply(raw('E quem é então?'), ctx).reasons)
 
     def test_engine_sends_the_hint_on_retry(self):
         import tempfile

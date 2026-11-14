@@ -254,11 +254,9 @@
         "status": [
           "OK"
         ],
-        "mentions_none": [
-          "moro aqui",
-          "vivo aqui",
-          "sou daqui",
-          "sou de cá"
+        "matches_none": [
+          "(?<!não )\\b(?:moro|vivo) aqui",
+          "(?<!não )\\bsou (?:daqui|de cá)"
         ]
       }
     },

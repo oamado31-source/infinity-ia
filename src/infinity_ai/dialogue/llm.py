@@ -34,7 +34,7 @@ class LlmProvider(Protocol):
 
 
 class OllamaProvider:
-    def __init__(self, model: str = 'qwen3:8b', *, base_url: str = 'http://127.0.0.1:11434',
+    def __init__(self, model: str = 'qwen3:30b-a3b', *, base_url: str = 'http://127.0.0.1:11434',
                  timeout_s: float = 30.0, temperature: float = 0.6, max_tokens: int = 220) -> None:
         self.model, self._url, self._timeout = model, base_url.rstrip('/') + '/api/chat', timeout_s
         self._options = {'temperature': temperature, 'num_predict': max_tokens}

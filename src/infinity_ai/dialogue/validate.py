@@ -7,6 +7,7 @@ not prove each sentence is true. A reply that fails is retried once, then replac
 """
 from __future__ import annotations
 
+import difflib
 import json
 import re
 from dataclasses import dataclass
@@ -122,6 +123,7 @@ _RETRY_HINTS = (
     ('RAW_CODE', 'não fale de códigos nem identificadores'),
     ('META_TALK', 'não fale de regras, ids, sistema nem de ser uma inteligência artificial'),
     ('MARKUP', 'não use símbolos de formatação'),
+    ('ECHO', 'você repetiu a pergunta do jogador; responda a ela, em personagem'),
     ('SELF_CLAIM:AWAY', 'você mora aqui: não diga que é de fora nem que está de passagem'),
     ('SELF_CLAIM:HOME', 'você não mora aqui: não diga que é daqui nem que mora aqui'),
     ('SELF_CLAIM:BORN', 'não diga que nasceu aqui; isso não está nos seus FATOS'),
@@ -159,6 +161,16 @@ def retry_hint(reasons: tuple[str, ...]) -> str:
             '. Responda de novo, em personagem, seguindo todas as regras.')
 
 
+def _plain_words(text: str) -> str:
+    return ' '.join(_WORD.findall(text.lower()))
+
+
+def echoes(speech: str, player_text: str | None) -> bool:
+    """The reply only repeats the player's line (qwen3:30b-a3b: "E quem é então?" back)."""
+    a, b = _plain_words(speech), _plain_words(player_text or '')
+    return bool(a and b) and (a == b or difflib.SequenceMatcher(None, a, b).ratio() >= 0.9)
+
+
 def validate_reply(raw: str, context: DialogueContext, player_text: str | None = None) -> Verdict:
     reasons: list[str] = []
     try:
@@ -186,6 +198,8 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
         reasons.append('META_TALK')
     if _MARKUP.search(speech):
         reasons.append('MARKUP')
+    if echoes(speech, player_text):
+        reasons.append('ECHO')
     claim = _SELF_CLAIM.search(speech)
     if claim:
         # The claimed word (dono, lorde, pai, ...) must be in the person's facts or own name.

@@ -9,7 +9,7 @@
 3. O serviço usa o ramo e o tempo de jogo da **última observação do jogo** (nunca valores enviados pelo jogador).
 4. `build_context`: só companheiros presentes no grupo atual; fatos = `recall(npc, ramo, tempo, purpose=npc_dialogue, audience=NARRATIVE_CONTEXT)` renderizados como `F1..Fn`, com nomes de área curados (código nunca vai ao texto).
 5. Prompt: regras + persona + fatos no papel `system`; texto do jogador **sempre** como `user`.
-6. Modelo local (Ollama, `qwen3:8b`, `think: false`, resposta em JSON com schema).
+6. Modelo local (Ollama, `qwen3:30b-a3b` desde o CR-2026-007, `think: false`, resposta em JSON com schema). O `qwen3:8b` continua aceito com `--model` para máquinas com menos memória.
 6a. Na caixa do jogo (ADR-0123), os últimos turnos da conversa em andamento entram como mensagens `user`/`assistant` antes da pergunta atual. Ficam só na memória do serviço e são descartados quando a caixa é reaberta ou o serviço reinicia.
 7. Validação; se falhar, uma nova tentativa com o motivo; se falhar de novo, fala de reserva da persona.
 8. Resposta ao overlay. Nada é escrito no jogo, na memória do NPC ou em disco; o console do serviço registra só metadados (NPC, status, motivo, nº de fatos, `unknown`, latência, flags).

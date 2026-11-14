@@ -15,6 +15,7 @@ import json
 import re
 import math
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
@@ -73,6 +74,7 @@ class RunResult:
     speech: str
     flags: tuple[str, ...]
     failures: tuple[str, ...]
+    seconds: float = 0.0              # whole answer, retries included
 
 
 @dataclass(frozen=True)
@@ -92,6 +94,14 @@ class CaseResult:
     @property
     def fallbacks(self) -> int:
         return sum(r.status == 'FALLBACK' for r in self.runs)
+
+    @property
+    def mean_seconds(self) -> float:
+        return sum(r.seconds for r in self.runs) / len(self.runs) if self.runs else 0.0
+
+    @property
+    def max_seconds(self) -> float:
+        return max((r.seconds for r in self.runs), default=0.0)
 
 
 def required_passes(runs: int) -> int:
@@ -268,10 +278,12 @@ def run_case(case: Case, pack: CanonPack, provider: LlmProvider, runs: int = 3,
              catalog: Catalog | None = None) -> CaseResult:
     results = []
     for _ in range(runs):
+        start = time.monotonic()
         response = ask(case, pack, provider, catalog)
+        seconds = time.monotonic() - start
         failures = check_answer(case, pack, response)
         results.append(RunResult(not failures, response.status.value, response.speech,
-                                 tuple(response.flags), failures))
+                                 tuple(response.flags), failures, round(seconds, 2)))
     return CaseResult(case, tuple(results), required_passes(runs))
 
 

@@ -40,9 +40,9 @@ class FirstContactTests(unittest.TestCase):
         doc.update(extra)
         return self.event("NpcDialogueStarted", doc, branch=branch, time=time)
 
-    def begin(self, e, *, branch=ROOT_BRANCH, at=100):
+    def begin(self, e, *, branch=ROOT_BRANCH, at=100, **kw):
         return self.service.begin(contact_event_id=e.event_id, branch_id=branch,
-                                  at_game_time=at)
+                                  at_game_time=at, **kw)
 
     def verified(self, npc_id="npc:generated:beggar-1", *, branch=ROOT_BRANCH,
                  time=90, token="actor-1", session="session-A"):
@@ -133,6 +133,20 @@ class FirstContactTests(unittest.TestCase):
         alt = self.begin(e, branch=child)
         self.assertNotEqual(alt.profile["seed_fingerprint"], main_profile.profile["seed_fingerprint"])
         self.assertEqual(len(self.store.visible_events(child, "NpcPersonalityAssigned")), 1)
+
+    def test_game_sheet_alignment_replaces_the_draw_when_given(self):
+        """CR-2026-010: Bernard (curated, no script name) keeps the alignment of his CRE."""
+        e = self.contact(role="MERCHANT")
+        drawn, sheet = self.begin(e), self.begin(e, game_alignment=0x12)
+        self.assertEqual((sheet.profile["alignment_initial"]["code"],
+                          sheet.profile["alignment_initial"]["provenance"]), ("LN", "GAME_DATA"))
+        self.assertEqual(sheet.profile["hexaco"], drawn.profile["hexaco"])
+        for unusable in (None, 0, 0x01, True, "0x12"):
+            with self.subTest(code=unusable):
+                self.assertEqual(self.begin(e, game_alignment=unusable).profile, drawn.profile)
+        _, contact = self.verified()
+        kept = self.begin(contact, at=110, game_alignment=0x33)
+        self.assertEqual(kept.profile["alignment_initial"]["code"], "CE")
 
     def test_canonical_actor_is_never_randomized(self):
         p = self.begin(self.contact(state="CANONICAL", role="MERCHANT"))

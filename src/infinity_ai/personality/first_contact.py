@@ -14,7 +14,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..state.store import CampaignStore, Event
-from .generator import generate_new_npc_profile
+from .generator import ALIGNMENT_AXES, generate_new_npc_profile
+from .style import GAME_ALIGNMENT
 
 ROLE_NAMES = {
     "BEGGAR": "Pessoa pedindo esmolas",
@@ -57,6 +58,15 @@ def _required(payload: dict, name: str) -> str:
     return value
 
 
+def _alignment_code(game_alignment: object) -> str | None:
+    """ALIGNMEN.IDS code (0x11 ... 0x33) -> "LG" ... "CE"; None when absent or unusable."""
+    if isinstance(game_alignment, bool) or not isinstance(game_alignment, int):
+        return None
+    axes = GAME_ALIGNMENT.get(game_alignment)
+    return next((code for code, pair in ALIGNMENT_AXES.items() if pair == axes), None) \
+        if axes else None
+
+
 def _digest(*parts: str) -> str:
     blob = json.dumps(parts, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
@@ -89,7 +99,11 @@ class FirstContactService:
         self.weights = alignment_weights
 
     def begin(self, *, contact_event_id: str, branch_id: str, at_game_time: int,
-              identity_factory: Callable[[str], dict] | None = None) -> FirstContact:
+              identity_factory: Callable[[str], dict] | None = None,
+              game_alignment: int | None = None) -> FirstContact:
+        """`game_alignment`: the ALIGNMEN.IDS code of a curated official NPC's game sheet; when
+        valid it replaces the drawn alignment (CR-2026-010). Ignored for anyone else."""
+        fixed = _alignment_code(game_alignment)
         if isinstance(at_game_time, bool) or not isinstance(at_game_time, int) or at_game_time < 0:
             raise FirstContactError("invalid game time")
         event = _at_event(self.store, event_id=contact_event_id,
@@ -133,7 +147,8 @@ class FirstContactService:
             profile = generate_new_npc_profile(
                 npc_id=npc_id, campaign_id=self.store.campaign_id,
                 creation_branch_id=branch_id, world_seed=self.world_seed,
-                npc_origin="CREATED", alignment_weights=self.weights)
+                npc_origin="CREATED", alignment_weights=self.weights,
+                fixed_alignment=fixed)
             identity = identity_factory(npc_id) if identity_factory else None
             return FirstContact("READY", npc_id, display, profile, "ENCOUNTER",
                                 False, event.event_id, identity=identity)
@@ -166,7 +181,8 @@ class FirstContactService:
         profile = generate_new_npc_profile(
             npc_id=npc_id, campaign_id=self.store.campaign_id,
             creation_branch_id=branch_id, world_seed=self.world_seed,
-            npc_origin="CREATED", alignment_weights=self.weights)
+            npc_origin="CREATED", alignment_weights=self.weights,
+            fixed_alignment=fixed)
         key = "spec006-personality:" + _digest(self.store.campaign_id, branch_id, npc_id)
         assignment, created = self.store.append_event(
             branch_id=branch_id, host_epoch=event.host_epoch,

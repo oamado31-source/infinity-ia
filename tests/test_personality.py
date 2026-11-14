@@ -67,6 +67,17 @@ class PersonalityGeneratorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.make(world_seed="")
 
+    def test_alignment_from_the_game_sheet_keeps_the_rest_of_the_draw(self):
+        """CR-2026-010: a curated official NPC keeps the game's alignment; nothing else changes."""
+        drawn, fixed = self.make(), self.make(fixed_alignment="LN")
+        self.assertEqual(fixed["alignment_initial"],
+                         {"code": "LN", "ethical": "LAWFUL", "moral": "NEUTRAL",
+                          "provenance": "GAME_DATA"})
+        for key in ("hexaco", "values", "drives", "vulnerabilities", "seed_fingerprint"):
+            self.assertEqual(fixed[key], drawn[key], key)
+        with self.assertRaises(ValueError):
+            self.make(fixed_alignment="XX")
+
     def test_provenance_does_not_pretend_to_observe_game(self):
         p = self.make()
         self.assertEqual(p["alignment_initial"]["provenance"], "GENERATED")

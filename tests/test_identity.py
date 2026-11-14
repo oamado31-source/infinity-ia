@@ -638,6 +638,22 @@ class OriginClaimTests(unittest.TestCase):
         self.assertFalse(self.check('Trabalho na cidade, perto da Coroa de Cobre.', 'HABITANTE',
                                     **here))
 
+    def test_the_question_repeated_back_is_not_a_claim(self):
+        """CR-2026-009: qwen3:30b-a3b starts with the player's question ("Trabalho aqui? Não...")."""
+        here = {'resident_of': 'a Coroa de Cobre'}
+        for speech, standing in (('Trabalho aqui? Não, só passo por aqui.', 'HABITANTE'),
+                                 ('Eu trabalho aqui? Sou carregador, não sou dono.', 'HABITANTE'),
+                                 ('Trabalho na Coroa de Cobre? Não.', 'HABITANTE'),
+                                 ('Estou de passagem? Não, moro em Athkatla.', 'HABITANTE'),
+                                 ('Moro aqui? Não, estou de passagem.', 'VIAJANTE'),
+                                 ('Nasci aqui? Não.', 'HABITANTE')):
+            with self.subTest(speech=speech):
+                self.assertFalse(self.check(speech, standing, **here))
+        for speech in ('Trabalho aqui, não é?', 'Você sabia que eu trabalho aqui?',
+                       'Trabalho aqui? Sim. Trabalho aqui.', 'Trabalho na Coroa de Cobre, sim.'):
+            with self.subTest(speech=speech):
+                self.assertTrue(self.check(speech, 'HABITANTE', **here))
+
     def test_staff_tie_comes_from_the_curated_affiliation(self):
         curation = SimpleNamespace(occupation='taverneiro da Coroa de Cobre', origin_region=None,
                                    years_here=None, places_visited=(), self_facts=(),

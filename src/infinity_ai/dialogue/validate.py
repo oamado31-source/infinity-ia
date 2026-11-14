@@ -68,13 +68,27 @@ def _unknown_names(speech: str, vocabulary: frozenset[str]) -> list[str]:
     return found
 
 
+def _stated(pattern: re.Pattern, speech: str) -> bool:
+    """A match that is said, not the player's question repeated back ("Trabalho aqui? Não, ...").
+
+    A match right before "?", with at most two words before it in its sentence, is that repeated
+    question (CR-2026-009); "Trabalho aqui, não é?" still states it."""
+    for m in pattern.finditer(speech):
+        if not re.match(r'\s*\?', speech[m.end():]):
+            return True
+        before = re.split(r'[.!?…:]', speech[:m.start()])[-1]
+        if len(_WORD.findall(before)) > 2:
+            return True
+    return False
+
+
 def _works_at_place(speech: str, context: DialogueContext) -> bool:
     """CR-2026-005: "trabalho na Coroa de Cobre" names the place where the person is."""
     place = re.sub(r'^(?:[ao]s?)\s+', '', context.resident_of or '', flags=re.I).strip()
     if not place:
         return False
-    return bool(re.search(r'(?<!não )\btrabalho\s+(?:aqui\s+)?(?:n[ao]s?|em)\s+(?:[ao]s?\s+)?'
-                          + re.escape(place) + r'\b', speech, re.I))
+    return _stated(re.compile(r'(?<!não )\btrabalho\s+(?:aqui\s+)?(?:n[ao]s?|em)\s+(?:[ao]s?\s+)?'
+                              + re.escape(place) + r'\b', re.I), speech)
 
 
 def _origin_contradicts(speech: str, context: DialogueContext) -> str | None:
@@ -83,13 +97,13 @@ def _origin_contradicts(speech: str, context: DialogueContext) -> str | None:
     not in its facts, "trabalho aqui" without a STAFF tie), or None."""
     resident = context.standing == 'HABITANTE'
     facts = ' '.join(f.text for f in context.facts).lower()
-    if _AWAY_CLAIM.search(speech) and resident:
+    if resident and _stated(_AWAY_CLAIM, speech):
         return 'AWAY'
-    if _HOME_CLAIM.search(speech) and not resident:
+    if not resident and _stated(_HOME_CLAIM, speech):
         return 'HOME'
-    if _BORN_CLAIM.search(speech) and 'nasceu' not in facts:
+    if 'nasceu' not in facts and _stated(_BORN_CLAIM, speech):
         return 'BORN'
-    if not context.staff and (_WORK_CLAIM.search(speech) or _works_at_place(speech, context)):
+    if not context.staff and (_stated(_WORK_CLAIM, speech) or _works_at_place(speech, context)):
         return 'WORK'
     # CR-2026-004: a resident may also say it is from where it lives or a region containing it
     # ("sou de Amn" while living in Athkatla); any other place must be in its own facts.

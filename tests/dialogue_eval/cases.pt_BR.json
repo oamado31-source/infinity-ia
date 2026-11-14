@@ -232,7 +232,7 @@
           "OK"
         ],
         "matches_none": [
-          "(?<!não )\\btrabalho (?:aqui|na taverna|na coroa|para o dono)"
+          "(?<!não )\\btrabalho (?:aqui|na taverna|na coroa|para o dono)(?!\\s*\\?)"
         ]
       }
     },
@@ -255,8 +255,8 @@
           "OK"
         ],
         "matches_none": [
-          "(?<!não )\\b(?:moro|vivo) aqui",
-          "(?<!não )\\bsou (?:daqui|de cá)"
+          "(?<!não )\\b(?:moro|vivo) aqui(?!\\s*\\?)",
+          "(?<!não )\\bsou (?:daqui|de cá)(?!\\s*\\?)"
         ]
       }
     },

@@ -134,3 +134,14 @@ Este endpoint é infraestrutura experimental, **não habilita cliques em NPCs co
 2. Copiar a caixa para a VM: `python tools/windows-lab/talk_poc.py --deploy` e reabrir o jogo.
 3. Serviço numa campanha nova: `dialogue_service.py ... --campaign lab-s1e --db ~/.infinity-ai/campaigns/lab-s1e.sqlite3 [--world-seed <semente>]`. Depois, pin: `pin_canon_pack.py --campaign lab-s1e --db ...`.
 4. No jogo, F9 sobre a pessoa. O console do serviço mostra `caixa pedido=... perfil=... status=... entradas=[...] ouvintes=[...]` e, quando houver, `conhecimento comum adquirido ... base=INQUIRY`.
+
+## Anexo — ADR-0127: voz do jogador na caixa do jogo
+
+1. **Caixa nova na VM:** com o jogo fechado, `python tools/windows-lab/talk_poc.py --deploy`. Esse comando copia `M_INFAIT.lua`, `INFAITLK.menu` e os arquivos vazios `INFAIRSP.lua`/`INFAIPTT.lua`. Depois, reabra o jogo inteiro.
+2. **Manifesto:** trocar a caixa muda o hash do modpack, então fixe um manifesto novo antes de usar `--pinned-manifest` (seções 2 e 3).
+3. **Modelo:** `~/.infinity-ai/models/ggml-large-v3-turbo-q5_0.bin` (whisper.cpp, 574 MB), fora do repositório. `whisper-cli` e `ffmpeg` vêm do Homebrew.
+4. **Serviço:** acrescente `--voice` (opções: `--stt-model`, `--mic-device`, `--max-voice-s` com padrão 20, `--min-voice-level` com padrão 150). O padrão é o microfone embutido. Liste os aparelhos com `ffmpeg -f avfoundation -list_devices true -i ""`.
+5. **Permissão:** na primeira gravação, o macOS pede acesso ao microfone para o app que roda o serviço. Só o jogador pode aprovar.
+6. **Log:** `voz ptt=… estado=REC|TEXT|FAILED|CANCELLED motivo=… duracao=… stt=… nivel=… chars=…`, sem a transcrição. A linha da caixa ganha `entrada=TEXT|VOICE`.
+7. **Comparar modelos:** `python tools/voice-eval/run_stt_eval.py --say` (vozes do macOS), `--record` (grava as 12 frases com a sua voz em `~/.infinity-ai/voice-eval/recordings/`) e `--recorded` (compara usando essas gravações).
+

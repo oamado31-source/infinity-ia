@@ -8,8 +8,10 @@
 -- A resposta volta pelo arquivo override\INFAIRSP.lua, gravado pelo servico, que define so a
 -- tabela INFAI_TALK_Reply = {req_id=..., speech=...}; o painel descarta o cache do recurso e o
 -- rele (Infinity_DoFile) ate o req_id bater. Nada aqui altera o estado do motor: sem variaveis, diario, dialogos ou save.
--- O botao "aperte para falar" (push-to-talk, ADR-0107) fica reservado e desabilitado; o campo
--- "input" do protocolo ja preve VOICE.
+-- Voz (ADR-0127): o botao "Falar" publica INFAI-PTT {START|STOP|CANCEL}; o servico abre o
+-- microfone no proprio host, transcreve localmente e devolve estado e texto em override\INFAIPTT.lua
+-- (so a tabela INFAI_PTT_State). O texto vai para o campo de edicao para revisao; enviar marca
+-- "input":"VOICE". A caixa nunca grava audio.
 
 INFAI_TALK_SCHEMA = "infinity-ai.talk.v1"
 INFAI_TALK_KEY_NAME = "F9"
@@ -21,6 +23,9 @@ INFAI_TALK_MAX_LINES = 40
 INFAI_TALK_STATE_DEAD = 0x800
 INFAI_TALK_RIGHT_CLICK = true    -- abrir com o botao direito sobre a criatura
 INFAI_TALK_DEBUG = true         -- laboratorio: registra teclas e motivos no console (sem texto)
+INFAI_PTT_SCHEMA = "infinity-ai.ptt.v1"
+INFAI_PTT_WAIT_MS = 10000       -- sem "REC" do servico nesse prazo: microfone indisponivel
+INFAI_PTT_BUSY_MS = 40000       -- sem texto nesse prazo depois de parar: transcricao falhou
 
 local function infai_debug(msg)
 	if INFAI_TALK_DEBUG then print("INFAI-TALK-DEBUG " .. msg) end
@@ -28,7 +33,7 @@ end
 
 INFAI_TALK_State = INFAI_TALK_State or {
 	open = false, speaker = nil, selected_leader = nil, lines = {}, pending = nil,
-	sent_at = 0, next_poll = 0, n = 0,
+	sent_at = 0, next_poll = 0, n = 0, ptt = nil, from_voice = false,
 }
 INFAI_TALK_Input = ""
 
@@ -206,6 +211,7 @@ function INFAI_TALK_Open()
 	local selected_leader = infai_selected_leader()
 	st.open, st.speaker, st.selected_leader, st.lines, st.pending =
 		true, speaker, selected_leader, {}, nil
+	st.ptt, st.from_voice = nil, false
 	-- ADR-0123: um id por abertura da caixa; a conversa vale enquanto ela estiver aberta.
 	st.conv = string.format("%d-%d", (INFAI_P2_State and INFAI_P2_State.session_seq) or 0,
 		Infinity_GetClockTicks())
@@ -218,9 +224,27 @@ function INFAI_TALK_Open()
 	return true
 end
 
+local function infai_session_seq()
+	return (INFAI_P2_State and INFAI_P2_State.session_seq) or 0
+end
+
+-- ADR-0127: um sinal de push-to-talk por linha no console (sem audio, sem texto).
+local function infai_ptt_signal(action)
+	local st = INFAI_TALK_State
+	if st.ptt == nil then return end
+	print("INFAI-PTT {" ..
+		'"schema":' .. infai_json_string(INFAI_PTT_SCHEMA) ..
+		',"ptt_id":' .. infai_json_string(st.ptt.id) ..
+		',"action":' .. infai_json_string(action) ..
+		',"session_seq":' .. infai_session_seq() ..
+		',"clock_ms":' .. string.format("%d", Infinity_GetClockTicks()) .. '}')
+end
+
 function INFAI_TALK_Close()
 	local st = INFAI_TALK_State
 	if not st.open then return end
+	if st.ptt ~= nil then infai_ptt_signal("CANCEL") end
+	st.ptt, st.from_voice = nil, false
 	st.open, st.pending, st.selected_leader = false, nil, nil
 	Infinity_PopMenu("INFAI_TALK_Menu")
 	infai_pause(false)
@@ -262,7 +286,7 @@ function INFAI_TALK_Send()
 		',"clock_ms":' .. string.format("%d", now) ..
 		',"area":' .. (area and infai_json_string(area) or "null") ..
 		',"game_time":' .. (game_time and string.format("%d", game_time) or "null") ..
-		',"input":"TEXT"' ..
+		',"input":' .. infai_json_string(st.from_voice and "VOICE" or "TEXT") ..
 		',"speaker":{"script":' .. infai_json_string(st.speaker.script) ..
 		',"name":' .. infai_json_string(st.speaker.name) ..
 		',"cre":' .. infai_json_string(st.speaker.cre) ..
@@ -281,28 +305,93 @@ function INFAI_TALK_Send()
 		',"listeners":' .. (listeners and infai_json_array(listeners) or "null") .. '}')
 	infai_add_line("Você: " .. text)
 	INFAI_TALK_Input = ""
+	st.from_voice = false
 	st.pending, st.sent_at, st.next_poll = req_id, now, now + INFAI_TALK_POLL_MS
 	st.read_error_logged, st.empty_logged = false, false
 end
 
--- O motor guarda em cache o conteudo de override\INFAIRSP.lua lido na primeira vez; descartar o
--- recurso (como faz EEex_Menu_Eval) obriga a proxima leitura a buscar o arquivo de novo.
-local function infai_drop_cached_reply()
+-- O motor guarda em cache o conteudo de override\INFAIRSP.lua (e INFAIPTT.lua) lido na primeira
+-- vez; descartar o recurso (como faz EEex_Menu_Eval) obriga a proxima leitura a buscar o arquivo.
+-- So estes dois arquivos do servico sao descartados.
+local function infai_drop_cached(resref)
+	if resref ~= "INFAIRSP" and resref ~= "INFAIPTT" then return false, "recurso nao permitido" end
 	return pcall(function()
-		local res = EEex_Resource_Fetch("INFAIRSP", "LUA")
+		local res = EEex_Resource_Fetch(resref, "LUA")
 		if res ~= nil then EngineGlobals.dimmDump(res) end
 	end)
+end
+
+-- ADR-0127: estado do push-to-talk vindo do servico (REC, TEXT, FAILED, CANCELLED).
+local function infai_ptt_poll(now)
+	local st = INFAI_TALK_State
+	local ptt = st.ptt
+	if ptt == nil or now < ptt.next_poll then return end
+	ptt.next_poll = now + INFAI_TALK_POLL_MS
+	INFAI_PTT_State = nil
+	infai_drop_cached("INFAIPTT")
+	pcall(Infinity_DoFile, "INFAIPTT")
+	local s = INFAI_PTT_State
+	if type(s) == "table" and s.ptt_id == ptt.id then
+		if s.state == "REC" and ptt.phase == "WAIT" then
+			ptt.phase, ptt.since = "REC", now
+		elseif s.state == "TEXT" and type(s.text) == "string" and s.text ~= "" then
+			INFAI_TALK_Input = s.text
+			st.from_voice, st.ptt = true, nil
+			Infinity_FocusTextEdit("INFAI_TALK_Edit")
+			return
+		elseif s.state == "FAILED" then
+			infai_add_line("(Não entendi; fale de novo ou digite.)")
+			st.ptt = nil
+			return
+		elseif s.state == "CANCELLED" then
+			st.ptt = nil
+			return
+		end
+	end
+	if ptt.phase == "WAIT" and now - ptt.since > INFAI_PTT_WAIT_MS then
+		infai_add_line("(O microfone não respondeu; digite a pergunta.)")
+		st.ptt = nil
+	elseif ptt.phase == "BUSY" and now - ptt.since > INFAI_PTT_BUSY_MS then
+		infai_add_line("(A transcrição não voltou; digite a pergunta.)")
+		st.ptt = nil
+	end
+end
+
+-- Botao "Falar": primeiro clique comeca, segundo clique para (alternancia).
+function INFAI_TALK_PTT()
+	local st = INFAI_TALK_State
+	if not st.open or st.speaker == nil or st.speaker.dead or st.pending ~= nil then return end
+	local now = Infinity_GetClockTicks()
+	if st.ptt == nil then
+		st.n = st.n + 1
+		st.ptt = { id = string.format("%d-%d-%d", infai_session_seq(), now, st.n),
+			phase = "WAIT", since = now, next_poll = now + INFAI_TALK_POLL_MS }
+		infai_ptt_signal("START")
+	elseif st.ptt.phase == "WAIT" or st.ptt.phase == "REC" then
+		st.ptt.phase, st.ptt.since = "BUSY", now
+		infai_ptt_signal("STOP")
+	end
+end
+
+function INFAI_TALK_PTTText()
+	local ptt = INFAI_TALK_State.ptt
+	if ptt == nil then return "Falar (microfone)" end
+	if ptt.phase == "WAIT" then return "Preparando o microfone..." end
+	if ptt.phase == "REC" then return "Gravando... clique para parar" end
+	return "Transcrevendo..."
 end
 
 -- Chamado a cada frame pelo menu (enabled do rotulo de fundo). Le a resposta, se houver.
 function INFAI_TALK_Tick()
 	local st = INFAI_TALK_State
-	if not st.open or st.pending == nil then return true end
+	if not st.open then return true end
 	local now = Infinity_GetClockTicks()
+	infai_ptt_poll(now)
+	if st.pending == nil then return true end
 	if now < st.next_poll then return true end
 	st.next_poll = now + INFAI_TALK_POLL_MS
 	INFAI_TALK_Reply = nil
-	local okd, derr = infai_drop_cached_reply()
+	local okd, derr = infai_drop_cached("INFAIRSP")
 	if not okd and not st.drop_error_logged then
 		infai_debug("descartar cache da resposta falhou: " .. tostring(derr))
 		st.drop_error_logged = true
@@ -367,6 +456,7 @@ end)
 
 EEex_GameState_AddDestroyedListener(function()
 	INFAI_TALK_State.open, INFAI_TALK_State.pending = false, nil
+	INFAI_TALK_State.ptt, INFAI_TALK_State.from_voice = nil, false
 	INFAI_TALK_State.paused_by_box = false
 	INFAI_TALK_State.selected_leader = nil
 end)

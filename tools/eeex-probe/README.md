@@ -26,11 +26,12 @@ Para remover: apague os dois arquivos do `override\` e volte `LogFile=` ao valor
 
 `M_INFAIT.lua` + `INFAITLK.menu`, instalados na mesma cópia que o probe:
 
-- **Abrir:** **clique com o botão direito** numa criatura fora do grupo (ou **F9**, `INFAI_TALK_KEY_NAME`, com o cursor sobre ela; no Mac, Fn+F9) abre um painel com nome, histórico, campo de texto, Enviar/Sair e o botão reservado "aperte para falar". O clique direito é capturado embrulhando `EEex_Key_Hook_AfterEventsPoll`; só é consumido sobre uma criatura fora do grupo, na tela de mundo.
+- **Abrir:** **clique com o botão direito** numa criatura fora do grupo (ou **F9**, `INFAI_TALK_KEY_NAME`, com o cursor sobre ela; no Mac, Fn+F9) abre um painel com nome, histórico, campo de texto, Enviar/Sair e o botão **Falar** (voz, ADR-0127). O clique direito é capturado embrulhando `EEex_Key_Hook_AfterEventsPoll`; só é consumido sobre uma criatura fora do grupo, na tela de mundo.
 - **Pausa:** enquanto a caixa está aberta o jogo fica pausado, como no diálogo nativo (`EEex_GameState_TogglePause`); ao fechar, só desfaz a pausa que a própria caixa fez.
 - **Pedido:** Enviar ou Enter publica `INFAI-TALK {json}` com o pedido, a área, o tempo, o falante (script name, CRE, nome, id da instância, se está morto), o texto e os ouvintes: companheiros ao alcance de 448 com linha de visão.
 - **Resposta:** vem de `override\INFAIRSP.lua` (só `INFAI_TALK_Reply = {req_id, speech}`), relido com `Infinity_DoFile` a cada 500 ms, com timeout de 60 s.
-- **Garantias:** não altera variáveis, diário, diálogos nem save. `tests/test_talk.py` verifica a allowlist de funções do motor e que o único arquivo lido é a resposta.
+- **Voz (ADR-0127):** **Falar** publica `INFAI-PTT {START|STOP|CANCEL}`. O estado e o texto voltam por `override\INFAIPTT.lua` (só `INFAI_PTT_State = {ptt_id, state, text}`), e o texto vai para o campo de edição para revisão. Enviar marca `"input":"VOICE"`. A caixa nunca grava áudio: o microfone é aberto pelo serviço (`--voice`).
+- **Garantias:** não altera variáveis, diário, diálogos nem save. `tests/test_talk.py` verifica a allowlist de funções do motor, que só os dois arquivos do serviço (resposta e estado da voz) são lidos e, com `lupa`, roda o fluxo da voz com o motor simulado.
 
 Cópia para a VM: `python tools/windows-lab/talk_poc.py --deploy` (depois, reabrir o jogo). O serviço `dialogue_service.py` responde aos pedidos; `talk_poc.py` sem argumentos só responde com eco, sem modelo.
 

@@ -37,13 +37,13 @@ menu
 		maxlines 1
 		text style "normal"
 	}
-	text
+	button
 	{
 		name "INFAI_TALK_PTT"
-		text "Aperte para falar (em breve)"
-		text style "normal"
-		text color 128 128 128 255
-		text align left center
+		text lua "INFAI_TALK_PTTText()"
+		text style "button"
+		fill 60 52 44 255
+		action "INFAI_TALK_PTT()"
 	}
 	button
 	{

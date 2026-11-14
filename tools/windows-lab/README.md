@@ -80,7 +80,7 @@ O banco fica em `~/.infinity-ai/campaigns/lab-s1.sqlite3` (fora do repo) e o bac
 
 ## 8. S1b — diálogo por texto com overlay (single player)
 
-No Mac (Ollama com `qwen3:8b` rodando):
+No Mac (Ollama com `qwen3:30b-a3b` instalado; `--model qwen3:8b` usa o modelo menor):
 
 ```bash
 export INFINITY_LAB_SSH='ssh -i ~/.ssh/<chave> -o IdentitiesOnly=yes -o BatchMode=yes -l "<usuario>" <ip-da-vm>'

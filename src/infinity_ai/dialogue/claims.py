@@ -4,7 +4,8 @@
 An opinion of the speaker passes ("Cruel!", "acho que ele é duro", "não confio nele"), except
 for numbers and durations, which need the knowledge even when hedged (CR-2026-006); what is
 stated as a fact about another person or group does not, unless the speaker's own context says
-it: a role ("o taverneiro é Lehtinan"), a trait ("Lehtinan? Cara duro"), a number or a duration
+it: a role ("o taverneiro é Lehtinan"), a trait ("Lehtinan? Cara duro", or a later clause with
+the subject left out: "Lehtinan? Dono da taverna. Não fala muito"), a number or a duration
 ("governam há décadas", "vivo aqui há 20 anos") or a general rule ("governa quem tem dinheiro").
 
 Local Portuguese patterns, checked against the context texts that mention the name, with a small
@@ -63,6 +64,27 @@ _TRAIT_PATTERNS = (
     re.compile(rf"(?P<name>{_CAP})\s*[?:,!.…]\s*(?i:um\s+|uma\s+)?(?i:cara|homem|mulher|sujeito|"
                rf"tipo|pessoa)\s+(?P<rest>(?:{_LOW}\s*){{1,3}})"),
 )
+# A trait in a clause that leaves the subject out ("Lehtinan? Dono. Não fala muito, mas é bom com
+# os clientes"): the subject is the last known name of that sentence or the two before it.
+_CARRIED_VERBS = ('fala', 'falava', 'gosta', 'gostava', 'bebe', 'bebia', 'trata', 'tratava',
+                  'costuma', 'costumava', 'anda', 'andava', 'vive', 'vivia', 'mora', 'morava',
+                  'cobra', 'cobrava', 'grita', 'gritava', 'odeia', 'adora', 'ama', 'sorri',
+                  'reclama', 'briga', 'confia', 'desconfia', 'trapaceia', 'rouba', 'mente')
+TRAIT_ADJECTIVES = frozenset({
+    'bom', 'boa', 'bons', 'boas', 'mau', 'má', 'maus', 'más', 'ruim', 'ruins', 'duro', 'dura',
+    'gentil', 'simpático', 'simpática', 'antipático', 'antipática', 'generoso', 'generosa',
+    'avarento', 'avarenta', 'sovina', 'mesquinho', 'mesquinha', 'honesto', 'honesta',
+    'desonesto', 'desonesta', 'justo', 'justa', 'injusto', 'injusta', 'cruel', 'calado',
+    'calada', 'quieto', 'quieta', 'falante', 'bravo', 'brava', 'nervoso', 'nervosa', 'tranquilo',
+    'tranquila', 'esperto', 'esperta', 'burro', 'burra', 'preguiçoso', 'preguiçosa',
+    'trabalhador', 'trabalhadora', 'educado', 'educada', 'grosso', 'grossa', 'rude', 'honrado',
+    'honrada', 'perigoso', 'perigosa', 'rico', 'rica', 'pobre', 'bêbado', 'bêbada', 'sério',
+    'séria', 'amável', 'legal', 'chato', 'chata', 'severo', 'severa', 'esquisito', 'esquisita'})
+_CARRIED = re.compile(
+    r"(?:^|(?<=[.!?…])\s*|,\s*(?:mas|e)\s+|\bmas\s+)(?P<clause>(?:não\s+)?(?:ele\s+|ela\s+)?"
+    r"(?P<verb>" + '|'.join(_CARRIED_VERBS) + r"|é|era)\b(?P<rest>[^.!?…,]*))", re.I)
+_PREPOSITION = re.compile(r"\b(?:em|de|da|do|das|dos|na|no|nas|nos|para|pra|por|pela|pelo|ao|à|"
+                          r"até|desde|sobre)\s+$", re.I)
 _NUMBER = re.compile(
     r"\b(?:há|faz)\s+(?:mais de\s+|uns\s+|umas\s+|cerca de\s+|quase\s+)?"
     r"(?P<n>\d+|uma|um|duas|dois|três|quatro|cinco|seis|sete|oito|nove|dez|vinte|trinta|"
@@ -120,6 +142,37 @@ class _Speech:
         return [w for w in re.findall(_CAP, text) if self.is_known(w)]
 
 
+def _subject_before(s: _Speech, pos: int) -> str | None:
+    """The last known name before `pos` in its sentence or the two before it ("Lehtinan? Dono.")."""
+    index = next((i for i, (a, b) in enumerate(s.sentences) if a <= pos < b), None)
+    if index is None:
+        return None
+    start = s.sentences[max(0, index - 2)][0]
+    # A name after a preposition is a place or an object ("Moro em Athkatla. É bom aqui."),
+    # not the subject being described.
+    names = [m.group(1) for m in re.finditer(rf"(?<![\wÀ-ÿ])({_CAP})", s.speech[start:pos])
+             if s.is_known(m.group(1)) and not _PREPOSITION.search(s.speech[start:start + m.start()])]
+    return names[-1] if names else None
+
+
+def _carried_trait(s: _Speech, m: re.Match) -> bool:
+    verb = m.group('verb').lower()
+    rest = m.group('rest')
+    words = [w for w in re.findall(r'[\wà-ÿ-]+', rest.lower()) if w not in _FILLER]
+    if verb in ('é', 'era'):
+        if not words or words[0] not in TRAIT_ADJECTIVES:
+            return False                      # "É Lehtinan.", "É o que sei."
+        claim = words[0]
+    else:
+        if re.match(r"\s*com\s+(?:ele|ela|[A-ZÀ-Ý])", rest):
+            return False                      # "Fala com ele." is advice, not a trait
+        claim = verb
+    name = _subject_before(s, m.start('clause'))
+    if name is None or s.opinion(m.start('clause')):
+        return False
+    return not _backed(claim, s.base([name]))
+
+
 def third_party_claim(speech: str, context: DialogueContext) -> str | None:
     """The first unbacked claim about someone else ('ROLE', 'TRAIT', 'NUMBER', 'GENERAL')."""
     s = _Speech(speech, context)
@@ -139,6 +192,9 @@ def third_party_claim(speech: str, context: DialogueContext) -> str | None:
                 continue
             if not _backed(trait, s.base([name])):
                 return 'TRAIT'
+    for m in _CARRIED.finditer(speech):
+        if _carried_trait(s, m):
+            return 'TRAIT'
     for m in _NUMBER.finditer(speech):
         n, unit = m.group('n').lower(), (m.group('unit') or '').lower()
         sentence = s.sentence(m.start())

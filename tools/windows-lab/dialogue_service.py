@@ -394,7 +394,8 @@ class Talker(threading.Thread):
                     base=base_morale(role_from_name(req.speaker_name),
                                      curation.morale if curation is not None else None),
                     mods=modifiers(ethical=ethical_axis(getattr(resident, 'alignment', None),
-                                                        profile), text=req.text),
+                                                        profile), text=req.text,
+                                   trigger=trigger),
                     world_seed=self.args.world_seed, game_time=view.game_time)
             result = DialogueEngine(store, self.provider, self.catalog).respond_resident(
                 ResidentRequest(speaker, req.speaker_name, req.text, req.area, req.speaker_dead),
@@ -582,7 +583,7 @@ def main() -> int:
     ap.add_argument('--game-root', default=r'C:\InfinityLab\BG2EE-P1')
     ap.add_argument('--bind', default='192.168.150.1')
     ap.add_argument('--port', type=int, default=8765)
-    ap.add_argument('--model', default='qwen3:8b')
+    ap.add_argument('--model', default='qwen3:30b-a3b')
     ap.add_argument('--ollama-url', default='http://127.0.0.1:11434')
     ap.add_argument('--reuse-token', action='store_true',
                     help='keep the token already in --config-out (overlay keeps working after a restart)')

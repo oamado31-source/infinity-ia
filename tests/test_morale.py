@@ -39,6 +39,8 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(modifiers(ethical='CHAOTIC', text='Fale ou eu te mato!'),
                          (('chaotic', -1), ('poorly_treated', -4)))
         self.assertEqual(modifiers(ethical=None, text='Quem governa?'), ())
+        self.assertEqual(modifiers(ethical=None, text='Conte ou te machuco.',
+                                   trigger='INTIMIDATION'), (('poorly_treated', -4),))
         self.assertEqual(ethical_axis(0x11), 'LAWFUL')
         self.assertEqual(ethical_axis(None, {'alignment_initial': {'ethical': 'CHAOTIC'}}),
                          'CHAOTIC')

@@ -208,3 +208,83 @@ def render_reply(req_id: str, speech: str) -> str:
         raise ValueError('bad req_id')
     speech = ' '.join(speech.split())[:MAX_SPEECH]
     return f'INFAI_TALK_Reply = {{req_id = {lua_string(req_id)}, speech = {lua_string(speech)}}}\n'
+
+
+# ADR-0127: push-to-talk. The box prints `INFAI-PTT {json}` on each press (START), release (STOP)
+# or close (CANCEL); the service answers in `override/INFAIPTT.lua` with the state and, once
+# transcribed, the text for the player to review. Same rules as the talk channel: strict parsing,
+# escaped literals only, the transcript never logged.
+PTT_PREFIX = 'INFAI-PTT '
+PTT_SCHEMA = 'infinity-ai.ptt.v1'
+PTT_RESREF = 'INFAIPTT'
+PTT_ACTIONS = frozenset({'START', 'STOP', 'CANCEL'})
+PTT_STATES = frozenset({'REC', 'TEXT', 'FAILED', 'CANCELLED'})
+PLACEHOLDER_PTT = 'INFAI_PTT_State = {ptt_id = "", state = "", text = ""}\n'
+"""Kept in override/ at all times, like the reply file (present at launch)."""
+
+
+@dataclass(frozen=True)
+class PttSignal:
+    ptt_id: str
+    action: str
+    session_seq: int
+    clock_ms: int
+
+
+def parse_ptt_line(line: str) -> PttSignal | None:
+    index = line.find(PTT_PREFIX)
+    if index < 0:
+        return None
+    payload = line[index + len(PTT_PREFIX):].strip()
+    if not payload or len(payload) > 512:
+        return None
+    try:
+        doc = json.loads(payload)
+    except ValueError:
+        return None
+    if not isinstance(doc, dict) or doc.get('schema') != PTT_SCHEMA:
+        return None
+    ptt_id, action = doc.get('ptt_id'), doc.get('action')
+    session_seq, clock_ms = _int(doc.get('session_seq')), _int(doc.get('clock_ms'))
+    if not isinstance(ptt_id, str) or not _REQ_ID.fullmatch(ptt_id) or action not in PTT_ACTIONS \
+            or session_seq is None or clock_ms is None:
+        return None
+    return PttSignal(ptt_id, action, session_seq, clock_ms)
+
+
+def parse_ptt_signals(text: str) -> list[PttSignal]:
+    """Every valid push-to-talk signal in the log text, oldest first (unterminated last skipped)."""
+    lines = text.splitlines(keepends=True)
+    if lines and not lines[-1].endswith(('\n', '\r')):
+        lines.pop()
+    return [s for s in (parse_ptt_line(line) for line in lines) if s is not None]
+
+
+PTT_MAX_AGE_MS = 20_000   # a press older than this, against the latest probe snapshot, is stale
+
+
+def fresh_ptt_signals(signals: list[PttSignal], seen: set[tuple[str, str]], *, session_seq: int,
+                      clock_ms: int, max_age_ms: int = PTT_MAX_AGE_MS) -> list[PttSignal]:
+    """Signals to act on: not handled before, from the current game session and at most
+    `max_age_ms` older than the latest snapshot. Every signal is marked seen, so a stale press
+    can never open the microphone later (e.g. when the service restarts)."""
+    out = []
+    for s in signals:
+        key = (s.ptt_id, s.action)
+        if key in seen:
+            continue
+        seen.add(key)
+        if s.session_seq == session_seq and s.clock_ms >= clock_ms - max_age_ms:
+            out.append(s)
+    return out
+
+
+def render_ptt_state(ptt_id: str, state: str, text: str = '') -> str:
+    """Contents of `override/INFAIPTT.lua`: the state of one press and, with TEXT, the transcript."""
+    if not _REQ_ID.fullmatch(ptt_id):
+        raise ValueError('bad ptt_id')
+    if state not in PTT_STATES:
+        raise ValueError('bad state')
+    text = ' '.join(text.split())[:MAX_TEXT] if state == 'TEXT' else ''
+    return (f'INFAI_PTT_State = {{ptt_id = {lua_string(ptt_id)}, state = {lua_string(state)}, '
+            f'text = {lua_string(text)}}}\n')

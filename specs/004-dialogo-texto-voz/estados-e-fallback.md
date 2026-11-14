@@ -1,6 +1,6 @@
 # SPEC-004 — Diálogo por texto: fluxo, estados, falhas e limites (etapa 1, single player)
 
-**Status:** parte de texto implementada em `src/infinity_ai/dialogue/` com overlay Windows (`tools/windows-overlay/`) e serviço de laboratório (`tools/windows-lab/dialogue_service.py`). **Voz (REQ-VOICE-001..003) ainda não implementada.** Single player; não é evidência de multiplayer.
+**Status:** parte de texto implementada em `src/infinity_ai/dialogue/` com overlay Windows (`tools/windows-overlay/`) e serviço de laboratório (`tools/windows-lab/dialogue_service.py`). **Voz do jogador (REQ-VOICE-001, 002 e 004) na caixa do jogo pelo ADR-0127; voz do NPC (REQ-VOICE-003, TTS) ainda não.** Single player; não é evidência de multiplayer.
 
 ## Fluxo
 
@@ -35,6 +35,28 @@ Recusa: JSON fora do formato; fala vazia ou > 400 caracteres; `used_facts` com i
 - afirmações sem nome próprio que não estão nos fatos (ex.: "a masmorra é cheia de monstros");
 - enfeites de personalidade ("comer doces").
 A validação reduz invenção e vazamento; não prova que cada frase é verdadeira (ADR-0055: risco baixo, sem segundo LLM por interação, ADR-0059 item 7).
+
+## Voz do jogador (ADR-0127)
+
+Na caixa do jogo, o botão **Falar** alterna início e fim:
+
+1. **Início:** `INFAI-PTT START` no log. O serviço (`--voice`) abre o microfone do próprio host e grava `override\INFAIPTT.lua` com `REC`. A caixa mostra "Preparando o microfone…" e depois "Gravando… clique para parar".
+2. **Fim:** `STOP`. O serviço fecha o microfone e roda o STT local (whisper.cpp, `-l pt`, com um vocabulário de nomes públicos). O resultado vai como `TEXT`, e a caixa põe o texto no campo de edição para revisão.
+3. **Envio:** o pedido sai com `input: VOICE` e segue o fluxo acima, com o mesmo validador.
+
+| Estado | Quando | A caixa mostra |
+|---|---|---|
+| `REC` | o microfone abriu | "Gravando… clique para parar" |
+| `TEXT` | transcrição com texto | o texto no campo de edição |
+| `FAILED` (`MIC`, `SILENCE`, `EMPTY`, `STT`) | microfone indisponível, silêncio (nível abaixo de `--min-voice-level`, sem rodar o STT), só marcas do Whisper ou erro do STT | "(Não entendi; fale de novo ou digite.)" |
+| `CANCELLED` | a caixa fechou gravando | — |
+| sem resposta | `--voice` desligado ou serviço fora do ar: 10 s sem `REC`, 40 s sem texto | "(O microfone não respondeu…)" ou "(A transcrição não voltou…)" |
+
+**Garantias:**
+- **REQ-VOICE-001:** o microfone só abre num `START` feito com o serviço rodando, e a gravação para sozinha aos 20 s.
+- **REQ-VOICE-002:** a transcrição é texto para revisar, nunca comando.
+- **REQ-VOICE-004:** sem voz, o texto continua igual.
+- **Privacidade:** o áudio fica num diretório temporário privado e é apagado depois do STT, em qualquer resultado. O log não registra a transcrição.
 
 ## Segurança
 

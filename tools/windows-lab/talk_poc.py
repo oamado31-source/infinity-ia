@@ -22,7 +22,8 @@ sys.path.insert(0, str(ROOT / 'src'))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from infinity_ai.bridge.talk import (  # noqa: E402
-    PLACEHOLDER_REPLY, REPLY_RESREF, parse_talk_requests, render_reply,
+    PLACEHOLDER_PTT, PLACEHOLDER_REPLY, PTT_RESREF, REPLY_RESREF, parse_talk_requests,
+    render_reply,
 )
 from lab_ssh import (  # noqa: E402
     SshLogSource, now_iso, put_override_file, ssh_from_env,
@@ -46,6 +47,8 @@ def main() -> int:
             print(f'copiado: override\\{name}')
         put_override_file(ssh, args.game_root, f'{REPLY_RESREF}.lua', PLACEHOLDER_REPLY.encode())
         print(f'copiado: override\\{REPLY_RESREF}.lua (resposta vazia; precisa existir ao abrir o jogo)')
+        put_override_file(ssh, args.game_root, f'{PTT_RESREF}.lua', PLACEHOLDER_PTT.encode())
+        print(f'copiado: override\\{PTT_RESREF}.lua (estado da voz vazio, ADR-0127)')
         print('reabra o jogo para carregar o modulo')
         return 0
 

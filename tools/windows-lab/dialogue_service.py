@@ -45,7 +45,8 @@ from infinity_ai.bridge.eeex_log import (  # noqa: E402
 from infinity_ai.bridge.manifest import build_fingerprint, modpack_hash  # noqa: E402
 from infinity_ai.bridge.service import ReadOnlyBridge  # noqa: E402
 from infinity_ai.bridge.talk import (  # noqa: E402
-    PLACEHOLDER_REPLY, REPLY_RESREF, parse_talk_requests, render_reply,
+    PLACEHOLDER_PTT, PLACEHOLDER_REPLY, PTT_RESREF, REPLY_RESREF, fresh_ptt_signals,
+    parse_ptt_signals, parse_talk_requests, render_ptt_state, render_reply,
 )
 from infinity_ai.canon.pack import load_partition, load_sources  # noqa: E402
 from infinity_ai.dialogue.context import (  # noqa: E402
@@ -84,6 +85,9 @@ from infinity_ai.personality.in_game import (  # noqa: E402
     profile_for, record_dialogue_start, resolve_speaker,
 )
 from infinity_ai.state.recorder import ObservationRecorder, RecordAction  # noqa: E402
+from infinity_ai.voice.capture import FfmpegRecorder  # noqa: E402
+from infinity_ai.voice.session import VoiceSession  # noqa: E402
+from infinity_ai.voice.stt import WhisperCppStt, vocabulary_prompt  # noqa: E402
 from infinity_ai.state.store import CampaignStore  # noqa: E402
 from lab_ssh import (  # noqa: E402
     SshLogSource, live_manifest, now_iso, put_override_file, ssh_from_env,
@@ -198,6 +202,61 @@ class Observer(threading.Thread):
         for k in report.granted:
             print(f'{now_iso()} conhecimento comum adquirido: npc={k.npc_id} entrada={k.entry_id} '
                   f'base={k.basis.value} regiao={k.region_id} t={k.game_time}')
+
+
+class VoiceListener(threading.Thread):
+    """ADR-0127: push-to-talk for the in-game box. The microphone of this host opens on the box's
+    START and closes on STOP/CANCEL or at the time limit; the local STT turns it into text that
+    goes back to the box for review. Audio is deleted right away; the log has no transcript."""
+
+    def __init__(self, args, ssh, observer: Observer, catalog: Catalog) -> None:
+        super().__init__(daemon=True)
+        self.args, self.ssh, self.observer, self.catalog = args, ssh, observer, catalog
+        self.session = VoiceSession(
+            lambda: FfmpegRecorder(device=args.mic_device, max_seconds=args.max_voice_s + 2),
+            WhisperCppStt(args.stt_model), max_seconds=args.max_voice_s,
+            min_level=args.min_voice_level, prompt=self.vocabulary)
+        self.seen: set[tuple[str, str]] | None = None
+
+    def vocabulary(self) -> str:
+        """Public names that help the STT spell them (place, regions, organizations)."""
+        public = [e for e in self.observer.pack.entries.values()
+                  if e.access_scope == 'COMMON_REGIONAL']
+        names = [self.catalog.area(self.observer.snapshot().area)]
+        # A capitalised word in the middle of a sentence is a proper name ("... de Lehtinan").
+        names += [m.group(1) for e in public for m in re.finditer(
+            r"(?<=[\w,;] )([A-ZÀ-Ý][a-zà-ÿ'-]{3,})", e.summary)]
+        names += [e.title.split(':')[0] for e in public]
+        return vocabulary_prompt(n for n in names if n and n != UNNAMED_AREA)
+
+    def _show(self, update) -> None:
+        print(f'{now_iso()} voz {update.summary()}')
+        if update.ptt_id:
+            put_override_file(self.ssh, self.args.game_root, f'{PTT_RESREF}.lua',
+                              render_ptt_state(update.ptt_id, update.state, update.text)
+                              .encode('utf-8'))
+
+    def run(self) -> None:
+        while True:
+            try:
+                text = self.observer.source.last_text()
+                snap = parse_latest_snapshot(text) if text else None
+                if text and self.seen is None:
+                    # Presses already in the log when the service starts are never acted on:
+                    # the microphone opens only for a press made while it runs. Nothing is
+                    # marked before the log was read at least once.
+                    self.seen = {(s.ptt_id, s.action) for s in parse_ptt_signals(text)}
+                elif text and snap is not None:
+                    for s in fresh_ptt_signals(parse_ptt_signals(text), self.seen,
+                                               session_seq=snap.session_seq,
+                                               clock_ms=snap.clock_ms):
+                        for update in self.session.handle(s.ptt_id, s.action):
+                            self._show(update)
+                for update in self.session.tick():
+                    self._show(update)
+            except Exception as exc:  # keep listening; a failed press is just logged
+                print(f'{now_iso()} voz falhou: {type(exc).__name__}')
+            time.sleep(0.25)
 
 
 class Talker(threading.Thread):
@@ -458,7 +517,8 @@ class Talker(threading.Thread):
                         if req.speaker_engine_morale_break_active is not None else "-")
         morale_break_base = (req.speaker_engine_morale_break_base
                              if req.speaker_engine_morale_break_base is not None else "-")
-        print(f'{now_iso()} caixa pedido={req.req_id} falante={speaker or "-"} '
+        print(f'{now_iso()} caixa pedido={req.req_id} entrada={req.input} '
+              f'falante={speaker or "-"} '
               f'turno={turn or "-"} lembra={earlier.conversations} '
               f'reacao={reaction.summary() if reaction is not None else "-"} '
               f'moral={check.summary() if check is not None else "-"} '
@@ -594,6 +654,18 @@ def main() -> int:
     ap.add_argument('--interval', type=float, default=3.0)
     ap.add_argument('--language', default='pt_BR', help='game language of the local area inventory')
     ap.add_argument('--campaign-year', type=int, default=1369, help='DR year (ADR-0109)')
+    ap.add_argument('--voice', action='store_true',
+                    help='push-to-talk in the in-game box (ADR-0127): microphone of this host, '
+                         'local STT; off by default')
+    ap.add_argument('--stt-model', type=Path,
+                    default=Path.home() / '.infinity-ai' / 'models' /
+                    'ggml-large-v3-turbo-q5_0.bin', help='whisper.cpp model for --voice')
+    ap.add_argument('--mic-device', default=None,
+                    help='audio input (index or part of its name); default: the built-in mic')
+    ap.add_argument('--max-voice-s', type=float, default=20.0,
+                    help='a recording stops by itself after this many seconds')
+    ap.add_argument('--min-voice-level', type=float, default=150.0,
+                    help='RMS below this is silence (no STT, "não entendi")')
     ap.add_argument('--residence-threshold', type=int, default=DEFAULT_RESIDENCE_THRESHOLD,
                     help='game time an NPC outside the party lives in a region before it knows its '
                          'common knowledge (ADR-0114; party members never learn by time)')
@@ -618,9 +690,18 @@ def main() -> int:
     CampaignStore.open(args.db, args.campaign).close()   # migrate once before the threads open it
     # The reply file must exist when the game starts, or Infinity_DoFile never finds it.
     put_override_file(ssh, args.game_root, f'{REPLY_RESREF}.lua', PLACEHOLDER_REPLY.encode('utf-8'))
+    # ADR-0127: same for the push-to-talk state (written even without --voice, so the box finds an
+    # empty state instead of a missing file).
+    put_override_file(ssh, args.game_root, f'{PTT_RESREF}.lua', PLACEHOLDER_PTT.encode('utf-8'))
     observer.start()
     talker = Talker(args, ssh, observer, catalog)
     talker.start()
+    if args.voice:
+        if not args.stt_model.expanduser().is_file():
+            print(f'voz: modelo nao encontrado em {args.stt_model}; voz desligada')
+        else:
+            VoiceListener(args, ssh, observer, catalog).start()
+            print(f'voz ligada: modelo {args.stt_model.name}, limite {args.max_voice_s:g}s')
 
     token = secrets.token_urlsafe(24)
     if args.reuse_token and args.config_out.exists():

@@ -1,0 +1,20 @@
+{
+  "schema": "infinity-ai.voice-eval-phrases.v1",
+  "note": "Frases nossas, no estilo das perguntas da caixa do jogo (ADR-0127). Sem texto do jogo.",
+  "names": ["Amn", "Athkatla", "Coroa de Cobre", "Lehtinan", "Bernard", "Conselho dos Seis",
+            "Tethyr", "Magos Encapuzados", "Salvanas", "Jierdan"],
+  "phrases": [
+    {"id": "p01", "text": "Quem governa Amn?", "names": ["Amn"]},
+    {"id": "p02", "text": "Você conhece o Lehtinan?", "names": ["Lehtinan"]},
+    {"id": "p03", "text": "Onde fica a Coroa de Cobre?", "names": ["Coroa de Cobre"]},
+    {"id": "p04", "text": "Há quanto tempo o Conselho dos Seis governa Amn?", "names": ["Conselho dos Seis", "Amn"]},
+    {"id": "p05", "text": "Você trabalha aqui?", "names": []},
+    {"id": "p06", "text": "De onde você é?", "names": []},
+    {"id": "p07", "text": "Quem cuida da taverna no dia a dia?", "names": []},
+    {"id": "p08", "text": "Te pago dez moedas se me disser quem governa Amn.", "names": ["Amn"]},
+    {"id": "p09", "text": "Você já esteve em Tethyr?", "names": ["Tethyr"]},
+    {"id": "p10", "text": "O Bernard está por aqui?", "names": ["Bernard"]},
+    {"id": "p11", "text": "Os Magos Encapuzados mandam em Athkatla?", "names": ["Magos Encapuzados", "Athkatla"]},
+    {"id": "p12", "text": "Fale quem governa Amn ou eu te mato!", "names": ["Amn"]}
+  ]
+}

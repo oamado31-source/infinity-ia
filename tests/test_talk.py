@@ -13,8 +13,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from infinity_ai.bridge.manifest import modpack_hash  # noqa: E402
 from infinity_ai.bridge.talk import (  # noqa: E402
-    PLACEHOLDER_REPLY, TALK_SCHEMA, lua_string, parse_talk_line, parse_talk_requests,
-    render_reply,
+    PLACEHOLDER_PTT, PLACEHOLDER_REPLY, TALK_SCHEMA, fresh_ptt_signals, lua_string,
+    parse_ptt_signals,
+    parse_talk_line, parse_talk_requests, render_ptt_state, render_reply,
 )
 from types import SimpleNamespace  # noqa: E402
 
@@ -226,6 +227,8 @@ class ReplyTests(unittest.TestCase):
         base = manifest(('override/M_INFAIT.lua', 'a'))
         self.assertEqual(modpack_hash(base), modpack_hash(manifest(
             ('override/M_INFAIT.lua', 'a'), ('override/INFAIRSP.lua', 'b'))))
+        self.assertEqual(modpack_hash(base), modpack_hash(manifest(        # ADR-0127
+            ('override/M_INFAIT.lua', 'a'), ('override/INFAIPTT.lua', 'c'))))
         self.assertNotEqual(modpack_hash(base), modpack_hash(manifest(
             ('override/M_INFAIT.lua', 'a'), ('override/OTHER.lua', 'b'))))
 
@@ -243,6 +246,140 @@ class ReplyTests(unittest.TestCase):
         reply = lua.globals().INFAI_TALK_Reply
         self.assertEqual(reply['speech'], ' '.join(speech.split()))
         self.assertIsNone(lua.globals().INFAI_PWNED)
+
+
+class PushToTalkProtocolTests(unittest.TestCase):
+    """ADR-0127: INFAI-PTT signals from the box and the INFAIPTT.lua state file."""
+
+    def line(self, **over):
+        doc = {'schema': 'infinity-ai.ptt.v1', 'ptt_id': '1-2500-3', 'action': 'START',
+               'session_seq': 1, 'clock_ms': 2500, **over}
+        return 'INFAI-PTT ' + json.dumps(doc) + '\n'
+
+    def test_signals_are_parsed_strictly(self):
+        (s,) = parse_ptt_signals(self.line() + 'other\n' + self.line(action='STOP')[:-1])
+        self.assertEqual((s.ptt_id, s.action, s.session_seq), ('1-2500-3', 'START', 1))
+        for bad in (self.line(action='RECORD'), self.line(schema='x'), self.line(ptt_id='1"x'),
+                    self.line(session_seq=-1), 'INFAI-PTT {not json}\n'):
+            with self.subTest(bad=bad):
+                self.assertEqual(parse_ptt_signals(bad), [])
+
+    def test_only_fresh_presses_of_this_session_open_the_microphone(self):
+        """S1h: a restarted service replayed old presses and opened the mic by itself."""
+        old = parse_ptt_signals(self.line(ptt_id='0-1000-1', clock_ms=1000) +
+                                self.line(ptt_id='0-1000-1', action='STOP', clock_ms=3000))
+        seen: set = set()
+        # Latest snapshot at 60 s: the presses from 1-3 s are stale, and are marked seen.
+        self.assertEqual(fresh_ptt_signals(old, seen, session_seq=1, clock_ms=60_000), [])
+        self.assertEqual(fresh_ptt_signals(old, seen, session_seq=1, clock_ms=2_000), [])
+        new = parse_ptt_signals(self.line(ptt_id='1-59000-2', clock_ms=59_000))
+        self.assertEqual([s.ptt_id for s in fresh_ptt_signals(new, seen, session_seq=1,
+                                                              clock_ms=55_000)], ['1-59000-2'])
+        other = parse_ptt_signals(self.line(ptt_id='0-59000-3', clock_ms=59_000, session_seq=0))
+        self.assertEqual(fresh_ptt_signals(other, set(), session_seq=1, clock_ms=59_000), [])
+
+    def test_state_file(self):
+        self.assertEqual(render_ptt_state('1-2500-3', 'REC', 'ignored'),
+                         'INFAI_PTT_State = {ptt_id = "1-2500-3", state = "REC", text = ""}\n')
+        out = render_ptt_state('1-2500-3', 'TEXT', 'Quem\n governa  "Amn"?')
+        self.assertIn('text = "Quem governa \\034Amn\\034?"', out)
+        for args in (('1"} x', 'REC'), ('1-2-3', 'PLAY')):
+            with self.subTest(args=args), self.assertRaises(ValueError):
+                render_ptt_state(*args)
+
+    @unittest.skipIf(lupa is None, 'lupa not installed')
+    def test_state_file_cannot_inject(self):
+        lua = lupa.LuaRuntime()
+        lua.execute(PLACEHOLDER_PTT)
+        self.assertEqual(lua.globals().INFAI_PTT_State['state'], '')
+        lua.execute(render_ptt_state('1-2-3', 'TEXT', 'x"} INFAI_PWNED = true --'))
+        self.assertIsNone(lua.globals().INFAI_PWNED)
+
+
+@unittest.skipIf(lupa is None, 'lupa not installed')
+class PushToTalkBoxTests(unittest.TestCase):
+    """The box module itself, run with a stubbed engine: press, record, stop, review, send."""
+
+    STUBS = """
+    printed = {}
+    print = function(s) table.insert(printed, s) end
+    clock = 1000
+    files = {}
+    Infinity_GetClockTicks = function() return clock end
+    Infinity_DoFile = function(name) local f = files[name]; if f then load(f)() end end
+    Infinity_FocusTextEdit = function() end
+    Infinity_PushMenu = function() end
+    Infinity_PopMenu = function() end
+    Infinity_GetScreenSize = function() return 1280, 720 end
+    Infinity_SetArea = function() end
+    EEex_Resource_Fetch = function() return nil end
+    EEex_Menu_AddMainFileLoadedListener = function() end
+    EEex_Key_AddPressedListener = function() end
+    EEex_GameState_AddDestroyedListener = function() end
+    EEex_GameState_TogglePause = function() end
+    EEex_Key_Hook_AfterEventsPoll = function() return false end
+    worldScreen = { CheckIfPaused = function() return true end }
+    """
+
+    def setUp(self):
+        self.lua = lupa.LuaRuntime()
+        self.lua.execute(self.STUBS)
+        self.lua.execute(MODULE.read_text(encoding='utf-8'))
+        self.g = self.lua.globals()
+        self.lua.execute("""
+        INFAI_TALK_State.open = true
+        INFAI_TALK_State.speaker = { id = 7, script = "", name = "Bernard", cre = "BERNARD",
+                                     dead = false, party = false, wis = 10, int = 10, x = 0, y = 0 }
+        INFAI_TALK_State.lines = {}
+        """)
+
+    def tick(self, ms=600):
+        self.g.clock = self.g.clock + ms
+        self.g.INFAI_TALK_Tick()
+
+    def printed(self):
+        return [self.g.printed[i] for i in range(1, len(self.g.printed) + 1)]
+
+    def serve(self, state, text=''):
+        ptt_id = self.g.INFAI_TALK_State.ptt.id
+        self.g.files['INFAIPTT'] = render_ptt_state(ptt_id, state, text)
+
+    def test_press_record_stop_review_and_send_as_voice(self):
+        self.g.INFAI_TALK_PTT()
+        (start,) = parse_ptt_signals('\n'.join(self.printed()) + '\n')
+        self.assertEqual(start.action, 'START')
+        self.assertEqual(self.g.INFAI_TALK_PTTText(), 'Preparando o microfone...')
+        self.serve('REC')
+        self.tick()
+        self.assertEqual(self.g.INFAI_TALK_PTTText(), 'Gravando... clique para parar')
+        self.g.INFAI_TALK_PTT()
+        self.assertEqual(parse_ptt_signals('\n'.join(self.printed()) + '\n')[-1].action, 'STOP')
+        self.assertEqual(self.g.INFAI_TALK_PTTText(), 'Transcrevendo...')
+        self.serve('TEXT', 'Quem governa Amn?')
+        self.tick()
+        self.assertEqual(self.g.INFAI_TALK_Input, 'Quem governa Amn?')
+        self.assertIsNone(self.g.INFAI_TALK_State.ptt)
+        self.g.INFAI_TALK_Send()
+        (req,) = parse_talk_requests('\n'.join(self.printed()) + '\n')
+        self.assertEqual((req.input, req.text), ('VOICE', 'Quem governa Amn?'))
+
+    def test_failure_close_and_timeout(self):
+        self.g.INFAI_TALK_PTT()
+        self.serve('FAILED')
+        self.tick()
+        self.assertIsNone(self.g.INFAI_TALK_State.ptt)
+        self.assertIn('Não entendi', self.g.INFAI_TALK_State.lines[1])
+        self.g.INFAI_TALK_PTT()                                      # no answer at all
+        self.tick(11000)
+        self.assertIsNone(self.g.INFAI_TALK_State.ptt)
+        self.assertIn('microfone não respondeu', self.g.INFAI_TALK_State.lines[2])
+        self.g.INFAI_TALK_PTT()
+        self.g.INFAI_TALK_Close()
+        self.assertEqual(parse_ptt_signals('\n'.join(self.printed()) + '\n')[-1].action, 'CANCEL')
+        self.g.INFAI_TALK_State.open = True
+        self.g.INFAI_TALK_Input = 'typed'
+        self.g.INFAI_TALK_Send()
+        self.assertEqual(parse_talk_requests('\n'.join(self.printed()) + '\n')[-1].input, 'TEXT')
 
 
 class ModuleStaticTests(unittest.TestCase):
@@ -295,15 +432,29 @@ class ModuleStaticTests(unittest.TestCase):
         self.assertEqual(self.code.count('EEex_GameState_TogglePause'), 2)
         self.assertIn('st.paused_by_box', self.raw)
 
-    def test_only_the_reply_resource_is_dropped_from_cache(self):
-        self.assertEqual(re.findall(r'EEex_Resource_Fetch\(([^)]*)\)', self.raw), ['"INFAIRSP", "LUA"'])
+    def test_only_the_service_files_are_dropped_from_cache(self):
+        # ADR-0127: the reply and the push-to-talk state, behind an explicit guard.
+        self.assertEqual(re.findall(r'EEex_Resource_Fetch\(([^)]*)\)', self.raw), ['resref, "LUA"'])
+        self.assertIn('if resref ~= "INFAIRSP" and resref ~= "INFAIPTT" then return false', self.raw)
+        self.assertEqual(sorted(re.findall(r'infai_drop_cached\("(\w+)"\)', self.raw)),
+                         ['INFAIPTT', 'INFAIRSP'])
         self.assertEqual(self.code.count('EngineGlobals.'), 1)
         self.assertIn('EngineGlobals.dimmDump(res)', self.raw)
 
-    def test_reads_only_the_reply_file(self):
-        self.assertEqual(self.code.count('Infinity_DoFile'), 1)
-        self.assertEqual(strip_lua(self.raw.replace('pcall(Infinity_DoFile, "INFAIRSP")', '')
-                                   ).count('Infinity_DoFile'), 0)
+    def test_reads_only_the_service_files(self):
+        self.assertEqual(self.code.count('Infinity_DoFile'), 2)
+        rest = self.raw.replace('pcall(Infinity_DoFile, "INFAIRSP")', '').replace(
+            'pcall(Infinity_DoFile, "INFAIPTT")', '')
+        self.assertEqual(strip_lua(rest).count('Infinity_DoFile'), 0)
+
+    def test_push_to_talk_signals_and_marks_voice_input(self):
+        """ADR-0127: the box only signals; it never records audio itself."""
+        self.assertIn('"INFAI-PTT {"', self.raw)
+        for action in ('"START"', '"STOP"', '"CANCEL"'):
+            self.assertIn(f'infai_ptt_signal({action})', self.raw)
+        self.assertIn('st.from_voice and "VOICE" or "TEXT"', self.raw)
+        self.assertIn('INFAI_TALK_Input = s.text', self.raw)
+        self.assertNotRegex(self.code, r'(?i)microphone|record_audio|capture')
 
     def test_never_assigns_to_engine_state(self):
         for src_line in self.code.splitlines():
@@ -318,7 +469,8 @@ class ModuleStaticTests(unittest.TestCase):
     def test_menu_is_bound_to_the_module(self):
         menu = MENU.read_text(encoding='utf-8')
         for name in ('INFAI_TALK_Menu', 'INFAI_TALK_Edit', 'INFAI_TALK_PTT', 'INFAI_TALK_Tick()',
-                     'INFAI_TALK_Send()', 'INFAI_TALK_Close()', 'INFAI_TALK_Input'):
+                     'INFAI_TALK_Send()', 'INFAI_TALK_Close()', 'INFAI_TALK_Input',
+                     'INFAI_TALK_PTT()', 'INFAI_TALK_PTTText()'):
             self.assertIn(name, menu)
         self.assertIn('"INFAITLK"', self.raw)
 

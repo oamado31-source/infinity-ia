@@ -8,5 +8,5 @@
 - [x] Conhecimento comum regional (ADR-0114): `src/infinity_ai/memory/common_knowledge.py`, migração `0002_npc_canon_knowledge.sql`, `tests/test_common_knowledge.py` (sintéticos); mecânica executada no laboratório ([S1d](../../docs/evidence/S1d-2026-11-09-laboratorio-arm64.md)).
 - [x] Canal `INQUIRY` (ADR-0116): habitantes colocados pelo jogo sabem desde o pin; `share_knowledge` ensina só os companheiros ouvintes e só as entradas usadas; companheiro não ensina companheiro. Testes sintéticos; laboratório pendente.
 - [ ] `INQUIRY` por pesquisa/leitura (livros, bibliotecas) e estadias curadas de NPCs de fora do grupo para `RESIDENCE`.
-- [ ] Corrigir leituras transitórias do tempo de jogo na troca de área, que hoje criam ramos falsos (evidência S1d).
+- [x] ~~Corrigir leituras transitórias do tempo de jogo na troca de área~~: não havia leitura falsa; o ramo do S1d veio de um save carregado (nova sessão). Correção na [evidência S1d](../../docs/evidence/S1d-2026-11-09-laboratorio-arm64.md#correção-de-2026-11-14); testes em `tests/test_recorder.py`.
 - [ ] Revisão de segurança, privacidade, licença e aprovação de merge.

@@ -135,6 +135,26 @@ class RecorderTests(unittest.TestCase):
         self.assertNotEqual(result.branch_id, ROOT_BRANCH)
 
 
+    def test_time_going_back_inside_one_session_never_forks(self):
+        """Only a new epoch (save loaded, back to the menu) decides a branch."""
+        rec = ObservationRecorder(self.store)
+        rec.observe(*obs('AR0602', 500))
+        result = rec.observe(*obs('AR0406', 300))
+        self.assertEqual(result.branch_id, ROOT_BRANCH)
+        self.assertNotIn('BranchForked', self.types(ROOT_BRANCH))
+
+    def test_s1d_replay_forks_on_the_save_load(self):
+        """lab-s1, 2026-11-09: the 'false times' were real; the fork came from a new epoch."""
+        rec = ObservationRecorder(self.store)
+        rec.observe(*obs('AR0602', 44969))
+        rec.observe(*obs('AR0046', 54606))           # travel to the wrong area, 15:08:34
+        rec.observe(*obs('AR0406', 55176))           # +570 ticks in 36 s: the game's own pace
+        self.assertNotIn('BranchForked', self.types(ROOT_BRANCH))
+        result = rec.observe(*obs('AR0602', 45122, epoch=1))   # the save at t=45122, again
+        self.assertNotEqual(result.branch_id, ROOT_BRANCH)
+        self.assertEqual([e.payload['area'] for e in
+                          self.store.visible_events(result.branch_id, 'AreaEntered')], ['AR0602'])
+
     def test_companions_present_remember_what_they_witnessed(self):
         rec = ObservationRecorder(self.store)
         result = rec.observe(*obs('AR0602', 100), party('["imoen"]'))

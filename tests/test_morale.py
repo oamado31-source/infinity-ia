@@ -96,6 +96,18 @@ class EventTests(unittest.TestCase):
                                                   'total', 'rule', 'policy'})
 
 
+    def test_a_new_game_launch_is_a_new_check(self):
+        def check(launch):
+            return morale_for(self.store, ROOT_BRANCH, key='npc:cre-x', session=0,
+                              trigger='BRIBE', base=7, mods=(), world_seed='w', game_time=10,
+                              launch=launch)
+        self.assertFalse(check('1').reused)
+        self.assertTrue(check('1').reused)
+        self.assertFalse(check('2').reused)                   # game reopened: checked again
+        self.assertEqual(self.store.visible_events(ROOT_BRANCH, MORALE_EVENT)[-1]
+                         .payload['launch'], '2')
+
+
 class CurationTests(unittest.TestCase):
     def test_curated_morale_is_read_and_checked(self):
         with tempfile.TemporaryDirectory() as d:

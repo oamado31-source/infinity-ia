@@ -180,7 +180,24 @@ _RETRY_HINTS = (
                              'ela'),
     ('UNKNOWN_NAMES', 'você citou nomes que não estão no que você sabe ({names}); não os use, ou '
                       'diga que não os conhece'),
+    ('UNBACKED_DETAIL', 'você citou metais ou moedas que não estão no que você sabe; fale só das '
+                        'moedas e metais que estão nas seções, ou diga que não sabe'),
 )
+
+# Lab, 2026-11-15: asked about the local coins, the model said silver was common and gold rare,
+# against the item it had ("o danter de ouro e o fandar de cobre"). A metal (or coin material) the
+# person names must be in what it knows or in what the player said.
+_METALS = re.compile(r'\b(ouro|prata|cobre|platina|electro|eletro|mithral|adamantina?)\b',
+                     re.I)
+
+
+def _unbacked_metals(speech: str, context: DialogueContext, player_text: str) -> list[str]:
+    said = {m.lower() for m in _METALS.findall(speech)}
+    if not said:
+        return []
+    backed = ' '.join([f.text for f in context.facts + context.knowledge
+                       + context.restricted_knowledge] + [player_text or '']).lower()
+    return sorted(w for w in said if not re.search(r'\b' + w + r'\b', backed))
 
 
 def retry_hint(reasons: tuple[str, ...]) -> str:
@@ -256,6 +273,9 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
     other = third_party_claim(speech, context, asked)   # ADR-0121: facts about someone else
     if other:
         reasons.append(f'THIRD_PARTY:{other}')
+    metals = _unbacked_metals(speech, context, player_text if isinstance(player_text, str) else '')
+    if metals:
+        reasons.append('UNBACKED_DETAIL:' + ','.join(metals))
     vocabulary = context.vocabulary | asked       # CR-2026-008: with or without `unknown`
     names = _unknown_names(speech, vocabulary)
     if names:

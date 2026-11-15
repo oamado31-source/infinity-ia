@@ -408,14 +408,23 @@ def named_in(pack: CanonPack, entry_ids: Iterable[str], speech: str,
             and mentioned_in(pack.get(e), speech, aliases)]
 
 
+def _singular(word: str) -> str:
+    """A word without a plural -s, so "moeda" names "Moedas" and "Favela" names "Favelas" (lab,
+    2026-11-15). Both sides of every comparison go through it."""
+    low = word.lower()
+    return low[:-1] if len(low) > 4 and low.endswith('s') else low
+
+
 def title_words(title: str) -> frozenset[str]:
-    """The words that name an entry: the capitalised words of its title (3+ letters), lowercase."""
-    return frozenset(w.lower() for w in _TITLE_WORD.findall(title))
+    """The words that name an entry: the capitalised words of its title (3+ letters), lowercase
+    and without a plural -s."""
+    return frozenset(_singular(w) for w in _TITLE_WORD.findall(title))
 
 
 def spoken_words(text: str, aliases: Mapping[str, str] | None = None) -> frozenset[str]:
-    """The words of a text, lowercase, plus the titles its common nouns mean here (`aliases`)."""
-    return frozenset(w.lower() for w in _SPOKEN_WORD.findall(_with_aliases(text, aliases)))
+    """The words of a text, lowercase and without a plural -s, plus the titles its common nouns
+    mean here (`aliases`)."""
+    return frozenset(_singular(w) for w in _SPOKEN_WORD.findall(_with_aliases(text, aliases)))
 
 
 def mentioned_in(entry: CanonEntry, speech: str,

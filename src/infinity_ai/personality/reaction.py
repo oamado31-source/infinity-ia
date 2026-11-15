@@ -109,36 +109,43 @@ def resolve_reaction(conduct: str, charisma: int | None, rng: random.Random, *,
 
 
 def reaction_rng(*, world_seed: str, campaign_id: str, branch_id: str, key: str,
-                 session: int) -> random.Random:
-    seed = json.dumps([POLICY, world_seed, campaign_id, branch_id, key, session],
-                      ensure_ascii=False)
+                 session: int, launch: str = '') -> random.Random:
+    parts = [POLICY, world_seed, campaign_id, branch_id, key, session]
+    seed = json.dumps(parts + ([launch] if launch else []), ensure_ascii=False)
     return random.Random(int.from_bytes(hashlib.sha256(seed.encode()).digest(), 'big'))
 
 
 def reaction_for(store: CampaignStore, branch_id: str, *, key: str, session: int,
                  opening_text: str, charisma: int | None, charisma_of: str, world_seed: str,
-                 game_time: int | None, evidence: str = 'LAB_OBSERVED') -> ReactionResult | None:
-    """The person's reaction in this session: the recorded one, or resolve and record it now."""
+                 game_time: int | None, evidence: str = 'LAB_OBSERVED',
+                 launch: str = '') -> ReactionResult | None:
+    """The person's reaction in this session: the recorded one, or resolve and record it now.
+    `launch` tells game launches apart (the box's session counter restarts at 0 on each one, so
+    without it a reaction from an earlier launch of the same save would be reused)."""
     if not key:
         return None
     for event in reversed(store.visible_events(branch_id, REACTION_EVENT)):
         p = event.payload
-        if p.get('npc_key') == key and p.get('session') == session:
+        if p.get('npc_key') == key and p.get('session') == session and \
+                p.get('launch', '') == launch:
             return ReactionResult(p['disposition'], p['conduct'], tuple(p['dice']),
                                   p.get('charisma'), p.get('charisma_of') or '',
                                   p.get('adjustment', 0), p['total'], session, reused=True)
     conduct = classify_conduct(opening_text)
     rng = reaction_rng(world_seed=world_seed, campaign_id=store.campaign_id,
-                       branch_id=branch_id, key=key, session=session)
+                       branch_id=branch_id, key=key, session=session, launch=launch)
     result = resolve_reaction(conduct, charisma, rng, charisma_of=charisma_of, session=session)
     payload = {'npc_key': key, 'session': session, 'conduct': result.conduct,
                'dice': list(result.dice), 'charisma': result.charisma,
                'charisma_of': result.charisma_of, 'adjustment': result.adjustment,
                'total': result.total, 'disposition': result.disposition, 'rule': RULE,
                'policy': POLICY}
+    if launch:
+        payload['launch'] = launch
     with store.transaction():
         store.append_event(branch_id=branch_id, host_epoch=session, event_type=REACTION_EVENT,
                            category='CAMPAIGN_OBSERVATION', game_time=game_time,
                            payload=payload, evidence=evidence,
-                           idempotency_key=f'reaction|{branch_id}|{key}|{session}')
+                           idempotency_key=f'reaction|{branch_id}|{key}|{session}'
+                                           + (f'|{launch}' if launch else ''))
     return result

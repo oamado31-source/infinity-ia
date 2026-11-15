@@ -46,6 +46,8 @@ LOTE_A_AMN = {'event:magic-ban-of-king-dhanar', 'event:end-of-amnian-monarchy',
 LOTE_A_CITY = {'place:waukeens-promenade', 'place:temple-district', 'place:bridge-district',
                'place:government-district', 'place:graveyard-district', 'place:athkatla-gates',
                'place:docks', 'place:slums'}
+# Lote A2: a place of Amn as a whole (its cities are sub-regions: not taught by living elsewhere).
+LOTE_A_AMN = LOTE_A_AMN | {'place:arnise-hold'}
 COUNTRY = {'region:faerun', 'region:amn', 'org:cowled-wizards'} | LOTE_A_AMN
 CITY = {'region:faerun', 'region:amn', 'region:athkatla', 'org:council-of-six', 'org:cowled-wizards',
         'place:copper-coronet', 'rel:lehtinan-owns-copper-coronet'} | LOTE_A_AMN | LOTE_A_CITY

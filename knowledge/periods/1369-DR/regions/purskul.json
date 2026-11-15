@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:purskul",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Purskul",
+  "summary": "A cidade-celeiro de Amn e parada de caravanas. Tem muitos meio-orcs, vistos ali como mais um povo: descendem de orcs escravizados pelos exércitos amnianos em 1235 e 1241 DR, que ganharam a liberdade e ficaram, muitos como guardas de caravana.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 33"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A cidade dos celeiros de Amn, cheia de meio-orcs.",
+    "INFORMED": "Os meio-orcs de lá são vistos como mais um povo; muitos guardam caravanas.",
+    "STUDIED": "Os orcs foram trazidos como escravos em 1235 e 1241 DR e depois ganharam a liberdade."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

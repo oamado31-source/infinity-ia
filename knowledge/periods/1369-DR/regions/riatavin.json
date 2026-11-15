@@ -1,0 +1,39 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:riatavin",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Riatavin",
+  "summary": "Cidade de caravanas e templos no extremo leste de Amn, porta das rotas que vêm do mar das Estrelas Cadentes. Foi fundada com apoio das famílias Spulzeer, Krimmevol e Coprith, e as duas últimas ainda têm muita influência lá.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 14"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 21"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 49"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Uma cidade de caravanas no leste de Amn.",
+    "INFORMED": "As famílias Krimmevol e Coprith têm muita influência lá."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

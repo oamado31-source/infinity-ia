@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:eshpurta",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Eshpurta",
+  "summary": "A Cidade-Escudo de Amn, no leste, orgulhosa de ser a cidade militar do país, embora os ricos de Athkatla a achem atrasada. Abriga a maior tropa permanente de Amn e muitos armeiros e mercenários; os mineiros de ferro das montanhas dos Trolls vivem no leste da cidade.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 38"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A cidade dos soldados e armeiros de Amn, no leste.",
+    "INFORMED": "Ali fica a maior tropa permanente de Amn; os ricos de Athkatla a tratam como cidade atrasada.",
+    "STUDIED": "O leste da cidade é dos mineiros de ferro das montanhas dos Trolls."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

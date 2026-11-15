@@ -1,0 +1,31 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:imnescar",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Imnescar",
+  "summary": "Entreposto agrícola do sul de Amn, por onde passam vinhos, frutas e grãos das fazendas entre a estrada de Tethir e as Small Teeth. O nome vem da cicatriz que o príncipe Imnel ganhou ali, na maior vitória humana das Guerras dos Ogros.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 55"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Uma cidade de fazendas e mercados no sul de Amn.",
+    "INFORMED": "Ali o príncipe Imnel ganhou uma cicatriz, na maior vitória humana das Guerras dos Ogros."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

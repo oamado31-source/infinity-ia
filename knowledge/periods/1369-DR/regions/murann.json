@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:murann",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Murann",
+  "summary": "A cidade dos marinheiros, porto de Amn no mar das Espadas, onde o comércio marítimo é tudo. É governada por um Rei do Porto, o capitão Degos Angerdboar, e tem o templo de Selûne visitado por marujos de toda parte. A família Lurraxol domina a construção naval.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 5"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 56"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O porto dos marinheiros de Amn.",
+    "INFORMED": "Para quem é de lá, só o mar importa; os marujos visitam o templo de Selûne.",
+    "STUDIED": "O Rei do Porto é o capitão Degos Angerdboar; a família Lurraxol domina a construção naval."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

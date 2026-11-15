@@ -125,7 +125,8 @@ class KnowledgeTierTests(unittest.TestCase):
                 'Conselho', 'Seis', 'DR', 'A', 'O', 'Os', 'As',
                 # sentence-initial common words (not names), lote A (CR-2026-013)
                 'Há', 'Morreu', 'Uns', 'Morto', 'Demônios', 'Faz', 'Em', 'São', 'Quem',
-                'Espelunca', 'Ali', 'Também', 'Apelidos', 'Chamar'}
+                'Espelunca', 'Ali', 'Também', 'Apelidos', 'Chamar',
+                'Um', 'Uma', 'Para'}                         # lote A2
             with self.subTest(entry=entry.id):
                 self.assertTrue(names <= allowed, names - allowed)
 
@@ -558,7 +559,9 @@ class StandingTests(unittest.TestCase):
                                       campaign_year=1369, build_areas=BUILD, standing=standing)
         full, shallow = known('HABITANTE', None)
         self.assertIn('org:council-of-six', full)
-        self.assertEqual(shallow, [])
+        self.assertEqual(set(shallow), {e.id for e in PACK.entries.values()       # CR-2026-015
+                                        if e.kind == 'REGION' and e.region_id == 'region:amn'
+                                        and e.id != 'region:athkatla'})
         full, shallow = known('VIAJANTE', 'region:amn')
         self.assertIn('org:council-of-six', shallow)          # the place: popular core only
         self.assertIn('org:cowled-wizards', full)             # the realm it comes from

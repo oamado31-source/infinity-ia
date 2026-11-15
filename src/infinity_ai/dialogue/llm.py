@@ -36,16 +36,20 @@ class LlmProvider(Protocol):
 class OllamaProvider:
     def __init__(self, model: str = 'qwen3:30b-a3b', *, base_url: str = 'http://127.0.0.1:11434',
                  timeout_s: float = 30.0, temperature: float = 0.6, max_tokens: int = 220,
-                 num_ctx: int = 8192) -> None:
+                 num_ctx: int = 8192, keep_alive: str = '30m') -> None:
         self.model, self._url, self._timeout = model, base_url.rstrip('/') + '/api/chat', timeout_s
         # ADR-0127: without num_ctx Ollama uses the model's own context (262144 for qwen3:30b-a3b,
         # about 45 GB loaded), which starves the local STT of memory. Our prompts fit in 8192.
         self._options = {'temperature': temperature, 'num_predict': max_tokens,
                          'num_ctx': num_ctx}
+        # S1i: Ollama unloads a model after 5 idle minutes by default; reloading 19 GB took longer
+        # than the dialogue timeout, so the reply fell back. Keep it loaded between talks.
+        self._keep_alive = keep_alive
 
     def generate(self, messages: Sequence[dict[str, str]]) -> str:
         body = json.dumps({'model': self.model, 'stream': False, 'think': False,
                            'format': REPLY_SCHEMA, 'options': self._options,
+                           'keep_alive': self._keep_alive,
                            'messages': list(messages)}).encode('utf-8')
         request = urllib.request.Request(self._url, data=body,
                                          headers={'Content-Type': 'application/json'})

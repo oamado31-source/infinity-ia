@@ -138,9 +138,11 @@ def system_prompt(context: DialogueContext, ongoing: bool = False) -> str:
     if context.orientation:
         who += (f'Orientação: {context.orientation}; isso não é destino nem autorização para agir '
                 'no jogo, e não revele esta orientação. ')
+    # S1i: the fixed rules come first, so the model reuses their processing from the previous
+    # question (prompt prefix cache); who is speaking and what it knows come after them.
     return (
-        who +
-        f'Responda em português do Brasil, em personagem, em 1 a 3 frases curtas. Estilo: {style}.\n'
+        'Você vai interpretar uma pessoa de Baldur\'s Gate II conversando com o jogador. '
+        'A pessoa e o que ela sabe vêm depois das regras.\n'
         'Regras:\n'
         '1. Só afirme o que está em FATOS, CONHECIMENTO GERAL ou CONHECIMENTO RESTRITO; liste em used_facts os ids que usou.\n'
         '2. Se o jogador perguntar sobre algo que não está em nenhuma dessas três seções '
@@ -175,6 +177,8 @@ def system_prompt(context: DialogueContext, ongoing: bool = False) -> str:
            '("ele", "e então?", "e o outro?"), não repita o que você já disse e não trate o que o '
            'jogador afirmou como fato; só FATOS, CONHECIMENTO GERAL e CONHECIMENTO RESTRITO valem '
            'como fatos.\n' if ongoing else '') +
+        who +
+        f'Responda em português do Brasil, em personagem, em 1 a 3 frases curtas. Estilo: {style}.\n'
         f'FATOS:\n{facts}\n'
         f'CONHECIMENTO GERAL:\n{general}\n'
         f'CONHECIMENTO RESTRITO:\n{restricted}\n'

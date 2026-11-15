@@ -85,11 +85,22 @@ class FfmpegRecorder:
         self._dir: str | None = None
         self._path: Path | None = None
 
+    # S1i: listing the devices costs ~0.4 s on every press; the index is kept per (ffmpeg, wanted)
+    # and listed again after a recording that captured nothing (device unplugged or renumbered).
+    _known: dict[tuple[str, str | None], int] = {}
+
     def device_index(self) -> int:
-        listing = subprocess.run([self.ffmpeg, '-hide_banner', '-f', 'avfoundation',
-                                  '-list_devices', 'true', '-i', ''],
-                                 capture_output=True, text=True, timeout=15)
-        return resolve_device(audio_devices(listing.stderr + listing.stdout), self.wanted)
+        key = (self.ffmpeg, self.wanted)
+        if key not in self._known:
+            listing = subprocess.run([self.ffmpeg, '-hide_banner', '-f', 'avfoundation',
+                                      '-list_devices', 'true', '-i', ''],
+                                     capture_output=True, text=True, timeout=15)
+            self._known[key] = resolve_device(audio_devices(listing.stderr + listing.stdout),
+                                              self.wanted)
+        return self._known[key]
+
+    def forget_device(self) -> None:
+        self._known.pop((self.ffmpeg, self.wanted), None)
 
     def command(self, index: int, path: Path) -> list[str]:
         # No -nostdin: "q" on stdin is how stop() ends the recording cleanly.
@@ -109,6 +120,7 @@ class FfmpegRecorder:
                                           stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         except OSError as exc:
             self._cleanup()
+            self.forget_device()
             raise CaptureError(f'ffmpeg failed to start: {exc}') from exc
 
     def _finish(self) -> None:
@@ -129,6 +141,7 @@ class FfmpegRecorder:
         path = self._path
         if path is None or not path.exists() or path.stat().st_size <= 44:
             self._cleanup()
+            self.forget_device()
             raise CaptureError('nothing was recorded (microphone permission?)')
         return path
 

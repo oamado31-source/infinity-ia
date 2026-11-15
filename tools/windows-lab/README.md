@@ -145,3 +145,13 @@ Este endpoint é infraestrutura experimental, **não habilita cliques em NPCs co
 6. **Log:** `voz ptt=… estado=REC|TEXT|FAILED|CANCELLED motivo=… duracao=… stt=… nivel=… chars=…`, sem a transcrição. A linha da caixa ganha `entrada=TEXT|VOICE`.
 7. **Comparar modelos:** `python tools/voice-eval/run_stt_eval.py --say` (vozes do macOS), `--record` (grava as 12 frases com a sua voz em `~/.infinity-ai/voice-eval/recordings/`) e `--recorded` (compara usando essas gravações).
 
+## Anexo — latência da caixa (S1i) e fala padrão (ADR-0129)
+
+O diálogo é só escrito, sem voz sintetizada (ADR-0129). O microfone continua transcrevendo a fala do jogador para o campo de texto (seção anterior).
+
+1. **Fala padrão:** ao abrir a caixa, a criatura diz uma fala do próprio conjunto de sons, como no clique esquerdo. Companheiros dizem uma fala de seleção; os outros, a de seleção ou, sem ela, a de primeiro encontro. O jogo toca o próprio áudio e mostra o próprio texto sobre a cabeça. Com `INFAI_TALK_DEBUG`, o log registra `fala padrao: N opcoes (...)`, sem texto.
+2. **Latência (S1i):**
+   - o serviço mantém dois PowerShell abertos na VM, numa conexão SSH cada: um lê o log a cada `--tail-interval` (padrão 0,3 s) e só traz o fim do log quando ele cresceu; o outro grava `INFAIRSP.lua`/`INFAIPTT.lua`. Cada chamada custa ~0,03 s, contra ~2 s de um SSH novo. Se a conexão cair, ela é refeita na chamada seguinte;
+   - a transcrição usa `whisper-server` com o modelo carregado (~0,5 s por frase curta), com `whisper-cli` como reserva;
+   - o modelo de diálogo lê primeiro as regras fixas, reaproveitadas de uma pergunta para a outra, e fica carregado entre as conversas (`keep_alive`).
+

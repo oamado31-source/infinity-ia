@@ -185,6 +185,26 @@ def em(place: str) -> str:
     return 'em ' + place
 
 
+def with_article(title: str) -> str:
+    """A district title with its article: "Favelas" -> "as Favelas", "Distrito da Ponte" -> "o
+    Distrito da Ponte" (by the first word's ending; Portuguese place names of the pack)."""
+    first = title.split()[0].lower() if title.split() else ''
+    if first.endswith('as'):
+        return 'as ' + title
+    if first.endswith('os') or first.endswith('ões'):
+        return 'os ' + title
+    return ('a ' if first.endswith('a') else 'o ') + title
+
+
+def place_in_district(place: str, district: str | None) -> str:
+    """Where the person is, with the district around it when the pack knows one: "a Coroa de
+    Cobre" + "Favelas" -> "a Coroa de Cobre, nas Favelas" (lab, 2026-11-15: without it the model
+    guessed the district)."""
+    if not district or district.lower() in place.lower():
+        return place
+    return f'{place}, {em(with_article(district))}'
+
+
 def por(place: str) -> str:
     """Portuguese "por" + place: "a Coroa de Cobre" -> "pela Coroa de Cobre"."""
     for article, contracted in (('as ', 'pelas '), ('os ', 'pelos '), ('a ', 'pela '),

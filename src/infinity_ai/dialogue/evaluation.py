@@ -27,14 +27,15 @@ from ..bridge.domain import (
 from ..canon.pack import CanonPack
 from ..canon.pin import pin_pack
 from ..memory.common_knowledge import (
-    context_order, home_region, identity_knowledge, mentioned_in, relationship_entries,
+    context_order, home_region, identity_knowledge, local_aliases, mentioned_in, named_in,
+    relationship_entries,
 )
 from ..memory.model import KnowledgeBasis
 from ..memory.store import MemoryStore
 from ..personality.morale import HOLD, TRIGGERS, YIELD
 from ..personality.reaction import DISPOSITIONS
 from ..personality.identity import (
-    STANDINGS, build_identity, knowledge_tier, layered_text, popular_only,
+    STANDINGS, build_identity, knowledge_tier, layered_text, place_in_district, popular_only,
 )
 from ..state.recorder import ObservationRecorder
 from ..state.store import ROOT_BRANCH, CampaignStore
@@ -221,7 +222,8 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
         affiliations=tuple(s.get('affiliations') or ()), standing=s.get('standing'))
     resident = SimpleNamespace(gender=s.get('gender', 1), race=s.get('race', 1), klass=0,
                                display_name=name)
-    identity = build_identity(npc_id=npc_id, name=name, pack=pack, place=catalog.area(area),
+    place = place_in_district(catalog.area(area), local_aliases(pack, area).get('bairro'))
+    identity = build_identity(npc_id=npc_id, name=name, pack=pack, place=place,
                               home_region=home, resident=resident, curation=curation)
     build = _build_areas(pack)
     full, shallow = identity_knowledge(pack, homeland=identity.origin_region,
@@ -244,7 +246,9 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
         disposition=s.get('disposition'),
         morale=(s['morale']['trigger'], s['morale']['outcome']) if s.get('morale') else None,
         order=tuple(context_order(pack, known, npc_id=npc_id, area=area,
-                                  home_region=identity.home_region)))
+                                  home_region=identity.home_region,
+                                  named=named_in(pack, known, case.question,
+                                                 local_aliases(pack, area)))))
 
 
 def _envelope(field_name: str, value: str) -> ObservationEnvelope:

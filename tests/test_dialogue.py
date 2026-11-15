@@ -142,6 +142,14 @@ class ValidateTests(Campaign):
         stranger = validate_reply(reply('Não sei, pergunte ao Gorion.', [], True), self.context, asked)
         self.assertIn('UNKNOWN_NAMES:Gorion', stranger.reasons)
 
+    def test_a_known_name_in_singular_or_plural_is_known(self):
+        # lab, 2026-11-15: "Favela" for "Favelas" was refused and the model dodged the name.
+        from infinity_ai.dialogue.validate import _unknown_names
+        vocabulary = frozenset({'Favelas', 'Docas', 'Lehtinan'})
+        self.assertEqual(_unknown_names('Aqui é a Favela, perto da Doca.', vocabulary), [])
+        self.assertEqual(_unknown_names('Falei com os Lehtinans ontem.', vocabulary), [])
+        self.assertEqual(_unknown_names('Falei com o Gorion ontem.', vocabulary), ['Gorion'])
+
     def test_no_false_positives_on_ordinary_portuguese(self):
         for speech in ('Claro! Minsc e Boo estão animados.', 'Eu ia dizer isso agora mesmo.',
                        'Não sei. Talvez a Jaheira saiba.', 'Ela disse: "Vamos logo!"'):

@@ -56,8 +56,18 @@ class Verdict:
 
 
 def _unknown_names(speech: str, vocabulary: frozenset[str]) -> list[str]:
-    """Capitalised words that are not sentence-initial and not in the context vocabulary."""
-    allowed = {w.lower() for w in vocabulary}
+    """Capitalised words that are not sentence-initial and not in the context vocabulary.
+
+    A known name in the singular or plural is the same name: "Favela" for "Favelas", "Doca" for
+    "Docas" (lab, 2026-11-15: refusing it made the model dodge the district's name)."""
+    allowed = set()
+    for w in vocabulary:
+        low = w.lower()
+        allowed |= {low, low + 's', low + 'es'}
+        if len(low) > 4 and low.endswith('es'):
+            allowed.add(low[:-2])
+        if len(low) > 3 and low.endswith('s'):
+            allowed.add(low[:-1])
     found, prev_end = [], 0
     for match in _WORD.finditer(speech):
         sentence_start = prev_end == 0 or bool(_BOUNDARY.search(speech[prev_end:match.start()]))

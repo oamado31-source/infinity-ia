@@ -45,8 +45,16 @@ _INTIMIDATE = re.compile(r'\b(?:te mato|vou te matar|te matar|te machuc\w*|vou t
                          r'te arrebent\w*|te esfaque\w*|te quebr\w*|cortar sua|corto sua|'
                          r'(?:fale|diga|conte|responda)\b[^.!?]{0,40}\bou (?:eu )?(?:te|vai)|'
                          r'senão (?:eu )?te\b)', re.I)
-_BRIBE = re.compile(r'\b(?:te pago|pago|pagar|pagarei|moedas?|ouro|peças? de ouro|recompens\w*|'
-                    r'gorjeta|suborn\w*|dinheiro|te dou|te darei|em troca)\b', re.I)
+# A bribe is an offer, not a mention: "Que moeda é usada aqui?" or "Como é o dinheiro aqui?" are
+# questions about money, not offers (lab, 2026-11-15).
+_MONEY = r'(?:moedas?|ouro|prata|dinheiro|peças?(?: de (?:ouro|prata))?|danters?|po\b|pp\b)'
+_BRIBE = re.compile(
+    r'\b(?:te pago|eu pago|(?:vou|posso|poderia|quero) (?:te )?pagar|pagarei|te recompens\w*|'
+    r'recompensarei|gorjeta|suborn\w*|te dou|te darei|dou (?:a você|pra você|para você)|'
+    r'em troca|por (?:um |uma |uns |umas )?(?:\d+|algumas|uns|umas|boas?) ' + _MONEY + r'|'
+    r'\d+ ' + _MONEY + r'|'
+    r'(?:pegue|pega|tome|toma|aceite|aceita|fique com|leve|guarde) (?:est[ae]s?|ess[ae]s?|'
+    r'um[ae]?s?|minh[ae]s?|algum[ae]?s?|o|a|os|as)?\s?' + _MONEY + r')', re.I)
 
 
 def classify_trigger(text: str, ties: Iterable[str] = ()) -> str | None:

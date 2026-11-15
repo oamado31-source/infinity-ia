@@ -76,6 +76,13 @@ class QuestionTests(unittest.TestCase):
         self.assertLess(ranked.index('region:murann'), ranked.index('region:athkatla'))
         self.assertGreater(order().index('region:murann'), 12)          # without the question
 
+    def test_singular_names_the_plural_title_but_short_words_do_not_collide(self):
+        aliases = local_aliases(PACK, 'AR0406')
+        self.assertIn('topic:amnian-currency',
+                      named_in(PACK, PACK.entries, 'Que moeda é usada aqui?', aliases))
+        self.assertNotIn('org:council-of-six',
+                         named_in(PACK, PACK.entries, 'Não sei de nada.', aliases))   # "Seis"
+
     def test_only_reorders_what_is_held(self):
         held = [e for e in PACK.entries if e != 'region:murann']
         ranked = context_order(PACK, held, npc_id=BERNARD, area='AR0406',

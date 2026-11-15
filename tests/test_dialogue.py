@@ -142,6 +142,24 @@ class ValidateTests(Campaign):
         stranger = validate_reply(reply('Não sei, pergunte ao Gorion.', [], True), self.context, asked)
         self.assertIn('UNKNOWN_NAMES:Gorion', stranger.reasons)
 
+    def test_metals_must_be_in_what_the_person_knows(self):
+        # lab, 2026-11-15: "silver is common, gold is rare" against the item about the coins.
+        import dataclasses
+        from infinity_ai.dialogue.context import Fact
+        coins = Fact('K1', 'canon:topic:amnian-currency',
+                     'Moedas amnianas: O danter de ouro e o fandar de cobre são as moedas do dia '
+                     'a dia.', 0)
+        context = dataclasses.replace(self.context, knowledge=(coins,))
+        wrong = validate_reply(reply('Moedas de prata e cobre são comuns; ouro é raro.', ['K1']),
+                               context, 'Que moeda é usada aqui?')
+        self.assertIn('UNBACKED_DETAIL:prata', wrong.reasons)
+        right = validate_reply(reply('Aqui se usa o danter de ouro e o fandar de cobre.', ['K1']),
+                               context, 'Que moeda é usada aqui?')
+        self.assertTrue(right.ok, right.reasons)
+        offered = validate_reply(reply('Prata? Não aceito suborno.', []), self.context,
+                                 'Te dou 10 peças de prata.')
+        self.assertFalse(any(r.startswith('UNBACKED_DETAIL') for r in offered.reasons))
+
     def test_a_known_name_in_singular_or_plural_is_known(self):
         # lab, 2026-11-15: "Favela" for "Favelas" was refused and the model dodged the name.
         from infinity_ai.dialogue.validate import _unknown_names

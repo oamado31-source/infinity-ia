@@ -583,6 +583,58 @@
           "\\bnão é da sua conta\\b"
         ]
       }
+    },
+    {
+      "id": "moedas-sem-inventar-metal",
+      "description": "Lab 2026-11-15: perguntado sobre as moedas, o habitante fala do danter e do fandar, sem inventar prata ou ouro raro.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Que moeda é usada aqui?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "topic:amnian-currency"
+        ],
+        "mentions_none": [
+          "prata",
+          "raro",
+          "raras"
+        ]
+      }
+    },
+    {
+      "id": "cidade-vizinha-pela-pergunta",
+      "description": "CR-2026-016: a cidade vizinha nomeada na pergunta entra no prompt e o habitante dá só o núcleo popular.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "O que você sabe de Murann?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "region:murann"
+        ],
+        "mentions_none": [
+          "Angerdboar",
+          "Lurraxol",
+          "Selûne"
+        ]
+      }
     }
   ]
 }

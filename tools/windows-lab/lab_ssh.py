@@ -164,6 +164,9 @@ class SshLogSource:
         self._ssh, self._root, self._shell, self._full_every = ssh, game_root, shell, full_every
         self._known: tuple[int, str] | None = None      # (length, text) of the last full read
         self._full_at = 0.0
+        # The game process start (UTC ticks), read on full reads: tells game launches apart, since
+        # the box's session counter restarts at 0 and the log file is truncated, not recreated.
+        self.launch = ''
 
     def _script(self, known: int) -> str:
         return f"""
@@ -178,7 +181,13 @@ if (-not (Test-Path -LiteralPath $f)) {{ '{{"exists":false}}' }} else {{
       $b = New-Object byte[] $n; [void]$s.Read($b, 0, $n); $b64 = [Convert]::ToBase64String($b)
     }}
   }} finally {{ $s.Dispose() }}
-  @{{exists=$true; age=$age; len=$len; b64=$b64}} | ConvertTo-Json -Compress
+  $launch = $null
+  if ({known} -lt 0) {{
+    $p = Get-Process -Name Baldur -ErrorAction SilentlyContinue |
+      Where-Object {{ $_.Path -like (Join-Path '{self._root}' '*') }} | Select-Object -First 1
+    if ($p) {{ $launch = [string]$p.StartTime.ToUniversalTime().Ticks }}
+  }}
+  @{{exists=$true; age=$age; len=$len; b64=$b64; launch=$launch}} | ConvertTo-Json -Compress
 }}
 """
 
@@ -186,6 +195,8 @@ if (-not (Test-Path -LiteralPath $f)) {{ '{{"exists":false}}' }} else {{
         now = time.monotonic()
         known = self._known[0] if self._known and now - self._full_at < self._full_every else -1
         doc = json.loads(_run(self._ssh, self._shell, self._script(known)))
+        if doc.get('launch'):
+            self.launch = str(doc['launch'])
         if not doc.get('exists'):
             self._known = None
             return '', math.inf

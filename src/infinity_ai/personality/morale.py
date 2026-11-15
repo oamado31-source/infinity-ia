@@ -130,33 +130,39 @@ def resolve_morale(trigger: str, base: int, mods: tuple[tuple[str, int], ...],
 
 
 def morale_rng(*, world_seed: str, campaign_id: str, branch_id: str, key: str, session: int,
-               trigger: str) -> random.Random:
-    seed = json.dumps([POLICY, world_seed, campaign_id, branch_id, key, session, trigger],
-                      ensure_ascii=False)
+               trigger: str, launch: str = '') -> random.Random:
+    parts = [POLICY, world_seed, campaign_id, branch_id, key, session, trigger]
+    seed = json.dumps(parts + ([launch] if launch else []), ensure_ascii=False)
     return random.Random(int.from_bytes(hashlib.sha256(seed.encode()).digest(), 'big'))
 
 
 def morale_for(store: CampaignStore, branch_id: str, *, key: str, session: int, trigger: str,
                base: int, mods: tuple[tuple[str, int], ...], world_seed: str,
-               game_time: int | None, evidence: str = 'LAB_OBSERVED') -> MoraleResult | None:
-    """This trigger's check for the person in this session: recorded, or resolved and recorded."""
+               game_time: int | None, evidence: str = 'LAB_OBSERVED',
+               launch: str = '') -> MoraleResult | None:
+    """This trigger's check for the person in this session: recorded, or resolved and recorded.
+    `launch` tells game launches apart (the box's session counter restarts at 0 on each one)."""
     if not key or trigger not in TRIGGERS:
         return None
     for event in reversed(store.visible_events(branch_id, MORALE_EVENT)):
         p = event.payload
-        if p.get('npc_key') == key and p.get('session') == session and p.get('trigger') == trigger:
+        if p.get('npc_key') == key and p.get('session') == session and \
+                p.get('trigger') == trigger and p.get('launch', '') == launch:
             return MoraleResult(trigger, p['outcome'], tuple(p['dice']), p['base'],
                                 tuple((m[0], m[1]) for m in p.get('modifiers') or ()),
                                 p['morale'], p['total'], reused=True)
     rng = morale_rng(world_seed=world_seed, campaign_id=store.campaign_id, branch_id=branch_id,
-                     key=key, session=session, trigger=trigger)
+                     key=key, session=session, trigger=trigger, launch=launch)
     result = resolve_morale(trigger, base, mods, rng)
     payload = {'npc_key': key, 'session': session, 'trigger': trigger, 'outcome': result.outcome,
                'dice': list(result.dice), 'base': base, 'modifiers': [list(m) for m in mods],
                'morale': result.morale, 'total': result.total, 'rule': RULE, 'policy': POLICY}
+    if launch:
+        payload['launch'] = launch
     with store.transaction():
         store.append_event(branch_id=branch_id, host_epoch=session, event_type=MORALE_EVENT,
                            category='CAMPAIGN_OBSERVATION', game_time=game_time,
                            payload=payload, evidence=evidence,
-                           idempotency_key=f'morale|{branch_id}|{key}|{session}|{trigger}')
+                           idempotency_key=f'morale|{branch_id}|{key}|{session}|{trigger}'
+                                           + (f'|{launch}' if launch else ''))
     return result

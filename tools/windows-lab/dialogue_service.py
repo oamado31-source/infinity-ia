@@ -134,6 +134,11 @@ class TeeLogSource:
         with self._lock:
             return self._text
 
+    @property
+    def launch(self) -> str:
+        """The game launch the log comes from (process start), '' when unknown."""
+        return getattr(self._inner, 'launch', '') or ''
+
 
 class LogTail(threading.Thread):
     """Reads the game log every `interval` seconds; a failed read is logged once until it recovers."""
@@ -173,6 +178,7 @@ class Observer(threading.Thread):
         self.stays = residents_as_stays(self.pack, self.residents, live_build)
         self.curations = load_curations(self.pack)
         self._knowledge_status = None
+        self._pin_warned: set[str] = set()
         self.pin = (pin_build, pin_modpack)
         self.source = TeeLogSource(SshLogSource(ssh, args.game_root, shell=RemoteShell(ssh)))
         self.adapter = EEexLogAdapter(self.source, campaign_id=args.campaign, branch_id='main',
@@ -232,6 +238,15 @@ class Observer(threading.Thread):
         if report.status != self._knowledge_status:
             print(f'{now_iso()} conhecimento comum: {report.status}')
             self._knowledge_status = report.status
+        # Lab: loading an older save opens a branch that may carry an older pin, and the pack's
+        # knowledge stays off there until a new explicit pin (REQ-REL-012). Say it once per branch.
+        stale = report.status in ('REVISION_CHANGED', 'NOT_PINNED')
+        if stale and branch_id not in self._pin_warned:
+            self._pin_warned.add(branch_id)
+            print(f'{now_iso()} AVISO: o ramo {branch_id} esta com o pacote {report.status}; o '
+                  f'conhecimento do pacote fica desligado ali ate um novo pin: '
+                  f'tools/windows-lab/pin_canon_pack.py --campaign {self.args.campaign} '
+                  f'--db {self.args.db}')
         for k in report.granted:
             print(f'{now_iso()} conhecimento comum adquirido: npc={k.npc_id} entrada={k.entry_id} '
                   f'base={k.basis.value} regiao={k.region_id} t={k.game_time}')
@@ -493,7 +508,8 @@ class Talker(threading.Thread):
                 charisma=leader.charisma_active if leader is not None else None,
                 charisma_of=(leader.script_name or leader.display_name)
                 if leader is not None else '',
-                world_seed=self.args.world_seed, game_time=view.game_time)
+                world_seed=self.args.world_seed, game_time=view.game_time,
+                launch=self.observer.source.launch)
             # ADR-0126: a bribe, a threat or a request against someone it is tied to calls for
             # a morale check (once per trigger per person per session), decided by code.
             # Ties: the other parties of relations it is part of or affiliated to (ADR-0119);
@@ -516,7 +532,8 @@ class Talker(threading.Thread):
                     mods=modifiers(ethical=ethical_axis(getattr(resident, 'alignment', None),
                                                         profile), text=req.text,
                                    trigger=trigger),
-                    world_seed=self.args.world_seed, game_time=view.game_time)
+                    world_seed=self.args.world_seed, game_time=view.game_time,
+                    launch=self.observer.source.launch)
             aliases = local_aliases(pack, req.area)   # "taverna" = the place where it is
             # ADR-0131: titles of what the person does not hold, for the typed-absence check only.
             held_now = set(known_now)

@@ -87,6 +87,23 @@ class EventTests(unittest.TestCase):
                             world_seed='w', game_time=100)
         self.assertEqual((same.dice, same.disposition), (first.dice, first.disposition))
 
+    def test_a_new_game_launch_is_a_new_encounter(self):
+        # lab, 2026-11-15: the box's session counter restarts at 0 when the game is reopened;
+        # the game process start (launch) keeps that from reusing the earlier launch's reaction.
+        def react(launch):
+            return reaction_for(self.store, ROOT_BRANCH, key='npc:cre-bernard', session=0,
+                                opening_text='Olá!', charisma=None, charisma_of='jaheira',
+                                world_seed='w', game_time=100, launch=launch)
+        first = react('639303792134606162')
+        self.assertTrue(react('639303792134606162').reused)           # same launch: kept
+        second = react('639303800000000000')                           # game reopened
+        self.assertFalse(second.reused)
+        self.assertTrue(react('639303800000000000').reused)
+        events = self.store.visible_events(ROOT_BRANCH, REACTION_EVENT)
+        self.assertEqual([e.payload.get('launch') for e in events],
+                         ['639303792134606162', '639303800000000000'])
+        self.assertNotEqual(first, second)
+
     def test_event_carries_no_text(self):
         self.react(text='Seu idiota, quem governa Amn?')
         events = self.store.visible_events(ROOT_BRANCH, REACTION_EVENT)

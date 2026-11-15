@@ -1,0 +1,38 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:government-district",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Distrito Governamental",
+  "summary": "O bairro mais exclusivo de Athkatla, com a Casa do Conselho e quarteirões inteiros das famílias mais poderosas; gente comum só entra a serviço. Seu marco é a torre Cloakspell, de um mago, abandonada e protegida por magia. O guia de Volo o chama de Distrito do Cetro.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [
+    "AR1000"
+  ],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-baldurs-gate-ii",
+      "locator": "p. 9, \"Scepter District\" (PDF p. 10)"
+    },
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"Athkatla\" (PDF p. 30)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O bairro dos ricos e do governo de Athkatla; gente comum não é bem-vinda.",
+    "INFORMED": "Ali ficam a Casa do Conselho e os complexos das famílias mais poderosas, que ocupam quarteirões inteiros.",
+    "STUDIED": "O marco do bairro é a torre Cloakspell, de um mago, abandonada e protegida por magia."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

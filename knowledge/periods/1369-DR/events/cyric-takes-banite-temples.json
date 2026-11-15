@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:cyric-takes-banite-temples",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Cyric toma os templos de Bane",
+  "summary": "Em 1362 DR, ao saber da morte de Bane, o sacerdote Tellvon Bloodshoulder, vindo de Tethyr, matou ou converteu o alto clero banita de Amn em favor de Cyric. Muitos templos de Bane passaram ao novo deus, cuja fé é forte entre os Ladrões das Sombras.",
+  "valid_from_dr": 1362,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 5"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Cyric herdou fiéis de deuses mortos, e muitos templos de Bane agora são dele.",
+    "INFORMED": "A fé de Cyric tem muita força entre os Ladrões das Sombras.",
+    "STUDIED": "Em 1362 DR, o sacerdote Tellvon Bloodshoulder matou ou converteu o alto clero de Bane em Amn em favor de Cyric."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

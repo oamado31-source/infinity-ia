@@ -1,0 +1,35 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:amnian-status-and-speech",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "Status e modo de falar amniano",
+  "summary": "Em Amn, o dinheiro define o status, medido por metais: de \"minério\", um insulto, a \"mithral\", o maior elogio. \"Bons negócios!\" serve de saudação, \"vender\" é convencer e \"achar a pérola\" é ter sorte. Exibir riqueza é obrigação social.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 3–4"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 6"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "\"Bons negócios!\" é como se cumprimenta em Amn; quem tem mais dinheiro tem mais status.",
+    "INFORMED": "Chamar alguém de \"minério\" é insulto, e de \"mithral\" é elogio; \"achar a pérola\" é ter sorte."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

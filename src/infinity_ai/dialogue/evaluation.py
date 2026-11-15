@@ -27,7 +27,7 @@ from ..bridge.domain import (
 from ..canon.pack import CanonPack
 from ..canon.pin import pin_pack
 from ..memory.common_knowledge import (
-    home_region, identity_knowledge, mentioned_in, relationship_entries,
+    context_order, home_region, identity_knowledge, mentioned_in, relationship_entries,
 )
 from ..memory.model import KnowledgeBasis
 from ..memory.store import MemoryStore
@@ -242,7 +242,9 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
         also_known=also_known, wisdom=s.get('wis'), intelligence=s.get('int'),
         popular_only_ids=shallow_ids, history=case.history,
         disposition=s.get('disposition'),
-        morale=(s['morale']['trigger'], s['morale']['outcome']) if s.get('morale') else None)
+        morale=(s['morale']['trigger'], s['morale']['outcome']) if s.get('morale') else None,
+        order=tuple(context_order(pack, known, npc_id=npc_id, area=area,
+                                  home_region=identity.home_region)))
 
 
 def _envelope(field_name: str, value: str) -> ObservationEnvelope:

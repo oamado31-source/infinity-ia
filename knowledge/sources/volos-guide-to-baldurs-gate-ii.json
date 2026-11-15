@@ -1,0 +1,14 @@
+{
+  "schema": "infinity-ai.source.v1",
+  "bibliographic_status": "TO_CONFIRM",
+  "notes": "Guia de Athkatla e arredores no período do jogo. O PDF do mantenedor é escaneado (sem camada de texto): citar pela página impressa; no PDF, a página é a impressa + 1. Para o que o jogo mostra (pessoal da Coroa de Cobre, nomes de bairros), o jogo prevalece. Dados bibliográficos a confirmar com o exemplar.",
+  "source_id": "volos-guide-to-baldurs-gate-ii",
+  "title": "Volo's Guide to Baldur's Gate II",
+  "publisher": "TSR / Wizards of the Coast",
+  "year": 2000,
+  "edition": "AD&D 2nd edition",
+  "creators": [],
+  "isbn": null,
+  "source_class": "S0_PRIMARY",
+  "setting_year_dr": 1369
+}

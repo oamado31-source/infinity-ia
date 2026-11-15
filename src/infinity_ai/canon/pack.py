@@ -23,7 +23,7 @@ MAX_LAYER = 200
 MAX_SUMMARY = 280
 MAX_QUOTE_WORDS = 15
 KIND_PREFIX = {'REGION': 'region', 'EVENT': 'event', 'ORGANIZATION': 'org', 'CHARACTER': 'char',
-               'PLACE': 'place', 'RELATIONSHIP': 'rel'}
+               'PLACE': 'place', 'RELATIONSHIP': 'rel', 'TOPIC': 'topic'}
 VERIFICATION = {'RESEARCH_ONLY', 'CROSS_REFERENCED', 'SOURCE_CHECKED', 'DISPUTED', 'CAMPAIGN_CANON'}
 # ADR-0131: secrecy classes, least to most protected. Optional on an entry; absent keeps the
 # behaviour before the class existed (public scopes count as PUBLIC, RESTRICTED as PROFESSIONAL).
@@ -127,6 +127,11 @@ def _check_entry(doc: dict, year: int, sources: dict[str, Source], name: str) ->
         problems.append(f'{name}: partition year {doc["partition_year_dr"]} in the {year} directory')
     if KIND_PREFIX.get(doc['kind']) != doc['id'].split(':', 1)[0]:
         problems.append(f'{name}: id prefix does not match kind')
+    if doc['kind'] == 'TOPIC':      # CR-2026-013: a custom known somewhere, never a place
+        if not doc.get('region_id'):
+            problems.append(f'{name}: a TOPIC needs region_id')
+        if doc['area_resrefs']:
+            problems.append(f'{name}: a TOPIC has no game areas')
     relation_fields = ('subject_id', 'predicate', 'object_id', 'context_id', 'audience',
                        'eligible_affiliations', 'allowed_npc_ids')
     if doc['kind'] == 'RELATIONSHIP':

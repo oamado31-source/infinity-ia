@@ -1,0 +1,33 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:slums",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Favelas",
+  "summary": "O bairro mais pobre e mal-afamado de Athkatla, de ruas imundas, onde vivem miseráveis e velhos desamparados. Marinheiros são recrutados e passam a folga ali; quem não vai ao mar trabalha nas barcaças do porto.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [
+    "AR0400"
+  ],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-baldurs-gate-ii",
+      "locator": "p. 8, \"River District\" (PDF p. 9); nome do jogo (D3)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O bairro mais pobre e mal-afamado de Athkatla.",
+    "INFORMED": "Marinheiros são recrutados e passam a folga ali; os pobres trabalham nas barcaças do porto."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

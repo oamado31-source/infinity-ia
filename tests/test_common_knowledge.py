@@ -21,7 +21,8 @@ from infinity_ai.dialogue.engine import (  # noqa: E402
 )
 from infinity_ai.dialogue.llm import FakeProvider  # noqa: E402
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
-    BackgroundRegion, Residence, acquire_common_knowledge, entries_named, identity_entries,
+    BackgroundRegion, Residence, acquire_common_knowledge, context_order, entries_named,
+    identity_entries,
     placement_regions, relationship_entries, residents_as_stays, share_knowledge,
 )
 from infinity_ai.memory.model import KnowledgeBasis  # noqa: E402
@@ -33,8 +34,21 @@ from test_recorder import obs, party  # noqa: E402
 PACK = load_partition(1369)
 BUILD = frozenset(a for e in PACK.entries.values() for a in e.area_resrefs) | {'AR0602'}
 DAY = 7200
+# CR-2026-014: the order the services pass, by closeness to the Copper Coronet.
+ORDER_AR0406 = tuple(context_order(PACK, PACK.entries, npc_id=None, area='AR0406',
+                                   home_region='region:athkatla'))
+# Lote A (CR-2026-013): public knowledge of Amn as a whole, and of Athkatla's districts.
+LOTE_A_AMN = {'event:magic-ban-of-king-dhanar', 'event:end-of-amnian-monarchy',
+              'org:merchant-families-of-amn', 'event:murann-spice-war', 'org:church-of-waukeen',
+              'event:cyric-takes-banite-temples', 'event:coast-plague', 'event:dragonspear-war',
+              'event:maztica-and-new-amn', 'event:council-schism', 'event:baldurs-gate-crisis',
+              'topic:amnian-currency', 'topic:amnian-status-and-speech', 'topic:thorass-in-amn'}
+LOTE_A_CITY = {'place:waukeens-promenade', 'place:temple-district', 'place:bridge-district',
+               'place:government-district', 'place:graveyard-district', 'place:athkatla-gates',
+               'place:docks', 'place:slums'}
+COUNTRY = {'region:faerun', 'region:amn', 'org:cowled-wizards'} | LOTE_A_AMN
 CITY = {'region:faerun', 'region:amn', 'region:athkatla', 'org:council-of-six', 'org:cowled-wizards',
-        'place:copper-coronet', 'rel:lehtinan-owns-copper-coronet'}
+        'place:copper-coronet', 'rel:lehtinan-owns-copper-coronet'} | LOTE_A_AMN | LOTE_A_CITY
 
 
 def reply(speech, used=(), unknown=False):
@@ -128,7 +142,7 @@ class ResidenceTests(Story):
         self.see('AR0602', 0)
         self.pin(game_time=0)
         self.acquire(DAY, residents=lives('region:amn'))
-        self.assertEqual(self.known(BERNARD), {'region:faerun', 'region:amn', 'org:cowled-wizards'})
+        self.assertEqual(self.known(BERNARD), COUNTRY)
 
     def test_time_in_the_party_is_not_residence(self):
         self.see('AR0602', 0)
@@ -182,10 +196,10 @@ class ResidenceTests(Story):
         self.see('AR0300', 0)
         self.pin(game_time=0)
         first = self.acquire(DAY, residents=lives())
-        self.assertEqual(len(first.granted), 7)
+        self.assertEqual(len(first.granted), len(CITY))
         self.assertEqual(self.acquire(DAY + 50, residents=lives()).granted, ())
         rows = self.store.connection.execute('SELECT count(*) FROM npc_canon_knowledge').fetchone()
-        self.assertEqual(rows[0], 7)
+        self.assertEqual(rows[0], len(CITY))
 
     def test_rows_are_append_only(self):
         self.see('AR0300', 0)
@@ -500,7 +514,7 @@ class DialogueTests(Story):
 
     def ctx(self, at):
         return build_context(self.memory, self.store, Catalog.load(), npc_id='npc:jaheira',
-                             branch_id=ROOT_BRANCH, at_game_time=at).context
+                             branch_id=ROOT_BRANCH, at_game_time=at, order=ORDER_AR0406).context
 
     def test_knowledge_reaches_the_prompt_only_after_acquisition(self):
         before = self.ctx(100)
@@ -509,7 +523,7 @@ class DialogueTests(Story):
         self.learn()
         after = self.ctx(10 + DAY)
         texts = {k.fact_id: k.text for k in after.knowledge}
-        self.assertEqual(len(texts), 7)
+        self.assertEqual(len(texts), 12)                         # MAX_KNOWLEDGE
         self.assertIn('canon:place:copper-coronet',
                       {k.event_id for k in after.knowledge})
         self.assertIn('canon:rel:lehtinan-owns-copper-coronet',
@@ -522,7 +536,8 @@ class DialogueTests(Story):
         self.learn()
         def council(**scores):
             ctx = build_context(self.memory, self.store, Catalog.load(), npc_id='npc:jaheira',
-                                branch_id=ROOT_BRANCH, at_game_time=10 + DAY, **scores).context
+                                branch_id=ROOT_BRANCH, at_game_time=10 + DAY, order=ORDER_AR0406,
+                                **scores).context
             text = next(k.text for k in ctx.knowledge if k.event_id == 'canon:org:council-of-six')
             return ctx, text
         # Overlay (no scores): the whole checked summary, as before.
@@ -548,7 +563,7 @@ class DialogueTests(Story):
             reply('Quem manda em Amn é o Conselho dos Seis, gente sem rosto.', [council])]),
             Catalog.load())
         result = engine.respond(DialogueRequest('npc:jaheira', 'Quem governa aqui?'),
-                                branch_id=ROOT_BRANCH, at_game_time=10 + DAY)
+                                branch_id=ROOT_BRANCH, at_game_time=10 + DAY, order=ORDER_AR0406)
         self.assertEqual(result.status, DialogueStatus.OK)
         self.assertEqual(result.used_event_ids, ('canon:org:council-of-six',))
         self.assertTrue(any('META_TALK' in f for f in result.flags))
@@ -572,7 +587,8 @@ class ResidentDialogueTests(Story):
 
     def ctx(self, **over):
         kw = dict(npc_id=BERNARD, display_name='Bernard', residence_areas=('AR0406',),
-                  area='AR0406', dead=False, branch_id=ROOT_BRANCH, at_game_time=200, wisdom=18)
+                  area='AR0406', dead=False, branch_id=ROOT_BRANCH, at_game_time=200, wisdom=18,
+                  order=self.ctx_order())
         kw.update(over)
         return build_resident_context(self.memory, self.store, Catalog.load(), **kw)
 
@@ -588,7 +604,7 @@ class ResidentDialogueTests(Story):
         self.acquire(110, residents=placed('AR0406'))
         context = self.ctx().context
         self.assertEqual(context.facts, ())
-        self.assertEqual(len(context.knowledge), 7)
+        self.assertEqual(len(context.knowledge), 12)             # MAX_KNOWLEDGE (CR-2026-014)
         prompt = system_prompt(context)
         self.assertIn('Você é Bernard e está na Coroa de Cobre', prompt)
         self.assertNotIn('companheiro(a) de viagem', prompt)
@@ -635,6 +651,11 @@ class ResidentDialogueTests(Story):
         self.assertIn('Orientação:', system_prompt(shaped.context))
         self.assertEqual(shaped.context.knowledge, ())
 
+    @staticmethod
+    def ctx_order():
+        return tuple(context_order(PACK, PACK.entries, npc_id=BERNARD, area='AR0406',
+                                   home_region='region:athkatla'))
+
     def engine(self, *replies):
         return DialogueEngine(self.store, FakeProvider([reply(*r) for r in replies]),
                               Catalog.load())
@@ -646,7 +667,8 @@ class ResidentDialogueTests(Story):
         result = self.engine(('Quem manda é o Conselho dos Seis, e ninguém sabe quem são.',
                               [council])).respond_resident(
             ResidentRequest(BERNARD, 'Bernard', 'Quem governa Amn?', 'AR0406', False),
-            residence_areas=('AR0406',), branch_id=ROOT_BRANCH, at_game_time=200)
+            residence_areas=('AR0406',), branch_id=ROOT_BRANCH, at_game_time=200,
+            order=self.ctx_order())
         self.assertEqual(result.status, DialogueStatus.OK)
         self.assertEqual(result.used_event_ids, ('canon:org:council-of-six',))
         used = [e.split(':', 1)[1] for e in result.used_event_ids]

@@ -49,6 +49,7 @@ class TempKnowledge(unittest.TestCase):
 
     def add(self, doc, category='events', name='test'):
         path = self.root / 'periods' / '1369-DR' / category / f'{name}.json'
+        path.parent.mkdir(exist_ok=True)
         path.write_text(json.dumps(doc, ensure_ascii=False), encoding='utf-8')
         return path
 

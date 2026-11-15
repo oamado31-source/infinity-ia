@@ -35,6 +35,12 @@ DEFAULT_AREA_NAMES = ROOT / 'knowledge' / 'areas' / 'bg2ee-area-names.pt_BR.json
 UNNAMED_AREA = 'um lugar que você não sabe nomear'
 MAX_FACTS = 20
 MAX_KNOWLEDGE = 12
+# CR-2026-014: without an order from the caller, standing things before events, by id prefix.
+_PREFIX_RANK = {'place': 0, 'rel': 1, 'region': 2, 'org': 3, 'topic': 4, 'char': 5, 'event': 6}
+
+
+def _prefix_rank(entry_id: str) -> int:
+    return _PREFIX_RANK.get(entry_id.split(':', 1)[0], 9)
 _NAME = re.compile(r"[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ'-]*")
 GENERIC_FALLBACK = 'Hum... não sei bem o que dizer agora.'
 
@@ -196,7 +202,8 @@ def _heard_from(entry_id: str, npc_id: str, shared: list, catalog: Catalog | Non
 
 def _knowledge_items(memory: MemoryStore, npc_id: str, branch_id: str, at_game_time: int | None,
                      vocabulary: set[str], tier: KnowledgeTier | None = None,
-                     store: CampaignStore | None = None, catalog: Catalog | None = None
+                     store: CampaignStore | None = None, catalog: Catalog | None = None,
+                     order: tuple[str, ...] = ()
                      ) -> tuple[RecallStatus, str, tuple[Fact, ...]]:
     """What the companion acquired; with a known `tier` (ADR-0117), only the layers it reaches.
     ADR-0124: what it heard by INQUIRY says from whom and where, when the record has it."""
@@ -210,6 +217,9 @@ def _knowledge_items(memory: MemoryStore, npc_id: str, branch_id: str, at_game_t
     shared = [e for e in store.visible_events(branch_id, SHARED_EVENT)
               if at_game_time is None or e.game_time is None or e.game_time <= at_game_time] \
         if store is not None else []
+    rank = {entry_id: i for i, entry_id in enumerate(order)}      # CR-2026-014
+    held = sorted(held, key=lambda k: (rank.get(k.entry_id, len(rank)), _prefix_rank(k.entry_id),
+                                       k.entry_id))
     for i, k in enumerate(held[:MAX_KNOWLEDGE], 1):
         text = layered_text(k.summary, k.layers, tier) if tier is not None else k.summary
         source = _heard_from(k.entry_id, npc_id, shared, catalog)
@@ -235,7 +245,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            recall_lines: tuple[tuple[str, str], ...] = (),
                            disposition: str | None = None,
                            morale: tuple[str, str] | None = None,
-                           trust: str = NEUTRO) -> ContextResult:
+                           trust: str = NEUTRO,
+                           order: tuple[str, ...] = ()) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
@@ -300,7 +311,17 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
     knowledge, restricted, decisions = [], [], []
     # ADR-0131: what the person tells, decided per item by code before the prompt (secrecy class,
     # ADR-0125 disposition, ADR-0126 morale, trust). A withheld item never reaches the model.
-    for i, entry_id in enumerate(sorted(subjects)[:MAX_KNOWLEDGE], 1):
+    # CR-2026-014: what fills the prompt is chosen by closeness (the caller's `order`, from the
+    # pack and where the person is), never alphabetically; restricted ties and what is about the
+    # person come first even without an order.
+    rank = {entry_id: i for i, entry_id in enumerate(order)}
+
+    def closeness(entry_id: str) -> tuple:
+        _, _, _, scope, subject_id, _ = subjects[entry_id]
+        own = scope == 'RESTRICTED' or subject_id == npc_id
+        return (rank.get(entry_id, len(rank)), 0 if own else 1, _prefix_rank(entry_id), entry_id)
+
+    for i, entry_id in enumerate(sorted(subjects, key=closeness)[:MAX_KNOWLEDGE], 1):
         t, s, layers, scope, subject_id, secrecy = subjects[entry_id]
         decision = decide(entry_id, access_scope=scope, secrecy=secrecy, disposition=disposition,
                           morale_outcome=morale[1] if morale is not None else None, trust=trust)
@@ -334,7 +355,8 @@ def _with_recall(facts: tuple[Fact, ...], lines: tuple[tuple[str, str], ...],
 def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *, npc_id: str,
                   branch_id: str, at_game_time: int | None, wisdom: int | None = None,
                   intelligence: int | None = None,
-                  recall_lines: tuple[tuple[str, str], ...] = ()) -> ContextResult:
+                  recall_lines: tuple[tuple[str, str], ...] = (),
+                  order: tuple[str, ...] = ()) -> ContextResult:
     """A companion in the party. When the game sends its Wisdom/Intelligence (in-game box), the
     ADR-0117 matrix sets how deeply it understands what it learned and how it speaks; without
     them (overlay) the whole checked summary is used, as before."""
@@ -368,7 +390,7 @@ def build_context(memory: MemoryStore, store: CampaignStore, catalog: Catalog, *
 
     tier = knowledge_tier(wisdom, intelligence) if wisdom or intelligence else None
     status, reason, knowledge = _knowledge_items(memory, npc_id, branch_id, at_game_time,
-                                                 vocabulary, tier, store, catalog)
+                                                 vocabulary, tier, store, catalog, order)
     if status is not RecallStatus.OK:
         return ContextResult(ContextStatus.DENIED, reason)
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(

@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:baldurs-gate-crisis",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Crise com Baldur's Gate",
+  "summary": "Pouco antes de 1369 DR, Amn esteve à beira da guerra com Baldur's Gate, ao norte. As tramas de Sarevok, filho mortal do deus do assassinato, foram frustradas e a guerra não aconteceu, mas as relações entre os dois continuam tensas.",
+  "valid_from_dr": 1368,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"Amn\" (PDF p. 26)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Amn quase entrou em guerra com Baldur's Gate há pouco tempo; as relações ainda estão tensas.",
+    "INFORMED": "A crise foi tramada por um tal Sarevok e frustrada antes da guerra.",
+    "STUDIED": "Sarevok era filho mortal do deus do assassinato."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

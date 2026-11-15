@@ -1,0 +1,30 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:thorass-in-amn",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "O Thorass nos contratos",
+  "summary": "Em Amn, contratos, documentos, tribunais e discursos oficiais usam o Thorass, a antiga língua do comércio, abandonada no resto de Faerûn. O povo do campo fala um comum simples, cheio de termos em Thorass.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 4"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Os contratos em Amn são escritos numa língua antiga, o Thorass."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

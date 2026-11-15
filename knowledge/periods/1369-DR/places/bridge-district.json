@@ -1,0 +1,38 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:bridge-district",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Distrito da Ponte",
+  "summary": "Bairro de trabalhadores pobres de Athkatla, com comércio de caravanas e lojinhas de mercadorias duvidosas. A ponte sobre o rio Alandor é a única ligação entre as duas metades da cidade, e quem saca uma arma nela é executado. Há rumores de túneis sob a cidade.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [
+    "AR0500"
+  ],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-baldurs-gate-ii",
+      "locator": "p. 8, \"Bridge District\" (PDF p. 9)"
+    },
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"Athkatla\" (PDF p. 31)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Bairro pobre de Athkatla, junto à ponte sobre o rio Alandor.",
+    "INFORMED": "Tem comércio das caravanas e lojinhas de mercadorias duvidosas. Quem saca uma arma na ponte é executado.",
+    "STUDIED": "Há rumores de túneis sob a cidade."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

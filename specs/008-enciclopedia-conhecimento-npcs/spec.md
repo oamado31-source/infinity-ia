@@ -21,6 +21,7 @@ Fazer dos NPCs fontes de conhecimento do mundo para o jogador, cada um limitado 
   - `audience`: `REGIONAL_PUBLIC`, `AFFILIATED`, `EXPLICIT_NPCS`.
 
   A classe de sigilo (SPEC-009) é o único campo novo, com migração versionada e padrão compatível.
+  **Extensão pelo CR-2026-013:** o tipo de entrada `TOPIC` (prefixo `topic:`), para costumes, moedas, línguas, modos de falar e religião. Exige região, não tem área do jogo e não é ponta de relação. É conhecido pelas mesmas regras das outras entradas regionais.
 - **Biografia:** a identidade curada atual (ADR-0117) mais eventos biográficos com local, intervalo DR, evidência e privacidade.
   - **Oficial:** só com respaldo.
   - **NPC gerado:** biografia fixada uma vez, persistida e versionada (D2); só vira `CAMPAIGN_CANON` depois de curadoria.

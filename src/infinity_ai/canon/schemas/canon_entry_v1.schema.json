@@ -27,7 +27,7 @@
     },
     "id": {
       "type": "string",
-      "pattern": "^(region|event|org|char|place|rel):[a-z0-9-]{1,64}$"
+      "pattern": "^(region|event|org|char|place|rel|topic):[a-z0-9-]{1,64}$"
     },
     "kind": {
       "enum": [
@@ -36,7 +36,8 @@
         "ORGANIZATION",
         "CHARACTER",
         "PLACE",
-        "RELATIONSHIP"
+        "RELATIONSHIP",
+        "TOPIC"
       ]
     },
     "partition_year_dr": {
@@ -348,6 +349,32 @@
         "properties": {
           "allowed_npc_ids": {
             "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "TOPIC"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "region_id"
+        ],
+        "properties": {
+          "region_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "area_resrefs": {
+            "maxItems": 0
           }
         }
       }

@@ -1,7 +1,7 @@
 # knowledge/ — o que entra e o que nunca entra
 
 **Entra (texto nosso, curto, com fonte):**
-- `periods/<ano>-DR/` — partição por ano DR (doc 60a). Uma entrada JSON por fato, entidade PLACE ou relação RELATIONSHIP, schema `src/infinity_ai/canon/schemas/canon_entry_v1.schema.json`. Só o ano pedido é carregado.
+- `periods/<ano>-DR/` — partição por ano DR (doc 60a). Uma entrada JSON por fato, entidade PLACE, tópico TOPIC ou relação RELATIONSHIP, schema `src/infinity_ai/canon/schemas/canon_entry_v1.schema.json`. Só o ano pedido é carregado.
 - `sources/` — registro bibliográfico das obras (classes S0–S3) e da curadoria explícita do projeto (S4_MAINTAINER_CURATED). S4 não é fonte externa e só fundamenta entradas CAMPAIGN_CANON aprovadas.
 - `personas/`, `areas/` — curadoria provisória da SPEC-004 (traços e nomes escritos por nós).
 - `npcs/` — identidade curada de NPCs oficiais (ADR-0117): ofício, origem, fatos sobre si, afiliações explícitas a lugares (ADR-0119) e estatuto local `standing` (`HABITANTE`, `VIAJANTE` ou `FORASTEIRO`, ADR-0120); só vale depois da conferência do mantenedor.
@@ -22,5 +22,10 @@
 
 **Relações (ADR-0119):** RELATIONSHIP registra subject_id, predicate, object_id e context_id opcional. COMMON_REGIONAL + REGIONAL_PUBLIC usa ORIGIN/RESIDENCE/INQUIRY; RESTRICTED exige afiliação curada (STAFF, REGULAR etc.) ou allowlist explícita. Estar na mesma área não concede acesso. INQUIRY compartilha apenas relações públicas; relações restritas não são propagadas por padrão.
 
+**Tópicos (CR-2026-013):** `TOPIC` (prefixo `topic:`, pasta `topics/`) guarda costumes, moedas, línguas, modos de falar e religião, o que não é região, lugar, evento, organização, personagem nem relação. Exige `region_id` (onde o costume é conhecido), não tem área do jogo e não é ponta de relação. É conhecido pelas mesmas regras regionais.
+
+**Validade e eventos passados (decisão do mantenedor, 2026-11-15):** `valid_from_dr`/`valid_to_dr` dizem em que anos de campanha o fato vale, não quando aconteceu. Um evento passado usa `valid_from_dr` = ano do evento e `valid_to_dr` vazio (o fato continua verdadeiro), com a data no texto. Uma entrada de livro ambientado em outro ano (por exemplo, *Lands of Intrigue*, 1370) precisa de validade explícita, ou o gate a recusa (`SETTING_YEAR_MISMATCH`). Nunca `valid_from_dr` depois do ano da partição: livro posterior não antecipa eventos.
+
+**Divergências com o jogo (decisão do mantenedor, 2026-11-15):** para o que o jogo mostra (quem trabalha onde, nomes de bairros), o jogo prevalece (`game-data-local`); o livro entra só no que não o contradiz. Bairros de Athkatla usam o nome do jogo com o conteúdo do *Volo's Guide to Baldur's Gate II* onde coincidem.
 
 Para pedir uma entrada nova: `templates/canon-entry.md`.

@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:murann-spice-war",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Guerra das Especiarias de Murann",
+  "summary": "Em 1338 DR, a briga das famílias Ulvax e Ophal pelo comércio de especiarias com Zakhara virou batalha nas ruas de Murann, a Noite das Lanças Temperadas, com mais de 400 mortos. O Conselho tirou o comércio dos Ulvax e os mandou para Esmeltaran.",
+  "valid_from_dr": 1338,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 12"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 22"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Faz uns trinta anos, uma briga de famílias deixou centenas de mortos nas ruas de Murann.",
+    "INFORMED": "Os Ulvax e os Ophal brigavam pelas especiarias; o Conselho castigou os Ulvax e os mandou para Esmeltaran.",
+    "STUDIED": "A batalha de 1338 DR ficou conhecida como a Noite das Lanças Temperadas e deixou mais de 400 mortos."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

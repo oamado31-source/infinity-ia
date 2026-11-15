@@ -1,0 +1,31 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:church-of-waukeen",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Igreja de Waukeen",
+  "summary": "Waukeen, deusa do comércio, é a divindade mais venerada de Amn, mesmo com seus problemas divinos atuais. Sua igreja está sob a regência de Lliira, que concede magia aos sacerdotes, e os cultos viraram grandes banquetes e festas.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 5"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Waukeen, deusa do comércio, é a mais venerada de Amn.",
+    "INFORMED": "A deusa Lliira cuida da igreja de Waukeen e é quem concede magia aos sacerdotes; os cultos são grandes festas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

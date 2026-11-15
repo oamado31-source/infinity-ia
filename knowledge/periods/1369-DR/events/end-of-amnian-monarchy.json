@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:end-of-amnian-monarchy",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Queda da monarquia",
+  "summary": "Depois do assassinato do rei Dhanar, em 1276 DR, as famílias mercantis disputaram o trono por décadas, e o último herdeiro morreu envenenado em 1306. Em 1333, a Grande Guerra Comercial terminou quando Thayze Selemchant fundou o Conselho dos Seis.",
+  "valid_from_dr": 1333,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 22"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Amn já teve reis; hoje quem governa é o Conselho dos Seis.",
+    "INFORMED": "Morto o último rei forte, as famílias ricas brigaram pelo trono por décadas, até o Conselho acabar com a guerra.",
+    "STUDIED": "O rei Dhanar foi assassinado em 1276; o último herdeiro morreu envenenado em 1306; Thayze Selemchant fundou o Conselho em 1333."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

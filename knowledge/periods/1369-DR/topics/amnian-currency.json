@@ -1,0 +1,31 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:amnian-currency",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "Moedas amnianas",
+  "summary": "Moedas cunhadas em Athkatla: fandar (cobre), taran (prata), decime (electro, o \"centauro\"), danter (ouro, a \"perolinha\") e roldon (platina, a \"pérola\"). Os ricos usam barras e joias; qualquer moeda vale nos mercados, e a troca direta é comum.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 13"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O danter de ouro e o fandar de cobre são as moedas do dia a dia.",
+    "INFORMED": "Apelidos: o danter é a \"perolinha\", o roldon a \"pérola\" e o decime o \"centauro\"; os ricos pagam com barras e joias."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

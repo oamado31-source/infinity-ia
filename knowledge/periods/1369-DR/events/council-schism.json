@@ -1,0 +1,31 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:council-schism",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "O Cisma de 1362",
+  "summary": "Em Marpenoth de 1362 DR, o Cisma do Conselho causou a morte do Meisarch, do Namarch e do Pommarch, que logo foram substituídos.",
+  "valid_from_dr": 1362,
+  "valid_to_dr": null,
+  "date_precision": "MONTH_ONLY",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 22"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Uns anos atrás, três conselheiros morreram de uma vez e foram trocados.",
+    "INFORMED": "Os mortos foram o Meisarch, o Namarch e o Pommarch."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

@@ -4,6 +4,11 @@ menu
 	modal
 	ignoreEsc
 
+	button
+	{
+		name "INFAI_TALK_Shield"
+		action ""
+	}
 	label
 	{
 		name "INFAI_TALK_Bg"

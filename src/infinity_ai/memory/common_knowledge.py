@@ -301,21 +301,28 @@ _TITLE_WORD = re.compile(r"[A-ZÀ-ÖØ-Þ][\wÀ-ÖØ-öø-ÿ'-]{2,}")
 # "o dono dessa taverna" names the Copper Coronet; "o reino" names Amn; "a cidade", Athkatla.
 PLACE_NOUNS = ('taverna', 'estalagem', 'hospedaria', 'estabelecimento', 'casa', 'bar', 'local',
                'lugar')
+# The district around the place: the place of the area that holds more than this one area.
+DISTRICT_NOUNS = ('bairro', 'distrito', 'quarteirão')
 CITY_NOUNS = ('cidade',)
 REALM_NOUNS = ('reino', 'país', 'nação')
 _SPOKEN_WORD = re.compile(r"[\wÀ-ÖØ-öø-ÿ'-]+")
 
 
 def local_aliases(pack: CanonPack, area: str | None) -> dict[str, str]:
-    """Common noun -> title of what it means where `area` is: the PLACE entry of the area, the
-    city (most specific pack region with a parent) and the realm (its top region)."""
+    """Common noun -> title of what it means where `area` is: the PLACE entry of the area (the
+    most specific, fewest areas), the district around it (a place of the area that holds more
+    areas, the Slums around the Copper Coronet), the city (most specific pack region with a
+    parent) and the realm (its top region)."""
     if not area:
         return {}
     aliases: dict[str, str] = {}
-    places = sorted(e.title for e in pack.entries.values() if e.kind == 'PLACE'
-                    and area.upper() in {a.upper() for a in e.area_resrefs})
+    places = sorted((len(e.area_resrefs), e.title) for e in pack.entries.values()
+                    if e.kind == 'PLACE' and area.upper() in {a.upper() for a in e.area_resrefs})
     if places:
-        aliases.update({noun: places[0] for noun in PLACE_NOUNS})
+        aliases.update({noun: places[0][1] for noun in PLACE_NOUNS})
+        wider = [title for count, title in places if count > places[0][0]]
+        if wider:
+            aliases.update({noun: wider[-1] for noun in DISTRICT_NOUNS})
     regions = placement_regions(pack, area)
     # CR-2026-012: the world root is never "the city" or "the realm".
     chain = [r for r in region_chain(pack, regions[0]) if r != WORLD_REGION] if regions else []
@@ -339,28 +346,40 @@ _KIND_ORDER = {'REGION': 0, 'ORGANIZATION': 1, 'PLACE': 2, 'TOPIC': 3, 'CHARACTE
 
 
 def context_order(pack: CanonPack, entry_ids: Iterable[str], *, npc_id: str | None,
-                  area: str | None, home_region: str | None) -> list[str]:
-    """CR-2026-014: the order in which known entries fill the prompt, never from player text.
+                  area: str | None, home_region: str | None,
+                  named: Iterable[str] = ()) -> list[str]:
+    """CR-2026-014: the order in which known entries fill the prompt.
 
     Restricted ties and what is about the person first; then the place where it is and the
-    relations naming it; then the levels of distance along the region chain of where it is
-    (city, realm, Faerûn, then regions off that chain) take turns, one entry each, so no level
-    fills the prompt alone. Within a level: the region itself, organizations, places, topics,
-    characters, relations, then events, recent ones first; ties by id. Pure and deterministic."""
+    relations naming it; then (CR-2026-016) what the question names, among the entries it holds:
+    this only reorders, it never adds one; then the levels of distance along the region chain of
+    where it is (city, realm, Faerûn, then regions off that chain) take turns, one entry each, so
+    no level fills the prompt alone. Region entries off the chain (sibling cities, distant lands)
+    and the continent itself come last: they matter when asked about. Within a level: the region
+    itself, organizations, places, topics, characters, relations, then events, recent ones first;
+    ties by id. Pure and deterministic."""
     chain = region_chain(pack, home_region)
     area_up = area.upper() if area else None
     here = {e.id for e in pack.entries.values() if e.kind == 'PLACE' and area_up
             and area_up in {a.upper() for a in e.area_resrefs}}
-    own, at_place, levels, unknown = [], [], {}, []
-    for entry_id in set(entry_ids):
+    own, at_place, levels, unknown, atlas, asked = [], [], {}, [], [], []
+    held = set(entry_ids)
+    wanted = set(named) & held
+    for entry_id in held:
         entry = pack.get(entry_id)
         if entry is None:
             unknown.append(entry_id)
+        elif entry_id in wanted and not (entry.access_scope == 'RESTRICTED'
+                                          or (npc_id and entry.subject_id == npc_id)
+                                          or entry.id in here):
+            asked.append(entry)
         elif entry.access_scope == 'RESTRICTED' or (npc_id and entry.subject_id == npc_id):
             own.append(entry)
         elif entry.id in here or (entry.kind == 'RELATIONSHIP' and here & {
                 entry.subject_id, entry.object_id, entry.context_id}):
             at_place.append(entry)
+        elif entry.kind == 'REGION' and (entry.id not in chain or entry.id == WORLD_REGION):
+            atlas.append(entry)            # other cities and lands, the continent: when asked
         else:
             region = entry.id if entry.kind == 'REGION' else entry.region_id
             levels.setdefault(chain.index(region) if region in chain else len(chain),
@@ -370,13 +389,23 @@ def context_order(pack: CanonPack, entry_ids: Iterable[str], *, npc_id: str | No
         recent = -(entry.valid_from_dr or 0) if entry.kind == 'EVENT' else 0
         return (_KIND_ORDER.get(entry.kind, 9), recent, entry.id)
 
-    ranked = [e.id for e in sorted(own, key=key)] + [e.id for e in sorted(at_place, key=key)]
+    ranked = ([e.id for e in sorted(own, key=key)] + [e.id for e in sorted(at_place, key=key)]
+              + [e.id for e in sorted(asked, key=key)])
     queues = [sorted(levels[d], key=key) for d in sorted(levels)]
     while any(queues):
         for queue in queues:
             if queue:
                 ranked.append(queue.pop(0).id)
-    return ranked + sorted(unknown)
+    return ranked + [e.id for e in sorted(atlas, key=key)] + sorted(unknown)
+
+
+def named_in(pack: CanonPack, entry_ids: Iterable[str], speech: str,
+             aliases: Mapping[str, str] | None = None) -> list[str]:
+    """CR-2026-016: the entries among `entry_ids` that the speech names (see `mentioned_in`)."""
+    if not speech or not speech.strip():
+        return []
+    return [e for e in entry_ids if pack.get(e) is not None
+            and mentioned_in(pack.get(e), speech, aliases)]
 
 
 def mentioned_in(entry: CanonEntry, speech: str,

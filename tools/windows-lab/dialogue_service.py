@@ -67,7 +67,7 @@ from infinity_ai.gamedata.inventory import (  # noqa: E402
 )
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
     DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, context_order, entries_named,
-    identity_knowledge,
+    identity_knowledge, named_in,
     local_aliases, placement_regions, relationship_entries, residents_as_stays, share_knowledge,
 )
 from infinity_ai.canon.pin import PinStatus, check_pin  # noqa: E402
@@ -78,7 +78,7 @@ from infinity_ai.personality import (  # noqa: E402
 )
 from infinity_ai.personality.identity import (  # noqa: E402
     HABITANTE, build_identity, generate_identity, knowledge_tier, layered_text, load_curations,
-    popular_only, role_from_name,
+    place_in_district, popular_only, role_from_name,
 )
 from infinity_ai.personality.morale import (  # noqa: E402
     base_morale, classify_trigger, ethical_axis, modifiers, morale_for,
@@ -413,7 +413,9 @@ class Talker(threading.Thread):
             pack = self.observer.pack
             where = placement_regions(pack, req.area) if req.area else []
             order = tuple(context_order(pack, pack.entries, npc_id=speaker, area=req.area,
-                                        home_region=where[0] if where else None))
+                                        home_region=where[0] if where else None,
+                                        named=named_in(pack, pack.entries, req.text,
+                                                       local_aliases(pack, req.area))))
             result = DialogueEngine(store, self.provider, self.catalog).respond(
                 DialogueRequest(speaker, req.text), branch_id=view.branch_id,
                 at_game_time=view.game_time, wisdom=wisdom, intelligence=intelligence,
@@ -446,6 +448,8 @@ class Talker(threading.Thread):
                 game_alignment=getattr(resident, 'alignment', None)
                 if curation is not None else None)
             place = self.catalog.area(req.area) if home else None
+            if place and place != UNNAMED_AREA:      # the district around it, when known
+                place = place_in_district(place, local_aliases(pack, req.area).get('bairro'))
             identity = build_identity(
                 npc_id=speaker or 'npc:desconhecido', name=req.speaker_name, pack=pack,
                 place=place if place != UNNAMED_AREA else None, home_region=home,
@@ -522,7 +526,9 @@ class Talker(threading.Thread):
                 disposition=reaction.disposition if reaction is not None else None,
                 morale=(check.trigger, check.outcome) if check is not None else None,
                 order=tuple(context_order(pack, known_now, npc_id=speaker, area=req.area,
-                                          home_region=home)))
+                                          home_region=home,
+                                          named=named_in(pack, known_now, req.text,
+                                                         local_aliases(pack, req.area)))))
             status, reason = result.status.value, result.reason
             flags = list(result.flags)
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)

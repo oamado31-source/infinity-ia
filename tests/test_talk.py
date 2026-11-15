@@ -43,6 +43,9 @@ ALLOWED = frozenset({
     'EEex_Resource_Fetch', 'EEex_GameState_TogglePause', 'EEex_Key_Hook_AfterEventsPoll',
     'EEex_Sprite_GetActiveStats',  # read-only: active creature stats
     'EEex_Sprite_GetSelectedID',  # read-only: selected group leader ID (EEex 1.1.0+, ADR-0122)
+    # EEex's hook for creature name tooltips: suppressed only while the box is open (lab fix)
+    'EEex_Sprite_Hook_CheckSuppressTooltip',
+    'EEex_EngineGlobal_CBaldurChitin',  # only to close the open name tooltip (m_tempCursor = 4)
     # ADR-0129: default line from the creature's own sound set, played and shown by the engine
     'EEex_Resource_LoadIDS', 'EEex_Resource_IterateUnpackedIDSEntries', 'EEex_Sprite_DisplayTextRef',
 })
@@ -550,6 +553,8 @@ class ModuleStaticTests(unittest.TestCase):
             for lhs in re.findall(r'([\w.\[\]:]+)\s*=(?!=)', src_line):
                 if src_line.strip().startswith(('if ', 'elseif ')):
                     continue
+                if src_line.strip().startswith('chitin.m_pObjectGame.m_tempCursor = 4'):
+                    continue    # UI cursor only: closes the open name tooltip, as EEex's B3EffMen
                 with self.subTest(line=src_line.strip()):
                     self.assertNotRegex(lhs, r'\.m_|:|EngineGlobals')
                     root = lhs.split('.')[0].split('[')[0]
@@ -562,6 +567,24 @@ class ModuleStaticTests(unittest.TestCase):
                      'INFAI_TALK_PTT()', 'INFAI_TALK_PTTText()'):
             self.assertIn(name, menu)
         self.assertIn('"INFAITLK"', self.raw)
+
+    def test_a_full_screen_shield_keeps_world_hover_out(self):
+        # The creature's name tooltip must not follow the cursor while the box is open: an
+        # invisible full-screen element sits under the box (first in the menu) and takes the mouse.
+        menu = MENU.read_text(encoding='utf-8')
+        self.assertLess(menu.index('INFAI_TALK_Shield'), menu.index('INFAI_TALK_Bg'))
+        self.assertIn('Infinity_SetArea("INFAI_TALK_Shield", 0, 0, w, h)', self.raw)
+
+    def test_creature_tooltips_are_suppressed_only_while_the_box_is_open(self):
+        # EEex's own hook (EEex_Sprite_Patch.lua): true keeps the name scroll from opening.
+        self.assertIn('function EEex_Sprite_Hook_CheckSuppressTooltip()', self.raw)
+        self.assertIn('if INFAI_TALK_State.open then return true end', self.raw)
+        self.assertIn('INFAI_TALK_PrevSuppressTooltip = INFAI_TALK_PrevSuppressTooltip or '
+                      'EEex_Sprite_Hook_CheckSuppressTooltip', self.raw)
+        # and the tooltip already open when the box opens is closed for the first frames
+        self.assertIn('chitin.m_pObjectGame.m_tempCursor = 4', self.raw)
+        self.assertIn('st.clear_tooltip = INFAI_TALK_CLEAR_TOOLTIP_FRAMES', self.raw)
+        self.assertEqual(len(re.findall(r'm_tempCursor', self.code)), 1)   # nowhere else
 
 
 if __name__ == '__main__':

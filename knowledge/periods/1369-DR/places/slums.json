@@ -10,12 +10,17 @@
   "date_precision": "RANGE",
   "region_id": "region:athkatla",
   "area_resrefs": [
-    "AR0400"
+    "AR0400",
+    "AR0406"
   ],
   "source_refs": [
     {
       "source_id": "volos-guide-to-baldurs-gate-ii",
       "locator": "p. 8, \"River District\" (PDF p. 9); nome do jogo (D3)"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "AR0406 (Coroa de Cobre) fica nas Favelas (AR0400) no jogo"
     }
   ],
   "verification_status": "SOURCE_CHECKED",

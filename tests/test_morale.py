@@ -54,6 +54,14 @@ class RuleTests(unittest.TestCase):
 
     def test_triggers(self):
         self.assertEqual(classify_trigger('Te pago 10 moedas se me disser.'), 'BRIBE')
+        for offer in ('Pegue estas moedas e me conte.', 'Aqui, 20 peças de ouro.',
+                      'Posso pagar bem por isso.', 'Conto em troca de um favor.',
+                      'Tome essa prata.', 'Fale por umas moedas.'):
+            self.assertEqual(classify_trigger(offer), 'BRIBE', offer)
+        for question in ('Que moeda é usada aqui?', 'Como é o dinheiro aqui?',   # lab, 2026-11-15
+                         'Quanto custa uma bebida?', 'Quanto tenho que pagar no portão?',
+                         'Há recompensa por esses bandidos?', 'O ouro de Maztica chegou?'):
+            self.assertIsNone(classify_trigger(question), question)
         self.assertEqual(classify_trigger('Fale ou eu te mato!'), 'INTIMIDATION')
         self.assertEqual(classify_trigger('Me ajude a roubar o Lehtinan.', ['Lehtinan']),
                          'BETRAYAL')

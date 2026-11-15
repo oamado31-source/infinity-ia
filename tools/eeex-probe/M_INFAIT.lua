@@ -48,6 +48,29 @@ INFAI_TALK_State = INFAI_TALK_State or {
 }
 INFAI_TALK_Input = ""
 
+-- EEex chama este gancho antes de abrir a tooltip (o pergaminho com o nome) de uma criatura;
+-- true suprime. Com a caixa aberta, nenhuma tooltip de criatura abre nem segue o cursor; fora
+-- dela, vale o que havia antes (o padrao do EEex devolve false).
+INFAI_TALK_PrevSuppressTooltip = INFAI_TALK_PrevSuppressTooltip or EEex_Sprite_Hook_CheckSuppressTooltip
+function EEex_Sprite_Hook_CheckSuppressTooltip()
+	if INFAI_TALK_State.open then return true end
+	if INFAI_TALK_PrevSuppressTooltip ~= nil then return INFAI_TALK_PrevSuppressTooltip() end
+	return false
+end
+
+-- Fecha a tooltip de criatura que ja estava aberta (o cursor estava sobre ela no clique), como
+-- fazem o B3EffMen e o B3AttackInfo do proprio EEex. So mexe no cursor da interface, nunca no
+-- estado do jogo; repetido nos primeiros quadros, porque o motor pode reabri-la no mesmo quadro.
+local function infai_clear_world_tooltip()
+	pcall(function()
+		local chitin = EEex_EngineGlobal_CBaldurChitin
+		if chitin ~= nil and chitin.m_pObjectGame ~= nil then
+			chitin.m_pObjectGame.m_tempCursor = 4  -- cursor da interface (B3EffMen): fecha a tooltip
+		end
+	end)
+end
+INFAI_TALK_CLEAR_TOOLTIP_FRAMES = 3
+
 local function infai_json_string(s)
 	s = string.gsub(s, '[%c"\\]', function(c)
 		if c == '"' then return '\\"' end
@@ -190,6 +213,9 @@ local function infai_layout()
 	local pw = math.min(760, w - 40)
 	local ph = 300
 	local x, y = math.floor((w - pw) / 2), h - ph - 120
+	-- Camada invisivel na tela toda, por baixo da caixa: segura o mouse para o mundo nao
+	-- receber o "passar por cima" e o nome da criatura nao seguir o cursor.
+	Infinity_SetArea("INFAI_TALK_Shield", 0, 0, w, h)
 	Infinity_SetArea("INFAI_TALK_Bg", x, y, pw, ph)
 	Infinity_SetArea("INFAI_TALK_Title", x + 16, y + 10, pw - 32, 26)
 	Infinity_SetArea("INFAI_TALK_History", x + 16, y + 42, pw - 32, ph - 130)
@@ -302,6 +328,8 @@ function INFAI_TALK_Open()
 	infai_greet(speaker)
 	infai_layout()
 	Infinity_PushMenu("INFAI_TALK_Menu")
+	infai_clear_world_tooltip()
+	st.clear_tooltip = INFAI_TALK_CLEAR_TOOLTIP_FRAMES
 	Infinity_FocusTextEdit("INFAI_TALK_Edit")
 	infai_pause(true)
 	return true
@@ -468,6 +496,10 @@ end
 function INFAI_TALK_Tick()
 	local st = INFAI_TALK_State
 	if not st.open then return true end
+	if (st.clear_tooltip or 0) > 0 then
+		st.clear_tooltip = st.clear_tooltip - 1
+		infai_clear_world_tooltip()
+	end
 	local now = Infinity_GetClockTicks()
 	infai_ptt_poll(now)
 	if st.pending == nil then return true end

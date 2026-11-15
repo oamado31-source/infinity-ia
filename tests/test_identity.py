@@ -131,6 +131,18 @@ class KnowledgeTierTests(unittest.TestCase):
                 self.assertTrue(names <= allowed, names - allowed)
 
 
+class DistrictTests(unittest.TestCase):
+    def test_the_place_says_its_district(self):
+        from infinity_ai.personality.identity import place_in_district, with_article
+        self.assertEqual(with_article('Favelas'), 'as Favelas')
+        self.assertEqual(with_article('Distrito da Ponte'), 'o Distrito da Ponte')
+        self.assertEqual(with_article('Docas'), 'as Docas')
+        self.assertEqual(place_in_district('a Coroa de Cobre', 'Favelas'),
+                         'a Coroa de Cobre, nas Favelas')
+        self.assertEqual(place_in_district('a Coroa de Cobre', None), 'a Coroa de Cobre')
+        self.assertEqual(place_in_district('as Favelas', 'Favelas'), 'as Favelas')
+
+
 class GeneratorTests(unittest.TestCase):
     def test_deterministic_and_only_pack_regions(self):
         self.assertEqual(gen(), gen())

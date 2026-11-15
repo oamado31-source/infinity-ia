@@ -26,3 +26,7 @@
 ## Não objetivos da primeira implementação
 
 Não substituir o jogo, não alterar quest original arbitrariamente, não invocar LLM para decidir host state, não afirmar hooks existentes sem POC.
+
+## Extensão pelo CR-2026-011 (2026-11-15)
+
+A SPEC-005 continua sendo o corpus factual. A [SPEC-008](../008-enciclopedia-conhecimento-npcs/spec.md) projeta esse corpus por NPC, sem duplicar o catálogo. O único campo novo previsto no cânone é a **classe de sigilo** (ADR-0131), opcional e por migração versionada. Rumor e crença ficam na projeção do NPC, nunca no cânone.

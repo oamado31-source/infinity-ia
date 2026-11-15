@@ -30,3 +30,7 @@ Não substituir o jogo, não alterar quest original arbitrariamente, não invoca
 ## Extensão proposta — SPEC-006 (personalidade dos NPCs)
 
 A personalidade inicial (seis fatores psicológicos, valores, alinhamento AD&D, motivações e vulnerabilidades) é especificada em [SPEC-006](../006-personalidade-alinhamento-npc/spec.md), **proposta**, não incorporada à implementação atual de SQLite. Quando aprovada e implementada, a SPEC-003 deverá persistir snapshots de criação por identidade/campanha/branch, imutáveis/idempotentes e herdáveis por fork. Emoções, crenças, relações e alinhamento projetado são estados evolutivos diferentes; nunca re-sorteá-los a cada sessão ou usar memória de outro ramo. A origem e o alinhamento oficiais permanecem curados, não aleatórios. Nenhuma migração de banco está sendo introduzida por esta alteração documental.
+
+## Extensão pelo CR-2026-011 (2026-11-15)
+
+Persistir os **episódios de aquisição** em conversa e as revisões de crença por NPC, campanha e ramo. São eventos novos, só acrescentados e idempotentes, sem texto do jogador na v1. Aproveita o `KnowledgeShared`; o `NpcConversationTurn` (ADR-0124) continua guardando só que houve conversa, não o que foi aprendido. Futuramente, persistir também a confiança direcional. Requisitos em [SPEC-008](../008-enciclopedia-conhecimento-npcs/spec.md) (REQ-KNOW-012..022) e [SPEC-009](../009-confianca-divulgacao-npcs/spec.md).

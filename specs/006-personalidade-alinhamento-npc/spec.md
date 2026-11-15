@@ -116,3 +116,7 @@ Fala, recusa, comércio, mudança de facção, deserção, combate, assassinato,
 ### POC necessária para interação de qualquer pessoa em BG2:EE
 
 Ainda **não existe** detecção validada do clique em qualquer CRE nem evento `NpcDialogueStarted` vindo de EEex. O probe vigente informa apenas área, tempo e integrantes da party. O comportamento ao clicar num figurante sem diálogo no jogo deve ser inspecionado em uma cópia descartável e em build pinada. Gate proposto: observar alvo e início de diálogo sem bloquear banters/quests originais; impedir colisões de IDs de instâncias e interface; emitir contato read-only; testar falhas, save/load, mudança de área e desempenho; somente depois ligar a rota do laboratório a uma UI de interação disponível.
+
+## Extensão pelo CR-2026-011 (2026-11-15)
+
+A identidade P0 ganha **eventos biográficos** com respaldo. NPCs gerados têm a biografia fixada uma vez e persistida ([SPEC-008](../008-enciclopedia-conhecimento-npcs/spec.md), ADR-0130). Os traços e o alinhamento influenciam o tom e a avaliação do que se ouviu, nunca o acesso ao conhecimento. A reação e a moral passam a operar dentro da decisão por item ([SPEC-009](../009-confianca-divulgacao-npcs/spec.md), ADR-0131).

@@ -44,3 +44,7 @@ Representar relações entre NPCs, lugares, organizações e outros atores como 
 7. A fala de Bernard pode citar Lehtinan e a propriedade sem unknown, com o ID de conhecimento correto.
 8. Fontes S4 não passam pelo gate quando a entrada não é CAMPAIGN_CANON.
 9. A suíte automatizada passa; a validação em jogo permanece pendente até repin e teste real.
+
+## Extensão pelo CR-2026-011 (2026-11-15)
+
+As relações restritas passam a ter uma **classe de sigilo** (ADR-0131). Sem classe, `RESTRICTED` conta como `PROFESSIONAL`, o que mantém o comportamento atual. Os vínculos pessoais verificados continuam separados da notoriedade pública ([SPEC-008](../008-enciclopedia-conhecimento-npcs/spec.md)).

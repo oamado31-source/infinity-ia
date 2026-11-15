@@ -33,3 +33,7 @@ Não substituir o jogo, não alterar quest original arbitrariamente, não invoca
 A persona atual `style/vocabulary/fallback` é provisória. A matriz de seis traços, os nove alinhamentos AD&D e valores/motivações estão definidos em [SPEC-006](../006-personalidade-alinhamento-npc/spec.md), proposta, e detalhados em [arquitetura](../../docs/architecture/npc-personality-matrix.md). Ao integrar o runtime, SPEC-004 deve receber um perfil **versionado e filtrado** para definir tom, tolerância a riscos e interpretação dos fatos F/K legitimamente disponíveis. O prompt não pode criar conhecimento a partir de personalidade/alinhamento, revelar vulnerabilidades ocultas de terceiros nem alterar o jogo. O gerador de perfis é somente sintético e **ainda não foi integrado ao `DialogueEngine`**.
 
 **Nota de status:** S1b, diálogo real por texto no laboratório ARM64/VM single player, foi validado após a redação da SPEC inicial; a voz segue não implementada. Ver `docs/evidence/S1b-2026-11-09-laboratorio-arm64.md`.
+
+## Extensão pelo CR-2026-011 (2026-11-15)
+
+O contexto do modelo passa a ser o **pacote de evidências liberado pela decisão por item** ([SPEC-009](../009-confianca-divulgacao-npcs/spec.md), ADR-0131), e o que é negado nunca entra no prompt. A ausência de informação ganha tipos (`NOT_KNOWN`, `NOT_DEFINED`, `WITHHELD`) com falas determinísticas. O aprendizado só acontece depois da fala validada e publicada, e só para ouvintes identificados ([SPEC-008](../008-enciclopedia-conhecimento-npcs/spec.md), ADR-0130).

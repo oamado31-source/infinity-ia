@@ -18,6 +18,7 @@ from enum import Enum
 from pathlib import Path
 
 from ..memory.common_knowledge import SHARED_EVENT, BackgroundRegion
+from .absence import classify_absence
 from .disclosure import NEUTRO, Decision, decide
 from ..memory.model import KnowledgeBasis
 from ..personality.identity import (HABITANTE, KnowledgeTier, NpcIdentity, em,
@@ -87,6 +88,7 @@ class DialogueContext:
     disposition: str | None = None    # ADR-0125: encounter reaction (FRIENDLY .. HOSTILE, FLIGHT)
     morale: tuple[str, str] | None = None  # ADR-0126: (trigger, HOLD|YIELD) of this line
     disclosure: tuple[Decision, ...] = ()  # ADR-0131: per-item decision with reason (no text)
+    absence: str | None = None   # ADR-0131: NOT_KNOWN/NOT_DEFINED/WITHHELD, answered by code
 
 
 @dataclass(frozen=True)
@@ -245,7 +247,9 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            recall_lines: tuple[tuple[str, str], ...] = (),
                            disposition: str | None = None,
                            morale: tuple[str, str] | None = None,
-                           trust: str = NEUTRO,
+                           trust: str = NEUTRO, question: str = '',
+                           unheld_titles: tuple[str, ...] = (),
+                           aliases: dict[str, str] | None = None,
                            order: tuple[str, ...] = ()) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
@@ -308,7 +312,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
             new_layers = layers if not learned[2] and learned[1] == s else learned[2]
             subjects[entry_id] = (learned[0], learned[1], new_layers, learned[3],
                                   learned[4] or subject_id, learned[5] or secrecy)
-    knowledge, restricted, decisions = [], [], []
+    knowledge, restricted, decisions, withheld_titles = [], [], [], []
     # ADR-0131: what the person tells, decided per item by code before the prompt (secrecy class,
     # ADR-0125 disposition, ADR-0126 morale, trust). A withheld item never reaches the model.
     # CR-2026-014: what fills the prompt is chosen by closeness (the caller's `order`, from the
@@ -327,6 +331,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                           morale_outcome=morale[1] if morale is not None else None, trust=trust)
         decisions.append(decision)
         if not decision.allowed:
+            withheld_titles.append(t)     # only for the absence check below; never the prompt
             continue
         learned_here = entry_id in popular_only_ids and not any(
             k.entry_id == entry_id for k in held)
@@ -334,12 +339,18 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         fact = Fact(f'K{i}', f'canon:{entry_id}', f'{t}: {text}', at_game_time or 0, subject_id)
         (restricted if scope == 'RESTRICTED' else knowledge).append(fact)
         vocabulary |= set(_NAME.findall(t)) | set(_NAME.findall(text))
+    # ADR-0131: a question only about what the person cannot answer gets a fixed line (engine).
+    absence = classify_absence(
+        question, told_texts=[f.text for f in facts + tuple(knowledge) + tuple(restricted)],
+        withheld_titles=withheld_titles, unheld_titles=unheld_titles,
+        self_texts=[f.text for f in facts], aliases=aliases,
+        where_texts=[place, identity.place if identity and identity.place else '', name])
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(
         persona, facts, frozenset(vocabulary), (), tuple(knowledge),
         identity.place if identity and identity.place else place, orientation,
         identity.occupation if identity else None, tier.style, tuple(restricted), standing,
         any(a.endswith(':STAFF') for a in identity.affiliations) if identity else False,
-        identity.home_names if identity else (), disposition, morale, tuple(decisions)))
+        identity.home_names if identity else (), disposition, morale, tuple(decisions), absence))
 
 
 def _with_recall(facts: tuple[Fact, ...], lines: tuple[tuple[str, str], ...],

@@ -245,6 +245,9 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
         popular_only_ids=shallow_ids, history=case.history,
         disposition=s.get('disposition'),
         morale=(s['morale']['trigger'], s['morale']['outcome']) if s.get('morale') else None,
+        unheld_titles=tuple(entry.title for entry_id, entry in sorted(pack.entries.items())
+                            if entry_id not in set(known)),
+        aliases=local_aliases(pack, area),
         order=tuple(context_order(pack, known, npc_id=npc_id, area=area,
                                   home_region=identity.home_region,
                                   named=named_in(pack, known, case.question,

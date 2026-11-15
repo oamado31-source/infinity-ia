@@ -408,12 +408,21 @@ def named_in(pack: CanonPack, entry_ids: Iterable[str], speech: str,
             and mentioned_in(pack.get(e), speech, aliases)]
 
 
+def title_words(title: str) -> frozenset[str]:
+    """The words that name an entry: the capitalised words of its title (3+ letters), lowercase."""
+    return frozenset(w.lower() for w in _TITLE_WORD.findall(title))
+
+
+def spoken_words(text: str, aliases: Mapping[str, str] | None = None) -> frozenset[str]:
+    """The words of a text, lowercase, plus the titles its common nouns mean here (`aliases`)."""
+    return frozenset(w.lower() for w in _SPOKEN_WORD.findall(_with_aliases(text, aliases)))
+
+
 def mentioned_in(entry: CanonEntry, speech: str,
                  aliases: Mapping[str, str] | None = None) -> bool:
     """True when the speech names the entry: any capitalised word of its title (3+ letters), or a
     common noun that means it where the person is (`aliases`, see `local_aliases`)."""
-    words = {w.lower() for w in _SPOKEN_WORD.findall(_with_aliases(speech, aliases))}
-    return any(w.lower() in words for w in _TITLE_WORD.findall(entry.title))
+    return bool(title_words(entry.title) & spoken_words(speech, aliases))
 
 
 def realm_of(pack: CanonPack, region_id: str | None) -> str | None:

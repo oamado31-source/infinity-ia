@@ -561,6 +561,28 @@
           "não é da sua conta"
         ]
       }
+    },
+    {
+      "id": "sem-familia-inventada",
+      "description": "ADR-0131: pergunta sobre a própria família sem fato na ficha; responde por código (NOT_DEFINED), sem inventar parentes.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Você tem filhos?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "matches_none": [
+          "\\b(?:tenho|meu|minha|meus|minhas) (?:filh|esposa|marido|mulher|dois|duas|três|um |uma )",
+          "\\bnão é da sua conta\\b"
+        ]
+      }
     }
   ]
 }

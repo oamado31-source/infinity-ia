@@ -464,7 +464,8 @@ class Talker(threading.Thread):
             known_now = tuple(sorted(stored | set(known_by_identity) | set(known_by_relationship)
                                      | shallow))
             also_known = tuple((e, pack.get(e).title, pack.get(e).summary, pack.get(e).layers,
-                                pack.get(e).access_scope, pack.get(e).subject_id)
+                                pack.get(e).access_scope, pack.get(e).subject_id,
+                                pack.get(e).secrecy)
                                for e in known_now if pack.get(e) is not None)
             # Wisdom and Intelligence (game data) set how deeply the person knows (ADR-0117).
             wisdom = getattr(resident, 'wisdom', 0) or None
@@ -573,7 +574,7 @@ class Talker(threading.Thread):
               f'chr_ativo={chr_active} chr_base={chr_base} '
               f'morale_engine_atual={morale} morale_break_ativo={morale_break} '
               f'morale_break_base={morale_break_base} selected_leader={leader_label} '
-              f'assuntos={len(known_now)} recusas={flags} '
+              f'assuntos={len(known_now)} retidos={list(result.withheld)} recusas={flags} '
               f'status={status} motivo={reason} '
               f'entradas={list(used)} inquiry={shared} '
               f'ouvintes={list(req.listeners) if req.listeners is not None else None}')

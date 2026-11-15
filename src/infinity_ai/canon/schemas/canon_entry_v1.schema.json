@@ -126,6 +126,18 @@
         "RESTRICTED"
       ]
     },
+    "secrecy": {
+      "description": "ADR-0131: optional secrecy class; absent = COMMON_REGIONAL/CANON_REFERENCE count as PUBLIC, RESTRICTED as PROFESSIONAL",
+      "type": "string",
+      "enum": [
+        "PUBLIC",
+        "PERSONAL",
+        "PROFESSIONAL",
+        "CONFIDENTIAL",
+        "FACTION_SECRET",
+        "ABSOLUTE"
+      ]
+    },
     "curation": {
       "type": "object",
       "additionalProperties": false,

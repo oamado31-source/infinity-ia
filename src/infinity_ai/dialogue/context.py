@@ -18,6 +18,7 @@ from enum import Enum
 from pathlib import Path
 
 from ..memory.common_knowledge import SHARED_EVENT, BackgroundRegion
+from .disclosure import NEUTRO, Decision, decide
 from ..memory.model import KnowledgeBasis
 from ..personality.identity import (HABITANTE, KnowledgeTier, NpcIdentity, em,
                                     knowledge_tier, layered_text, popular_only)
@@ -32,7 +33,6 @@ ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_PERSONA_DIR = ROOT / 'knowledge' / 'personas'
 DEFAULT_AREA_NAMES = ROOT / 'knowledge' / 'areas' / 'bg2ee-area-names.pt_BR.json'
 UNNAMED_AREA = 'um lugar que você não sabe nomear'
-CLOSED_DISPOSITIONS = frozenset({'THREATENING', 'HOSTILE', 'FLIGHT'})   # ADR-0125: tells nothing
 MAX_FACTS = 20
 MAX_KNOWLEDGE = 12
 _NAME = re.compile(r"[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ'-]*")
@@ -80,6 +80,7 @@ class DialogueContext:
     home_names: tuple[str, ...] = ()  # CR-2026-004: a resident may say it is from these places
     disposition: str | None = None    # ADR-0125: encounter reaction (FRIENDLY .. HOSTILE, FLIGHT)
     morale: tuple[str, str] | None = None  # ADR-0126: (trigger, HOLD|YIELD) of this line
+    disclosure: tuple[Decision, ...] = ()  # ADR-0131: per-item decision with reason (no text)
 
 
 @dataclass(frozen=True)
@@ -233,14 +234,16 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            popular_only_ids: frozenset[str] = frozenset(),
                            recall_lines: tuple[tuple[str, str], ...] = (),
                            disposition: str | None = None,
-                           morale: tuple[str, str] | None = None) -> ContextResult:
+                           morale: tuple[str, str] | None = None,
+                           trust: str = NEUTRO) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
     e.g. a local placed by the game data) reaches CONHECIMENTO GERAL. A SPEC-006 `profile`, when
     given, sets the speaking style and the alignment orientation; it never adds facts. An ADR-0117
     `identity` becomes the "SOBRE VOCÊ" facts (F-items): all the person may say about itself.
-    `also_known` = (entry_id, title, summary, layers[, access_scope[, subject_id]]). Public entries
+    `also_known` = (entry_id, title, summary, layers[, access_scope[, subject_id[, secrecy]]]).
+    What reaches the prompt is decided per item by `disclosure.decide` (ADR-0131). Public entries
     join CONHECIMENTO GERAL; RESTRICTED entries join a separate section and require an explicit
     affiliation/allowlist. Wisdom and Intelligence set
     how deeply it understands each subject and how it speaks (`knowledge_tier`), not how many
@@ -278,29 +281,31 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         return ContextResult(ContextStatus.DENIED, reason)
     tier = knowledge_tier(wisdom, intelligence)
     shallow = popular_only(tier)
-    subjects = {k.entry_id: (k.title, k.summary, k.layers, 'COMMON_REGIONAL', None) for k in held}
+    subjects = {k.entry_id: (k.title, k.summary, k.layers, 'COMMON_REGIONAL', None, None)
+                for k in held}
     for item in also_known:
         entry_id, t, s, layers = item[:4]
         scope = item[4] if len(item) > 4 else 'COMMON_REGIONAL'
         subject_id = item[5] if len(item) > 5 else None
+        secrecy = item[6] if len(item) > 6 else None
         learned = subjects.get(entry_id)
         if learned is None:
-            subjects[entry_id] = (t, s, layers, scope, subject_id)
+            subjects[entry_id] = (t, s, layers, scope, subject_id, secrecy)
         else:
             # A learned entry keeps its snapshot, but takes who it is about from the pack; and
             # if learned before layers existed (same checked summary), the layers restate it.
             new_layers = layers if not learned[2] and learned[1] == s else learned[2]
             subjects[entry_id] = (learned[0], learned[1], new_layers, learned[3],
-                                  learned[4] or subject_id)
-    knowledge, restricted = [], []
-    # ADR-0125: what the person is willing to tell in this encounter, decided by code.
-    tells_public = disposition not in CLOSED_DISPOSITIONS
-    tells_restricted = tells_public and disposition != 'CAUTIOUS'
-    if morale is not None and morale[1] == 'YIELD':     # ADR-0126: gave in, tells what it holds
-        tells_public = tells_restricted = True
+                                  learned[4] or subject_id, learned[5] or secrecy)
+    knowledge, restricted, decisions = [], [], []
+    # ADR-0131: what the person tells, decided per item by code before the prompt (secrecy class,
+    # ADR-0125 disposition, ADR-0126 morale, trust). A withheld item never reaches the model.
     for i, entry_id in enumerate(sorted(subjects)[:MAX_KNOWLEDGE], 1):
-        t, s, layers, scope, subject_id = subjects[entry_id]
-        if not (tells_restricted if scope == 'RESTRICTED' else tells_public):
+        t, s, layers, scope, subject_id, secrecy = subjects[entry_id]
+        decision = decide(entry_id, access_scope=scope, secrecy=secrecy, disposition=disposition,
+                          morale_outcome=morale[1] if morale is not None else None, trust=trust)
+        decisions.append(decision)
+        if not decision.allowed:
             continue
         learned_here = entry_id in popular_only_ids and not any(
             k.entry_id == entry_id for k in held)
@@ -313,7 +318,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         identity.place if identity and identity.place else place, orientation,
         identity.occupation if identity else None, tier.style, tuple(restricted), standing,
         any(a.endswith(':STAFF') for a in identity.affiliations) if identity else False,
-        identity.home_names if identity else (), disposition, morale))
+        identity.home_names if identity else (), disposition, morale, tuple(decisions)))
 
 
 def _with_recall(facts: tuple[Fact, ...], lines: tuple[tuple[str, str], ...],

@@ -19,8 +19,10 @@ used (INQUIRY).
 from __future__ import annotations
 
 import argparse
+import atexit
 import hmac
 import json
+import math
 import os
 import re
 import secrets
@@ -87,10 +89,11 @@ from infinity_ai.personality.in_game import (  # noqa: E402
 from infinity_ai.state.recorder import ObservationRecorder, RecordAction  # noqa: E402
 from infinity_ai.voice.capture import FfmpegRecorder  # noqa: E402
 from infinity_ai.voice.session import VoiceSession  # noqa: E402
-from infinity_ai.voice.stt import WhisperCppStt, vocabulary_prompt  # noqa: E402
+from infinity_ai.voice.stt import WhisperServerStt, vocabulary_prompt  # noqa: E402
 from infinity_ai.state.store import CampaignStore  # noqa: E402
 from lab_ssh import (  # noqa: E402
-    SshLogSource, live_manifest, now_iso, put_override_file, ssh_from_env,
+    OverrideWriter, RemoteShell, SshLogSource, live_manifest, now_iso, put_override_file,
+    ssh_from_env,
 )
 
 FIELDS = (AREA_FIELD, GAME_TIME_FIELD, PARTY_FIELD)
@@ -109,20 +112,49 @@ class GameView:
 
 
 class TeeLogSource:
-    """Keeps the last log text fetched by the observer, so the talk thread needs no extra SSH."""
+    """The last log text read from the game, shared by every thread (S1i latency). Only LogTail
+    reads the game, over one long-lived shell, a few times a second; fetch() and last_text() return
+    that copy, with its age advanced by the time since it was read."""
 
     def __init__(self, inner) -> None:
-        self._inner, self._lock, self._text = inner, threading.Lock(), ''
+        self._inner, self._lock = inner, threading.Lock()
+        self._text, self._age, self._at = '', math.inf, time.monotonic()
 
-    def fetch(self) -> tuple[str, float]:
+    def refresh(self) -> None:
         text, age = self._inner.fetch()
         with self._lock:
-            self._text = text
-        return text, age
+            self._text, self._age, self._at = text, age, time.monotonic()
+
+    def fetch(self) -> tuple[str, float]:
+        with self._lock:
+            return self._text, self._age + (time.monotonic() - self._at)
 
     def last_text(self) -> str:
         with self._lock:
             return self._text
+
+
+class LogTail(threading.Thread):
+    """Reads the game log every `interval` seconds; a failed read is logged once until it recovers."""
+
+    def __init__(self, source: TeeLogSource, interval: float) -> None:
+        super().__init__(daemon=True)
+        self.source, self.interval = source, interval
+
+    def run(self) -> None:
+        failing = False
+        while True:
+            try:
+                self.source.refresh()
+                if failing:
+                    print(f'{now_iso()} leitura do log voltou')
+                failing = False
+            except Exception as exc:  # keep reading; the views just get older meanwhile
+                if not failing:
+                    print(f'{now_iso()} leitura do log falhou: {type(exc).__name__}')
+                failing = True
+                time.sleep(1.0)
+            time.sleep(self.interval)
 
 
 class Observer(threading.Thread):
@@ -141,7 +173,7 @@ class Observer(threading.Thread):
         self.curations = load_curations(self.pack)
         self._knowledge_status = None
         self.pin = (pin_build, pin_modpack)
-        self.source = TeeLogSource(SshLogSource(ssh, args.game_root))
+        self.source = TeeLogSource(SshLogSource(ssh, args.game_root, shell=RemoteShell(ssh)))
         self.adapter = EEexLogAdapter(self.source, campaign_id=args.campaign, branch_id='main',
                                       build_fingerprint=live_build, modpack_hash=live_modpack)
         self.allowlist = Allowlist(pin_build, tuple(
@@ -209,14 +241,21 @@ class VoiceListener(threading.Thread):
     START and closes on STOP/CANCEL or at the time limit; the local STT turns it into text that
     goes back to the box for review. Audio is deleted right away; the log has no transcript."""
 
-    def __init__(self, args, ssh, observer: Observer, catalog: Catalog) -> None:
+    def __init__(self, args, ssh, observer: Observer, catalog: Catalog,
+                 writer: OverrideWriter) -> None:
         super().__init__(daemon=True)
         self.args, self.ssh, self.observer, self.catalog = args, ssh, observer, catalog
+        self.writer = writer
+        # S1i: the STT server keeps the model loaded (falls back to whisper-cli per press).
+        self.stt = WhisperServerStt(args.stt_model)
+        threading.Thread(target=self.stt.start, daemon=True).start()
+        atexit.register(self.stt.stop)
         self.session = VoiceSession(
             lambda: FfmpegRecorder(device=args.mic_device, max_seconds=args.max_voice_s + 2),
-            WhisperCppStt(args.stt_model), max_seconds=args.max_voice_s,
+            self.stt, max_seconds=args.max_voice_s,
             min_level=args.min_voice_level, prompt=self.vocabulary)
         self.seen: set[tuple[str, str]] | None = None
+        self._last_text: str | None = None      # the log copy already parsed (polled at 10 Hz)
 
     def vocabulary(self) -> str:
         """Public names that help the STT spell them (place, regions, organizations)."""
@@ -232,15 +271,15 @@ class VoiceListener(threading.Thread):
     def _show(self, update) -> None:
         print(f'{now_iso()} voz {update.summary()}')
         if update.ptt_id:
-            put_override_file(self.ssh, self.args.game_root, f'{PTT_RESREF}.lua',
-                              render_ptt_state(update.ptt_id, update.state, update.text)
-                              .encode('utf-8'))
+            self.writer.put(f'{PTT_RESREF}.lua', render_ptt_state(
+                update.ptt_id, update.state, update.text).encode('utf-8'))
 
     def run(self) -> None:
         while True:
             try:
                 text = self.observer.source.last_text()
-                snap = parse_latest_snapshot(text) if text else None
+                changed, self._last_text = text is not self._last_text, text
+                snap = parse_latest_snapshot(text) if text and changed else None
                 if text and self.seen is None:
                     # Presses already in the log when the service starts are never acted on:
                     # the microphone opens only for a press made while it runs. Nothing is
@@ -256,17 +295,20 @@ class VoiceListener(threading.Thread):
                     self._show(update)
             except Exception as exc:  # keep listening; a failed press is just logged
                 print(f'{now_iso()} voz falhou: {type(exc).__name__}')
-            time.sleep(0.25)
+            time.sleep(0.1)
 
 
 class Talker(threading.Thread):
     """Answers the in-game box (INFAI-TALK lines) as a local resident and applies INQUIRY."""
 
-    def __init__(self, args, ssh, observer: Observer, catalog: Catalog) -> None:
+    def __init__(self, args, ssh, observer: Observer, catalog: Catalog,
+                 writer: OverrideWriter) -> None:
         super().__init__(daemon=True)
         self.args, self.ssh, self.observer, self.catalog = args, ssh, observer, catalog
+        self.writer = writer
         self.provider = OllamaProvider(args.model, base_url=args.ollama_url)
         self.seen: set[str] | None = None
+        self._last_text: str | None = None      # the log copy already parsed (polled at 10 Hz)
         self._lock = threading.Lock()
         self._last: dict | None = None      # last box exchange, in memory only (overlay fallback)
         self.conversations = ConversationMemory()   # ADR-0123: turns of open boxes, RAM only
@@ -280,6 +322,10 @@ class Talker(threading.Thread):
         while True:
             try:
                 text = self.observer.source.last_text()
+                if text is self._last_text and self.seen is not None:
+                    time.sleep(0.1)
+                    continue                      # nothing new in the log copy
+                self._last_text = text
                 requests = parse_talk_requests(text) if text else []
                 if self.seen is None:
                     # Old requests are not replayed, but one the box is still waiting for (same
@@ -303,7 +349,7 @@ class Talker(threading.Thread):
                                 self._remember_companion(req.req_id)
             except Exception as exc:  # keep answering; one failed request is just logged
                 print(f'{now_iso()} caixa de dialogo falhou: {type(exc).__name__}')
-            time.sleep(0.5)
+            time.sleep(0.1)
 
     def _answered_path(self) -> Path:
         # A companion's turn records no event (no first contact), so answered ids are kept in a
@@ -501,8 +547,7 @@ class Talker(threading.Thread):
         with self._lock:
             self._last = {'req_id': req.req_id, 'speaker': req.speaker_name, 'question': req.text,
                           'speech': speech}
-        put_override_file(self.ssh, self.args.game_root, f'{REPLY_RESREF}.lua',
-                          render_reply(req.req_id, speech).encode('utf-8'))
+        self.writer.put(f'{REPLY_RESREF}.lua', render_reply(req.req_id, speech).encode('utf-8'))
         leader = req.selected_leader
         leader_label = "-"
         if leader is not None:
@@ -651,7 +696,10 @@ def main() -> int:
     ap.add_argument('--ollama-url', default='http://127.0.0.1:11434')
     ap.add_argument('--reuse-token', action='store_true',
                     help='keep the token already in --config-out (overlay keeps working after a restart)')
-    ap.add_argument('--interval', type=float, default=3.0)
+    ap.add_argument('--interval', type=float, default=1.0,
+                    help='seconds between observations (reads the shared copy of the log)')
+    ap.add_argument('--tail-interval', type=float, default=0.3,
+                    help='seconds between reads of the game log (one long-lived shell)')
     ap.add_argument('--language', default='pt_BR', help='game language of the local area inventory')
     ap.add_argument('--campaign-year', type=int, default=1369, help='DR year (ADR-0109)')
     ap.add_argument('--voice', action='store_true',
@@ -693,14 +741,28 @@ def main() -> int:
     # ADR-0127: same for the push-to-talk state (written even without --voice, so the box finds an
     # empty state instead of a missing file).
     put_override_file(ssh, args.game_root, f'{PTT_RESREF}.lua', PLACEHOLDER_PTT.encode('utf-8'))
+    # S1i: one long-lived shell reads the log a few times a second, another writes the box files.
+    observer.source.refresh()
+    LogTail(observer.source, args.tail_interval).start()
+    writer = OverrideWriter(ssh, args.game_root)
     observer.start()
-    talker = Talker(args, ssh, observer, catalog)
+    talker = Talker(args, ssh, observer, catalog, writer)
     talker.start()
+
+    def warm_up() -> None:
+        # Load the dialogue model before the first question (a cold load can pass the timeout).
+        try:
+            OllamaProvider(args.model, base_url=args.ollama_url, timeout_s=300).generate(
+                [{'role': 'user', 'content': 'ok'}])
+            print(f'{now_iso()} modelo de dialogo carregado')
+        except Exception as exc:  # the first question will just be slower
+            print(f'{now_iso()} aquecimento do modelo falhou: {type(exc).__name__}')
+    threading.Thread(target=warm_up, daemon=True).start()
     if args.voice:
         if not args.stt_model.expanduser().is_file():
             print(f'voz: modelo nao encontrado em {args.stt_model}; voz desligada')
         else:
-            VoiceListener(args, ssh, observer, catalog).start()
+            VoiceListener(args, ssh, observer, catalog, writer).start()
             print(f'voz ligada: modelo {args.stt_model.name}, limite {args.max_voice_s:g}s')
 
     token = secrets.token_urlsafe(24)

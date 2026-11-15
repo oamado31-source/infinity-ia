@@ -12,6 +12,9 @@
 -- microfone no proprio host, transcreve localmente e devolve estado e texto em override\INFAIPTT.lua
 -- (so a tabela INFAI_PTT_State). O texto vai para o campo de edicao para revisao; enviar marca
 -- "input":"VOICE". A caixa nunca grava audio.
+-- Fala padrao (ADR-0129): ao abrir, a criatura diz uma fala do proprio conjunto de sons, como no
+-- clique esquerdo do jogo. O motor toca o proprio audio e mostra o proprio texto (mensagem sobre a
+-- cabeca); nada entra na fila de acoes da criatura, e nenhum audio ou texto do jogo sai daqui.
 
 INFAI_TALK_SCHEMA = "infinity-ai.talk.v1"
 INFAI_TALK_KEY_NAME = "F9"
@@ -26,6 +29,14 @@ INFAI_TALK_DEBUG = true         -- laboratorio: registra teclas e motivos no con
 INFAI_PTT_SCHEMA = "infinity-ai.ptt.v1"
 INFAI_PTT_WAIT_MS = 10000       -- sem "REC" do servico nesse prazo: microfone indisponivel
 INFAI_PTT_BUSY_MS = 40000       -- sem texto nesse prazo depois de parar: transcricao falhou
+INFAI_TALK_GREET = true         -- fala padrao da criatura ao abrir a caixa (ADR-0129)
+-- Slots do conjunto de sons, pelo nome nos .IDS do proprio jogo (sem numeros fixos aqui).
+INFAI_GREET_SELECT = { "SELECT_COMMON1", "SELECT_COMMON2", "SELECT_COMMON3", "SELECT_COMMON4",
+	"SELECT_COMMON5", "SELECT_COMMON6" }
+INFAI_GREET_MEETING = { "INITIAL_MEETING" }
+INFAI_NO_STRREF = 4294967295    -- strref vazio (0xFFFFFFFF)
+INFAI_GREET_OPTIONS = {}
+INFAI_GREET_OPTIONS.overHead = true   -- texto sobre a cabeca, como no clique esquerdo
 
 local function infai_debug(msg)
 	if INFAI_TALK_DEBUG then print("INFAI-TALK-DEBUG " .. msg) end
@@ -134,6 +145,7 @@ local function infai_speaker_under_cursor()
 			engine_morale_break_active = (okmbreak and type(mbreak) == "number") and mbreak or nil,
 			engine_morale_break_base = (okmbreakbase and type(mbreakbase) == "number") and mbreakbase or nil,
 			x = object.m_pos.x, y = object.m_pos.y,
+			sprite = object,    -- so para a fala padrao; nunca vai para o JSON
 		}
 	end)
 	if ok then
@@ -203,6 +215,76 @@ local function infai_pause(on)
 	end)
 end
 
+-- Indices do conjunto de sons da ficha, pelo nome: SNDSLOT.IDS (posicoes na ficha) e, se faltar o
+-- nome la, SOUNDOFF.IDS. Lidos uma vez; so os numeros sao usados.
+INFAI_GREET_IDS = { "SNDSLOT", "SOUNDOFF" }
+local infai_slots = nil
+local function infai_load_slots()
+	infai_slots = {}
+	for _, resref in ipairs(INFAI_GREET_IDS) do
+		local map = {}
+		local ok, err = pcall(function()
+			local ids = EEex_Resource_LoadIDS(resref)
+			EEex_Resource_IterateUnpackedIDSEntries(ids, function(id, line)
+				if type(line) == "string" then map[string.upper(line)] = id end
+			end)
+		end)
+		if not ok then infai_debug(resref .. ".IDS ilegivel: " .. tostring(err)) end
+		table.insert(infai_slots, map)
+	end
+end
+
+local function infai_sound_slot(symbol)
+	if infai_slots == nil then infai_load_slots() end
+	for _, map in ipairs(infai_slots) do
+		if map[symbol] ~= nil then return map[symbol] end
+	end
+	return nil
+end
+
+local function infai_strref(sprite, slot)
+	local ok, value = pcall(function() return sprite.m_baseStats.m_speech:get(slot) end)
+	if not ok then
+		infai_debug("conjunto de sons ilegivel: " .. tostring(value))
+		return nil
+	end
+	if type(value) == "number" and value > 0 and value ~= INFAI_NO_STRREF then return value end
+	return nil
+end
+
+-- Companheiro: uma fala de selecao; outros: selecao ou, sem ela, a de primeiro encontro.
+-- Quem nao tem fala no conjunto de sons (ou esta morto) fica em silencio.
+local function infai_greet(speaker)
+	if not INFAI_TALK_GREET or speaker.dead ~= false or speaker.sprite == nil then return end
+	local groups = { INFAI_GREET_SELECT }
+	if not speaker.party then table.insert(groups, INFAI_GREET_MEETING) end
+	for _, group in ipairs(groups) do
+		local found = {}
+		for _, symbol in ipairs(group) do
+			local slot = infai_sound_slot(symbol)
+			local strref = slot ~= nil and infai_strref(speaker.sprite, slot) or nil
+			if strref ~= nil then table.insert(found, strref) end
+		end
+		if #found > 0 then
+			local ok, err = pcall(EEex_Sprite_DisplayTextRef, speaker.sprite,
+				found[math.random(#found)], INFAI_GREET_OPTIONS)
+			infai_debug("fala padrao: " .. #found .. " opcoes (" .. group[1] .. "), tocada=" ..
+				tostring(ok) .. (ok and "" or " erro=" .. tostring(err)))
+			return
+		end
+	end
+	if INFAI_TALK_DEBUG then
+		-- Laboratorio: quais posicoes da ficha tem fala e onde cada nome caiu (so numeros, sem texto).
+		local filled = {}
+		for slot = 0, 99 do
+			if infai_strref(speaker.sprite, slot) ~= nil then table.insert(filled, tostring(slot)) end
+		end
+		infai_debug("fala padrao: nenhuma; posicoes com fala=" .. table.concat(filled, ",") ..
+			" SELECT_COMMON1=" .. tostring(infai_sound_slot("SELECT_COMMON1")) ..
+			" INITIAL_MEETING=" .. tostring(infai_sound_slot("INITIAL_MEETING")))
+	end
+end
+
 function INFAI_TALK_Open()
 	local st = INFAI_TALK_State
 	if st.open then return false end
@@ -217,6 +299,7 @@ function INFAI_TALK_Open()
 		Infinity_GetClockTicks())
 	INFAI_TALK_Input = ""
 	if speaker.dead then infai_add_line("(" .. speaker.name .. " não pode responder.)") end
+	infai_greet(speaker)
 	infai_layout()
 	Infinity_PushMenu("INFAI_TALK_Menu")
 	Infinity_FocusTextEdit("INFAI_TALK_Edit")

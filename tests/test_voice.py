@@ -14,12 +14,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 
 from infinity_ai.voice.capture import (  # noqa: E402
-    CaptureError, audio_devices, resolve_device, speech_level,
+    CaptureError, FfmpegRecorder, audio_devices, resolve_device, speech_level,
 )
 from infinity_ai.voice.session import (  # noqa: E402
     CANCEL, CANCELLED, FAILED, REC, START, STOP, TEXT, VoiceSession,
 )
 from infinity_ai.voice.stt import (  # noqa: E402
+    WhisperServerStt, multipart,
     FakeStt, SttError, WhisperCppStt, clean_transcript, vocabulary_prompt,
 )
 
@@ -166,10 +167,44 @@ class HelperTests(unittest.TestCase):
         with self.assertRaises(CaptureError):
             resolve_device([], None)
 
+    def test_device_list_is_read_once_until_a_recording_fails(self):
+        calls = []
+
+        def fake_run(cmd, **kw):
+            calls.append(cmd)
+            return subprocess.CompletedProcess(cmd, 1, stdout='', stderr=self.LISTING)
+        rec = FfmpegRecorder(ffmpeg='ffmpeg-teste-cache')
+        original, subprocess.run = subprocess.run, fake_run
+        try:
+            self.assertEqual(FfmpegRecorder(ffmpeg='ffmpeg-teste-cache').device_index(), 1)
+            self.assertEqual(rec.device_index(), 1)
+            self.assertEqual(len(calls), 1)                 # the second press reuses the index
+            rec.forget_device()
+            rec.device_index()
+            self.assertEqual(len(calls), 2)
+        finally:
+            subprocess.run = original
+            rec.forget_device()
+
     def test_speech_level_separates_silence(self):
         with tempfile.TemporaryDirectory() as d:
             self.assertLess(speech_level(write_wav(Path(d) / 'a.wav', 20)), 150)
             self.assertGreater(speech_level(write_wav(Path(d) / 'b.wav', 3000)), 1000)
+
+    def test_stt_server_request_and_fallback(self):
+        with tempfile.TemporaryDirectory() as d:
+            wav = write_wav(Path(d) / 'a.wav', 20)
+            body, kind = multipart({'prompt': 'Lehtinan, Amn'}, 'file', wav)
+            boundary = kind.split('boundary=')[1]
+            self.assertIn(b'name="prompt"\r\n\r\nLehtinan, Amn\r\n', body)
+            self.assertTrue(body.endswith(f'--{boundary}--\r\n'.encode()))
+            self.assertIn(wav.read_bytes(), body)
+            model = Path(d) / 'm.bin'
+            model.write_bytes(b'x')
+            fallback = FakeStt(['Quem governa Amn?'])
+            stt = WhisperServerStt(model, binary=str(Path(d) / 'sem-binario'), fallback=fallback)
+            self.assertEqual(stt.transcribe(wav, prompt='Amn'), 'Quem governa Amn?')
+            self.assertEqual(fallback.calls[0][1], 'Amn')     # same vocabulary on the fallback
 
     def test_clean_transcript(self):
         self.assertEqual(clean_transcript(' Quem governa Amn? \n'), 'Quem governa Amn?')

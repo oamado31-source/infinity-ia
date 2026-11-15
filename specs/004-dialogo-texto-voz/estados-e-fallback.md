@@ -1,6 +1,6 @@
 # SPEC-004 — Diálogo por texto: fluxo, estados, falhas e limites (etapa 1, single player)
 
-**Status:** parte de texto implementada em `src/infinity_ai/dialogue/` com overlay Windows (`tools/windows-overlay/`) e serviço de laboratório (`tools/windows-lab/dialogue_service.py`). **Voz do jogador (REQ-VOICE-001, 002 e 004) na caixa do jogo pelo ADR-0127; voz do NPC (REQ-VOICE-003, TTS) ainda não.** Single player; não é evidência de multiplayer.
+**Status:** parte de texto implementada em `src/infinity_ai/dialogue/` com overlay Windows (`tools/windows-overlay/`) e serviço de laboratório (`tools/windows-lab/dialogue_service.py`). **Voz do jogador (REQ-VOICE-001, 002 e 004) na caixa do jogo pelo ADR-0127; o diálogo do NPC é só escrito, e a caixa toca a fala padrão do jogo ao abrir (ADR-0129).** Single player; não é evidência de multiplayer.
 
 ## Fluxo
 
@@ -57,6 +57,14 @@ Na caixa do jogo, o botão **Falar** alterna início e fim:
 - **REQ-VOICE-002:** a transcrição é texto para revisar, nunca comando.
 - **REQ-VOICE-004:** sem voz, o texto continua igual.
 - **Privacidade:** o áudio fica num diretório temporário privado e é apagado depois do STT, em qualquer resultado. O log não registra a transcrição.
+
+## Resposta do NPC: só texto, com a fala padrão do jogo (ADR-0129)
+
+- **Diálogo:** a resposta é só escrita, em português, como no jogo. Não há voz sintetizada; o TTS testado no ADR-0128 foi retirado. O REQ-VOICE-003 fica atendido pelo texto, e o áudio continua opcional.
+- **Fala padrão:** ao abrir a caixa (clique direito ou F9), a criatura diz uma fala do próprio conjunto de sons, como no clique esquerdo. O motor toca o próprio áudio e mostra o próprio texto sobre a cabeça.
+  - Companheiro: uma fala de seleção. Outros: a de seleção ou, sem ela, a de primeiro encontro.
+  - Morto, sem fala no conjunto de sons ou com leitura falha: silêncio.
+  - Nenhuma ação entra na fila da criatura, e nenhum áudio ou texto do jogo é copiado ou analisado (REQ-CANON-004).
 
 ## Segurança
 

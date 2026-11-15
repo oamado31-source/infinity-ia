@@ -13,5 +13,5 @@
 - [x] Conjunto fixo de testes de fala com o modelo local (`tools/dialogue-eval/`, 3 rodadas, 2 acertos); no CI só a forma dos casos e o verificador (`tests/test_dialogue_eval.py`).
 - [x] Lembrança de conversas anteriores sem texto (ADR-0124): quantas, quando e assuntos, por ramo; genéricos só na mesma sessão; companheiros dizem de quem ouviram (INQUIRY). Testado no laboratório S1f com Bernard e Jaheira; o genérico por sessão está coberto só pelos testes sintéticos.
 - [x] Voz do jogador: push-to-talk + STT local revisável na caixa do jogo ([ADR-0127](../../docs/decisions/ADR-0127-voz-do-jogador-ptt-stt-local.md)): `src/infinity_ai/voice/`, `INFAI-PTT`/`INFAIPTT.lua`, `--voice` no serviço; `tests/test_voice.py`, `tests/test_talk.py`.
-- [ ] Voz do NPC: TTS opcional (ADR-0107 item 2), num ADR seguinte.
+- [x] Resposta do NPC só escrita e fala padrão do jogo ao abrir a caixa ([ADR-0129](../../docs/decisions/ADR-0129-dialogo-so-texto-e-fala-padrao.md)): `tools/eeex-probe/M_INFAIT.lua`; `tests/test_talk.py`. O TTS do [ADR-0128](../../docs/decisions/ADR-0128-voz-dos-npcs-tts-local.md) foi testado e retirado.
 - [ ] Revisão de segurança, privacidade, licença e aprovação de merge.

@@ -43,6 +43,8 @@ ALLOWED = frozenset({
     'EEex_Resource_Fetch', 'EEex_GameState_TogglePause', 'EEex_Key_Hook_AfterEventsPoll',
     'EEex_Sprite_GetActiveStats',  # read-only: active creature stats
     'EEex_Sprite_GetSelectedID',  # read-only: selected group leader ID (EEex 1.1.0+, ADR-0122)
+    # ADR-0129: default line from the creature's own sound set, played and shown by the engine
+    'EEex_Resource_LoadIDS', 'EEex_Resource_IterateUnpackedIDSEntries', 'EEex_Sprite_DisplayTextRef',
 })
 
 
@@ -294,6 +296,93 @@ class PushToTalkProtocolTests(unittest.TestCase):
         self.assertEqual(lua.globals().INFAI_PTT_State['state'], '')
         lua.execute(render_ptt_state('1-2-3', 'TEXT', 'x"} INFAI_PWNED = true --'))
         self.assertIsNone(lua.globals().INFAI_PWNED)
+
+
+@unittest.skipIf(lupa is None, 'lupa not installed')
+class DefaultLineTests(unittest.TestCase):
+    """ADR-0129: opening the box plays the creature's default line, like the game's left click."""
+
+    STUBS = """
+    printed, shown = {}, {}
+    print = function(s) table.insert(printed, s) end
+    Infinity_GetClockTicks = function() return 1000 end
+    Infinity_FocusTextEdit = function() end
+    Infinity_PushMenu = function() end
+    Infinity_GetScreenSize = function() return 1280, 720 end
+    Infinity_SetArea = function() end
+    EEex_Menu_AddMainFileLoadedListener = function() end
+    EEex_Key_AddPressedListener = function() end
+    EEex_GameState_AddDestroyedListener = function() end
+    EEex_GameState_TogglePause = function() end
+    EEex_Key_Hook_AfterEventsPoll = function() return false end
+    worldScreen = { CheckIfPaused = function() return false end }
+    -- SNDSLOT has the sheet positions; SOUNDOFF (VerbalConstant) numbers differ and only fill gaps
+    IDS = { SNDSLOT = { SELECT_COMMON1 = 26, SELECT_COMMON2 = 27, SELECT_ACTION1 = 32 },
+            SOUNDOFF = { INITIAL_MEETING = 0, SELECT_COMMON1 = 70, SELECT_COMMON2 = 71 } }
+    EEex_Resource_LoadIDS = function(name) return name end
+    EEex_Resource_IterateUnpackedIDSEntries = function(ids, f)
+        for line, id in pairs(IDS[ids]) do f(id, line, line) end
+    end
+    EEex_Sprite_DisplayTextRef = function(sprite, strref, args)
+        table.insert(shown, {id = sprite.m_id, strref = strref, overhead = args.overHead})
+    end
+    portraits = {}
+    EEex_Sprite_GetInPortrait = function(i) return portraits[i] end
+    EEex_Sprite_GetSelectedID = function() return -1 end
+    EEex_Sprite_GetName = function() return "Alguem" end
+    EEex_Sprite_GetActiveStats = function() return { m_nWIS = 10, m_nINT = 10, m_nCHR = 10,
+        m_nMoraleBreak = 5 } end
+    function creature(id, speech, dead)
+        return { m_id = id, m_pos = { x = 1, y = 2 },
+            m_scriptName = { get = function() return "Alguem" end },
+            m_resref = { get = function() return "ALGUEM" end },
+            m_baseStats = { m_generalState = dead and 0x800 or 0, m_CHRBase = 10, m_morale = 10,
+                m_moraleBreak = 5,
+                m_speech = { get = function(self, i) return speech[i] or 4294967295 end } } }
+    end
+    """
+
+    def setUp(self):
+        self.lua = lupa.LuaRuntime()
+        self.lua.execute(self.STUBS)
+        self.lua.execute(MODULE.read_text(encoding='utf-8'))
+        self.g = self.lua.globals()
+
+    def open(self, speech, *, dead=False, portrait=None):
+        self.lua.execute('INFAI_TALK_State.open = false; shown = {}')
+        under = self.lua.eval('creature')(9, self.lua.table_from(speech), dead)
+        self.g.EEex_GameObject_GetUnderCursor = lambda: under
+        if portrait is not None:
+            self.g.portraits[portrait] = under
+        opened = self.g.INFAI_TALK_Open()
+        shown = [dict(self.g.shown[i]) for i in range(1, len(self.g.shown) + 1)]
+        self.lua.execute('portraits = {}')
+        return opened, shown
+
+    def test_companion_says_a_selection_line(self):
+        opened, shown = self.open({26: 100, 27: 101, 0: 50, 70: 900, 71: 901}, portrait=2)
+        self.assertTrue(opened)
+        self.assertEqual(len(shown), 1)
+        self.assertIn(shown[0]['strref'], (100, 101))
+        self.assertTrue(shown[0]['overhead'])
+
+    def test_other_creature_falls_back_to_the_first_meeting_line(self):
+        self.assertEqual(self.open({0: 50})[1], [{'id': 9, 'strref': 50, 'overhead': True}])
+        self.assertEqual(self.open({0: 50}, portrait=3)[1], [])     # a companion only selects
+
+    def test_silent_when_dead_without_lines_or_protagonist(self):
+        self.assertEqual(self.open({26: 100}, dead=True)[1], [])
+        self.assertEqual(self.open({32: 77})[1], [])                  # an action line is not one
+        self.assertEqual(self.open({26: 100}, portrait=0), (False, []))
+
+    def test_the_creature_object_never_goes_into_the_request(self):
+        self.open({26: 100})
+        self.lua.execute('INFAI_TALK_Input = "Oi"')
+        self.g.EEex_Area_GetVisible = lambda: None
+        self.g.EEex_Area_GetAllOfTypeStringInRange = lambda *a: self.lua.table()
+        self.g.INFAI_TALK_Send()
+        request = [s for s in self.g.printed.values() if str(s).startswith('INFAI-TALK {')][-1]
+        self.assertNotIn('sprite', request)
 
 
 @unittest.skipIf(lupa is None, 'lupa not installed')

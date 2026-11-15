@@ -25,6 +25,9 @@ MAX_QUOTE_WORDS = 15
 KIND_PREFIX = {'REGION': 'region', 'EVENT': 'event', 'ORGANIZATION': 'org', 'CHARACTER': 'char',
                'PLACE': 'place', 'RELATIONSHIP': 'rel'}
 VERIFICATION = {'RESEARCH_ONLY', 'CROSS_REFERENCED', 'SOURCE_CHECKED', 'DISPUTED', 'CAMPAIGN_CANON'}
+# ADR-0131: secrecy classes, least to most protected. Optional on an entry; absent keeps the
+# behaviour before the class existed (public scopes count as PUBLIC, RESTRICTED as PROFESSIONAL).
+SECRECY = ('PUBLIC', 'PERSONAL', 'PROFESSIONAL', 'CONFIDENTIAL', 'FACTION_SECRET', 'ABSOLUTE')
 SOURCE_CLASSES = {'S0_PRIMARY', 'S1_LICENSED', 'S2_INDEXED', 'S3_COMMUNITY', 'S4_MAINTAINER_CURATED'}
 RELATIONSHIP_PREDICATES = frozenset({'OWNER_OF', 'WORKS_AT', 'MANAGES_FOR', 'EMPLOYED_BY',
     'FREQUENTS', 'MEMBER_OF', 'ALLIED_WITH', 'HOSTILE_TO', 'FAMILY_OF', 'MENTORS',
@@ -80,6 +83,7 @@ class CanonEntry:
     audience: str | None = None
     eligible_affiliations: tuple[str, ...] = ()
     allowed_npc_ids: tuple[str, ...] = ()
+    secrecy: str | None = None       # ADR-0131: None = default by access_scope
 
 
 @dataclass(frozen=True)
@@ -156,6 +160,14 @@ def _check_entry(doc: dict, year: int, sources: dict[str, Source], name: str) ->
         problems.append(f'{name}: relationship metadata on a non-RELATIONSHIP entry')
     if doc['verification_status'] not in VERIFICATION:
         problems.append(f'{name}: unknown verification status')
+    secrecy = doc.get('secrecy')
+    if secrecy is not None:
+        if secrecy not in SECRECY:
+            problems.append(f'{name}: unknown secrecy class')
+        elif doc.get('access_scope') == 'RESTRICTED' and secrecy == 'PUBLIC':
+            problems.append(f'{name}: a RESTRICTED entry cannot be PUBLIC')
+        elif doc.get('access_scope') != 'RESTRICTED' and secrecy != 'PUBLIC':
+            problems.append(f'{name}: only a RESTRICTED entry can have a secrecy class above PUBLIC')
     layers = doc.get('knowledge_layers')
     if layers is not None and (not isinstance(layers, dict) or not set(layers) <= set(LAYERS)
                                or 'POPULAR' not in layers
@@ -227,7 +239,8 @@ def load_partition(year_dr: int, root: Path = KNOWLEDGE_ROOT) -> CanonPack:
             MappingProxyType(dict(doc.get('knowledge_layers') or {})),
             doc.get('subject_id'), doc.get('predicate'), doc.get('object_id'),
             doc.get('context_id'), doc.get('audience'),
-            tuple(doc.get('eligible_affiliations') or ()), tuple(doc.get('allowed_npc_ids') or ()))
+            tuple(doc.get('eligible_affiliations') or ()), tuple(doc.get('allowed_npc_ids') or ()),
+            doc.get('secrecy'))
     for entry in entries.values():
         if entry.kind == 'RELATIONSHIP':
             for endpoint in (entry.subject_id, entry.object_id, entry.context_id):

@@ -233,7 +233,8 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
     shallow_ids = frozenset(e for e in shallow if e not in learned)
     known = sorted(set(full) | set(related) | learned | shallow_ids)
     also_known = tuple((e, pack.get(e).title, pack.get(e).summary, pack.get(e).layers,
-                        pack.get(e).access_scope, pack.get(e).subject_id) for e in known)
+                        pack.get(e).access_scope, pack.get(e).subject_id, pack.get(e).secrecy)
+                       for e in known)
     return DialogueEngine(store, provider, catalog).respond_resident(
         ResidentRequest(npc_id, name, case.question, area, False), residence_areas=(area,),
         branch_id=ROOT_BRANCH, at_game_time=GAME_TIME, identity=identity,

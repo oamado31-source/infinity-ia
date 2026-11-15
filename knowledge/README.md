@@ -14,6 +14,8 @@
 
 **`access_scope`:** `COMMON_REGIONAL` marca o que é de conhecimento público numa região e pode ser adquirido pelos canais do ADR-0114: origem curada (`background_regions` na persona), residência de NPC de fora do grupo e, depois, investigação ativa. Companheiros nunca aprendem por tempo de permanência. `CANON_REFERENCE` (por exemplo, organizações secretas) só serve de referência e nunca é adquirido por esses canais.
 
+**`secrecy`** (opcional, ADR-0131): classe de sigilo, `PUBLIC`, `PERSONAL`, `PROFESSIONAL`, `CONFIDENTIAL`, `FACTION_SECRET` ou `ABSOLUTE`. Só uma entrada `RESTRICTED` pode ter classe acima de `PUBLIC`. Sem o campo, `COMMON_REGIONAL`/`CANON_REFERENCE` contam como `PUBLIC` e `RESTRICTED` como `PROFESSIONAL`, que é o comportamento de antes. A classe decide o que o NPC conta antes do prompt (reação favorável e moral nunca abrem `CONFIDENTIAL`, `FACTION_SECRET` ou `ABSOLUTE`) e é curada e conferida pelo mantenedor.
+
 **`knowledge_layers`** (opcional, ADR-0117): os fatos do resumo conferido redistribuídos por dificuldade — `POPULAR` (o que todo mundo sabe), `INFORMED` (atenção, vivência, ofício) e `STUDIED` (história, causas, política) —, em texto nosso de até 200 caracteres cada e **sem fatos novos**. A Sabedoria e a Inteligência do NPC decidem até onde ele chega.
 
 **Relações (ADR-0119):** RELATIONSHIP registra subject_id, predicate, object_id e context_id opcional. COMMON_REGIONAL + REGIONAL_PUBLIC usa ORIGIN/RESIDENCE/INQUIRY; RESTRICTED exige afiliação curada (STAFF, REGULAR etc.) ou allowlist explícita. Estar na mesma área não concede acesso. INQUIRY compartilha apenas relações públicas; relações restritas não são propagadas por padrão.

@@ -18,6 +18,7 @@ from ..state.store import CampaignStore
 from .context import (
     Catalog, ContextResult, ContextStatus, DialogueContext, build_context, build_resident_context,
 )
+from .disclosure import NEUTRO
 from .llm import LlmError, LlmProvider
 from ..personality.identity import em
 from .validate import retry_hint, validate_reply
@@ -98,6 +99,7 @@ class DialogueResponse:
     unknown: bool = False
     model: str = ''
     latency_ms: int = 0
+    withheld: tuple[str, ...] = ()   # ADR-0131: '<entry>:<reason>' kept out of the prompt
 
     def to_json(self) -> dict:
         return {'status': self.status.value, 'npc_id': self.npc_id,
@@ -217,7 +219,8 @@ class DialogueEngine:
                          history: tuple[tuple[str, str], ...] = (),
                          recall_lines: tuple[tuple[str, str], ...] = (),
                          disposition: str | None = None,
-                         morale: tuple[str, str] | None = None) -> DialogueResponse:
+                         morale: tuple[str, str] | None = None,
+                         trust: str = NEUTRO) -> DialogueResponse:
         """A person in the in-game box: SPEC-006 profile for style, only acquired knowledge."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_resident_context(
@@ -227,7 +230,7 @@ class DialogueEngine:
             at_game_time=at_game_time, profile=profile, identity=identity,
             also_known=also_known, wisdom=wisdom, intelligence=intelligence,
             game_alignment=game_alignment, popular_only_ids=popular_only_ids,
-            recall_lines=recall_lines, disposition=disposition, morale=morale),
+            recall_lines=recall_lines, disposition=disposition, morale=morale, trust=trust),
             display_name=request.display_name, history=history)
 
     def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,
@@ -240,6 +243,9 @@ class DialogueEngine:
         def done(status, speech, reason, context=None, **kw) -> DialogueResponse:
             name = context.persona.display_name if context else \
                 (display_name or self._catalog.display(npc_id or '?'))
+            if context is not None:
+                kw.setdefault('withheld', tuple(f'{d.entry_id}:{d.reason}'
+                                                for d in context.disclosure if not d.allowed))
             return DialogueResponse(status, npc_id, speech, reason, name,
                                     model=self._provider.model,
                                     latency_ms=int((self._clock() - started) * 1000), **kw)

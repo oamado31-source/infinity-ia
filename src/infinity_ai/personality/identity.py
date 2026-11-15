@@ -290,8 +290,11 @@ def generate_identity(*, npc_id: str, role: str | None, gender: int, home_region
                                         'big'))
     if home_chain and away.random() < AWAY_CHANCE.get(role or 'COMMONER', 0.0):
         realm = home_chain[1:]                  # ancestors: same realm, not this very place
-        if elsewhere and (not realm or away.random() < OUTSIDER_SHARE):
-            standing, origin = FORASTEIRO, away.choice(elsewhere)
+        # ADR-0120: an outsider comes from outside the realm; a sibling city of the same realm
+        # (Murann, for someone in Athkatla) is not a distant land.
+        outside = [r for r in elsewhere if not home_chain or home_chain[-1] not in _chain(pack, r)]
+        if outside and (not realm or away.random() < OUTSIDER_SHARE):
+            standing, origin = FORASTEIRO, away.choice(outside)
         elif realm:
             standing, origin = VIAJANTE, away.choice(realm)
         if standing != HABITANTE:

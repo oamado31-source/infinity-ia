@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:crimmor",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Crimmor",
+  "summary": "A capital das caravanas de Amn: as mercadorias sobem o rio Alandor de barcaça desde Athkatla, e as caravanas partem de lá. Cidade pequena, barulhenta e suja, onde sopa de cobra é prato típico. Governa o prefeito Corl Braen, apoiado pelas famílias Crytrapper e Krimmevol.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 30"
+    },
+    {
+      "source_id": "volos-guide-to-baldurs-gate-ii",
+      "locator": "p. 48, \"Crimmor\" (PDF p. 49)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A cidade das caravanas de Amn, rio acima de Athkatla.",
+    "INFORMED": "As mercadorias chegam de Athkatla de barcaça pelo Alandor; a cidade é barulhenta e suja, e sopa de cobra é prato típico.",
+    "STUDIED": "Governa o prefeito Corl Braen, apoiado pelas famílias Crytrapper e Krimmevol."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

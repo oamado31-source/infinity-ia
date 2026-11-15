@@ -6,7 +6,7 @@
     "curated_by": "claude-code",
     "curated_at": "2026-11-09",
     "checked_by": "mantenedor",
-    "checked_at": "2026-11-09"
+    "checked_at": "2026-11-15"
   },
   "id": "region:athkatla",
   "kind": "REGION",
@@ -23,7 +23,7 @@
     "AR0900",
     "AR1000"
   ],
-  "summary": "Capital de Amn e a cidade de maior peso político e comercial do país. O poder ali é disputado entre o governo oficial e a guilda de ladrões local; a sede do Conselho dos Seis fica na cidade.",
+  "summary": "Capital de Amn e a cidade de maior peso político e comercial do país. O poder ali é disputado entre o governo oficial e a guilda de ladrões local; a sede do Conselho dos Seis fica na cidade. Um dos portos mais movimentados de Faerûn; no verão, passa de 400 mil habitantes.",
   "valid_from_dr": 1369,
   "valid_to_dr": 1370,
   "date_precision": "RANGE",
@@ -39,12 +39,16 @@
     {
       "source_id": "game-data-local",
       "locator": "WORLDMAP (mapa 2): distritos com nome no jogo"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 28"
     }
   ],
   "verification_status": "SOURCE_CHECKED",
   "knowledge_layers": {
     "POPULAR": "A capital de Amn, a cidade mais importante do país.",
-    "INFORMED": "É o centro da política e do comércio de Amn; a sede do Conselho dos Seis fica aqui.",
+    "INFORMED": "É o centro da política e do comércio de Amn; a sede do Conselho dos Seis fica aqui. Um dos portos mais movimentados de Faerûn; no verão, passa de 400 mil habitantes.",
     "STUDIED": "O poder na cidade é disputado entre o governo oficial e a guilda de ladrões local."
   }
 }

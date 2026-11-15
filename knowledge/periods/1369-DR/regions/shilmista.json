@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:shilmista",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Shilmista",
+  "summary": "Floresta élfica no extremo leste de Amn, onde resta uma pequena tribo sob o rei Elbereth. Desde os ataques do Castelo Trinity, em 1361 DR, os elfos não deixam morrer nem mais uma árvore ou elfo da floresta e guardam as bordas como sagradas.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 2"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 43"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Uma floresta de elfos no leste de Amn, onde não se corta árvore.",
+    "INFORMED": "Os elfos guardam as bordas da floresta como sagradas; o rei deles é Elbereth.",
+    "STUDIED": "A decisão veio depois dos ataques do Castelo Trinity, em 1361 DR."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

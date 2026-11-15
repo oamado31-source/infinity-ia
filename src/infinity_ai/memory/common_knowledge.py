@@ -387,6 +387,13 @@ def mentioned_in(entry: CanonEntry, speech: str,
     return any(w.lower() in words for w in _TITLE_WORD.findall(entry.title))
 
 
+def realm_of(pack: CanonPack, region_id: str | None) -> str | None:
+    """CR-2026-015: the realm of a region, its highest ancestor below the world root (Amn for
+    Athkatla or Murann); None outside the pack or for the root itself."""
+    chain = [r for r in region_chain(pack, region_id) if r != WORLD_REGION]
+    return chain[-1] if chain else None
+
+
 def identity_knowledge(pack: CanonPack, *, homeland: str | None, home: str | None,
                        campaign_year: int, build_areas: frozenset[str] | None,
                        standing: str = 'HABITANTE',
@@ -400,9 +407,13 @@ def identity_knowledge(pack: CanonPack, *, homeland: str | None, home: str | Non
     CANON_OK; the caller checks the pin). Computed when the person speaks, never stored.
 
     CR-2026-012: what is public at the world root is known by anyone from or in Faerûn, whatever
-    the standing; a region the person has visited (and below) gives only its popular core."""
+    the standing; a region the person has visited (and below) gives only its popular core.
+    CR-2026-015: someone of a realm (living there as a resident, or born there) knows the popular
+    core of every region below that realm: the sibling cities, not what is inside them."""
     full, popular = [], []
     trips = [v for v in visited if v and _is_region(pack, v) and v != WORLD_REGION]
+    realms = {realm_of(pack, r) for r in ((home if standing == 'HABITANTE' else None), homeland)
+              if r and _is_region(pack, r)} - {None}
     in_world = any(r and _is_region(pack, r) for r in (homeland, home))   # placed in the pack
     for entry in sorted(pack.entries.values(), key=lambda e: e.id):
         if entry.access_scope != COMMON_SCOPE:
@@ -421,6 +432,8 @@ def identity_knowledge(pack: CanonPack, *, homeland: str | None, home: str | Non
             bucket = full if from_homeland else None
         if bucket is None and any(v in chain for v in trips):
             bucket = popular                                   # been there: the popular core
+        if bucket is None and entry.kind == 'REGION' and realms & set(chain):
+            bucket = popular                                   # a city of one's own realm
         if bucket is None:
             continue
         gate = assess(pack, entry.id, campaign_year=campaign_year, build_areas=build_areas)

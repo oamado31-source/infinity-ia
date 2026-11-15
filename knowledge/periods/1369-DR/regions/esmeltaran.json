@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:esmeltaran",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Esmeltaran",
+  "summary": "A antiga capital de Amn, à beira do lago Esmel, hoje balneário de luxo da elite, com as melhores propriedades do país; até o palácio de Dahaundar virou casa de veraneio. O paxá Iitriv Gaall governa só no nome; de fato manda um grupo de interesses que inclui a igreja de Waukeen.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 3"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 45"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A cidade dos ricos à beira do lago Esmel, que já foi a capital de Amn.",
+    "INFORMED": "As melhores propriedades de Amn ficam ali; o palácio de Dahaundar virou casa de veraneio.",
+    "STUDIED": "O paxá Iitriv Gaall governa só no nome; de fato manda um grupo de interesses que inclui a igreja de Waukeen."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

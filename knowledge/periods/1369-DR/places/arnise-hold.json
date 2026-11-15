@@ -1,0 +1,37 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:arnise-hold",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Fortaleza de'Arnise",
+  "summary": "Pequeno forte nas terras de Amn, de uma família de guerreiros profissionais há gerações, que protege os camponeses locais como os antigos \"senhores da espada\". Junto às muralhas há uma hospedaria rústica e fria, mas de boa comida.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [
+    "AR1300"
+  ],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-baldurs-gate-ii",
+      "locator": "p. 47–48, \"Arnise Hold\" (PDF p. 48–49)"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "AR1300, nome da área no jogo (Fortaleza de'Arnise)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Um pequeno forte da família Arnise, que protege os camponeses da região.",
+    "INFORMED": "Os Arnise são guerreiros há gerações; a hospedaria junto às muralhas é rústica e fria, mas de boa comida."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:trademeet",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Trademeet",
+  "summary": "Cidadezinha num cruzamento de caravanas, conhecida pela Paz dos Mercadores: ali todo negócio é honesto. Conta-se que, em 920 DR, Waukeen apareceu ali, transformou em ouro as mãos de um mercador trapaceiro e decretou a paz, nunca quebrada. Helm e Ilmater são muito venerados lá.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [
+    "AR2000"
+  ],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 5"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 58"
+    },
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"The Sword Coast\" (PDF p. 26)"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "AR2000, área de Trademeet no jogo (Encontro Comercial)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A cidade onde todo negócio é honesto, pela paz de Waukeen.",
+    "INFORMED": "Conta-se que Waukeen transformou em ouro as mãos de um mercador trapaceiro e decretou a paz ali.",
+    "STUDIED": "A aparição de Waukeen foi em 920 DR; Helm e Ilmater são muito venerados na cidade."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

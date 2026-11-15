@@ -230,14 +230,14 @@ class HomelandAndHomeTests(unittest.TestCase):
     def test_homeland_and_home_common_knowledge(self):
         known = identity_entries(PACK, homeland='region:tethyr', home='region:athkatla',
                                  campaign_year=1369, build_areas=BUILD)
-        self.assertEqual(set(known), {'region:tethyr', 'event:tethyr-reclamation-wars-end',
-                                      'region:athkatla', 'region:amn', 'org:council-of-six',
+        self.assertEqual(set(known), {'region:faerun', 'region:tethyr',
+                                      'event:tethyr-reclamation-wars-end', 'region:athkatla', 'region:amn', 'org:council-of-six',
                                       'org:cowled-wizards', 'place:copper-coronet',
                                       'rel:lehtinan-owns-copper-coronet'})
         self.assertNotIn('org:shadow-thieves', known)                      # not common
         countryside = identity_entries(PACK, homeland=None, home='region:amn',
                                        campaign_year=1369, build_areas=BUILD)
-        self.assertEqual(set(countryside), {'region:amn', 'org:cowled-wizards'})
+        self.assertEqual(set(countryside), {'region:faerun', 'region:amn', 'org:cowled-wizards'})
         self.assertEqual(identity_entries(PACK, homeland='region:rashemen', home=None,
                                           campaign_year=1369, build_areas=BUILD), [])
 
@@ -559,7 +559,8 @@ class StandingTests(unittest.TestCase):
         self.assertIn('org:cowled-wizards', full)             # the realm it comes from
         self.assertNotIn('org:council-of-six', full)
         full, shallow = known('FORASTEIRO', 'region:tethyr')
-        self.assertEqual(set(full), {'region:tethyr', 'event:tethyr-reclamation-wars-end'})
+        self.assertEqual(set(full), {'region:faerun', 'region:tethyr',     # CR-2026-012
+                                     'event:tethyr-reclamation-wars-end'})
         self.assertEqual(shallow, [])
 
     def test_traveler_sees_only_the_popular_core(self):

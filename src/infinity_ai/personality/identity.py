@@ -20,7 +20,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..canon.pack import CanonPack
+from ..canon.pack import WORLD_REGION, CanonPack
 
 IDENTITY_SCHEMA = 'infinity-ai.npc-identity.v1'
 CURATION_SCHEMA = 'infinity-ai.npc-identity-curation.v1'
@@ -252,11 +252,13 @@ def _is_region(pack: CanonPack, region_id: str) -> bool:
 
 
 def _chain(pack: CanonPack, region_id: str | None) -> list[str]:
+    """The region and its ancestors, without the world root (CR-2026-012): nobody is "from
+    Faerûn" or lives in it the way one lives in Athkatla or Amn."""
     chain: list[str] = []
     while region_id and region_id not in chain and _is_region(pack, region_id):
         chain.append(region_id)
         region_id = pack.get(region_id).region_id
-    return chain
+    return [r for r in chain if r != WORLD_REGION]
 
 
 def generate_identity(*, npc_id: str, role: str | None, gender: int, home_region: str | None,
@@ -265,7 +267,8 @@ def generate_identity(*, npc_id: str, role: str | None, gender: int, home_region
     """Deterministic background for a generic person; regions come only from the pack."""
     seed = json.dumps([POLICY, world_seed, campaign_id, branch_id, npc_id], ensure_ascii=False)
     rng = random.Random(int.from_bytes(hashlib.sha256(seed.encode()).digest(), 'big'))
-    regions = sorted(e.id for e in pack.entries.values() if e.kind == 'REGION')
+    regions = sorted(e.id for e in pack.entries.values()
+                     if e.kind == 'REGION' and e.id != WORLD_REGION)
     home_chain = _chain(pack, home_region)
     elsewhere = [r for r in regions if r not in home_chain]
     occupation = None
@@ -314,6 +317,7 @@ class NpcIdentity:
     standing: str = HABITANTE            # ADR-0120: resident, traveler or outsider
     affiliations: tuple[str, ...] = ()   # ADR-0119 curated ties to places (e.g. ...:STAFF)
     home_names: tuple[str, ...] = ()     # CR-2026-004: where it lives and the regions above it
+    visited_regions: tuple[str, ...] = ()  # CR-2026-012: regions it passed through (popular core)
 
     @property
     def source(self) -> str:
@@ -409,7 +413,8 @@ def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None
                        home_region if region_title else None, standing,
                        tuple(getattr(curation, 'affiliations', ()) or ()) if curation else (),
                        tuple(title(r) for r in _chain(pack, home_region) if title(r))
-                       if standing == HABITANTE else ())
+                       if standing == HABITANTE else (),
+                       tuple(r for r in visited if title(r)))
 
 
 IdentityFactory = Callable[[str], dict]

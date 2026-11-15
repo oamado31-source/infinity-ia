@@ -16,6 +16,8 @@
 
 **`secrecy`** (opcional, ADR-0131): classe de sigilo, `PUBLIC`, `PERSONAL`, `PROFESSIONAL`, `CONFIDENTIAL`, `FACTION_SECRET` ou `ABSOLUTE`. Só uma entrada `RESTRICTED` pode ter classe acima de `PUBLIC`. Sem o campo, `COMMON_REGIONAL`/`CANON_REFERENCE` contam como `PUBLIC` e `RESTRICTED` como `PROFESSIONAL`, que é o comportamento de antes. A classe decide o que o NPC conta antes do prompt (reação favorável e moral nunca abrem `CONFIDENTIAL`, `FACTION_SECRET` ou `ABSOLUTE`) e é curada e conferida pelo mantenedor.
 
+**Regiões (CR-2026-012):** toda região descende da raiz `region:faerun`. O que é público na raiz é sabido por qualquer NPC com origem ou residência no pacote. Uma região **sem área no jogo** (Águas Profundas, Calimshan…) só passa no gate se descender da raiz e serve apenas ao diálogo, nunca ao motor (REQ-CANON-002). Quem visitou uma região (`places_visited`) sabe só a camada `POPULAR` do que é público lá.
+
 **`knowledge_layers`** (opcional, ADR-0117): os fatos do resumo conferido redistribuídos por dificuldade — `POPULAR` (o que todo mundo sabe), `INFORMED` (atenção, vivência, ofício) e `STUDIED` (história, causas, política) —, em texto nosso de até 200 caracteres cada e **sem fatos novos**. A Sabedoria e a Inteligência do NPC decidem até onde ele chega.
 
 **Relações (ADR-0119):** RELATIONSHIP registra subject_id, predicate, object_id e context_id opcional. COMMON_REGIONAL + REGIONAL_PUBLIC usa ORIGIN/RESIDENCE/INQUIRY; RESTRICTED exige afiliação curada (STAFF, REGULAR etc.) ou allowlist explícita. Estar na mesma área não concede acesso. INQUIRY compartilha apenas relações públicas; relações restritas não são propagadas por padrão.

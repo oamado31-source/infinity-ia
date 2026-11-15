@@ -28,6 +28,9 @@ VERIFICATION = {'RESEARCH_ONLY', 'CROSS_REFERENCED', 'SOURCE_CHECKED', 'DISPUTED
 # ADR-0131: secrecy classes, least to most protected. Optional on an entry; absent keeps the
 # behaviour before the class existed (public scopes count as PUBLIC, RESTRICTED as PROFESSIONAL).
 SECRECY = ('PUBLIC', 'PERSONAL', 'PROFESSIONAL', 'CONFIDENTIAL', 'FACTION_SECRET', 'ABSOLUTE')
+# CR-2026-012: the world root. Every region descends from it; it is never a place someone is
+# from, lives in or calls its realm, and regions off the game map (no areas) hang below it.
+WORLD_REGION = 'region:faerun'
 SOURCE_CLASSES = {'S0_PRIMARY', 'S1_LICENSED', 'S2_INDEXED', 'S3_COMMUNITY', 'S4_MAINTAINER_CURATED'}
 RELATIONSHIP_PREDICATES = frozenset({'OWNER_OF', 'WORKS_AT', 'MANAGES_FOR', 'EMPLOYED_BY',
     'FREQUENTS', 'MEMBER_OF', 'ALLIED_WITH', 'HOSTILE_TO', 'FAMILY_OF', 'MENTORS',

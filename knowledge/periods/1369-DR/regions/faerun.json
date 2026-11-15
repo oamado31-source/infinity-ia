@@ -1,0 +1,30 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "partition_year_dr": 1369,
+  "access_scope": "COMMON_REGIONAL",
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  },
+  "id": "region:faerun",
+  "kind": "REGION",
+  "title": "Faerûn",
+  "summary": "Faerûn é o continente onde ficam Amn, Tethyr e as terras vizinhas. É a região mais ampla do pacote: o que é público neste nível vale para todo o continente.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": null,
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "maintainer-curation",
+      "locator": "CR-2026-012: região raiz do mundo, aprovada pelo mantenedor em 2026-11-15."
+    }
+  ],
+  "verification_status": "CAMPAIGN_CANON",
+  "knowledge_layers": {
+    "POPULAR": "Faerûn é o continente onde ficam Amn, Tethyr e as terras vizinhas."
+  }
+}

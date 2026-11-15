@@ -452,7 +452,7 @@ class Talker(threading.Thread):
                 known_by_identity, shallow_ids = identity_knowledge(
                     pack, homeland=identity.origin_region, home=identity.home_region,
                     campaign_year=self.args.campaign_year, build_areas=self.observer.build_areas,
-                    standing=standing)
+                    standing=standing, visited=identity.visited_regions)
                 known_by_relationship = relationship_entries(
                     pack, npc_id=speaker, affiliations=curation.affiliations if curation else (),
                     campaign_year=self.args.campaign_year, build_areas=self.observer.build_areas)

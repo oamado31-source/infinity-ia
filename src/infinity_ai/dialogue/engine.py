@@ -201,13 +201,14 @@ class DialogueEngine:
                 at_game_time: int | None, wisdom: int | None = None,
                 intelligence: int | None = None,
                 history: tuple[tuple[str, str], ...] = (),
-                recall_lines: tuple[tuple[str, str], ...] = ()) -> DialogueResponse:
+                recall_lines: tuple[tuple[str, str], ...] = (),
+                order: tuple[str, ...] = ()) -> DialogueResponse:
         """A companion in the party (overlay, or the in-game box with its ability scores)."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_context(
             self._memory, self._store, self._catalog, npc_id=npc_id, branch_id=branch_id,
             at_game_time=at_game_time, wisdom=wisdom, intelligence=intelligence,
-            recall_lines=recall_lines), history=history)
+            recall_lines=recall_lines, order=order), history=history)
 
     def respond_resident(self, request: ResidentRequest, *, residence_areas: tuple[str, ...],
                          branch_id: str, at_game_time: int | None,
@@ -220,7 +221,8 @@ class DialogueEngine:
                          recall_lines: tuple[tuple[str, str], ...] = (),
                          disposition: str | None = None,
                          morale: tuple[str, str] | None = None,
-                         trust: str = NEUTRO) -> DialogueResponse:
+                         trust: str = NEUTRO,
+                         order: tuple[str, ...] = ()) -> DialogueResponse:
         """A person in the in-game box: SPEC-006 profile for style, only acquired knowledge."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_resident_context(
@@ -230,7 +232,8 @@ class DialogueEngine:
             at_game_time=at_game_time, profile=profile, identity=identity,
             also_known=also_known, wisdom=wisdom, intelligence=intelligence,
             game_alignment=game_alignment, popular_only_ids=popular_only_ids,
-            recall_lines=recall_lines, disposition=disposition, morale=morale, trust=trust),
+            recall_lines=recall_lines, disposition=disposition, morale=morale, trust=trust,
+            order=order),
             display_name=request.display_name, history=history)
 
     def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,

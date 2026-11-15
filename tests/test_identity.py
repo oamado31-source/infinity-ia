@@ -33,6 +33,7 @@ from infinity_ai.personality.identity import (  # noqa: E402
     knowledge_tier, layered_text, load_curations, role_from_name,
 )
 from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
+from test_common_knowledge import LOTE_A_AMN, LOTE_A_CITY  # noqa: E402
 
 PACK = load_partition(1369)
 REGION_TITLES = {e.title for e in PACK.entries.values() if e.kind == 'REGION'}
@@ -121,7 +122,10 @@ class KnowledgeTierTests(unittest.TestCase):
             allowed = set(re.findall(r'\b[A-ZÀ-Ý]\w+', entry.summary + ' ' + entry.title)) | {
                 'É', 'Por', 'Depois', 'Fica', 'Foram', 'Usam', 'Reúnem', 'Restringem', 'Tem',
                 'Governam', 'Reino', 'Terra', 'Magos', 'Isso', 'Essa', 'Amn', 'Athkatla', 'Tethyr',
-                'Conselho', 'Seis', 'DR', 'A', 'O', 'Os', 'As'}
+                'Conselho', 'Seis', 'DR', 'A', 'O', 'Os', 'As',
+                # sentence-initial common words (not names), lote A (CR-2026-013)
+                'Há', 'Morreu', 'Uns', 'Morto', 'Demônios', 'Faz', 'Em', 'São', 'Quem',
+                'Espelunca', 'Ali', 'Também', 'Apelidos', 'Chamar'}
             with self.subTest(entry=entry.id):
                 self.assertTrue(names <= allowed, names - allowed)
 
@@ -233,11 +237,12 @@ class HomelandAndHomeTests(unittest.TestCase):
         self.assertEqual(set(known), {'region:faerun', 'region:tethyr',
                                       'event:tethyr-reclamation-wars-end', 'region:athkatla', 'region:amn', 'org:council-of-six',
                                       'org:cowled-wizards', 'place:copper-coronet',
-                                      'rel:lehtinan-owns-copper-coronet'})
+                                      'rel:lehtinan-owns-copper-coronet'} | LOTE_A_AMN | LOTE_A_CITY)
         self.assertNotIn('org:shadow-thieves', known)                      # not common
         countryside = identity_entries(PACK, homeland=None, home='region:amn',
                                        campaign_year=1369, build_areas=BUILD)
-        self.assertEqual(set(countryside), {'region:faerun', 'region:amn', 'org:cowled-wizards'})
+        self.assertEqual(set(countryside), {'region:faerun', 'region:amn', 'org:cowled-wizards'}
+                         | LOTE_A_AMN)
         self.assertEqual(identity_entries(PACK, homeland='region:rashemen', home=None,
                                           campaign_year=1369, build_areas=BUILD), [])
 

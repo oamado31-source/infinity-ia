@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:maztica-and-new-amn",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Descoberta de Maztica",
+  "summary": "Em 1361 DR, Maztica, terra a oeste do oceano, foi conquistada em nome de Amn, que fundou ali a colônia de Nova Amn; o ouro e as especiarias de lá enriquecem o oeste do país. O governador-geral Cordell, de Nova Amn, responde ao Namarch.",
+  "valid_from_dr": 1361,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 11"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 13"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 22"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Amn tem uma colônia numa terra nova do outro lado do mar, de onde vem muito ouro.",
+    "INFORMED": "O ouro de Maztica enriqueceu sobretudo o oeste de Amn.",
+    "STUDIED": "O governador-geral Cordell, de Nova Amn, responde ao Namarch."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

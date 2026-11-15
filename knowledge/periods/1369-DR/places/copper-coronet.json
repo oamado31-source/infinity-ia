@@ -4,7 +4,7 @@
   "kind": "PLACE",
   "partition_year_dr": 1369,
   "title": "Coroa de Cobre",
-  "summary": "A Coroa de Cobre é uma taverna de Athkatla.",
+  "summary": "A Coroa de Cobre é uma taverna de Athkatla, espelunca suja de contrabandistas, piratas e mercenários que a maioria dos athkatlanos evita.",
   "valid_from_dr": 1369,
   "valid_to_dr": 1370,
   "date_precision": "RANGE",
@@ -16,18 +16,22 @@
     {
       "source_id": "game-data-local",
       "locator": "AR0406, posicionamento local de Bernard junto ao balcão"
+    },
+    {
+      "source_id": "volos-guide-to-baldurs-gate-ii",
+      "locator": "p. 10, \"The Copper Coronet\" (PDF p. 11)"
     }
   ],
   "verification_status": "SOURCE_CHECKED",
   "access_scope": "COMMON_REGIONAL",
   "knowledge_layers": {
     "POPULAR": "A Coroa de Cobre é uma taverna de Athkatla.",
-    "INFORMED": "É um estabelecimento frequentado por moradores, viajantes e aventureiros."
+    "INFORMED": "Espelunca suja de contrabandistas, piratas e mercenários; a maioria dos athkatlanos evita o lugar."
   },
   "curation": {
     "curated_by": "mantenedor",
     "curated_at": "2026-11-10",
     "checked_by": "mantenedor",
-    "checked_at": "2026-11-10"
+    "checked_at": "2026-11-15"
   }
 }

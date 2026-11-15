@@ -1,0 +1,34 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:temple-district",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Distrito dos Templos",
+  "summary": "Bairro de Athkatla com templos, estalagens para peregrinos, escritórios e casas de mercadores ricos. Era o centro da magia da cidade até a proibição do rei Dhanar, quando abadias de Mystra e Azuth foram queimadas; restos de templos ainda aparecem nas mansões.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [
+    "AR0900"
+  ],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-baldurs-gate-ii",
+      "locator": "p. 8 e 12–13, \"Temple District\" e \"Temples No More\" (PDF p. 9 e 13–14)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O bairro dos templos de Athkatla, cheio de peregrinos.",
+    "INFORMED": "Também tem escritórios e casas de mercadores ricos; restos de templos antigos aparecem nas mansões.",
+    "STUDIED": "Era o centro da magia de Athkatla até a proibição do rei Dhanar, quando abadias de Mystra e Azuth foram queimadas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

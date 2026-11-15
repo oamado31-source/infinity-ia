@@ -333,6 +333,52 @@ def _with_aliases(text: str, aliases: Mapping[str, str] | None) -> str:
     return ' '.join([text] + sorted({title for noun, title in aliases.items() if noun in words}))
 
 
+# CR-2026-014: within one level of distance, the region itself and standing things first.
+_KIND_ORDER = {'REGION': 0, 'ORGANIZATION': 1, 'PLACE': 2, 'TOPIC': 3, 'CHARACTER': 4,
+               'RELATIONSHIP': 5, 'EVENT': 6}
+
+
+def context_order(pack: CanonPack, entry_ids: Iterable[str], *, npc_id: str | None,
+                  area: str | None, home_region: str | None) -> list[str]:
+    """CR-2026-014: the order in which known entries fill the prompt, never from player text.
+
+    Restricted ties and what is about the person first; then the place where it is and the
+    relations naming it; then the levels of distance along the region chain of where it is
+    (city, realm, Faerûn, then regions off that chain) take turns, one entry each, so no level
+    fills the prompt alone. Within a level: the region itself, organizations, places, topics,
+    characters, relations, then events, recent ones first; ties by id. Pure and deterministic."""
+    chain = region_chain(pack, home_region)
+    area_up = area.upper() if area else None
+    here = {e.id for e in pack.entries.values() if e.kind == 'PLACE' and area_up
+            and area_up in {a.upper() for a in e.area_resrefs}}
+    own, at_place, levels, unknown = [], [], {}, []
+    for entry_id in set(entry_ids):
+        entry = pack.get(entry_id)
+        if entry is None:
+            unknown.append(entry_id)
+        elif entry.access_scope == 'RESTRICTED' or (npc_id and entry.subject_id == npc_id):
+            own.append(entry)
+        elif entry.id in here or (entry.kind == 'RELATIONSHIP' and here & {
+                entry.subject_id, entry.object_id, entry.context_id}):
+            at_place.append(entry)
+        else:
+            region = entry.id if entry.kind == 'REGION' else entry.region_id
+            levels.setdefault(chain.index(region) if region in chain else len(chain),
+                              []).append(entry)
+
+    def key(entry: CanonEntry) -> tuple:
+        recent = -(entry.valid_from_dr or 0) if entry.kind == 'EVENT' else 0
+        return (_KIND_ORDER.get(entry.kind, 9), recent, entry.id)
+
+    ranked = [e.id for e in sorted(own, key=key)] + [e.id for e in sorted(at_place, key=key)]
+    queues = [sorted(levels[d], key=key) for d in sorted(levels)]
+    while any(queues):
+        for queue in queues:
+            if queue:
+                ranked.append(queue.pop(0).id)
+    return ranked + sorted(unknown)
+
+
 def mentioned_in(entry: CanonEntry, speech: str,
                  aliases: Mapping[str, str] | None = None) -> bool:
     """True when the speech names the entry: any capitalised word of its title (3+ letters), or a

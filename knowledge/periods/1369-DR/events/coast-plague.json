@@ -1,0 +1,31 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:coast-plague",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Praga da Costa",
+  "summary": "Em 1345 DR, a Praga da Costa atingiu Murann, Athkatla, Purskul e Crimmor e matou um quinto da população. As caravanas a levaram até Beregost e Zazesspur.",
+  "valid_from_dr": 1345,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 22"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Há uns vinte e poucos anos, uma praga matou muita gente nas cidades de Amn.",
+    "INFORMED": "Morreu um em cada cinco moradores de Murann, Athkatla, Purskul e Crimmor; a doença chegou a Beregost e Zazesspur pelas caravanas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

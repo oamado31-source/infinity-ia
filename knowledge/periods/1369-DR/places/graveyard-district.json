@@ -1,0 +1,33 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:graveyard-district",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Distrito do Cemitério",
+  "summary": "Bairro de mausoléus ornamentados de Athkatla, usados também para encontros amorosos, reuniões de negócio e até refeições. À noite é muito patrulhado, para impedir acampamentos, negócios e crimes entre os túmulos.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [
+    "AR0800"
+  ],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-baldurs-gate-ii",
+      "locator": "p. 9, \"Grave District\" (PDF p. 10)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O cemitério de Athkatla, cheio de mausoléus caros.",
+    "INFORMED": "Os mausoléus servem até para encontros e negócios; à noite a guarda patrulha muito."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

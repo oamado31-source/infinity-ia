@@ -1,0 +1,34 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:athkatla-gates",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Portões e pedágio da cidade",
+  "summary": "Athkatla tem seis portões externos e um sétimo que leva ao cemitério. Quem não é cidadão paga um pedágio de \"uma moeda qualquer\", em geral um fandar; alguns guardas usam a regra para importunar quem não lhes agrada.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [
+    "AR0020"
+  ],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-baldurs-gate-ii",
+      "locator": "p. 9, \"The Gates\" (PDF p. 10)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Quem é de fora paga uma moeda para passar pelos portões da cidade.",
+    "INFORMED": "Em geral se paga um fandar; alguns guardas usam a regra para importunar quem não lhes agrada.",
+    "STUDIED": "São seis portões externos e um sétimo, que leva ao cemitério."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

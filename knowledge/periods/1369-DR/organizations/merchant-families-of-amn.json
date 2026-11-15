@@ -1,0 +1,35 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:merchant-families-of-amn",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Famílias mercantis",
+  "summary": "As famílias ricas de Amn têm mais poder do que a lei lhes dá. Cada uma manda num bairro ou cidade, sustentada por dívidas de favor. Athkatla abriga 42 delas, donas das maiores casas de comércio, e o Conselho pune com dureza as rixas que saem do controle.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 11–12"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 14"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "As famílias ricas mandam em seus bairros, e quem lhes deve favores lhes deve lealdade.",
+    "INFORMED": "Athkatla tem 42 grandes famílias, donas das maiores casas de comércio; o Conselho pune com dureza as rixas que saem do controle."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

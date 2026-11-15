@@ -1,0 +1,37 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:waukeens-promenade",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Passeio de Waukeen",
+  "summary": "O grande mercado a céu aberto de Athkatla, onde se acha quase qualquer mercadoria. Fica no coração comercial da cidade e é seu marco mais conhecido, cercado de tavernas, estalagens e casas de festa dos ricos.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [
+    "AR0700"
+  ],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-baldurs-gate-ii",
+      "locator": "p. 8–9, \"Center District\" (PDF p. 9–10)"
+    },
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"Athkatla\" (PDF p. 28)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O grande mercado de Athkatla, onde se compra quase tudo.",
+    "INFORMED": "Fica no bairro central, o coração do comércio da cidade, cercado de tavernas, estalagens e casas de festa dos ricos."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

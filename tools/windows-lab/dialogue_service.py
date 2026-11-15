@@ -66,7 +66,8 @@ from infinity_ai.gamedata.inventory import (  # noqa: E402
     load_local_names, load_local_residents, load_local_resrefs,
 )
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
-    DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, entries_named, identity_knowledge,
+    DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, context_order, entries_named,
+    identity_knowledge,
     local_aliases, placement_regions, relationship_entries, residents_as_stays, share_knowledge,
 )
 from infinity_ai.canon.pin import PinStatus, check_pin  # noqa: E402
@@ -408,10 +409,15 @@ class Talker(threading.Thread):
             wisdom, intelligence = req.speaker_wisdom, req.speaker_intelligence
             if wisdom or intelligence:
                 tier = knowledge_tier(wisdom, intelligence).name
+            # CR-2026-014: what fills the prompt, by closeness to where the party is.
+            pack = self.observer.pack
+            where = placement_regions(pack, req.area) if req.area else []
+            order = tuple(context_order(pack, pack.entries, npc_id=speaker, area=req.area,
+                                        home_region=where[0] if where else None))
             result = DialogueEngine(store, self.provider, self.catalog).respond(
                 DialogueRequest(speaker, req.text), branch_id=view.branch_id,
                 at_game_time=view.game_time, wisdom=wisdom, intelligence=intelligence,
-                history=history, recall_lines=lines)
+                history=history, recall_lines=lines, order=order)
             status, reason, flags = result.status.value, result.reason, list(result.flags)
             speech = result.speech or self.catalog.persona(speaker).fallback
             used = tuple(e.split(':', 1)[1] for e in result.used_event_ids
@@ -514,7 +520,9 @@ class Talker(threading.Thread):
                 intelligence=intelligence, game_alignment=getattr(resident, 'alignment', None),
                 popular_only_ids=shallow, history=history, recall_lines=lines,
                 disposition=reaction.disposition if reaction is not None else None,
-                morale=(check.trigger, check.outcome) if check is not None else None)
+                morale=(check.trigger, check.outcome) if check is not None else None,
+                order=tuple(context_order(pack, known_now, npc_id=speaker, area=req.area,
+                                          home_region=home)))
             status, reason = result.status.value, result.reason
             flags = list(result.flags)
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)

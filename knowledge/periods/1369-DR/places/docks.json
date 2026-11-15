@@ -1,0 +1,33 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:docks",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Docas",
+  "summary": "Bairro portuário de Athkatla, onde se concentram o comércio marítimo, os estaleiros, cordoeiros e cartógrafos. Seu marco é o templo cônico de Selûne; o sino Grande Grifo avisa os navios que tentam entrar no porto durante tempestades.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [
+    "AR0300"
+  ],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-baldurs-gate-ii",
+      "locator": "p. 7–8, \"Wave District\" (PDF p. 8–9); nome do jogo (D3)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O porto de Athkatla, com seu comércio marítimo e seus estaleiros.",
+    "INFORMED": "Ali ficam o templo de Selûne e o grande sino que avisa os navios nas tempestades."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

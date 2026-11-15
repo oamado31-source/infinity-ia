@@ -635,6 +635,52 @@
           "Selûne"
         ]
       }
+    },
+    {
+      "id": "magia-sem-nomear-os-magos",
+      "description": "CR-2026-018: a pergunta sobre magia não nomeia os Magos Encapuzados, mas eles estão no prompt (instituições antes da história).",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Posso usar magia na cidade?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "org:cowled-wizards"
+        ]
+      }
+    },
+    {
+      "id": "historia-de-faerun-pela-pergunta",
+      "description": "Lote B: o Tempo das Perturbações, sabido em todo o continente, vem quando é perguntado, no núcleo popular.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "O que foi o Tempo das Perturbações?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "event:time-of-troubles"
+        ],
+        "mentions_none": [
+          "Ao ",
+          "Tábuas"
+        ]
+      }
     }
   ]
 }

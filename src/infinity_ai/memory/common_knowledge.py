@@ -345,6 +345,11 @@ _KIND_ORDER = {'REGION': 0, 'ORGANIZATION': 1, 'PLACE': 2, 'TOPIC': 3, 'CHARACTE
                'RELATIONSHIP': 5, 'EVENT': 6}
 
 
+_GROUPS = (frozenset({'REGION', 'ORGANIZATION'}),
+           frozenset({'TOPIC', 'PLACE', 'CHARACTER', 'RELATIONSHIP'}),
+           frozenset({'EVENT'}))
+
+
 def context_order(pack: CanonPack, entry_ids: Iterable[str], *, npc_id: str | None,
                   area: str | None, home_region: str | None,
                   named: Iterable[str] = ()) -> list[str]:
@@ -354,7 +359,8 @@ def context_order(pack: CanonPack, entry_ids: Iterable[str], *, npc_id: str | No
     relations naming it; then (CR-2026-016) what the question names, among the entries it holds:
     this only reorders, it never adds one; then the levels of distance along the region chain of
     where it is (city, realm, Faerûn, then regions off that chain) take turns, one entry each, so
-    no level fills the prompt alone. Region entries off the chain (sibling cities, distant lands)
+    no level fills the prompt alone, first among regions and organizations, then topics, places,
+    characters and relations, then events (CR-2026-018). Region entries off the chain (sibling cities, distant lands)
     and the continent itself come last: they matter when asked about. Within a level: the region
     itself, organizations, places, topics, characters, relations, then events, recent ones first;
     ties by id. Pure and deterministic."""
@@ -391,11 +397,18 @@ def context_order(pack: CanonPack, entry_ids: Iterable[str], *, npc_id: str | No
 
     ranked = ([e.id for e in sorted(own, key=key)] + [e.id for e in sorted(at_place, key=key)]
               + [e.id for e in sorted(asked, key=key)])
-    queues = [sorted(levels[d], key=key) for d in sorted(levels)]
-    while any(queues):
-        for queue in queues:
-            if queue:
-                ranked.append(queue.pop(0).id)
+    # CR-2026-018: institutions (regions, organizations) first, then customs and places, then
+    # events; within each group the levels of distance take turns. History comes when asked.
+    for group in _GROUPS:
+        queues = [sorted((e for e in levels[d] if e.kind in group), key=key)
+                  for d in sorted(levels)]
+        while any(queues):
+            for queue in queues:
+                if queue:
+                    ranked.append(queue.pop(0).id)
+    leftover = [e for d in sorted(levels) for e in levels[d]
+                if not any(e.kind in g for g in _GROUPS)]
+    ranked += [e.id for e in sorted(leftover, key=key)]
     return ranked + [e.id for e in sorted(atlas, key=key)] + sorted(unknown)
 
 

@@ -1,0 +1,35 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:waukeen-vanishes",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Sumiço de Waukeen",
+  "summary": "No Tempo das Perturbações, em 1358 DR, Waukeen, deusa do comércio, deixou sua divindade aos cuidados da deusa Lliira e desapareceu de Faerûn. Desde então é Lliira quem responde às preces dos sacerdotes de Waukeen.",
+  "valid_from_dr": 1358,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 142, \"1358 DR Year of Shadows\""
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 5"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Waukeen, a deusa do comércio, sumiu no Tempo das Perturbações.",
+    "INFORMED": "Ela deixou sua divindade aos cuidados de Lliira, que desde então responde às preces dos sacerdotes de Waukeen."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

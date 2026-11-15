@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:fall-of-netheril",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Netheril e as cidades voadoras",
+  "summary": "Netheril foi um antigo império de magos poderosos, com cidades flutuantes. Em −339 DR, o arquimago Karsus tentou se tornar deus; a deusa da magia morreu, a magia falhou e quase todas as cidades caíram do céu.",
+  "valid_from_dr": -339,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 47, \"−339 DR Year of Sundered Webs\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Há muito tempo existiu um império de magos com cidades voadoras, que caíram do céu.",
+    "INFORMED": "O império se chamava Netheril e caiu quando a magia falhou de repente.",
+    "STUDIED": "A queda veio em −339 DR, quando o arquimago Karsus tentou virar deus e a deusa da magia morreu."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

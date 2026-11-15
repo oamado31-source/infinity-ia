@@ -48,6 +48,12 @@ LOTE_A_CITY = {'place:waukeens-promenade', 'place:temple-district', 'place:bridg
                'place:docks', 'place:slums'}
 # Lote A2: a place of Amn as a whole (its cities are sub-regions: not taught by living elsewhere).
 LOTE_A_AMN = LOTE_A_AMN | {'place:arnise-hold'}
+# Lote B: what the whole continent knows (Faerûn level), and Tethyr's own.
+LOTE_B_WORLD = {'event:time-of-troubles', 'event:gods-fallen-and-risen', 'event:waukeen-vanishes',
+                'event:tuigan-horde', 'event:fall-of-zhentil-keep', 'event:fall-of-myth-drannor',
+                'event:fall-of-netheril', 'topic:calendar-of-harptos'}
+LOTE_B_TETHYR = {'event:red-knight-ascends'}
+LOTE_A_AMN = LOTE_A_AMN | LOTE_B_WORLD          # everyone placed in the pack knows the world level
 COUNTRY = {'region:faerun', 'region:amn', 'org:cowled-wizards'} | LOTE_A_AMN
 CITY = {'region:faerun', 'region:amn', 'region:athkatla', 'org:council-of-six', 'org:cowled-wizards',
         'place:copper-coronet', 'rel:lehtinan-owns-copper-coronet'} | LOTE_A_AMN | LOTE_A_CITY
@@ -479,7 +485,8 @@ class OriginTests(Story):
         self.pin(game_time=100)
         report = self.acquire(150, backgrounds=self.background(), sources=load_sources())
         self.assertEqual(self.known(), {'region:faerun', 'region:tethyr',
-                                        'event:tethyr-reclamation-wars-end'})
+                                        'event:tethyr-reclamation-wars-end'}
+                         | LOTE_B_WORLD | LOTE_B_TETHYR)
         self.assertTrue(all(k.basis is KnowledgeBasis.ORIGIN and k.game_time == 100
                             for k in report.granted))
         self.assertEqual(self.known('npc:imoen'), set())
@@ -490,7 +497,8 @@ class OriginTests(Story):
         b = self.background()['npc:jaheira']
         report = self.acquire(150, backgrounds={BERNARD: b}, sources=load_sources())
         self.assertEqual(self.known(BERNARD), {'region:faerun', 'region:tethyr',
-                                               'event:tethyr-reclamation-wars-end'})
+                                               'event:tethyr-reclamation-wars-end'}
+                         | LOTE_B_WORLD | LOTE_B_TETHYR)
         self.assertTrue(all(k.game_time == 100 for k in report.granted))   # from the pin
 
     def test_origin_needs_a_checked_strong_source(self):

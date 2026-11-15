@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:time-of-troubles",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Perturbações dos deuses",
+  "summary": "Em 1358 DR, no chamado Tempo das Perturbações, o deus supremo Ao expulsou os deuses de seus domínios, e eles vagaram por Faerûn como mortais em busca das Tábuas do Destino roubadas. A magia ficou instável e as preces dos fiéis não eram atendidas.",
+  "valid_from_dr": 1358,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 142, \"1358 DR Year of Shadows\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Há uns dez anos, no Tempo das Perturbações, os deuses andaram pela terra como mortais, e a magia enlouqueceu.",
+    "INFORMED": "Foi o Tempo das Perturbações: a magia falhava ou saía do controle, e as preces não eram atendidas.",
+    "STUDIED": "Ao expulsou os deuses de seus domínios, e eles buscavam as Tábuas do Destino roubadas para poder voltar."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

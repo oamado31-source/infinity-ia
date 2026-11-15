@@ -4,7 +4,7 @@
 - [x] Acrescentar o campo opcional de classe ao schema do cânone (`secrecy`, compatível: sem classe, o comportamento de antes). `tests/test_disclosure.py`.
 - [x] Decisão por item antes do prompt, com `reason_code` auditável e política neutra (`dialogue/disclosure.py`; retidos no log do serviço como `retidos=[<entrada>:<motivo>]`, fora do JSON da resposta).
 - [x] Montar o contexto do modelo só com os itens liberados; o validador confere contra o pacote (o contexto já é o pacote: o validador só conhece os itens liberados).
-- [ ] Modelos determinísticos de fala para `NOT_KNOWN`, `NOT_DEFINED` e `WITHHELD`.
+- [x] Modelos determinísticos de fala para `NOT_KNOWN`, `NOT_DEFINED` e `WITHHELD` (`dialogue/absence.py`; `WITHHELD` neutro, por decisão do mantenedor; resposta sem o modelo, motivo `ABSENCE:*`). `tests/test_absence.py`, caso `sem-familia-inventada` na bateria.
 - [x] Testes de compatibilidade dos ADR-0125/0126 para itens sem classe (todas as combinações de escopo, disposição e moral); casos novos de reação, moral e confiança.
 - [ ] Casos novos na bateria de diálogo: recusa sem vazamento e injeção.
 - [ ] Confiança qualitativa e direcional por evento (fase 4b).

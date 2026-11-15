@@ -18,6 +18,7 @@ from ..state.store import CampaignStore
 from .context import (
     Catalog, ContextResult, ContextStatus, DialogueContext, build_context, build_resident_context,
 )
+from .absence import absence_line
 from .disclosure import NEUTRO
 from .llm import LlmError, LlmProvider
 from ..personality.identity import em
@@ -221,7 +222,8 @@ class DialogueEngine:
                          recall_lines: tuple[tuple[str, str], ...] = (),
                          disposition: str | None = None,
                          morale: tuple[str, str] | None = None,
-                         trust: str = NEUTRO,
+                         trust: str = NEUTRO, unheld_titles: tuple[str, ...] = (),
+                         aliases: dict[str, str] | None = None,
                          order: tuple[str, ...] = ()) -> DialogueResponse:
         """A person in the in-game box: SPEC-006 profile for style, only acquired knowledge."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
@@ -233,7 +235,8 @@ class DialogueEngine:
             also_known=also_known, wisdom=wisdom, intelligence=intelligence,
             game_alignment=game_alignment, popular_only_ids=popular_only_ids,
             recall_lines=recall_lines, disposition=disposition, morale=morale, trust=trust,
-            order=order),
+            question=request.player_text if isinstance(request.player_text, str) else '',
+            unheld_titles=unheld_titles, aliases=aliases, order=order),
             display_name=request.display_name, history=history)
 
     def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,
@@ -259,6 +262,10 @@ class DialogueEngine:
         if built.status is not ContextStatus.OK:
             return done(DialogueStatus.DENIED, '', built.reason)
         context = built.context
+        if context.absence is not None:     # ADR-0131: answered by code, the model is not asked
+            return done(DialogueStatus.OK,
+                        absence_line(context.absence, context.disposition, npc_id + '|' + text),
+                        f'ABSENCE:{context.absence}', context, unknown=True)
         fact_events = {f.fact_id: f.event_id for f in context.facts + context.knowledge + context.restricted_knowledge}
 
         # ADR-0123: earlier turns of this conversation as chat turns; the player's words stay in

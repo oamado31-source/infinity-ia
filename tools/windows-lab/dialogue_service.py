@@ -517,6 +517,11 @@ class Talker(threading.Thread):
                                                         profile), text=req.text,
                                    trigger=trigger),
                     world_seed=self.args.world_seed, game_time=view.game_time)
+            aliases = local_aliases(pack, req.area)   # "taverna" = the place where it is
+            # ADR-0131: titles of what the person does not hold, for the typed-absence check only.
+            held_now = set(known_now)
+            unheld = tuple(entry.title for entry_id, entry in sorted(pack.entries.items())
+                           if entry_id not in held_now)
             result = DialogueEngine(store, self.provider, self.catalog).respond_resident(
                 ResidentRequest(speaker, req.speaker_name, req.text, req.area, req.speaker_dead),
                 residence_areas=areas, branch_id=view.branch_id, at_game_time=view.game_time,
@@ -525,6 +530,7 @@ class Talker(threading.Thread):
                 popular_only_ids=shallow, history=history, recall_lines=lines,
                 disposition=reaction.disposition if reaction is not None else None,
                 morale=(check.trigger, check.outcome) if check is not None else None,
+                unheld_titles=unheld, aliases=aliases,
                 order=tuple(context_order(pack, known_now, npc_id=speaker, area=req.area,
                                           home_region=home,
                                           named=named_in(pack, known_now, req.text,
@@ -534,7 +540,6 @@ class Talker(threading.Thread):
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
             used = tuple(e.split(':', 1)[1] for e in result.used_event_ids
                          if e.startswith('canon:'))
-            aliases = local_aliases(pack, req.area)   # "taverna" = the place where it is
             if result.status is DialogueStatus.OK and speaker:
                 # The model may name an entry without declaring it: what was said is what was heard.
                 used = tuple(dict.fromkeys(used + tuple(entries_named(

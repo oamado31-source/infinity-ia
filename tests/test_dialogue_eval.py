@@ -64,7 +64,7 @@ class CheckerTests(unittest.TestCase):
         self.assertIn('Bernard', provider.calls[0][0]['content'])        # restricted, by REGULAR
         provider = FakeProvider([reply('Não sei.', unknown=True)])
         ask(case(self.cases, 'sem-vinculo-bernard'), PACK, provider)
-        self.assertNotIn('Bernard coordena', provider.calls[0][0]['content'])
+        self.assertEqual(provider.calls, [])      # ADR-0131: not held -> NOT_KNOWN, no model call
         provider = FakeProvider([reply('Não sei.', unknown=True)])
         ask(case(self.cases, 'companheiro-rudimentar-sem-duracao'), PACK, provider)
         prompt = provider.calls[0][0]['content']

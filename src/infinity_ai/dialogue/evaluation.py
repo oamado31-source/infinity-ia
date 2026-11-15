@@ -226,7 +226,8 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
     build = _build_areas(pack)
     full, shallow = identity_knowledge(pack, homeland=identity.origin_region,
                                        home=identity.home_region, campaign_year=CAMPAIGN_YEAR,
-                                       build_areas=build, standing=identity.standing)
+                                       build_areas=build, standing=identity.standing,
+                                       visited=identity.visited_regions)
     related = relationship_entries(pack, npc_id=npc_id, affiliations=curation.affiliations,
                                    campaign_year=CAMPAIGN_YEAR, build_areas=build)
     learned = set(s.get('knows') or ())               # heard by INQUIRY: always in full

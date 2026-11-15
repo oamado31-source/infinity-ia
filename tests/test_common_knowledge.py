@@ -33,7 +33,7 @@ from test_recorder import obs, party  # noqa: E402
 PACK = load_partition(1369)
 BUILD = frozenset(a for e in PACK.entries.values() for a in e.area_resrefs) | {'AR0602'}
 DAY = 7200
-CITY = {'region:amn', 'region:athkatla', 'org:council-of-six', 'org:cowled-wizards',
+CITY = {'region:faerun', 'region:amn', 'region:athkatla', 'org:council-of-six', 'org:cowled-wizards',
         'place:copper-coronet', 'rel:lehtinan-owns-copper-coronet'}
 
 
@@ -128,7 +128,7 @@ class ResidenceTests(Story):
         self.see('AR0602', 0)
         self.pin(game_time=0)
         self.acquire(DAY, residents=lives('region:amn'))
-        self.assertEqual(self.known(BERNARD), {'region:amn', 'org:cowled-wizards'})
+        self.assertEqual(self.known(BERNARD), {'region:faerun', 'region:amn', 'org:cowled-wizards'})
 
     def test_time_in_the_party_is_not_residence(self):
         self.see('AR0602', 0)
@@ -182,10 +182,10 @@ class ResidenceTests(Story):
         self.see('AR0300', 0)
         self.pin(game_time=0)
         first = self.acquire(DAY, residents=lives())
-        self.assertEqual(len(first.granted), 6)
+        self.assertEqual(len(first.granted), 7)
         self.assertEqual(self.acquire(DAY + 50, residents=lives()).granted, ())
         rows = self.store.connection.execute('SELECT count(*) FROM npc_canon_knowledge').fetchone()
-        self.assertEqual(rows[0], 6)
+        self.assertEqual(rows[0], 7)
 
     def test_rows_are_append_only(self):
         self.see('AR0300', 0)
@@ -462,7 +462,8 @@ class OriginTests(Story):
         self.see('AR0602', 100)
         self.pin(game_time=100)
         report = self.acquire(150, backgrounds=self.background(), sources=load_sources())
-        self.assertEqual(self.known(), {'region:tethyr', 'event:tethyr-reclamation-wars-end'})
+        self.assertEqual(self.known(), {'region:faerun', 'region:tethyr',
+                                        'event:tethyr-reclamation-wars-end'})
         self.assertTrue(all(k.basis is KnowledgeBasis.ORIGIN and k.game_time == 100
                             for k in report.granted))
         self.assertEqual(self.known('npc:imoen'), set())
@@ -472,7 +473,8 @@ class OriginTests(Story):
         self.pin(game_time=100)
         b = self.background()['npc:jaheira']
         report = self.acquire(150, backgrounds={BERNARD: b}, sources=load_sources())
-        self.assertEqual(self.known(BERNARD), {'region:tethyr', 'event:tethyr-reclamation-wars-end'})
+        self.assertEqual(self.known(BERNARD), {'region:faerun', 'region:tethyr',
+                                               'event:tethyr-reclamation-wars-end'})
         self.assertTrue(all(k.game_time == 100 for k in report.granted))   # from the pin
 
     def test_origin_needs_a_checked_strong_source(self):
@@ -507,7 +509,7 @@ class DialogueTests(Story):
         self.learn()
         after = self.ctx(10 + DAY)
         texts = {k.fact_id: k.text for k in after.knowledge}
-        self.assertEqual(len(texts), 6)
+        self.assertEqual(len(texts), 7)
         self.assertIn('canon:place:copper-coronet',
                       {k.event_id for k in after.knowledge})
         self.assertIn('canon:rel:lehtinan-owns-copper-coronet',
@@ -586,7 +588,7 @@ class ResidentDialogueTests(Story):
         self.acquire(110, residents=placed('AR0406'))
         context = self.ctx().context
         self.assertEqual(context.facts, ())
-        self.assertEqual(len(context.knowledge), 6)
+        self.assertEqual(len(context.knowledge), 7)
         prompt = system_prompt(context)
         self.assertIn('Você é Bernard e está na Coroa de Cobre', prompt)
         self.assertNotIn('companheiro(a) de viagem', prompt)

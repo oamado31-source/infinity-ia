@@ -29,7 +29,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 
 from ..canon.gate import CanonStatus, assess
-from ..canon.pack import CanonEntry, CanonPack, Source, load_sources
+from ..canon.pack import WORLD_REGION, CanonEntry, CanonPack, Source, load_sources
 from ..canon.pin import PinStatus, active_pin, check_pin
 from ..state.store import CampaignStore, Event
 from .model import CanonKnowledge, KnowledgeBasis
@@ -261,6 +261,9 @@ def acquire_common_knowledge(store: CampaignStore, branch_id: str, pack: CanonPa
                 if origin & set(chain):
                     basis, region = KnowledgeBasis.ORIGIN, next(r for r in chain if r in origin)
                     trigger_event = first_seen.get(npc_id, pin)
+                elif home == WORLD_REGION and origin:          # CR-2026-012: the continent knows it
+                    basis, region = KnowledgeBasis.ORIGIN, WORLD_REGION
+                    trigger_event = first_seen.get(npc_id, pin)
                 else:
                     for r in sorted(resided):
                         if home in region_chain(pack, r):
@@ -314,7 +317,8 @@ def local_aliases(pack: CanonPack, area: str | None) -> dict[str, str]:
     if places:
         aliases.update({noun: places[0] for noun in PLACE_NOUNS})
     regions = placement_regions(pack, area)
-    chain = region_chain(pack, regions[0]) if regions else []
+    # CR-2026-012: the world root is never "the city" or "the realm".
+    chain = [r for r in region_chain(pack, regions[0]) if r != WORLD_REGION] if regions else []
     if len(chain) > 1:
         aliases.update({noun: pack.get(chain[0]).title for noun in CITY_NOUNS})
     if chain:
@@ -339,15 +343,21 @@ def mentioned_in(entry: CanonEntry, speech: str,
 
 def identity_knowledge(pack: CanonPack, *, homeland: str | None, home: str | None,
                        campaign_year: int, build_areas: frozenset[str] | None,
-                       standing: str = 'HABITANTE') -> tuple[list[str], list[str]]:
+                       standing: str = 'HABITANTE',
+                       visited: Iterable[str] = ()) -> tuple[list[str], list[str]]:
     """ADR-0117/0120: what is public where the NPC comes from and where it is, by standing.
 
     Returns (full, popular_only). Homeland (identity origin): the region and its sub-regions, as
     ORIGIN. Where it is (home): a resident knows the region and its ancestors, as RESIDENCE; a
     traveler knows only the popular core of the place itself (the home region and below); an
     outsider knows nothing of it. Same eligibility as the other channels (COMMON_REGIONAL, gate
-    CANON_OK; the caller checks the pin). Computed when the person speaks, never stored."""
+    CANON_OK; the caller checks the pin). Computed when the person speaks, never stored.
+
+    CR-2026-012: what is public at the world root is known by anyone from or in Faerûn, whatever
+    the standing; a region the person has visited (and below) gives only its popular core."""
     full, popular = [], []
+    trips = [v for v in visited if v and _is_region(pack, v) and v != WORLD_REGION]
+    in_world = any(r and _is_region(pack, r) for r in (homeland, home))   # placed in the pack
     for entry in sorted(pack.entries.values(), key=lambda e: e.id):
         if entry.access_scope != COMMON_SCOPE:
             continue
@@ -355,12 +365,16 @@ def identity_knowledge(pack: CanonPack, *, homeland: str | None, home: str | Non
         local = bool(home) and home in chain                  # the place itself and below
         from_homeland = bool(homeland) and _is_region(pack, homeland) and homeland in chain
         from_home = bool(home) and home_region(entry) in region_chain(pack, home)
-        if standing == 'HABITANTE':
+        if home_region(entry) == WORLD_REGION and in_world:
+            bucket = full                                      # the whole continent knows it
+        elif standing == 'HABITANTE':
             bucket = full if (from_homeland or from_home) else None
         elif local:
             bucket = popular if standing == 'VIAJANTE' else None
         else:
             bucket = full if from_homeland else None
+        if bucket is None and any(v in chain for v in trips):
+            bucket = popular                                   # been there: the popular core
         if bucket is None:
             continue
         gate = assess(pack, entry.id, campaign_year=campaign_year, build_areas=build_areas)

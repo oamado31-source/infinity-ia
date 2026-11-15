@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from .pack import CanonPack
+from .pack import WORLD_REGION, CanonPack
 
 CHECKED = frozenset({'SOURCE_CHECKED', 'CAMPAIGN_CANON'})
 STRONG_CLASSES = frozenset({'S0_PRIMARY', 'S1_LICENSED'})
@@ -30,6 +30,21 @@ class CanonAssessment:
     reasons: tuple[str, ...] = ()
 
 
+def _off_map(pack: CanonPack, region) -> bool:
+    """CR-2026-012: a region with no game areas that descends from the world root (or is it) is
+    known in talk only. REQ-CANON-002 still holds: nothing about it ever touches the engine."""
+    if region.area_resrefs:
+        return False
+    seen: set[str] = set()
+    current = region
+    while current is not None and current.id not in seen:
+        if current.id == WORLD_REGION:
+            return True
+        seen.add(current.id)
+        current = pack.get(current.region_id) if current.region_id else None
+    return False
+
+
 def assess(pack: CanonPack, entry_id: str, *, campaign_year: int,
            build_areas: frozenset[str] | None) -> CanonAssessment:
     entry = pack.get(entry_id)
@@ -45,7 +60,7 @@ def assess(pack: CanonPack, entry_id: str, *, campaign_year: int,
                                                    if entry.region_id else None)
     if entry.region_id and region is None:
         return CanonAssessment(CanonStatus.UNKNOWN, ('REGION_NOT_IN_PACK',))
-    if region is not None:
+    if region is not None and not _off_map(pack, region):
         if build_areas is None:
             return CanonAssessment(CanonStatus.UNKNOWN, ('NO_INVENTORY',))
         if not set(region.area_resrefs) & build_areas:

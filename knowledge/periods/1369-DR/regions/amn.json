@@ -11,7 +11,7 @@
   "id": "region:amn",
   "kind": "REGION",
   "title": "Amn",
-  "region_id": null,
+  "region_id": "region:faerun",
   "area_resrefs": [
     "AR0020",
     "AR0300",

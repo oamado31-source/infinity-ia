@@ -12,7 +12,7 @@
   "id": "region:tethyr",
   "kind": "REGION",
   "title": "Tethyr",
-  "region_id": null,
+  "region_id": "region:faerun",
   "area_resrefs": [
     "AR5000"
   ],

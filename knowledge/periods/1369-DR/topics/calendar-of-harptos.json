@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:calendar-of-harptos",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "Calendário de Harptos",
+  "summary": "O ano em Faerûn tem 12 meses de 30 dias, divididos em dezenas de dias, mais cinco dias de festa entre os meses. Os nomes dos meses vêm do mago Harptos: Hammer, Alturiak, Ches, Tarsakh, Mirtul, Kythorn, Flamerule, Eleasias, Eleint, Marpenoth, Uktar e Nightal.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 20–21, \"Time in the Realms\" e \"The Calendar of Harptos\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O ano tem doze meses de trinta dias e alguns dias de festa entre eles.",
+    "INFORMED": "Os meses são Hammer, Alturiak, Ches, Tarsakh, Mirtul, Kythorn, Flamerule, Eleasias, Eleint, Marpenoth, Uktar e Nightal.",
+    "STUDIED": "O calendário leva o nome do mago Harptos; os meses se dividem em dezenas de dias."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

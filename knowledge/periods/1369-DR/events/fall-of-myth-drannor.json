@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:fall-of-myth-drannor",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Myth Drannor caída",
+  "summary": "Myth Drannor foi a grande cidade dos elfos de Cormanthyr. Em 714 DR, no fim da Guerra do Pranto, caiu sob o cerco do Exército das Trevas.",
+  "valid_from_dr": 714,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 99, \"714 DR Year of Doom\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Myth Drannor foi uma grande cidade élfica que caiu há muito tempo.",
+    "INFORMED": "A cidade ficava em Cormanthyr e caiu sob o cerco do Exército das Trevas.",
+    "STUDIED": "O cerco final foi em 714 DR, no fim da Guerra do Pranto."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

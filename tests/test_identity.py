@@ -33,7 +33,7 @@ from infinity_ai.personality.identity import (  # noqa: E402
     knowledge_tier, layered_text, load_curations, role_from_name,
 )
 from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
-from test_common_knowledge import LOTE_A_AMN, LOTE_A_CITY  # noqa: E402
+from test_common_knowledge import LOTE_A_AMN, LOTE_A_CITY, LOTE_B_TETHYR, LOTE_B_WORLD  # noqa: E402
 
 PACK = load_partition(1369)
 REGION_TITLES = {e.title for e in PACK.entries.values() if e.kind == 'REGION'}
@@ -126,7 +126,8 @@ class KnowledgeTierTests(unittest.TestCase):
                 # sentence-initial common words (not names), lote A (CR-2026-013)
                 'Há', 'Morreu', 'Uns', 'Morto', 'Demônios', 'Faz', 'Em', 'São', 'Quem',
                 'Espelunca', 'Ali', 'Também', 'Apelidos', 'Chamar',
-                'Um', 'Uma', 'Para'}                         # lote A2
+                'Um', 'Uma', 'Para',                         # lote A2
+                'Foi', 'Deuses', 'Morreram', 'Ela', 'Aconteceu'}   # lote B
             with self.subTest(entry=entry.id):
                 self.assertTrue(names <= allowed, names - allowed)
 
@@ -250,7 +251,8 @@ class HomelandAndHomeTests(unittest.TestCase):
         self.assertEqual(set(known), {'region:faerun', 'region:tethyr',
                                       'event:tethyr-reclamation-wars-end', 'region:athkatla', 'region:amn', 'org:council-of-six',
                                       'org:cowled-wizards', 'place:copper-coronet',
-                                      'rel:lehtinan-owns-copper-coronet'} | LOTE_A_AMN | LOTE_A_CITY)
+                                      'rel:lehtinan-owns-copper-coronet'} | LOTE_A_AMN | LOTE_A_CITY
+                         | LOTE_B_TETHYR)
         self.assertNotIn('org:shadow-thieves', known)                      # not common
         countryside = identity_entries(PACK, homeland=None, home='region:amn',
                                        campaign_year=1369, build_areas=BUILD)
@@ -580,7 +582,8 @@ class StandingTests(unittest.TestCase):
         self.assertNotIn('org:council-of-six', full)
         full, shallow = known('FORASTEIRO', 'region:tethyr')
         self.assertEqual(set(full), {'region:faerun', 'region:tethyr',     # CR-2026-012
-                                     'event:tethyr-reclamation-wars-end'})
+                                     'event:tethyr-reclamation-wars-end'}
+                         | LOTE_B_WORLD | LOTE_B_TETHYR)
         self.assertEqual(shallow, [])
 
     def test_traveler_sees_only_the_popular_core(self):

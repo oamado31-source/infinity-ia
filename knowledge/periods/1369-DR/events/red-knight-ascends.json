@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:red-knight-ascends",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Cavaleira Vermelha",
+  "summary": "Durante o Tempo das Perturbações, em 1358 DR, uma guerreira à frente da Companhia do Falcão Vermelho defendeu Tethyr de bandos de monstros saídos da floresta de Tethir. Por esse valor, foi elevada a deusa como a Cavaleira Vermelha.",
+  "valid_from_dr": 1358,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:tethyr",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 142–143, \"1358 DR Year of Shadows\" e \"1358: A Red Knight for Tethyr\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Uma guerreira salvou Tethyr dos monstros no Tempo das Perturbações e virou deusa.",
+    "INFORMED": "Ela liderava a Companhia do Falcão Vermelho contra os monstros que saíam da floresta de Tethir.",
+    "STUDIED": "É venerada como a Cavaleira Vermelha."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

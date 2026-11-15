@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:tuigan-horde",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Horda Tuigan",
+  "summary": "Em 1359 e 1360 DR, a Horda Tuigan, vinda do leste sob Yamun Khahan, invadiu Thay e Rashemen e depois avançou para oeste. Uma aliança de muitos reinos a venceu em Phsant, e o rei Azoun IV, de Cormyr, venceu Yamun Khahan em combate singular.",
+  "valid_from_dr": 1359,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 144–145, \"1359 DR\" e \"1360 DR\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Há uns dez anos uma horda vinda do leste foi vencida por uma aliança de reinos.",
+    "INFORMED": "A horda invadiu Thay e Rashemen; a vitória final foi em Phsant, com o rei Azoun IV, de Cormyr.",
+    "STUDIED": "Azoun IV venceu o líder da horda, Yamun Khahan, em combate singular."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-15",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-15"
+  }
+}

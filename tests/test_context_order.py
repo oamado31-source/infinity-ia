@@ -56,6 +56,16 @@ class OrderTests(unittest.TestCase):
         self.assertLess(pos['event:baldurs-gate-crisis'], pos['event:coast-plague'])   # 1368, 1345
         self.assertLess(pos['event:coast-plague'], pos['event:magic-ban-of-king-dhanar'])
 
+    def test_institutions_before_customs_before_events(self):
+        # CR-2026-018: with the world's history in the pack, the Cowled Wizards must still fit.
+        ranked = order()
+        pos = {e: i for i, e in enumerate(ranked)}
+        events = [pos[e] for e in PACK.entries if e.startswith('event:')]
+        orgs = [pos[e] for e in PACK.entries if e.startswith('org:')]
+        self.assertLess(max(orgs), min(events))
+        self.assertLess(pos['org:cowled-wizards'], 12)
+        self.assertLess(pos['topic:amnian-currency'], pos['event:time-of-troubles'])
+
     def test_pure_and_deterministic(self):
         self.assertEqual(order(), order())
         self.assertEqual(sorted(order()), sorted(PACK.entries))

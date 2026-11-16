@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:tempus",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Tempus",
+  "summary": "Tempus, o Senhor das Batalhas, é o deus da guerra, das batalhas e dos guerreiros. Todos os guerreiros o veneram, e muitos rezam a ele na noite antes da batalha. Seu símbolo é uma espada de prata em chamas num campo vermelho-sangue; ele elevou a Cavaleira Vermelha a deusa.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 158, \"Tempus\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Tempus, o Senhor das Batalhas, é o deus da guerra e dos guerreiros.",
+    "INFORMED": "Muitos rezam a ele na noite antes da batalha; seu símbolo é uma espada de prata em chamas num campo vermelho-sangue.",
+    "STUDIED": "Ele elevou a Cavaleira Vermelha a deusa."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

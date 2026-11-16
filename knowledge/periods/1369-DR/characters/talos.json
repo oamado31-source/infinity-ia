@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:talos",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Talos",
+  "summary": "Talos, o Destruidor, é o deus das tempestades, dos incêndios florestais, dos terremotos e da destruição. Atrai saqueadores e bandidos. Seu símbolo são três raios saindo de um ponto. Com Auril, Malar e Umberlee, forma os Deuses da Fúria.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 155, \"Talos\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Talos, o Destruidor, é o deus das tempestades e da destruição.",
+    "INFORMED": "Saqueadores e bandidos o seguem; seu símbolo são três raios saindo de um ponto.",
+    "STUDIED": "Com Auril, Malar e Umberlee, forma os Deuses da Fúria."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

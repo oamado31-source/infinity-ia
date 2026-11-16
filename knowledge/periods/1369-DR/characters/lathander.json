@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:lathander",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Lathander",
+  "summary": "Lathander, o Senhor da Manhã, é o deus da aurora, da primavera, do nascimento, da renovação, da criatividade e da juventude. Muitos rezam a ele no começo de uma viagem ou de um negócio; é muito popular entre mercadores, nobres e camponeses. Seu símbolo é um disco cor-de-rosa.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 90, \"Lathander\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Lathander, o Senhor da Manhã, é o deus da aurora e dos recomeços.",
+    "INFORMED": "Muitos rezam a ele no começo de uma viagem ou de um negócio; é querido por mercadores, nobres e camponeses.",
+    "STUDIED": "Também é deus da primavera, do nascimento, da criatividade e da juventude; seu símbolo é um disco cor-de-rosa."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

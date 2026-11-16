@@ -1,0 +1,35 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:sune",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Sune",
+  "summary": "Sune Cabelo-de-Fogo é a deusa da beleza, do amor e da paixão. Sua fé é popular nas grandes cidades e entre os nobres, os artistas e os apaixonados. Seu símbolo é o rosto de uma bela donzela de longos cabelos ruivos.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 149, \"Sune\""
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 5"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Sune Cabelo-de-Fogo é a deusa da beleza e do amor.",
+    "INFORMED": "É venerada nas grandes cidades, por nobres, artistas e apaixonados; seu símbolo é o rosto de uma donzela ruiva."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

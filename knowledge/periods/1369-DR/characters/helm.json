@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:helm",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Helm",
+  "summary": "Helm, o Vigilante, é o deus dos guardiões, dos protetores e da proteção; seu símbolo é um olho aberto na palma de uma manopla. Muitos o culpam por parte da destruição do Tempo das Perturbações, e a dureza de seus sacerdotes em Maztica piorou sua fama de frio e inflexível.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 68, \"Helm\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Helm, o Vigilante, é o deus dos guardas e da proteção.",
+    "INFORMED": "Seu símbolo é um olho aberto na palma de uma manopla; tem fama de frio e inflexível.",
+    "STUDIED": "Muitos o culpam por parte da destruição do Tempo das Perturbações; a dureza de seus sacerdotes em Maztica piorou essa fama."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

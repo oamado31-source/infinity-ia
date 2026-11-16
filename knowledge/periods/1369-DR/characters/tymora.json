@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:tymora",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Tymora",
+  "summary": "Tymora, a Senhora Sorte, é a deusa da boa sorte, da habilidade, da vitória e dos aventureiros, e sua fé é uma das mais comuns de Faerûn. Seu símbolo é um disco de prata liso. Ela e Beshaba são as duas metades da antiga deusa Tyche.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 166, \"Tymora\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Tymora, a Senhora Sorte, é a deusa da boa sorte e dos aventureiros.",
+    "INFORMED": "Sua fé é uma das mais comuns de Faerûn; seu símbolo é um disco de prata liso.",
+    "STUDIED": "Ela e Beshaba são as duas metades da antiga deusa Tyche."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

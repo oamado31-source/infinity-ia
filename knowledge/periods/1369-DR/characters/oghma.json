@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:oghma",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Oghma",
+  "summary": "Oghma, o Senhor do Conhecimento, é o deus do conhecimento, da invenção, da inspiração e dos bardos; seu símbolo é um pergaminho em branco. É venerado por sábios, magos e bardos. Candlekeep é o maior centro de saber de Faerûn e um de seus lugares mais sagrados.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 131 e 133, \"Oghma\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Oghma, o Senhor do Conhecimento, é o deus do saber e dos bardos.",
+    "INFORMED": "É venerado por sábios, magos e bardos; seu símbolo é um pergaminho em branco.",
+    "STUDIED": "Candlekeep é o maior centro de saber de Faerûn e um dos lugares mais sagrados de Oghma."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

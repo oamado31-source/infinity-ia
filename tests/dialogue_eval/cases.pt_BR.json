@@ -708,6 +708,27 @@
           "^\\s*por qu[eê]\\?\\s*$"
         ]
       }
+    },
+    {
+      "id": "deus-pela-pergunta",
+      "description": "Lote C: um deus nomeado na pergunta vem ao prompt e o habitante dá o núcleo popular, sem inventar símbolo.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Quem é Lathander?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "char:lathander"
+        ]
+      }
     }
   ]
 }

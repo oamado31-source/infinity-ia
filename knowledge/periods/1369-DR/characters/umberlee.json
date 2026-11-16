@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:umberlee",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Umberlee",
+  "summary": "Umberlee, a Rainha do Mar, é a deusa dos oceanos, das correntes, das ondas e dos ventos do mar, venerada mais por medo. Marinheiros jogam pedras preciosas ao mar e deixam oferendas em seus altares para ter uma travessia segura. É rival de Selûne.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 173, \"Umberlee\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Umberlee, a Rainha do Mar, é a deusa cruel dos oceanos, temida pelos marinheiros.",
+    "INFORMED": "Marinheiros jogam pedras preciosas ao mar e deixam oferendas nos altares dela para ter uma travessia segura.",
+    "STUDIED": "É rival de Selûne."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

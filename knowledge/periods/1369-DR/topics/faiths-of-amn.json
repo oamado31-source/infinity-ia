@@ -1,0 +1,31 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:faiths-of-amn",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "Fés amnianas",
+  "summary": "Em Amn não há religião oficial: todas as fés têm templos, e o Conselho só age contra templos que o desafiam ou atrapalham os negócios. Quase todos rezam a vários deuses, como marinheiros a Valkur e Umberlee e caravaneiros a Shaundakul, Waukeen e Helm.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 4–5"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Em Amn cada um reza a vários deuses, conforme o negócio; não há religião oficial.",
+    "INFORMED": "Marinheiros rezam a Valkur e Umberlee; caravaneiros, a Shaundakul, Waukeen e Helm. O Conselho só age contra templos que o desafiam ou atrapalham os negócios."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

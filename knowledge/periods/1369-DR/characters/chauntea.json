@@ -1,0 +1,35 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:chauntea",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Chauntea",
+  "summary": "Chauntea, a Grande Mãe, é a deusa da agricultura, dos agricultores, dos jardineiros e do verão. Seu símbolo é uma flor brotando cercada por um sol, ou um feixe de trigo dourado. Em Amn, os lavradores a veneram com fervor, em pequenos santuários nos campos.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 47, \"Chauntea\""
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 5"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Chauntea, a Grande Mãe, é a deusa das colheitas e de quem trabalha a terra.",
+    "INFORMED": "Seu símbolo é uma flor cercada por um sol, ou um feixe de trigo dourado; os lavradores a veneram em santuários nos campos."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

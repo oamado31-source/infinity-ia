@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:mask",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Mask",
+  "summary": "Mask, o Senhor das Sombras, é o deus dos ladrões, do roubo e das sombras; seu símbolo é uma máscara de veludo preto tingida de vermelho. Perdeu parte de seu poder para Cyric numa intriga e hoje anda com cautela, mas continua sendo o padroeiro dos ladrões.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 109, \"Mask\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Mask, o Senhor das Sombras, é o deus dos ladrões.",
+    "INFORMED": "Seu símbolo é uma máscara de veludo preto tingida de vermelho.",
+    "STUDIED": "Perdeu parte de seu poder para Cyric numa intriga e hoje anda com cautela."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

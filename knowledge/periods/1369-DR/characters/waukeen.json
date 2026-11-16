@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:waukeen",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Waukeen",
+  "summary": "Waukeen, a Amiga dos Mercadores, é a deusa do comércio, do dinheiro e da riqueza, venerada por mercadores, guias de caravana, cambistas e contrabandistas. Sumiu no Tempo das Perturbações, há mais de dez anos, e muitos a julgam morta. Seu símbolo: uma moeda de ouro com seu rosto.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 176, \"Waukeen\""
+    },
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 96, \"Lliira\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Waukeen, a Amiga dos Mercadores, é a deusa do comércio e da riqueza.",
+    "INFORMED": "É venerada por mercadores, guias de caravana, cambistas e contrabandistas; seu símbolo é uma moeda de ouro com o rosto dela.",
+    "STUDIED": "Sumiu no Tempo das Perturbações, há mais de dez anos, e muitos a julgam morta."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

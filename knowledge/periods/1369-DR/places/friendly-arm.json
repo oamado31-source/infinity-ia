@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:friendly-arm",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Braço Amigo (Friendly Arm)",
+  "summary": "O Braço Amigo (Friendly Arm) é uma estalagem fortificada e segura na Estrada da Costa, ao norte de Beregost, num antigo castelo de um sacerdote de Bhaal. O gnomo Bentley Mirrorshade o venceu e reformou o lugar, que hoje é terreno neutro e tem um templo de Garl Glittergold.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:sword-coast",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 39, \"The Friendly Arm\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Braço Amigo (Friendly Arm) é uma estalagem fortificada e segura na Estrada da Costa.",
+    "INFORMED": "Fica num antigo castelo de um sacerdote de Bhaal; o gnomo Bentley Mirrorshade o venceu e reformou o lugar.",
+    "STUDIED": "É terreno neutro e tem um templo de Garl Glittergold."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

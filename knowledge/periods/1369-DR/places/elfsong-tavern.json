@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:elfsong-tavern",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Canção do Elfo (Elfsong)",
+  "summary": "A Canção do Elfo (Elfsong) é a taverna de Baldur's Gate onde aventureiros se encontram e são contratados; piratas e foras da lei também a frequentam. O nome vem de uma voz fantasma de mulher elfa que às vezes canta um lamento triste, e todos se calam enquanto ela canta.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:baldurs-gate",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 17, \"Elfsong Tavern\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A Canção do Elfo (Elfsong) é a taverna dos aventureiros em Baldur's Gate.",
+    "INFORMED": "Uma voz fantasma de mulher elfa às vezes canta ali um lamento triste, e todos se calam enquanto ela canta.",
+    "STUDIED": "Também é frequentada por piratas e foras da lei."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

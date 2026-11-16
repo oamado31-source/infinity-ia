@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:ilmater",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Ilmater",
+  "summary": "Ilmater, o Deus que Chora, é o deus da resistência, do sofrimento, do martírio e da perseverança, e dos oprimidos: ele toma para si a dor dos outros. É calmo e bondoso, mas se enfurece diante da crueldade. Seu símbolo são duas mãos brancas atadas por um cordão vermelho.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 75, \"Ilmater\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Ilmater, o Deus que Chora, é o deus dos que sofrem e dos oprimidos.",
+    "INFORMED": "Ele toma para si a dor dos outros; é calmo e bondoso, mas se enfurece diante da crueldade.",
+    "STUDIED": "Seu símbolo são duas mãos brancas atadas por um cordão vermelho."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

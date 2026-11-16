@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:baldurs-gate",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Baldur's Gate (Portão de Baldur)",
+  "summary": "Baldur's Gate, também chamada Portão de Baldur, é um grande porto e uma das maiores cidades da Costa da Espada. É uma cidade de mercadores, tolerante e bem policiada, governada por quatro Grandes Duques. O Punho Flamejante, com mais de mil mercenários, tem sede ali.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:sword-coast",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 7, \"The Coast\""
+    },
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 8–9, \"Baldur's Gate\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Baldur's Gate, o Portão de Baldur, é um grande porto e uma das maiores cidades da Costa da Espada.",
+    "INFORMED": "É uma cidade de mercadores, tolerante e bem policiada, governada por quatro Grandes Duques.",
+    "STUDIED": "O Punho Flamejante, com mais de mil mercenários, tem sede ali."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

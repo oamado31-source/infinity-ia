@@ -24,7 +24,7 @@ from infinity_ai.dialogue.validate import validate_reply  # noqa: E402
 from infinity_ai.canon.pin import pin_pack  # noqa: E402
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
     conveyed, entries_named, heard, identity_entries, identity_knowledge, local_aliases,
-    share_knowledge,
+    realm_of, share_knowledge,
 )
 from infinity_ai.personality.style import orientation_from_game_alignment  # noqa: E402
 from infinity_ai.memory.store import MemoryStore  # noqa: E402
@@ -530,8 +530,9 @@ class StandingTests(unittest.TestCase):
             g = gen(npc=f'npc:generated:enc-{i}', role='TRAVELER')
             if g['standing'] == 'VIAJANTE':
                 self.assertEqual(g['origin_region'], 'region:amn')          # same realm
-            else:
-                self.assertEqual(g['origin_region'], 'region:tethyr')       # distant land
+            else:                                                           # distant land
+                self.assertIsNotNone(g['origin_region'])
+                self.assertNotEqual(realm_of(PACK, g['origin_region']), 'region:amn')
             self.assertIsNone(g['years_here'])
             self.assertFalse(g['born_here'])
 

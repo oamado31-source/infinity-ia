@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:iron-throne-plot",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Sarevok e o Trono de Ferro (Iron Throne)",
+  "summary": "Em 1368 DR, Sarevok, filho do deus Bhaal, tramou com o Trono de Ferro (Iron Throne) uma guerra entre Amn e Baldur's Gate, sabotando as minas de ferro perto de Nashkel. A trama foi frustrada; no conflito, o Duque Eltan, do Punho Flamejante, chegou a morrer e foi ressuscitado.",
+  "valid_from_dr": 1368,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:sword-coast",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 148, \"1368 DR Year of the Banner\""
+    },
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"Amn\" (PDF p. 26)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Sarevok tramou há pouco uma guerra entre Amn e Baldur's Gate, mas a trama foi frustrada.",
+    "INFORMED": "Ele se aliou ao Trono de Ferro (Iron Throne) e sabotou as minas de ferro perto de Nashkel.",
+    "STUDIED": "Sarevok era filho do deus Bhaal; o Duque Eltan, do Punho Flamejante, chegou a morrer e foi ressuscitado."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

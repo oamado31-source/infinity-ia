@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:faiths-of-baldurs-gate",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "Fés baldurianas",
+  "summary": "Baldur's Gate tem três templos: a Casa Alta das Maravilhas, de Gond, que é o maior e é famosa pelas explosões de suas invenções; o Salão da Senhora, de Tymora; e a Casa da Rainha das Águas, de Umberlee. Há também santuários de Helm, Ilmater, Lathander e Oghma.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:baldurs-gate",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 9, \"Baldur's Gate\""
+    },
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 13, \"mapa de Baldur's Gate\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Em Baldur's Gate, os grandes templos são os de Gond, Tymora e Umberlee.",
+    "INFORMED": "O de Gond, a Casa Alta das Maravilhas, é o maior e é famoso pelas explosões de suas invenções.",
+    "STUDIED": "Há também santuários de Helm, Ilmater, Lathander e Oghma; o templo de Umberlee é a Casa da Rainha das Águas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

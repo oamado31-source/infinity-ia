@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:tymora-pearls-in-amn",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "Pérolas de Tymora",
+  "summary": "Em Amn, as pérolas são tão ligadas à sorte que os clérigos de Tymora usam moedas e pérolas, de preferência negras, como símbolo da deusa, o que clérigos de outras terras acham quase heresia. As pérolas também são a joia da moda: quanto menores e mais numerosas, melhor.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 6"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Dois, p. 3"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Em Amn, as pérolas trazem sorte, e os clérigos de Tymora usam moedas e pérolas como símbolo.",
+    "INFORMED": "Os clérigos preferem pérolas negras; clérigos de Tymora de outras terras acham isso quase heresia.",
+    "STUDIED": "As pérolas também são a joia da moda: quanto menores e mais numerosas, melhor."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

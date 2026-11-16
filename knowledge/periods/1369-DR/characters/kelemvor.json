@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:kelemvor",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Kelemvor",
+  "summary": "Kelemvor, o Senhor dos Mortos, é o deus da morte e dos mortos. Era um guerreiro mortal, companheiro de Midnight e Cyric no Tempo das Perturbações, e herdou os mortos quando Cyric os perdeu. Promete julgá-los com justiça. Seu símbolo: um braço de esqueleto com uma balança dourada.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 84–85, \"Kelemvor\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Kelemvor, o Senhor dos Mortos, é o deus da morte e dos mortos.",
+    "INFORMED": "Ele promete julgar os mortos com justiça; seu símbolo é um braço de esqueleto com uma balança dourada.",
+    "STUDIED": "Era um guerreiro mortal, companheiro de Midnight e Cyric no Tempo das Perturbações, e herdou os mortos quando Cyric os perdeu."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

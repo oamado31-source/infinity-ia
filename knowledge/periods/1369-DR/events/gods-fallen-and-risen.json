@@ -4,7 +4,7 @@
   "kind": "EVENT",
   "partition_year_dr": 1369,
   "title": "Bane, Bhaal e Myrkul mortos",
-  "summary": "No fim do Tempo das Perturbações, em 1358 DR, os deuses Bane, Bhaal e Myrkul morreram. Cyric e Midnight, até então mortais, subiram a deuses no alto do monte de Waterdeep. Midnight tornou-se a nova Mystra, e Cyric herdou o lugar dos deuses mortos.",
+  "summary": "No fim do Tempo das Perturbações, em 1358 DR, os deuses Bane, Bhaal e Myrkul morreram. Cyric e Midnight, até então mortais, subiram a deuses no alto do monte de Águas Profundas (Waterdeep). Midnight tornou-se a nova Mystra, e Cyric herdou o lugar dos deuses mortos.",
   "valid_from_dr": 1358,
   "valid_to_dr": null,
   "date_precision": "YEAR_ONLY",
@@ -25,7 +25,7 @@
   "knowledge_layers": {
     "POPULAR": "Deuses morreram no Tempo das Perturbações, e mortais viraram deuses no lugar deles.",
     "INFORMED": "Morreram Bane, Bhaal e Myrkul; Cyric e Midnight viraram deuses, e Midnight é a nova Mystra.",
-    "STUDIED": "A subida de Cyric e Midnight aconteceu no alto do monte de Waterdeep, numa grande batalha em 1358 DR."
+    "STUDIED": "A subida de Cyric e Midnight aconteceu no alto do monte de Águas Profundas (Waterdeep), numa grande batalha em 1358 DR."
   },
   "curation": {
     "curated_by": "claude-code",

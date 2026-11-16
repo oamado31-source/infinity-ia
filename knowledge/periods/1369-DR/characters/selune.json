@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:selune",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Selûne",
+  "summary": "Selûne, Nossa Senhora de Prata, é a deusa da lua, das estrelas, da navegação, dos navegantes, dos andarilhos e dos que buscam. Seu símbolo são dois olhos de mulher cercados por sete estrelas de prata. É inimiga eterna de Shar e disputa com Umberlee o destino dos navios.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 134–135, \"Selûne\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Selûne, Nossa Senhora de Prata, é a deusa da lua e das estrelas.",
+    "INFORMED": "Ela guia os navegantes, os andarilhos e os que buscam; seu símbolo são dois olhos de mulher cercados por sete estrelas de prata.",
+    "STUDIED": "É inimiga eterna de Shar e disputa com Umberlee o destino dos navios."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

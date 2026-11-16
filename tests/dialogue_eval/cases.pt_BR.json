@@ -729,6 +729,71 @@
           "char:lathander"
         ]
       }
+    },
+    {
+      "id": "forasteiro-de-baldurs-gate-nome-em-ingles",
+      "description": "Lote D: forasteiro de Baldur's Gate reconhece o Punho Flamejante pelo nome em inglês (decisão do mantenedor: nomes nas duas línguas).",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval4",
+        "name": "Cliente da Taverna",
+        "wis": 9,
+        "int": 9,
+        "standing": "FORASTEIRO",
+        "origin": "region:baldurs-gate"
+      },
+      "question": "Quem é o Flaming Fist?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "org:flaming-fist"
+        ]
+      }
+    },
+    {
+      "id": "forasteiro-de-baldurs-gate-nome-em-portugues",
+      "description": "Lote D: o mesmo forasteiro reconhece a cidade pelo nome do jogo em pt-BR.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval4",
+        "name": "Cliente da Taverna",
+        "wis": 9,
+        "int": 9,
+        "standing": "FORASTEIRO",
+        "origin": "region:baldurs-gate"
+      },
+      "question": "Como é o Portão de Baldur?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "region:baldurs-gate"
+        ]
+      }
+    },
+    {
+      "id": "deus-dos-mortos-pela-pergunta",
+      "description": "Lote C2: um deus que antes não estava no pacote (Kelemvor) vem ao prompt pela pergunta, e o habitante dá o núcleo popular.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Quem é Kelemvor?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "char:kelemvor"
+        ]
+      }
     }
   ]
 }

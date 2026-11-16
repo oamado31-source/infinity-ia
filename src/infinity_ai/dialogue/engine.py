@@ -64,6 +64,7 @@ STANDING_TEXT = {
                    'seus costumes, e não diz que mora aqui.'),
 }
 MAX_ATTEMPTS = 2
+PLAYER_TURN, OWN_TURN = 'Jogador: ', 'Você: '      # CR-2026-019: who speaks in earlier turns
 
 
 class DialogueStatus(str, Enum):
@@ -269,11 +270,15 @@ class DialogueEngine:
         fact_events = {f.fact_id: f.event_id for f in context.facts + context.knowledge + context.restricted_knowledge}
 
         # ADR-0123: earlier turns of this conversation as chat turns; the player's words stay in
-        # the user role, never in the system prompt.
+        # the user role, never in the system prompt. CR-2026-019: with earlier turns, each one says
+        # who speaks ("Jogador: ", "Você: "): without it, a short follow-up ("E quem é então?",
+        # "Por quê?") came back as the reply about half the time.
         earlier = [m for asked, said in history for m in (
-            {'role': 'user', 'content': asked}, {'role': 'assistant', 'content': said})]
+            {'role': 'user', 'content': PLAYER_TURN + asked},
+            {'role': 'assistant', 'content': OWN_TURN + said})]
+        current = PLAYER_TURN + text if history else text
         messages = [{'role': 'system', 'content': system_prompt(context, bool(history))},
-                    *earlier, {'role': 'user', 'content': text}]
+                    *earlier, {'role': 'user', 'content': current}]
         base = len(messages)
         flags: list[str] = []
         for attempt in range(MAX_ATTEMPTS):

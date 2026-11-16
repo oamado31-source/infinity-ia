@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:calim-and-memnon",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Calim e Memnon",
+  "summary": "Há milênios, o djinni Calim trouxe gênios e escravos a Faerûn e fundou o primeiro império humano da Costa da Espada; depois veio o efreeti Memnon. Os dois guerrearam por séculos, até os altos magos elfos os prenderem, entre −6500 e −6100 DR. A luta criou o Deserto de Calim.",
+  "valid_from_dr": -6100,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:calimshan",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "empires-of-the-shining-sea",
+      "locator": "p. 11–13, \"Time of the Genies\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 21, \"−6500 DR to −6100 DR\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Um antigo império de gênios existiu ali, e a guerra entre dois deles criou o deserto.",
+    "INFORMED": "O djinni Calim fundou o império, e o efreeti Memnon veio depois; os dois guerrearam por séculos.",
+    "STUDIED": "Os altos magos elfos prenderam Calim e Memnon entre −6500 e −6100 DR; a luta deles criou o Deserto de Calim."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:far-lands-renown",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "Terras distantes: Halruaa, Lantan, Chult, Luiren, Durpar e Dambrath",
+  "summary": "Das terras distantes do Sul, conta-se: Halruaa é a terra dos magos, com navios que voam; Lantan, ilhas de inventores devotos de Gond; Chult, selva de monstros e dinossauros; Luiren, dos halflings; Durpar, de mercadores que pechincham; Dambrath, de uma rainha sacerdotisa da dor.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-shining-south",
+      "locator": "p. 3, 26, 42 e 53"
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 108–109 e 128"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Halruaa é a terra dos magos; Lantan, dos inventores; Chult, de selvas e dinossauros; Luiren, dos halflings.",
+    "INFORMED": "Durpar é terra de mercadores que pechincham; Dambrath, de uma rainha sacerdotisa da dor.",
+    "STUDIED": "Halruaa tem navios que voam, e os inventores de Lantan são devotos de Gond."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

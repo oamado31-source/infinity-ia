@@ -33,7 +33,9 @@ from infinity_ai.personality.identity import (  # noqa: E402
     knowledge_tier, layered_text, load_curations, role_from_name,
 )
 from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
-from test_common_knowledge import LOTE_A_AMN, LOTE_A_CITY, LOTE_B_TETHYR, WORLD  # noqa: E402
+from test_common_knowledge import (  # noqa: E402
+    LOTE_A_AMN, LOTE_A_CITY, LOTE_B_TETHYR, LOTE_E_TETHYR, WORLD,
+)
 
 PACK = load_partition(1369)
 REGION_TITLES = {e.title for e in PACK.entries.values() if e.kind == 'REGION'}
@@ -573,11 +575,16 @@ class StandingTests(unittest.TestCase):
         def known(standing, homeland):
             return identity_knowledge(PACK, homeland=homeland, home='region:athkatla',
                                       campaign_year=1369, build_areas=BUILD, standing=standing)
+        def level(*realms):                                   # CR-2026-021: a realm's own level
+            return {e.id for e in PACK.entries.values()
+                    if (e.id if e.kind == 'REGION' else e.region_id) in realms}
         full, shallow = known('HABITANTE', None)
         self.assertIn('org:council-of-six', full)
         self.assertEqual(set(shallow), {e.id for e in PACK.entries.values()       # CR-2026-015
                                         if e.kind == 'REGION' and e.region_id == 'region:amn'
-                                        and e.id != 'region:athkatla'})
+                                        and e.id != 'region:athkatla'}
+                         | level('region:tethyr', 'region:sword-coast',      # the realms next door
+                                 'region:calimshan'))
         full, shallow = known('VIAJANTE', 'region:amn')
         self.assertIn('org:council-of-six', shallow)          # the place: popular core only
         self.assertIn('org:cowled-wizards', full)             # the realm it comes from
@@ -585,8 +592,10 @@ class StandingTests(unittest.TestCase):
         full, shallow = known('FORASTEIRO', 'region:tethyr')
         self.assertEqual(set(full), {'region:faerun', 'region:tethyr',     # CR-2026-012
                                      'event:tethyr-reclamation-wars-end'}
-                         | WORLD | LOTE_B_TETHYR)
-        self.assertEqual(shallow, [])
+                         | WORLD | LOTE_B_TETHYR | LOTE_E_TETHYR)
+        amn_public, _ = known('HABITANTE', None)              # what Amn's own level makes public
+        self.assertEqual(set(shallow), (level('region:amn') & set(amn_public))  # next door
+                         | level('region:calimshan'))
 
     def test_traveler_sees_only_the_popular_core(self):
         tmp = tempfile.TemporaryDirectory()

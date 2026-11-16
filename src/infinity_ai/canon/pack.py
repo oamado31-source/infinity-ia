@@ -96,6 +96,9 @@ class CanonPack:
     entries: dict[str, CanonEntry] = field(default_factory=dict)
     sources: dict[str, Source] = field(default_factory=dict)
     revision: str = ''
+    # CR-2026-021: realms (regions right below the world root) that border each other, curated
+    # by the maintainer in the partition manifest; symmetric.
+    neighbors: Mapping[str, frozenset[str]] = field(default_factory=dict)
 
     def get(self, entry_id: str) -> CanonEntry | None:
         return self.entries.get(entry_id)
@@ -211,9 +214,12 @@ def _check_entry(doc: dict, year: int, sources: dict[str, Source], name: str) ->
     return problems
 
 
-def _revision(entries: list[dict], used_sources: list[dict]) -> str:
-    canonical = json.dumps({'entries': entries, 'sources': used_sources}, sort_keys=True,
-                           separators=(',', ':'), ensure_ascii=False)
+def _revision(entries: list[dict], used_sources: list[dict],
+              neighbors: list[list[str]] | None = None) -> str:
+    content: dict = {'entries': entries, 'sources': used_sources}
+    if neighbors:                    # CR-2026-021: part of the pinned revision when present
+        content['realm_neighbors'] = neighbors
+    canonical = json.dumps(content, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
     return 'sha256:' + hashlib.sha256(canonical.encode('utf-8')).hexdigest()
 
 
@@ -254,11 +260,40 @@ def load_partition(year_dr: int, root: Path = KNOWLEDGE_ROOT) -> CanonPack:
             for endpoint in (entry.subject_id, entry.object_id, entry.context_id):
                 if endpoint and not endpoint.startswith('npc:') and endpoint not in entries:
                     problems.append(f'{entry.id}: unresolved relationship endpoint {endpoint}')
+    pairs, neighbors = _realm_neighbors(manifest.get('realm_neighbors'), entries, problems)
     if problems:
         raise CanonError(problems)
     used = sorted({r.source_id for e in entries.values() for r in e.source_refs})
     used_docs = [json.loads((root / 'sources' / f'{s}.json').read_text(encoding='utf-8'))
                  for s in used]
     return CanonPack(year_dr, manifest.get('coverage_status', 'EMPTY'), entries,
-                     {s: sources[s] for s in used}, _revision(sorted(docs, key=lambda d: d['id']),
-                                                              used_docs))
+                     {s: sources[s] for s in used},
+                     _revision(sorted(docs, key=lambda d: d['id']), used_docs, pairs),
+                     MappingProxyType(neighbors))
+
+
+def _realm_neighbors(raw: object, entries: Mapping[str, CanonEntry],
+                     problems: list[str]) -> tuple[list[list[str]], dict[str, frozenset[str]]]:
+    """CR-2026-021: the manifest's `realm_neighbors`, pairs of realms (REGION entries right below
+    the world root). Returns the sorted pairs (for the revision) and a symmetric map."""
+    if raw is None:
+        return [], {}
+    if not isinstance(raw, list):
+        problems.append('manifest: realm_neighbors must be a list of pairs')
+        return [], {}
+    pairs, links = set(), {}
+    for item in raw:
+        if not (isinstance(item, list) and len(item) == 2 and all(isinstance(x, str) for x in item)
+                and item[0] != item[1]):
+            problems.append(f'manifest: invalid realm_neighbors pair {item!r}')
+            continue
+        bad = [x for x in item if (entries.get(x) is None or entries[x].kind != 'REGION'
+                                   or entries[x].region_id != WORLD_REGION)]
+        if bad:
+            problems.append(f'manifest: realm_neighbors needs realms below region:faerun: {bad}')
+            continue
+        a, b = sorted(item)
+        pairs.add((a, b))
+        links.setdefault(a, set()).add(b)
+        links.setdefault(b, set()).add(a)
+    return [list(p) for p in sorted(pairs)], {k: frozenset(v) for k, v in links.items()}

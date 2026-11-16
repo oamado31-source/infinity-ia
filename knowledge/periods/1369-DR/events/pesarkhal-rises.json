@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:pesarkhal-rises",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Ascensão de Pesarkhal",
+  "summary": "Depois do Tempo das Perturbações, a morte dos assassinos de Bhaal e a retirada dos Ladrões das Sombras jogaram o submundo de Calimshan na Guerra dos Andarilhos das Trevas. No caos, Ralan el Pesarkhal matou rivais com veneno e provas falsas e virou sil-paxá por volta de 1360 DR.",
+  "valid_from_dr": 1360,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:calimshan",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "empires-of-the-shining-sea",
+      "locator": "p. 36–37, \"The Darkstalker Wars\"; \"The Rise of El Pesarkhal\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O atual sil-paxá de Calimshan subiu ao poder no meio de uma guerra de ladrões, há uns dez anos.",
+    "INFORMED": "A guerra veio da morte dos assassinos de Bhaal e da retirada dos Ladrões das Sombras: a Guerra dos Andarilhos das Trevas.",
+    "STUDIED": "Ralan el Pesarkhal matou rivais com veneno e provas falsas e virou sil-paxá por volta de 1360 DR."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

@@ -469,11 +469,14 @@ def identity_knowledge(pack: CanonPack, *, homeland: str | None, home: str | Non
     CR-2026-012: what is public at the world root is known by anyone from or in Faerûn, whatever
     the standing; a region the person has visited (and below) gives only its popular core.
     CR-2026-015: someone of a realm (living there as a resident, or born there) knows the popular
-    core of every region below that realm: the sibling cities, not what is inside them."""
+    core of every region below that realm: the sibling cities, not what is inside them.
+    CR-2026-021: and the popular core of what is public at the level of a neighbouring realm
+    (the realm itself, its events, places and customs), not of its cities."""
     full, popular = [], []
     trips = [v for v in visited if v and _is_region(pack, v) and v != WORLD_REGION]
     realms = {realm_of(pack, r) for r in ((home if standing == 'HABITANTE' else None), homeland)
               if r and _is_region(pack, r)} - {None}
+    near = {n for r in realms for n in pack.neighbors.get(r, ())} - realms   # CR-2026-021
     in_world = any(r and _is_region(pack, r) for r in (homeland, home))   # placed in the pack
     for entry in sorted(pack.entries.values(), key=lambda e: e.id):
         if entry.access_scope != COMMON_SCOPE:
@@ -494,6 +497,8 @@ def identity_knowledge(pack: CanonPack, *, homeland: str | None, home: str | Non
             bucket = popular                                   # been there: the popular core
         if bucket is None and entry.kind == 'REGION' and realms & set(chain):
             bucket = popular                                   # a city of one's own realm
+        if bucket is None and home_region(entry) in near:
+            bucket = popular                                   # the realm next door
         if bucket is None:
             continue
         gate = assess(pack, entry.id, campaign_year=campaign_year, build_areas=build_areas)

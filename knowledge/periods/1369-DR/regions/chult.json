@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:chult",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Chult",
+  "summary": "Chult é uma terra de selva do outro lado do Mar Brilhante, cheia de rumores sombrios, civilizações antigas caídas, minas de pedras preciosas e deuses antigos. Lá vivem grandes monstros, até dinossauros. Sua cidade mais antiga, Mezro, foi fundada pelo deus Ubtao.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 128, \"Jungles of Chult\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 144, cronologia (Mezro)"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Mar Brilhante\", \"a antiga Mezro\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Chult é uma selva do outro lado do Mar Brilhante, cheia de monstros e até dinossauros.",
+    "INFORMED": "Tem civilizações antigas caídas, minas de pedras preciosas e deuses antigos.",
+    "STUDIED": "Sua cidade mais antiga, Mezro, foi fundada pelo deus Ubtao."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

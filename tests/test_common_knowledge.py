@@ -59,7 +59,12 @@ LOTE_C_WORLD = {'char:lathander', 'char:helm', 'char:talos', 'char:tymora', 'cha
 # Lote C2: the rest of the gods, and Tymora's pearls in Amn.
 LOTE_C2_WORLD = {'char:selune', 'char:ilmater', 'char:kelemvor', 'char:cyric', 'char:mystra',
                  'char:lliira', 'char:waukeen'}
-WORLD = LOTE_B_WORLD | LOTE_C_WORLD | LOTE_C2_WORLD   # everyone placed in the pack knows the world level
+# Lote E: the Shoon Imperium and the renown of the far southern lands; Tethyr's queen and cities.
+LOTE_E_WORLD = {'event:shoon-imperium', 'topic:far-lands-renown'}
+LOTE_E_TETHYR = {'char:zaranda', 'region:darromar', 'region:zazesspur'}
+LOTE_B_TETHYR = LOTE_B_TETHYR | LOTE_E_TETHYR    # what someone from Tethyr knows of it (B and E)
+WORLD = (LOTE_B_WORLD | LOTE_C_WORLD | LOTE_C2_WORLD
+         | LOTE_E_WORLD)                         # everyone placed in the pack knows the world level
 LOTE_A_AMN = LOTE_A_AMN | WORLD | {'topic:faiths-of-amn', 'topic:tymora-pearls-in-amn'}
 COUNTRY = {'region:faerun', 'region:amn', 'org:cowled-wizards'} | LOTE_A_AMN
 CITY = {'region:faerun', 'region:amn', 'region:athkatla', 'org:council-of-six', 'org:cowled-wizards',

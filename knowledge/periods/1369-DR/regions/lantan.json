@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:lantan",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Lantan",
+  "summary": "Lantan é uma nação de ilhas no mar do Sul, de selvas e casas no alto de pináculos de rocha. Seu povo venera Gond, deus dos inventores, comercia por toda a Costa da Espada em navios de velas cor de vinho e inventou o arcabuz. Um conselho de doze governa as ilhas.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 108–109, \"Lantan\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Lantan é uma terra de ilhas no Sul, de inventores devotos de Gond.",
+    "INFORMED": "Os mercadores de Lantan navegam por toda a Costa da Espada em navios de velas cor de vinho; inventaram o arcabuz.",
+    "STUDIED": "Tem selvas e casas no alto de pináculos de rocha; um conselho de doze governa as ilhas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

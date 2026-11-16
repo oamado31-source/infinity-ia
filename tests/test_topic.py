@@ -48,7 +48,8 @@ class TopicTests(TempKnowledge):
         stranger, popular = identity_knowledge(pack, homeland='region:tethyr',
                                                home='region:tethyr', campaign_year=1369,
                                                build_areas=self.build(pack))
-        self.assertNotIn('topic:test-coins', set(stranger) | set(popular))
+        self.assertNotIn('topic:test-coins', stranger)
+        self.assertIn('topic:test-coins', popular)          # CR-2026-021: Amn is next door
         _, visited = identity_knowledge(pack, homeland='region:tethyr', home='region:tethyr',
                                         campaign_year=1369, build_areas=self.build(pack),
                                         visited=('region:amn',))

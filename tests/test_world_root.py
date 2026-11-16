@@ -3,6 +3,7 @@
 import json
 import sys
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -81,7 +82,9 @@ class OffMapTests(TempKnowledge):
 
 class TravelTests(unittest.TestCase):
     def known(self, standing='HABITANTE', homeland=None, visited=()):
-        return identity_knowledge(PACK, homeland=homeland, home='region:athkatla',
+        # Trips alone: without CR-2026-021's neighbours, which would also teach Tethyr's core.
+        return identity_knowledge(replace(PACK, neighbors={}), homeland=homeland,
+                                  home='region:athkatla',
                                   campaign_year=1369, build_areas=BUILD, standing=standing,
                                   visited=visited)
 

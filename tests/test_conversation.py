@@ -86,6 +86,22 @@ class EngineHistoryTests(unittest.TestCase):
                          ['system', 'user', 'assistant', 'user', 'system'])
         self.assertEqual(retry[3]['content'], 'Jogador: E o taverneiro?')
 
+    def test_a_name_the_person_already_said_here_is_known(self):
+        # CR-2026-022 (lab, Darromar): "Zaranda" was said, validated, in the turn before; the
+        # follow-up's prompt does not carry her entry, and the name was refused twice.
+        provider = FakeProvider([reply('Já falei de Zaranda, não sei mais nada.', True)])
+        response = self.ask(provider, 'E onde fica a corte?',
+                            (('Quem governa Tethyr?', 'A rainha é Zaranda.'),))
+        self.assertEqual(response.status.value, 'OK')
+        self.assertFalse(any('UNKNOWN_NAMES' in f for f in response.flags))
+
+    def test_a_name_only_the_player_said_before_is_still_unknown(self):
+        said = reply('Ouvi dizer que Zaranda gosta de vinho.')
+        provider = FakeProvider([said, said, said])
+        response = self.ask(provider, 'E ela?', (('Conhece Zaranda?', 'Não sei quem é.'),))
+        self.assertEqual(response.status.value, 'FALLBACK')
+        self.assertTrue(any('UNKNOWN_NAMES:Zaranda' in f for f in response.flags))
+
 
 if __name__ == '__main__':
     unittest.main()

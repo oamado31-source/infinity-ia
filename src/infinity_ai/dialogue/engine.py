@@ -10,13 +10,14 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 
 from ..memory.store import MemoryStore
 from ..state.store import CampaignStore
 from .context import (
-    Catalog, ContextResult, ContextStatus, DialogueContext, build_context, build_resident_context,
+    _NAME, Catalog, ContextResult, ContextStatus, DialogueContext, build_context,
+    build_resident_context,
 )
 from .absence import absence_line
 from .disclosure import NEUTRO
@@ -263,6 +264,9 @@ class DialogueEngine:
         if built.status is not ContextStatus.OK:
             return done(DialogueStatus.DENIED, '', built.reason)
         context = built.context
+        if history:   # CR-2026-022: a name the person already said here (validated then) is known
+            said = {n for _, earlier_said in history for n in _NAME.findall(earlier_said)}
+            context = replace(context, vocabulary=context.vocabulary | frozenset(said))
         if context.absence is not None:     # ADR-0131: answered by code, the model is not asked
             return done(DialogueStatus.OK,
                         absence_line(context.absence, context.disposition, npc_id + '|' + text),

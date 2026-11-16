@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:dambrath",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Dambrath",
+  "summary": "Dambrath é um reino de pradarias no litoral do Grande Mar, governado por uma rainha que é também a alta sacerdotisa de Loviatar, deusa da dor. A nobreza, os crinti, tem sangue drow; só eles têm terras. A justiça é dura, e os homens comuns sofrem mais que as mulheres.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-shining-south",
+      "locator": "p. 23–24 e 26, \"Dambrath\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Dambrath é um reino governado por uma rainha sacerdotisa de Loviatar, deusa da dor.",
+    "INFORMED": "A nobreza, os crinti, tem sangue drow, e só eles têm terras.",
+    "STUDIED": "A justiça é dura, e os homens comuns sofrem mais que as mulheres."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

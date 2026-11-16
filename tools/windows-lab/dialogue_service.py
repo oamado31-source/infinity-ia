@@ -70,7 +70,7 @@ from infinity_ai.memory.common_knowledge import (  # noqa: E402
     identity_knowledge, named_in,
     local_aliases, placement_regions, relationship_entries, residents_as_stays, share_knowledge,
 )
-from infinity_ai.canon.pin import PinStatus, check_pin  # noqa: E402
+from infinity_ai.canon.pin import PinStatus, carry_pin, check_pin  # noqa: E402
 from infinity_ai.memory.model import KnowledgeBasis  # noqa: E402
 from infinity_ai.memory.store import MemoryStore  # noqa: E402
 from infinity_ai.personality import (  # noqa: E402
@@ -230,6 +230,13 @@ class Observer(threading.Thread):
 
 
     def _acquire(self, store: CampaignStore, branch_id: str, game_time: int) -> None:
+        if self.args.carry_pin:          # CR-2026-020: only a revision already pinned by hand
+            carried = carry_pin(store, branch_id, self.pack, game_time=game_time)
+            if carried:
+                pin, source = carried
+                print(f'{now_iso()} pin levado ao ramo {branch_id}: revisao '
+                      f'{self.pack.revision[:19]}... ({len(self.pack.entries)} entradas, t={game_time}),'
+                      f' aprovada no pin {source.event_id} do ramo {source.branch_id}')
         report = acquire_common_knowledge(
             store, branch_id, self.pack, campaign_year=self.args.campaign_year,
             build_areas=self.build_areas, backgrounds=self.catalog.backgrounds(),
@@ -739,6 +746,9 @@ def main() -> int:
                     help='seconds between reads of the game log (one long-lived shell)')
     ap.add_argument('--language', default='pt_BR', help='game language of the local area inventory')
     ap.add_argument('--campaign-year', type=int, default=1369, help='DR year (ADR-0109)')
+    ap.add_argument('--carry-pin', action='store_true',
+                    help='CR-2026-020: a branch forked by a loaded save takes the pack revision '
+                         'the maintainer already pinned on another branch of this campaign')
     ap.add_argument('--voice', action='store_true',
                     help='push-to-talk in the in-game box (ADR-0127): microphone of this host, '
                          'local STT; off by default')

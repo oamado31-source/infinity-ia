@@ -133,6 +133,7 @@ Este endpoint é infraestrutura experimental, **não habilita cliques em NPCs co
 1. Inventário de habitantes (fora do repositório): `python tools/windows-lab/build_area_inventory.py --residents`.
 2. Copiar a caixa para a VM: `python tools/windows-lab/talk_poc.py --deploy` e reabrir o jogo.
 3. Serviço numa campanha nova: `dialogue_service.py ... --campaign lab-s1e --db ~/.infinity-ai/campaigns/lab-s1e.sqlite3 [--world-seed <semente>]`. Depois, pin: `pin_canon_pack.py --campaign lab-s1e --db ...`.
+4. CR-2026-020: com `--carry-pin`, um ramo aberto por um save antigo recebe sozinho a revisão do pacote que você já pinou à mão nesta campanha (o log diz `pin levado ao ramo ...`). Uma revisão nova continua precisando do `pin_canon_pack.py`.
 4. No jogo, F9 sobre a pessoa. O console do serviço mostra `caixa pedido=... perfil=... status=... entradas=[...] ouvintes=[...]` e, quando houver, `conhecimento comum adquirido ... base=INQUIRY`.
 
 ## Anexo — ADR-0127: voz do jogador na caixa do jogo

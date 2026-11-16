@@ -269,6 +269,14 @@ class CampaignStore:
         return [e for e in map(_row_to_event, rows)
                 if steps[e.branch_id].admits(e.seq, e.game_time)]
 
+    def campaign_events(self, event_type: str) -> list[Event]:
+        """Every event of one type in this campaign, on any branch (CR-2026-020: an approved pin
+        may live on a branch the current one does not see)."""
+        rows = self._conn.execute(f'SELECT {_EVENT_COLUMNS} FROM events WHERE campaign_id = ? '
+                                  'AND event_type = ? ORDER BY seq',
+                                  (self.campaign_id, event_type)).fetchall()
+        return [_row_to_event(r) for r in rows]
+
     def is_visible(self, branch_id: str, event_id: str) -> bool:
         event = self.get_event(event_id)
         if event is None or event.campaign_id != self.campaign_id:

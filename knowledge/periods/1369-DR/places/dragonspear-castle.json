@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:dragonspear-castle",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Dragonspear (Lança do Dragão)",
+  "summary": "O Castelo de Dragonspear, ou da Lança do Dragão, é uma ruína na borda oeste da Charneca Alta. Diabos o tomaram por um portal dos Infernos; em 1356 DR, exércitos de Águas Profundas e Baldur's Gate o cercaram e venceram os diabos. O portal foi selado, mas muitos temem que reabra.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:sword-coast",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 73–75, \"Dragonspear Castle\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 142, \"The Dragonspear War\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Castelo de Dragonspear, ou da Lança do Dragão, é uma ruína onde diabos se instalaram, vindos por um portal dos Infernos.",
+    "INFORMED": "Em 1356 DR, exércitos de Águas Profundas e Baldur's Gate cercaram o castelo e venceram os diabos.",
+    "STUDIED": "O portal foi selado, mas muitos temem que reabra; o castelo fica na borda oeste da Charneca Alta."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

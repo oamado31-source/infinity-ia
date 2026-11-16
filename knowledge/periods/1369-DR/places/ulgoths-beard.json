@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:ulgoths-beard",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Barba de Ulgoth (Ulgoth's Beard)",
+  "summary": "A Barba de Ulgoth (Ulgoth's Beard) é uma aldeia de uns setenta pastores e pescadores na foz do rio Chionthar, a oeste de Baldur's Gate. Um farol no penhasco avisa a cidade de navios inimigos; o nome lembra o pirata Ulgoth, morto num ataque que o farol frustrou.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:sword-coast",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 61, \"Ulgoth's Beard\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A Barba de Ulgoth (Ulgoth's Beard) é uma aldeia de pastores e pescadores perto de Baldur's Gate.",
+    "INFORMED": "Um farol no penhasco avisa Baldur's Gate de navios inimigos.",
+    "STUDIED": "O nome lembra o pirata Ulgoth, morto num ataque que o farol frustrou."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

@@ -56,8 +56,11 @@ LOTE_B_TETHYR = {'event:red-knight-ascends'}
 # Lote C: the gods everyone in Faerûn knows, and Amn's own faiths.
 LOTE_C_WORLD = {'char:lathander', 'char:helm', 'char:talos', 'char:tymora', 'char:chauntea',
                 'char:sune', 'char:umberlee', 'char:mask', 'char:oghma', 'char:tempus'}
-WORLD = LOTE_B_WORLD | LOTE_C_WORLD              # everyone placed in the pack knows the world level
-LOTE_A_AMN = LOTE_A_AMN | WORLD | {'topic:faiths-of-amn'}
+# Lote C2: the rest of the gods, and Tymora's pearls in Amn.
+LOTE_C2_WORLD = {'char:selune', 'char:ilmater', 'char:kelemvor', 'char:cyric', 'char:mystra',
+                 'char:lliira', 'char:waukeen'}
+WORLD = LOTE_B_WORLD | LOTE_C_WORLD | LOTE_C2_WORLD   # everyone placed in the pack knows the world level
+LOTE_A_AMN = LOTE_A_AMN | WORLD | {'topic:faiths-of-amn', 'topic:tymora-pearls-in-amn'}
 COUNTRY = {'region:faerun', 'region:amn', 'org:cowled-wizards'} | LOTE_A_AMN
 CITY = {'region:faerun', 'region:amn', 'region:athkatla', 'org:council-of-six', 'org:cowled-wizards',
         'place:copper-coronet', 'rel:lehtinan-owns-copper-coronet'} | LOTE_A_AMN | LOTE_A_CITY

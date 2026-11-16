@@ -3,8 +3,8 @@
   "id": "region:cloud-peaks",
   "kind": "REGION",
   "partition_year_dr": 1369,
-  "title": "Cloud Peaks",
-  "summary": "Cordilheira que marca o norte de Amn. Nas passagens mais altas, as nevascas de inverno fecham as estradas e isolam Nashkel de Athkatla por meses.",
+  "title": "Picos das Nuvens (Cloud Peaks)",
+  "summary": "Os Picos das Nuvens (Cloud Peaks) são a cordilheira que marca o norte de Amn. Nas passagens mais altas, as nevascas de inverno fecham as estradas e isolam Nashkel de Athkatla por meses.",
   "valid_from_dr": 1369,
   "valid_to_dr": 1370,
   "date_precision": "RANGE",
@@ -19,7 +19,7 @@
   "verification_status": "SOURCE_CHECKED",
   "access_scope": "COMMON_REGIONAL",
   "knowledge_layers": {
-    "POPULAR": "As montanhas do norte de Amn, cheias de neve no inverno.",
+    "POPULAR": "Os Picos das Nuvens (Cloud Peaks) são as montanhas do norte de Amn, cheias de neve no inverno.",
     "INFORMED": "As nevascas fecham as passagens e isolam Nashkel por meses."
   },
   "curation": {

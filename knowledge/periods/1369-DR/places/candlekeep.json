@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:candlekeep",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Fortaleza da Vela (Candlekeep)",
+  "summary": "A Fortaleza da Vela, ou Candlekeep, é uma cidadela do saber à beira-mar. Guarda as profecias do vidente Alaundo e todos os escritos que consegue reunir, e para entrar paga-se com um livro. É governada por Ulraunt, o Guardião dos Tomos, e por Tethtoril, o Primeiro Leitor.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:sword-coast",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 32–33, \"Candlekeep\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Fortaleza da Vela\", \"Primeiro Leitor\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A Fortaleza da Vela, ou Candlekeep, é uma cidadela do saber à beira-mar.",
+    "INFORMED": "Para entrar paga-se com um livro; ela guarda as profecias do vidente Alaundo.",
+    "STUDIED": "É governada por Ulraunt, o Guardião dos Tomos, e por Tethtoril, o Primeiro Leitor."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

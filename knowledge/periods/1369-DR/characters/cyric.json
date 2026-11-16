@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:cyric",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Cyric",
+  "summary": "Cyric, o Príncipe das Mentiras, é o deus do assassinato, das mentiras e da intriga; herdou de Bhaal o assassinato e os fiéis de outros deuses mortos. Leu um livro mágico próprio e enlouqueceu. Culpam-no pela destruição de Zhentil Keep. Seu símbolo: caveira branca sobre sol negro.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 51, \"Cyric\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Cyric, o Príncipe das Mentiras, é o deus louco do assassinato e das mentiras.",
+    "INFORMED": "Ele herdou de Bhaal o assassinato e os fiéis de outros deuses mortos; seu símbolo é uma caveira branca sobre um sol negro.",
+    "STUDIED": "Ele leu um livro mágico próprio e enlouqueceu; culpam-no pela destruição de Zhentil Keep."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

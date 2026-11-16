@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:sword-coast",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Costa da Espada (Sword Coast)",
+  "summary": "A Costa da Espada (Sword Coast) são as terras entre Águas Profundas (Waterdeep), ao norte, e Amn, ao sul, chamadas de Terras Vazias. A rota de caravanas passa por ela; o nome vem dos bandidos e monstros. Baldur's Gate é uma de suas maiores cidades; Beregost e Scornubel ficam ali.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 5, \"The Sword Coast\""
+    },
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 7, \"The Coast\""
+    },
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"The Sword Coast\" (PDF p. 26)"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A Costa da Espada (Sword Coast) fica entre Águas Profundas (Waterdeep) e Amn; é terra de estradas perigosas, e Baldur's Gate é uma de suas maiores cidades.",
+    "INFORMED": "A rota de caravanas passa por ela; o nome vem dos bandidos e monstros.",
+    "STUDIED": "Também é chamada de Terras Vazias; Beregost e Scornubel ficam ali."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:ulcasters-school",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Escola de Ulcaster (Ulcaster School)",
+  "summary": "Num morro a leste de Beregost ficam as ruínas da escola de magia de Ulcaster, fundada há mais de trezentos anos e destruída por magos calishitas que temiam seu poder. Dizem que fantasmas que ainda lançam magias assombram o lugar; o governador desaprova quem explora as ruínas.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:beregost",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 27, \"Beregost\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "As ruínas da escola de Ulcaster ficam num morro perto de Beregost, e dizem que são assombradas.",
+    "INFORMED": "A escola de magia foi destruída por magos calishitas que temiam seu poder; dizem que fantasmas ainda lançam magias ali.",
+    "STUDIED": "Foi fundada há mais de trezentos anos; o governador desaprova quem explora as ruínas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

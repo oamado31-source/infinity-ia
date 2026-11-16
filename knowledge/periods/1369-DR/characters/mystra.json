@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:mystra",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Mystra",
+  "summary": "Mystra, a Senhora dos Mistérios, é a deusa da magia, dos feitiços e da Trama, que permite lançar magia; é venerada sobretudo por magos. A antiga Mystra foi destruída no Tempo das Perturbações, e a maga Midnight assumiu o nome e o lugar dela. Seu símbolo é um círculo de estrelas.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 128, \"Mystra\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Mystra, a Senhora dos Mistérios, é a deusa da magia.",
+    "INFORMED": "É venerada sobretudo pelos magos e cuida da Trama, que permite lançar magia; seu símbolo é um círculo de estrelas.",
+    "STUDIED": "A antiga Mystra foi destruída no Tempo das Perturbações, e a maga Midnight assumiu o nome e o lugar dela."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

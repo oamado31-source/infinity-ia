@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:baldurian-customs",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "Costumes baldurianos",
+  "summary": "Em Baldur's Gate tudo é de pedra e vive molhado de chuva e névoa. Há gatos por toda parte contra os ratos dos navios, e quase nenhum cão. A maior festa é a Quebra, quando o último gelo deixa o porto na primavera; nas conversas de rua, tochas vermelhas marcam o lugar.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:baldurs-gate",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 8, \"Baldur's Gate\""
+    },
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 11"
+    },
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 13"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Em Baldur's Gate tudo é de pedra e vive molhado de chuva e névoa.",
+    "INFORMED": "Há gatos por toda parte contra os ratos dos navios, e quase nenhum cão.",
+    "STUDIED": "A maior festa é a Quebra, quando o último gelo deixa o porto na primavera; tochas vermelhas marcam as conversas de rua."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

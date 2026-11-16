@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:lliira",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Lliira",
+  "summary": "Lliira, Nossa Senhora da Alegria, é a deusa da alegria, da dança, das festas e da liberdade. Prometeu guardar o poder de Waukeen até ela voltar e, em 1365 DR, assumiu como regente a igreja dela. Seu símbolo: três estrelas de seis pontas, laranja, amarela e vermelha.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "faiths-and-avatars",
+      "locator": "p. 96, \"Lliira\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Lliira, Nossa Senhora da Alegria, é a deusa da alegria, da dança e das festas.",
+    "INFORMED": "Ela guarda o poder de Waukeen até a deusa voltar e cuida da igreja dela como regente.",
+    "STUDIED": "Ela assumiu a igreja de Waukeen em 1365 DR; seu símbolo são três estrelas de seis pontas: laranja, amarela e vermelha."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:beregost",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Beregost",
+  "summary": "Beregost é uma cidade na Estrada da Costa, entre Baldur's Gate e Amn, onde mercadores amnianos reúnem caravanas. É dominada pelo templo de Lathander, a Canção da Manhã, e seu sumo sacerdote, Kelddath Ormlyr, governa a cidade. O ferreiro Taerom faz armaduras famosas.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:sword-coast",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 27, \"Beregost\""
+    },
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 28–29, \"The Song of the Morning; Thunderhammer Smithy\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Beregost é uma cidade na Estrada da Costa, entre Baldur's Gate e Amn, dominada pelo templo de Lathander.",
+    "INFORMED": "Ali, mercadores amnianos reúnem caravanas; o sumo sacerdote, Kelddath Ormlyr, governa a cidade.",
+    "STUDIED": "O templo se chama Canção da Manhã; o ferreiro Taerom faz armaduras famosas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

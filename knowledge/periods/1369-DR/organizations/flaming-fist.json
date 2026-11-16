@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:flaming-fist",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Punho Flamejante (Flaming Fist)",
+  "summary": "O Punho Flamejante (Flaming Fist) é uma companhia de mercenários com mais de mil membros, sediada em Baldur's Gate. Ajuda a guarda a manter a cidade segura: dizem que uma em cada dez pessoas na rua é do Punho ou espiã dele. Seu comandante é o Duque Eltan.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:baldurs-gate",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 8, \"Baldur's Gate\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: fala do Duque Eltan, comandante do Punho Flamejante"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Punho Flamejante (Flaming Fist) é a grande companhia de mercenários de Baldur's Gate.",
+    "INFORMED": "Tem mais de mil membros e ajuda a guarda a manter a cidade segura; dizem que uma em cada dez pessoas na rua é do Punho ou espiã dele.",
+    "STUDIED": "Seu comandante é o Duque Eltan."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

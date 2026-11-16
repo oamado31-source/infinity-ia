@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:scornubel",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Scornubel",
+  "summary": "Scornubel é a Cidade das Caravanas: sem muralhas, cheia de armazéns, currais e mercadores de passagem, na margem norte do rio Chionthar, onde a Estrada do Comércio encontra o rio. É governada por Lady Rhessajan Ambermantle, a Velha Raposa, com um conselho de mercadores.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:sword-coast",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 105, \"Scornubel\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Scornubel é a Cidade das Caravanas, cheia de armazéns e mercadores de passagem.",
+    "INFORMED": "É uma cidade sem muralhas, na margem norte do rio Chionthar, onde a Estrada do Comércio encontra o rio.",
+    "STUDIED": "É governada por Lady Rhessajan Ambermantle, a Velha Raposa, com um conselho de mercadores."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

@@ -681,6 +681,33 @@
           "Tábuas"
         ]
       }
+    },
+    {
+      "id": "seguimento-curto-por-que",
+      "description": "CR-2026-019: um seguimento curto (\"Por quê?\") é respondido, não devolvido como fala.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-nobre",
+        "name": "Lorde Eval",
+        "wis": 10,
+        "int": 9,
+        "occupation": "nobre de Athkatla"
+      },
+      "history": [
+        [
+          "Quem governa Amn?",
+          "É o Conselho dos Seis. Ninguém sabe quem são os seis."
+        ]
+      ],
+      "question": "Por quê?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "matches_none": [
+          "^\\s*por qu[eê]\\?\\s*$"
+        ]
+      }
     }
   ]
 }

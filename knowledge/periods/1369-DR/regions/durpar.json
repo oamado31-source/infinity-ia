@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:durpar",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Durpar",
+  "summary": "Durpar lidera as Terras Brilhantes, com Var, a Dourada, e Estagund, em volta da baía da Água Dourada. Um Conselho de Mercadores governa as três, e seu povo tem fama de pechinchar até os sapatos de alguém. Vendem café, coral e pérolas.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-shining-south",
+      "locator": "p. 53–54, \"Durpar, Estagund, and Var the Golden\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Durpar é uma terra de mercadores, famosa por pechinchar.",
+    "INFORMED": "Ela lidera as Terras Brilhantes, com Var, a Dourada, e Estagund; um Conselho de Mercadores governa as três.",
+    "STUDIED": "As três ficam em volta da baía da Água Dourada; vendem café, coral e pérolas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

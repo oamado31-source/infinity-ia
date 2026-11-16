@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:darromar",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Darromar",
+  "summary": "Darromar, antiga Ithmong, a Cidade dos Tiranos, é hoje a Cidade da Rainha e a capital de Tethyr. Fica no centro do reino, e os exércitos da rainha chegam dali a qualquer ponto em cinco dias. A corte está no palácio de Faerntarn.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:tethyr",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Um, p. 83 (\"Darromar\")"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Darromar é a capital de Tethyr, a cidade da rainha.",
+    "INFORMED": "Ela se chamava Ithmong, a Cidade dos Tiranos; fica no centro do reino.",
+    "STUDIED": "A corte está no palácio de Faerntarn; os exércitos da rainha chegam dali a qualquer ponto em cinco dias."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

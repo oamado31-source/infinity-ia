@@ -794,6 +794,102 @@
           "char:kelemvor"
         ]
       }
+    },
+    {
+      "id": "reino-vizinho-pela-pergunta",
+      "description": "CR-2026-021: o habitante de Athkatla conhece o núcleo popular de Calimshan, reino vizinho, sem saber o que há dentro das cidades de lá.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "O que você sabe de Calimshan?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "region:calimshan"
+        ]
+      }
+    },
+    {
+      "id": "terra-distante-pela-pergunta",
+      "description": "Lote E: a fama das terras distantes vem ao prompt quando a pergunta nomeia uma delas (Halruaa).",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "O que é Halruaa?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "topic:far-lands-renown"
+        ]
+      }
+    },
+    {
+      "id": "nome-ja-dito-na-conversa",
+      "description": "CR-2026-022 (laboratório, Darromar): o NPC pode repetir um nome que ele mesmo disse no turno anterior (Zaranda), mesmo sem a entrada dela no prompt da pergunta seguinte.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval4",
+        "name": "Cliente da Taverna",
+        "wis": 9,
+        "int": 9,
+        "standing": "FORASTEIRO",
+        "origin": "region:tethyr"
+      },
+      "history": [
+        [
+          "Quem é a rainha de Tethyr?",
+          "É a rainha Zaranda, coroada neste ano com o rei Haedrak III."
+        ]
+      ],
+      "question": "E Darromar?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "region:darromar"
+        ]
+      }
+    },
+    {
+      "id": "rainha-sem-o-nome",
+      "description": "Lote E (laboratório, Bernard): um morador de Athkatla nascido em Tethyr ouve \"Quem é a rainha de Tethyr?\", sem o nome, e a entrada da rainha Zaranda vem ao prompt; antes ele dizia que não sabia e que Tethyr não tinha rainha.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador",
+        "standing": "HABITANTE",
+        "origin": "region:tethyr"
+      },
+      "question": "Quem é a rainha de Tethyr?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "char:zaranda"
+        ],
+        "mentions_any": [
+          "Zaranda"
+        ]
+      }
     }
   ]
 }

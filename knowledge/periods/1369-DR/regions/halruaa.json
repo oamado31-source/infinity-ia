@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:halruaa",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Halruaa",
+  "summary": "Halruaa é um reino rico e fechado, cercado de montanhas e governado por magos: o rei Zalathorm, adivinho de séculos de idade, lidera o Conselho dos Anciões. Foi fundado por magos que fugiram de Netheril em navios voadores. É famoso pela magia, pelo vinho e pelas naves do céu.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-shining-south",
+      "locator": "p. 3–4, \"Halruaa\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Halruaa é a terra dos magos, rica e fechada, com navios que voam.",
+    "INFORMED": "Fica cercado de montanhas; o rei Zalathorm, adivinho de séculos de idade, lidera o Conselho dos Anciões.",
+    "STUDIED": "Foi fundado por magos que fugiram de Netheril em navios voadores; é famoso também pelo vinho."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

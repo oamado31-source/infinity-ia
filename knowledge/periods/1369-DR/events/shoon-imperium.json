@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:shoon-imperium",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Império Shoon",
+  "summary": "O Império Shoon, de Calimshan, foi o maior do Sul: de 27 a 450 DR, dominou de Tethyr e Amn até o rio Chionthar, governado de Shoonach por uma dinastia. Caiu quando Tethyr se revoltou e o príncipe Strohm matou o último qysar, em 450 DR. A realeza de Amn vem de governadores Shoon.",
+  "valid_from_dr": 450,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "empires-of-the-shining-sea",
+      "locator": "p. 23, \"Rise of the Imperium\"; p. 32, \"The Fall of the Shoon Imperium\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 87, \"450 DR Year of the Corrie Fist\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Há quase mil anos, o Império Shoon, de Calimshan, dominou Amn, Tethyr e todo o Sul.",
+    "INFORMED": "Caiu em 450 DR, quando Tethyr se revoltou e o príncipe Strohm matou o último qysar.",
+    "STUDIED": "O império era governado de Shoonach por uma dinastia; a realeza de Amn vem de governadores Shoon."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

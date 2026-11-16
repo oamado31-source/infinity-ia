@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:calimshan",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Calimshan",
+  "summary": "Calimshan, a Terra dos Paxás, é o antigo reino ao sul de Tethyr: terra quente de sedas, gênios e escravos, de ricos riquíssimos e pobres miseráveis. É governada de Porto Calim pelo sil-paxá Ralan el Pesarkhal, que subiu com intrigas e assassinatos e cobiça terras de Tethyr.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "empires-of-the-shining-sea",
+      "locator": "p. 49, \"Calimshan Overview\""
+    },
+    {
+      "source_id": "empires-of-the-shining-sea",
+      "locator": "p. 36–37, \"The Rise of El Pesarkhal\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Calimshan é a terra quente dos paxás, ao sul de Tethyr, de gênios, sedas e escravos.",
+    "INFORMED": "É governada de Porto Calim pelo sil-paxá Ralan el Pesarkhal; os ricos são riquíssimos e os pobres, miseráveis.",
+    "STUDIED": "Pesarkhal subiu com intrigas e assassinatos e cobiça terras de Tethyr."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

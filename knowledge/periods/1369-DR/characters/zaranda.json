@@ -1,0 +1,44 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:zaranda",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Rainha Zaranda",
+  "summary": "Zaranda Star é a rainha-monarca de Tethyr, coroada em Flamerule de 1369 DR com o rei Haedrak III. Aventureira, lutou contra a Horda Tuigan e liderou em Tethyr a Companhia da Estrela, que ensinou os aldeões a se defender de bandidos. Tomou Ithmong, hoje Darromar, de um tirano.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:tethyr",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Um, p. 39–40"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Um, p. 51 (\"Tethyr of Today\")"
+    },
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Um, p. 83 (\"Darromar\")"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"a rainha Zaranda de Tethyr\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Zaranda é a rainha de Tethyr, coroada neste ano com o rei Haedrak III.",
+    "INFORMED": "Foi aventureira e lutou contra a Horda Tuigan; liderou em Tethyr a Companhia da Estrela, que ensinou os aldeões a se defender de bandidos.",
+    "STUDIED": "Tomou Ithmong, hoje Darromar, de um tirano; foi coroada em Flamerule de 1369 DR."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

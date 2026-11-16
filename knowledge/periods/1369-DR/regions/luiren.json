@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:luiren",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Luiren",
+  "summary": "Luiren é a terra dos halflings, um pequeno reino de florestas no litoral do Grande Mar, entre Dambrath e Estagund. É famosa pela comida, pela cerveja e pelos entalhes em madeira. Não tem governo central: cada vila tem seu prefeito e um conselho de anciões.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-shining-south",
+      "locator": "p. 42–43, \"Luiren\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 128, \"Luiren\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Luiren é a terra dos halflings, famosa pela comida e pela cerveja.",
+    "INFORMED": "Fica no litoral do Grande Mar, entre Dambrath e Estagund, e é famosa também pelos entalhes em madeira.",
+    "STUDIED": "Não tem governo central: cada vila tem seu prefeito e um conselho de anciões."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

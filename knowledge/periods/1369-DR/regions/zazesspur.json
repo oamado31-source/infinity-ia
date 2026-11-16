@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:zazesspur",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Zazesspur",
+  "summary": "Zazesspur é o grande porto de Tethyr, mistura de culturas tethyriana e calishita. A Cidade Alta, ao norte do rio, é a maior; a Cidade Baixa, ao sul, foi erguida sobre ruínas antigas. Um Conselho de Lordes, hoje de oito membros, governa a cidade, cobiçada por muitos.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:tethyr",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "lands-of-intrigue",
+      "locator": "Livro Um, p. 69 (\"Zazesspur\")"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Zazesspur é o grande porto de Tethyr, meio tethyriano, meio calishita.",
+    "INFORMED": "A Cidade Alta, ao norte do rio, é a maior; a Cidade Baixa, ao sul, foi erguida sobre ruínas antigas.",
+    "STUDIED": "Um Conselho de Lordes, hoje de oito membros, governa a cidade, cobiçada por muitos."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

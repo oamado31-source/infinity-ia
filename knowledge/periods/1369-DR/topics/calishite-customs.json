@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:calishite-customs",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "Costumes calishitas",
+  "summary": "Os calishitas se veem como a única civilização verdadeira e acham os nortistas bárbaros. A sociedade tem classes rígidas, dos escravos sem direitos aos paxás; as mulheres não são iguais aos homens. Manter as aparências é tudo; apontar a verdade por trás delas é a maior grosseria.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:calimshan",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "empires-of-the-shining-sea",
+      "locator": "p. 56–60, \"Society and Customs\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Os calishitas se acham a única civilização verdadeira e chamam os nortistas de bárbaros.",
+    "INFORMED": "A sociedade tem classes rígidas, dos escravos sem direitos aos paxás; as mulheres não são iguais aos homens.",
+    "STUDIED": "Manter as aparências é tudo; apontar a verdade por trás delas é a maior grosseria."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

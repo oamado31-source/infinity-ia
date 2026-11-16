@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:calimport",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Porto Calim (Calimport)",
+  "summary": "Porto Calim (Calimport), capital de Calimshan, é a maior cidade de Faerûn: a Cidade da Glória ou a Cidade dos Escravos, com um a dois milhões de pessoas. Não tem muralha externa; cada distrito tem seus muros, e os ricos andam sobre eles enquanto o povo se espreme nas ruas.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:calimshan",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "calimport-1998",
+      "locator": "p. 4, \"First Impressions\"; p. 5, \"The Look of the City\"; p. 11, \"Population\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Porto Calim\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Porto Calim (Calimport) é a capital de Calimshan e a maior cidade de Faerûn.",
+    "INFORMED": "Uns a chamam de Cidade da Glória, outros de Cidade dos Escravos; tem um a dois milhões de pessoas.",
+    "STUDIED": "Não tem muralha externa; cada distrito tem seus muros, e os ricos andam sobre eles enquanto o povo se espreme nas ruas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

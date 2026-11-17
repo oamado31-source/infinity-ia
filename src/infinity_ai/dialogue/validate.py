@@ -93,8 +93,12 @@ def _stated(pattern: re.Pattern, speech: str) -> bool:
 
 
 def _works_at_place(speech: str, context: DialogueContext) -> bool:
-    """CR-2026-005: "trabalho na Coroa de Cobre" names the place where the person is."""
-    place = re.sub(r'^(?:[ao]s?)\s+', '', context.resident_of or '', flags=re.I).strip()
+    """CR-2026-005: "trabalho na Coroa de Cobre" names the place where the person is.
+
+    CR-2026-024: the place phrase may carry its district ("a Coroa de Cobre, nas Favelas"); the
+    workplace is the establishment before the comma, never the district around it."""
+    establishment = (context.resident_of or '').split(',')[0]
+    place = re.sub(r'^(?:[ao]s?)\s+', '', establishment, flags=re.I).strip()
     if not place:
         return False
     return _stated(re.compile(r'(?<!não )\btrabalho\s+(?:aqui\s+)?(?:n[ao]s?|em)\s+(?:[ao]s?\s+)?'

@@ -932,6 +932,124 @@
           "org:order-of-the-radiant-heart"
         ]
       }
+    },
+    {
+      "id": "heroi-do-norte-pela-pergunta",
+      "description": "Lote G: um herói de fama continental (Drizzt) é conhecido pelo habitante de Athkatla.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Quem é Drizzt?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "char:drizzt"
+        ]
+      }
+    },
+    {
+      "id": "cidade-do-reino-vizinho",
+      "description": "CR-2026-025: o habitante de Athkatla conhece o núcleo popular de uma cidade do reino vizinho (Baldur's Gate).",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Já ouviu falar de Baldur's Gate?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "region:baldurs-gate"
+        ]
+      }
+    },
+    {
+      "id": "aguas-profundas-para-quem-e-da-costa",
+      "description": "CR-2026-025 (lacuna do lote G): quem nasceu em Baldur's Gate conhece Águas Profundas, cidade do Norte vizinho.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval4",
+        "name": "Cliente da Taverna",
+        "wis": 9,
+        "int": 9,
+        "standing": "FORASTEIRO",
+        "origin": "region:baldurs-gate"
+      },
+      "question": "O que você sabe de Águas Profundas?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "region:waterdeep"
+        ]
+      }
+    },
+    {
+      "id": "cidade-distante-pelo-que-se-sabe",
+      "description": "CR-2026-026: quem é de Athkatla não tem Águas Profundas, mas conhece Khelben, o arquimago de lá; responde pelo que sabe, sem \"não sei\".",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ]
+      },
+      "question": "O que você sabe de Águas Profundas?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "unknown": false,
+        "mentions_none": [
+          "Alustriel"
+        ]
+      }
+    },
+    {
+      "id": "cidade-pelo-outro-nome",
+      "description": "CR-2026-026 (jogo, 2026-11-17): \"Silvery Moon\" é Lua Prateada, que Salvanas conhece por Alustriel; responde ligando os dois nomes, sem cair na reserva.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ]
+      },
+      "question": "O que sabe sobre Silvery Moon e sobre Alustriel?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "unknown": false,
+        "mentions_any": [
+          "Lua Prateada"
+        ]
+      }
     }
   ]
 }

@@ -17,7 +17,7 @@ import hashlib
 import re
 from collections.abc import Iterable, Mapping
 
-from ..memory.common_knowledge import spoken_words, title_words
+from ..memory.common_knowledge import asked_names, spoken_words, title_words
 
 NOT_KNOWN, NOT_DEFINED, WITHHELD = 'NOT_KNOWN', 'NOT_DEFINED', 'WITHHELD'
 KINDS = (NOT_KNOWN, NOT_DEFINED, WITHHELD)
@@ -60,13 +60,17 @@ LINES = {
 def classify_absence(question: str, *, told_texts: Iterable[str],
                      withheld_titles: Iterable[str], unheld_titles: Iterable[str],
                      self_texts: Iterable[str], where_texts: Iterable[str] = (),
+                     told_titles: Iterable[str] = (),
                      aliases: Mapping[str, str] | None = None) -> str | None:
     """The absence kind of this question, or None when the model should answer.
 
     `told_texts`: every fact and item the person may say (F and released K); `withheld_titles`:
     titles of items it holds but keeps back; `unheld_titles`: titles of pack entries it does not
     hold; `self_texts`: the facts about itself (F); `where_texts`: where it is and its name, which
-    keep a question about them from being NOT_KNOWN (but do not answer a withheld item)."""
+    keep a question about them from being NOT_KNOWN (but do not answer a withheld item);
+    `told_titles`: titles of the items it may say. CR-2026-026: NOT_KNOWN only when no name of
+    any unheld entry asked is said in what it tells (Silverymoon is "Lua Prateada" in Alustriel's
+    text) and the question names nothing it may tell ("Luskan and Khelben?" is answered)."""
     if not question or not question.strip():
         return None
     asked = spoken_words(question, aliases)
@@ -84,10 +88,11 @@ def classify_absence(question: str, *, told_texts: Iterable[str],
     withheld = named(withheld_titles)
     if withheld and not withheld & told:
         return WITHHELD
-    unheld = named(unheld_titles)
+    unheld = [names for names in (asked_names(t, asked) for t in unheld_titles) if names]
     for text in where_texts:
         told |= spoken_words(text)
-    if unheld and not unheld & told and not _ABOUT_SELF.search(question):
+    if (unheld and not any(words & told for words in unheld) and not named(told_titles)
+            and not _ABOUT_SELF.search(question)):
         return NOT_KNOWN
     if _YOU.search(question):
         own = ' '.join(self_texts).lower()

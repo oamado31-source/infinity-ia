@@ -34,7 +34,8 @@ class NeighborTests(TempKnowledge):
                          frozenset({'region:tethyr', 'region:sword-coast', 'region:calimshan'}))
         self.assertEqual(PACK.neighbors['region:tethyr'],
                          frozenset({'region:amn', 'region:calimshan'}))
-        self.assertEqual(PACK.neighbors['region:sword-coast'], frozenset({'region:amn'}))
+        self.assertEqual(PACK.neighbors['region:sword-coast'],
+                         frozenset({'region:amn', 'region:the-north'}))
 
     def test_only_realms_below_the_root_can_be_neighbours(self):
         for pairs in ([['region:amn', 'region:athkatla']], [['region:amn', 'region:faerun']],
@@ -57,12 +58,23 @@ class NeighborTests(TempKnowledge):
         self.assertIn('event:tethyr-reclamation-wars-end', popular)
         self.assertNotIn('region:tethyr', full)
 
-    def test_not_the_cities_of_the_realm_next_door(self):
+    def test_the_cities_next_door_but_not_what_is_inside_them(self):
+        # CR-2026-025: the cities of the realm next door give their popular core too.
         full, popular = self.known(PACK, homeland='region:tethyr', home='region:tethyr')
         self.assertIn('region:amn', popular)
-        for city in ('region:athkatla', 'region:murann', 'org:council-of-six'):
+        for city in ('region:athkatla', 'region:murann'):
             with self.subTest(city=city):
-                self.assertNotIn(city, full + popular)
+                self.assertIn(city, popular)
+                self.assertNotIn(city, full)
+        for inside in ('org:council-of-six', 'place:copper-coronet', 'place:slums'):
+            with self.subTest(inside=inside):
+                self.assertNotIn(inside, full + popular)
+
+    def test_a_coast_native_knows_waterdeep_next_door(self):
+        # The lote G gap: someone born in Baldur's Gate knew the North but not Waterdeep.
+        full, popular = self.known(PACK, homeland='region:baldurs-gate', home='region:athkatla')
+        self.assertIn('region:waterdeep', popular)
+        self.assertNotIn('org:lords-of-waterdeep', full + popular)       # inside the city
 
     def test_a_neighbour_of_a_neighbour_is_not_next_door(self):
         full, popular = self.known(PACK, homeland='region:tethyr', home='region:tethyr')

@@ -67,8 +67,10 @@ LOTE_B_TETHYR = LOTE_B_TETHYR | LOTE_E_TETHYR    # what someone from Tethyr know
 # Lote F: the organizations and villains the whole continent has heard of; Amn's and Athkatla's own.
 LOTE_F_WORLD = {'org:harpers', 'org:zhentarim', 'org:red-wizards', 'char:szass-tam',
                 'org:cult-of-the-dragon', 'org:lords-alliance'}
+# Lote G: the northern heroes whose fame runs the whole continent.
+LOTE_G_WORLD = {'char:khelben', 'char:alustriel', 'char:drizzt'}
 WORLD = (LOTE_B_WORLD | LOTE_C_WORLD | LOTE_C2_WORLD
-         | LOTE_E_WORLD | LOTE_F_WORLD)          # everyone placed in the pack knows the world level
+         | LOTE_E_WORLD | LOTE_F_WORLD | LOTE_G_WORLD)   # everyone placed in the pack knows it
 LOTE_A_AMN = LOTE_A_AMN | WORLD | {'topic:faiths-of-amn', 'topic:tymora-pearls-in-amn',
                                    'org:knights-of-the-shield'}
 COUNTRY = {'region:faerun', 'region:amn', 'org:cowled-wizards'} | LOTE_A_AMN

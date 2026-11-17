@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:neverwinter",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Inverno Remoto (Neverwinter)",
+  "summary": "Inverno Remoto (Neverwinter), a Cidade das Mãos Hábeis, é uma cidade culta de artesãos do Norte, com jardins, pontes e um rio quente que não deixa o porto congelar. Evita guerras, negocia com o mundo por meio de Águas Profundas e talvez seja a cidade mais cosmopolita de Faerûn.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:the-north",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-north-1996",
+      "locator": "p. 114, \"Neverwinter\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Inverno Remoto\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Inverno Remoto (Neverwinter) é uma cidade culta de artesãos do Norte.",
+    "INFORMED": "Tem jardins, pontes e um rio quente que não deixa o porto congelar; evita guerras.",
+    "STUDIED": "Ela negocia com o mundo por meio de Águas Profundas e talvez seja a cidade mais cosmopolita de Faerûn."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

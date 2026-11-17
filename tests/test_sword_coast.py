@@ -68,9 +68,9 @@ class SwordCoastTests(unittest.TestCase):
         full, popular = known(homeland='region:athkatla', home='region:athkatla')
         self.assertFalse(LOTE_D & set(full))
         coast_level = {e for e in LOTE_D if e == 'region:sword-coast'
-                       or (PACK.get(e).kind != 'REGION'
-                           and PACK.get(e).region_id == 'region:sword-coast')}
-        self.assertEqual(LOTE_D & set(popular), coast_level)    # CR-2026-021: not its cities
+                       or PACK.get(e).region_id == 'region:sword-coast'}
+        self.assertEqual(LOTE_D & set(popular), coast_level)    # CR-2026-021/025: and its cities
+        self.assertNotIn('org:flaming-fist', popular)            # inside Baldur's Gate
 
 
 if __name__ == '__main__':

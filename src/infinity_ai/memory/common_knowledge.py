@@ -418,11 +418,33 @@ def context_order(pack: CanonPack, entry_ids: Iterable[str], *, npc_id: str | No
 
 def named_in(pack: CanonPack, entry_ids: Iterable[str], speech: str,
              aliases: Mapping[str, str] | None = None) -> list[str]:
-    """CR-2026-016: the entries among `entry_ids` that the speech names (see `mentioned_in`)."""
+    """CR-2026-016: the entries among `entry_ids` that the speech names (see `mentioned_in`).
+
+    CR-2026-026: when the speech names an entry the person does not hold, the held entries whose
+    popular layer says one of its names are named too ("Águas Profundas" brings Khelben, its archmage), so the
+    person tells what it knows through them instead of "I don't know". Still only reorders."""
     if not speech or not speech.strip():
         return []
-    return [e for e in entry_ids if pack.get(e) is not None
-            and mentioned_in(pack.get(e), speech, aliases)]
+    held = [e for e in entry_ids if pack.get(e) is not None]
+    named = [e for e in held if mentioned_in(pack.get(e), speech, aliases)]
+    asked = spoken_words(speech, aliases)
+    held_set = set(held)
+    names: set[str] = set()
+    for entry in pack.entries.values():   # a whole name only: "cidade" is not "Dez Cidades"
+        if entry.id not in held_set:
+            sides = [title_words(name) for name in title_names(entry.title)]
+            if any(side <= asked for side in sides):
+                names |= frozenset().union(*sides)
+    for entry_id in held:                 # a word that already names a held entry ("Amn") is
+        names -= title_words(pack.get(entry_id).title)     # answered by it, not by mentions
+    if names:   # what everyone who holds it is told (the popular layer), not a scholar's detail
+        named += [e for e in held if e not in named
+                  and names & spoken_words(_popular_text(pack.get(e)))]
+    return named
+
+
+def _popular_text(entry: CanonEntry) -> str:
+    return (entry.layers or {}).get('POPULAR') or entry.summary
 
 
 def _singular(word: str) -> str:
@@ -438,10 +460,42 @@ def title_words(title: str) -> frozenset[str]:
     return frozenset(_singular(w) for w in _TITLE_WORD.findall(title))
 
 
+def title_names(title: str) -> list[str]:
+    """CR-2026-026: the names in a title, the game's pt-BR one and the English ones in
+    parentheses: "Lua Prateada (Silverymoon)" -> ["Lua Prateada", "Silverymoon"]."""
+    return [part.strip() for part in re.split(r'[(),]', title) if title_words(part)]
+
+
+def other_names(title: str, asked: frozenset[str], told: frozenset[str]) -> tuple[str, str] | None:
+    """CR-2026-026: (the name asked, the other name the person knows) when the question says one
+    name of `title` whole and what the person tells says another whole; else None."""
+    names = title_names(title)
+    said = next((n for n in names if title_words(n) <= asked), None)
+    known = next((n for n in names if n != said and title_words(n) <= told), None)
+    return (said, known) if said and known else None
+
+
+def asked_names(title: str, asked: frozenset[str]) -> frozenset[str]:
+    """CR-2026-026: the words of `title` the question names; and when it names one of the title's
+    names whole (the game's pt-BR name or the English one in parentheses), all its names, which
+    are the same thing: "Silverymoon" is also "Lua Prateada". A part of a name ("Lordes" of
+    "Lordes de Águas Profundas") stays only itself."""
+    hits = title_words(title) & asked
+    if not hits:
+        return frozenset()
+    sides = [title_words(name) for name in title_names(title)]
+    if any(side <= asked for side in sides):
+        return frozenset().union(*sides)
+    return hits
+
+
 def spoken_words(text: str, aliases: Mapping[str, str] | None = None) -> frozenset[str]:
     """The words of a text, lowercase and without a plural -s, plus the titles its common nouns
-    mean here (`aliases`)."""
-    return frozenset(_singular(w) for w in _SPOKEN_WORD.findall(_with_aliases(text, aliases)))
+    mean here (`aliases`). CR-2026-026: two words in a row also count joined, so "Silvery Moon"
+    names "Silverymoon" and "Never Winter" names "Neverwinter"."""
+    words = _SPOKEN_WORD.findall(_with_aliases(text, aliases))
+    joined = [a + b for a, b in zip(words, words[1:]) if len(a) > 2 and len(b) > 2]
+    return frozenset(_singular(w) for w in words + joined)
 
 
 def mentioned_in(entry: CanonEntry, speech: str,
@@ -475,7 +529,8 @@ def identity_knowledge(pack: CanonPack, *, homeland: str | None, home: str | Non
     CR-2026-015: someone of a realm (living there as a resident, or born there) knows the popular
     core of every region below that realm: the sibling cities, not what is inside them.
     CR-2026-021: and the popular core of what is public at the level of a neighbouring realm
-    (the realm itself, its events, places and customs), not of its cities."""
+    (the realm itself, its events, places and customs); CR-2026-025: and of the cities of that
+    realm too, not what is inside them."""
     full, popular = [], []
     trips = [v for v in visited if v and _is_region(pack, v) and v != WORLD_REGION]
     realms = {realm_of(pack, r) for r in ((home if standing == 'HABITANTE' else None), homeland)
@@ -503,6 +558,8 @@ def identity_knowledge(pack: CanonPack, *, homeland: str | None, home: str | Non
             bucket = popular                                   # a city of one's own realm
         if bucket is None and home_region(entry) in near:
             bucket = popular                                   # the realm next door
+        if bucket is None and entry.kind == 'REGION' and near & set(chain):
+            bucket = popular                                   # CR-2026-025: its cities
         if bucket is None:
             continue
         gate = assess(pack, entry.id, campaign_year=campaign_year, build_areas=build_areas)

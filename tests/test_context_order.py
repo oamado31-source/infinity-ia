@@ -17,6 +17,11 @@ from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
 
 PACK = load_partition(1369)
 BERNARD = 'npc:cre-bernard'
+# CR-2026-026: what someone of Athkatla does not hold of the North (it is not a neighbour of Amn).
+NORTH = {e.id for e in PACK.entries.values()
+         if e.id == 'region:the-north' or e.region_id == 'region:the-north'
+         or (PACK.get(e.region_id) is not None
+             and PACK.get(e.region_id).region_id == 'region:the-north')}
 
 
 def order(npc_id=BERNARD, area='AR0406', home='region:athkatla'):
@@ -116,6 +121,21 @@ class QuestionTests(unittest.TestCase):
         self.assertEqual(sorted(ranked), sorted(held))
         self.assertEqual(named_in(PACK, PACK.entries, ''), [])
 
+    def test_an_unheld_name_brings_the_held_entry_that_says_it(self):     # CR-2026-026
+        held = [e for e in PACK.entries if e not in NORTH]
+        named = named_in(PACK, held, 'O que você sabe de Águas Profundas?')
+        self.assertIn('char:khelben', named)                  # "arquimago de Águas Profundas"
+        self.assertNotIn('region:waterdeep', named)           # never adds what is not held
+        self.assertNotIn('region:athkatla', named)            # nor what does not say the name
+        self.assertNotIn('char:alustriel', named)             # only her scholarly layer says it
+        self.assertIn('region:waterdeep',                     # who holds the city gets it
+                      named_in(PACK, PACK.entries, 'O que você sabe de Águas Profundas?'))
+        self.assertEqual(named_in(PACK, held, 'Como vai o movimento hoje?'), [])
+        # the other name of the same city brings who its popular layer names (CR-2026-026)
+        self.assertIn('char:alustriel', named_in(PACK, held, 'E Silvery Moon?'))
+        # a common word of a name is not the name: "cidade" of "Dez Cidades (Ten-Towns)"
+        self.assertEqual(named_in(PACK, held, 'Posso usar magia na cidade?'), [])
+
 
 class PromptTests(unittest.TestCase):
     def setUp(self):
@@ -155,6 +175,42 @@ class PromptTests(unittest.TestCase):
             disposition='CAUTIOUS').context
         ids = [k.event_id for k in context.knowledge + context.restricted_knowledge]
         self.assertNotIn('canon:rel:bernard-manages-copper-coronet', ids)   # still withheld
+
+    def test_a_far_city_is_answered_through_the_held_entry_that_names_it(self):   # CR-2026-026
+        question = 'O que você sabe de Águas Profundas?'
+        held = [e for e in PACK.entries if e not in NORTH]
+        ranked = tuple(context_order(PACK, held, npc_id=BERNARD, area='AR0406',
+                                     home_region='region:athkatla',
+                                     named=named_in(PACK, held, question)))
+        known = tuple((e.id, e.title, e.summary, e.layers, e.access_scope, e.subject_id,
+                       e.secrecy) for e in PACK.entries.values() if e.id in held)
+        context = build_resident_context(
+            MemoryStore(self.store), self.store, Catalog.load(), npc_id=BERNARD,
+            display_name='Bernard', residence_areas=('AR0406',), area='AR0406', dead=False,
+            branch_id=ROOT_BRANCH, at_game_time=10, also_known=known, order=ranked,
+            question=question).context
+        ids = [k.event_id for k in context.knowledge + context.restricted_knowledge]
+        self.assertIn('canon:char:khelben', ids)
+        self.assertIsNone(context.absence)                    # the model answers, no "não sei"
+
+    def test_the_other_name_of_a_known_city_is_said_to_be_the_same(self):     # CR-2026-026
+        question = 'O que sabe sobre Silvery Moon e sobre Alustriel?'
+        held = [e for e in PACK.entries if e not in NORTH]
+        ranked = tuple(context_order(PACK, held, npc_id=BERNARD, area='AR0406',
+                                     home_region='region:athkatla',
+                                     named=named_in(PACK, held, question)))
+        known = tuple((e.id, e.title, e.summary, e.layers, e.access_scope, e.subject_id,
+                       e.secrecy) for e in PACK.entries.values() if e.id in held)
+        context = build_resident_context(
+            MemoryStore(self.store), self.store, Catalog.load(), npc_id=BERNARD,
+            display_name='Bernard', residence_areas=('AR0406',), area='AR0406', dead=False,
+            branch_id=ROOT_BRANCH, at_game_time=10, also_known=known, order=ranked,
+            question=question,
+            unheld_titles=tuple(PACK.get(e).title for e in NORTH)).context
+        texts = [k.text for k in context.knowledge]
+        self.assertIn('Silverymoon: é o mesmo que Lua Prateada, com o nome em outra língua.',
+                      texts)
+        self.assertIsNone(context.absence)
 
     def test_without_an_order_ties_first_and_events_last(self):
         context = self.ctx(())

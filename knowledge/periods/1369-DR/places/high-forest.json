@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "place:high-forest",
+  "kind": "PLACE",
+  "partition_year_dr": 1369,
+  "title": "Floresta Alta (High Forest)",
+  "summary": "A Floresta Alta (High Forest) é a maior floresta de Faerûn, com mais de 800 km de norte a sul, intocada pelo machado há séculos. Falam de druidas, tribos de elfos, treants e ruínas de cidades élficas, mas poucos entram e voltam: algo nela afasta quem quer explorá-la.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:the-north",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-north-1996",
+      "locator": "p. 50, \"High Forest\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Floresta Alta\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A Floresta Alta (High Forest) é a maior floresta de Faerûn, misteriosa e intocada.",
+    "INFORMED": "Falam de druidas, tribos de elfos, treants e ruínas de cidades élficas dentro dela.",
+    "STUDIED": "A floresta tem mais de 800 km de norte a sul; poucos entram e voltam, porque algo nela afasta quem quer explorá-la."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

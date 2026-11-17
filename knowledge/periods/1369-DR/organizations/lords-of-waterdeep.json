@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:lords-of-waterdeep",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Lordes de Águas Profundas (Lords of Waterdeep)",
+  "summary": "Os Lordes de Águas Profundas (Lords of Waterdeep) governam a cidade mascarados e em segredo; o Lorde Sem Máscara, Piergeiron, é o único que mostra o rosto. Julgam no Tribunal dos Lordes assassinato, traição e mau uso da magia. Dizem que o arquimago Khelben é um deles.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:waterdeep",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 105, os Lordes e o Tribunal"
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 157, \"Piergeiron the Unmasked Lord\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Lordes de Águas Profundas\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Os Lordes de Águas Profundas (Lords of Waterdeep) governam a cidade mascarados e em segredo.",
+    "INFORMED": "O Lorde Sem Máscara, Piergeiron, é o único que mostra o rosto; os Lordes julgam assassinato, traição e mau uso da magia.",
+    "STUDIED": "Dizem que o arquimago Khelben é um deles."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

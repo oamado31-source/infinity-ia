@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:luskan",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Luskan",
+  "summary": "Luskan é um porto mercante do Norte, de homens do norte orgulhosos e guerreiros, conhecido como abrigo de piratas. Visitantes são poucos e malvistos, e a Irmandade Arcana, uma guilda de magos, vigia quem entra. É inimiga de Águas Profundas e da Aliança dos Lordes.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:the-north",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-north-1996",
+      "locator": "p. 122, \"Luskan\""
+    },
+    {
+      "source_id": "the-north-1996",
+      "locator": "p. 66–67, \"Arcane Brotherhood\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Luskan\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Luskan é um porto do Norte de gente guerreira, conhecido como abrigo de piratas.",
+    "INFORMED": "Visitantes são poucos e malvistos; a Irmandade Arcana, uma guilda de magos, vigia quem entra.",
+    "STUDIED": "Luskan é inimiga de Águas Profundas e da Aliança dos Lordes."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

@@ -578,13 +578,18 @@ class StandingTests(unittest.TestCase):
         def level(*realms):                                   # CR-2026-021: a realm's own level
             return {e.id for e in PACK.entries.values()
                     if (e.id if e.kind == 'REGION' else e.region_id) in realms}
+
+        def cities(*realms):                                  # CR-2026-025: and its cities
+            return {e.id for e in PACK.entries.values()
+                    if e.kind == 'REGION' and e.region_id in realms}
         full, shallow = known('HABITANTE', None)
         self.assertIn('org:council-of-six', full)
         self.assertEqual(set(shallow), {e.id for e in PACK.entries.values()       # CR-2026-015
                                         if e.kind == 'REGION' and e.region_id == 'region:amn'
                                         and e.id != 'region:athkatla'}
                          | level('region:tethyr', 'region:sword-coast',      # the realms next door
-                                 'region:calimshan'))
+                                 'region:calimshan')
+                         | cities('region:tethyr', 'region:sword-coast', 'region:calimshan'))
         full, shallow = known('VIAJANTE', 'region:amn')
         self.assertIn('org:council-of-six', shallow)          # the place: popular core only
         self.assertIn('org:cowled-wizards', full)             # the realm it comes from
@@ -595,7 +600,8 @@ class StandingTests(unittest.TestCase):
                          | WORLD | LOTE_B_TETHYR | LOTE_E_TETHYR)
         amn_public, _ = known('HABITANTE', None)              # what Amn's own level makes public
         self.assertEqual(set(shallow), (level('region:amn') & set(amn_public))  # next door
-                         | level('region:calimshan'))
+                         | level('region:calimshan')
+                         | cities('region:amn', 'region:calimshan'))
 
     def test_traveler_sees_only_the_popular_core(self):
         tmp = tempfile.TemporaryDirectory()

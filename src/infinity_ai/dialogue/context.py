@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
-from ..memory.common_knowledge import SHARED_EVENT, BackgroundRegion
+from ..memory.common_knowledge import SHARED_EVENT, BackgroundRegion, other_names, spoken_words
 from .absence import classify_absence
 from .disclosure import NEUTRO, Decision, decide
 from ..memory.model import KnowledgeBasis
@@ -312,7 +312,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
             new_layers = layers if not learned[2] and learned[1] == s else learned[2]
             subjects[entry_id] = (learned[0], learned[1], new_layers, learned[3],
                                   learned[4] or subject_id, learned[5] or secrecy)
-    knowledge, restricted, decisions, withheld_titles = [], [], [], []
+    knowledge, restricted, decisions, withheld_titles, told_titles = [], [], [], [], []
     # ADR-0131: what the person tells, decided per item by code before the prompt (secrecy class,
     # ADR-0125 disposition, ADR-0126 morale, trust). A withheld item never reaches the model.
     # CR-2026-014: what fills the prompt is chosen by closeness (the caller's `order`, from the
@@ -338,11 +338,25 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         text = layered_text(s, layers, shallow if learned_here else tier)
         fact = Fact(f'K{i}', f'canon:{entry_id}', f'{t}: {text}', at_game_time or 0, subject_id)
         (restricted if scope == 'RESTRICTED' else knowledge).append(fact)
+        told_titles.append(t)
         vocabulary |= set(_NAME.findall(t)) | set(_NAME.findall(text))
+    # CR-2026-026: the question says a name the person knows by another ("Silverymoon", and it
+    # knows "Lua Prateada" from Alustriel): the title of the entry says they are the same.
+    if question:
+        asked = spoken_words(question, aliases)
+        told = spoken_words(' '.join(f.text for f in knowledge + restricted))
+        for t in unheld_titles:
+            pair = other_names(t, asked, told)
+            if pair:
+                fact = Fact(f'K{len(knowledge) + len(restricted) + 1}', f'name:{t}',
+                            f'{pair[0]}: é o mesmo que {pair[1]}, com o nome em outra língua.',
+                            at_game_time or 0)
+                knowledge.append(fact)
+                vocabulary |= set(_NAME.findall(fact.text))
     # ADR-0131: a question only about what the person cannot answer gets a fixed line (engine).
     absence = classify_absence(
         question, told_texts=[f.text for f in facts + tuple(knowledge) + tuple(restricted)],
-        withheld_titles=withheld_titles, unheld_titles=unheld_titles,
+        withheld_titles=withheld_titles, unheld_titles=unheld_titles, told_titles=told_titles,
         self_texts=[f.text for f in facts], aliases=aliases,
         where_texts=[place, identity.place if identity and identity.place else '', name])
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(

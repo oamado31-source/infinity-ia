@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:myth-drannor-founded",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Fundação de Myth Drannor",
+  "summary": "Em 261 DR, a cidade élfica no coração de Cormanthyr virou Myth Drannor, sob um mythal, uma grande proteção mágica. O Coronal Eltargrim abriu o reino a quem não era elfo, e a cidade se tornou um lugar de humanos, anões e elfos juntos, até cair em 714 DR.",
+  "valid_from_dr": 261,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 68, \"261 DR Year of Soaring Stars\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Myth Drannor\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Myth Drannor foi a grande cidade dos elfos, aberta também a humanos e anões.",
+    "INFORMED": "Ela foi fundada no coração de Cormanthyr, sob um mythal, uma grande proteção mágica.",
+    "STUDIED": "Isso foi em 261 DR, quando o Coronal Eltargrim abriu o reino a quem não era elfo."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

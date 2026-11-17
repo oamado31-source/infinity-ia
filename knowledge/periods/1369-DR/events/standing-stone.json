@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:standing-stone",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Pedra Erguida e a Contagem dos Vales (Standing Stone, Dalereckoning)",
+  "summary": "A Pedra Erguida (Standing Stone) foi levantada em 1 DR pelos elfos de Cormanthyr e pelos homens dos Vales, selando o pacto que deixou os humanos se assentarem nas clareiras. O dia marca o começo da Contagem dos Vales, o calendário de anos usado em quase todo Faerûn.",
+  "valid_from_dr": 1,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 59, \"1 DR Year of Sunrise\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Pedra Erguida\", \"Contagem dos Vales\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A Pedra Erguida (Standing Stone) marca o começo da Contagem dos Vales, a contagem dos anos.",
+    "INFORMED": "Foi levantada pelos elfos de Cormanthyr e pelos homens dos Vales, num pacto de paz.",
+    "STUDIED": "Isso foi em 1 DR; o pacto deixou os humanos se assentarem nas clareiras."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

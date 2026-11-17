@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:crown-wars",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Guerras da Coroa (Crown Wars)",
+  "summary": "As Guerras da Coroa (Crown Wars) foram quatro gerações de guerra entre os reinos dos próprios elfos, de −12000 a −9000 DR. Delas vieram o Desastre Sombrio, que fez da floresta de Miyeritar a Charneca Alta (High Moor), e a descida dos elfos negros para debaixo da terra.",
+  "valid_from_dr": -9000,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 12, \"The Crown Wars\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Guerras da Coroa\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Há muitos milênios, os elfos guerrearam entre si por séculos.",
+    "INFORMED": "As guerras se chamam Guerras da Coroa (Crown Wars); delas veio a descida dos elfos negros para debaixo da terra.",
+    "STUDIED": "As guerras duraram de −12000 a −9000 DR; o Desastre Sombrio fez da floresta de Miyeritar a Charneca Alta (High Moor)."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

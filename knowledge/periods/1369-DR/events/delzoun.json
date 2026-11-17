@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:delzoun",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Delzoun, o Reino do Norte (Northkingdom)",
+  "summary": "Delzoun, o Reino do Norte (Northkingdom), foi um grande reino de anões fundado por volta de −3900 DR sob as terras do Norte em volta de Lua Prateada. Negociou com Netheril e durou milênios, até ser arrasado pelas hordas de orcs por volta de −111 DR.",
+  "valid_from_dr": -3900,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:the-north",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 27, \"c. −3900 DR\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 57, as hordas de orcs"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Delzoun\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Há muito tempo, existiu um grande reino de anões debaixo do Norte.",
+    "INFORMED": "Ele se chamava Delzoun, o Reino do Norte (Northkingdom), e foi arrasado pelas hordas de orcs.",
+    "STUDIED": "Foi fundado por volta de −3900 DR, sob as terras em volta de Lua Prateada, e negociou com Netheril."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

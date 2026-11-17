@@ -71,8 +71,10 @@ LOTE_F_WORLD = {'org:harpers', 'org:zhentarim', 'org:red-wizards', 'char:szass-t
 LOTE_G_WORLD = {'char:khelben', 'char:alustriel', 'char:drizzt'}
 LOTE_H_WORLD = {'char:elminster', 'char:azoun', 'topic:heartlands-renown'}
 LOTE_I_WORLD = {'char:simbul', 'char:lolth', 'topic:east-renown'}
+LOTE_J_WORLD = {'event:crown-wars', 'event:descent-of-the-drow', 'event:standing-stone',
+                'event:myth-drannor-founded', 'event:imaskar', 'event:jhaamdath'}
 WORLD = (LOTE_B_WORLD | LOTE_C_WORLD | LOTE_C2_WORLD | LOTE_E_WORLD | LOTE_F_WORLD
-         | LOTE_G_WORLD | LOTE_H_WORLD | LOTE_I_WORLD)   # everyone placed in the pack knows it
+         | LOTE_G_WORLD | LOTE_H_WORLD | LOTE_I_WORLD | LOTE_J_WORLD)   # everyone placed knows it
 LOTE_A_AMN = LOTE_A_AMN | WORLD | {'topic:faiths-of-amn', 'topic:tymora-pearls-in-amn',
                                    'org:knights-of-the-shield'}
 COUNTRY = {'region:faerun', 'region:amn', 'org:cowled-wizards'} | LOTE_A_AMN

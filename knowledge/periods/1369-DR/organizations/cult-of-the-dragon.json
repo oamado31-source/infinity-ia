@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:cult-of-the-dragon",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Culto do Dragão (Cult of the Dragon)",
+  "summary": "O Culto do Dragão (Cult of the Dragon) foi fundado pelo mago Sammaster, que proclamou que os dragões malignos governariam o mundo. Seus membros servem esses dragões, enchem seus tesouros e os tornam dracoliches, dragões mortos-vivos. Não é um grupo único, mas células por Faerûn.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "cult-of-the-dragon",
+      "locator": "p. 7, \"The Story of Sammaster\""
+    },
+    {
+      "source_id": "cult-of-the-dragon",
+      "locator": "p. 28, \"Basic Information\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 155, \"The Cult of the Dragon\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Culto do Dragão (Cult of the Dragon) venera dragões malignos e os torna dragões mortos-vivos.",
+    "INFORMED": "Foi fundado pelo mago Sammaster, que proclamou que os dragões malignos governariam o mundo.",
+    "STUDIED": "Não é um grupo único, mas células por Faerûn; os membros enchem os tesouros dos dragões."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

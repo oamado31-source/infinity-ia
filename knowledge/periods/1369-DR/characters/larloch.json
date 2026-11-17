@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:larloch",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Larloch",
+  "summary": "Larloch é um arquimago de Netheril que escapou da queda do império e vive na Cripta do Bruxo (Warlock's Crypt), nas Colinas dos Trolls, guardado por servos imortais. A cripta foi descoberta em 1351 DR, e os poucos exploradores que voltaram trouxeram uma praga a Baldur's Gate.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:sword-coast",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 102, \"Warlock's Crypt\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 48, \"−339 DR\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 140, \"1351 DR Year of the Crown\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Larloch é um mago antigo e terrível que vive na Cripta do Bruxo, nas Colinas dos Trolls.",
+    "INFORMED": "É um arquimago de Netheril que escapou da queda do império; servos imortais o guardam.",
+    "STUDIED": "A cripta foi descoberta em 1351 DR, e os poucos exploradores que voltaram trouxeram uma praga a Baldur's Gate."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:red-wizards",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Magos Vermelhos de Thay (Red Wizards)",
+  "summary": "Os Magos Vermelhos (Red Wizards) governam Thay, terra de magos a leste do Mar das Estrelas Cadentes, onde o trabalho é feito por escravos. Oito zulkires, um por escola de magia, mandam no país, mas vivem tramando uns contra os outros. Seus agentes agem em cidades de todo Faerûn.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "villains-lorebook",
+      "locator": "p. 118–119, \"Red Wizards of Thay\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Os Magos Vermelhos (Red Wizards) são os magos que governam Thay, no leste, uma terra de escravos.",
+    "INFORMED": "Oito zulkires, um por escola de magia, mandam no país, mas vivem tramando uns contra os outros.",
+    "STUDIED": "Seus agentes agem em cidades de todo Faerûn."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

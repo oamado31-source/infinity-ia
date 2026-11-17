@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:order-of-the-radiant-heart",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Ordem do Coração Radiante (Order of the Radiant Heart)",
+  "summary": "A Nobilíssima Ordem do Coração Radiante (Order of the Radiant Heart), ordem de cavaleiros sediada no Distrito dos Templos de Athkatla, protege os indefesos e pune o mal. Reúne paladinos, como os de Torm, e sacerdotes de Helm; escudeiros fazem um Teste para virar cavaleiros.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "bg2-manual",
+      "locator": "seção \"New Friends\" (PDF p. 30–31)"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Nobilíssima Ordem do Coração Radiante\", \"paladino de Torm\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A Ordem do Coração Radiante (Order of the Radiant Heart) é a ordem de cavaleiros paladinos de Athkatla, que protege os indefesos e pune o mal.",
+    "INFORMED": "Tem sede no Distrito dos Templos e reúne paladinos, como os de Torm, e sacerdotes de Helm.",
+    "STUDIED": "Os escudeiros fazem um Teste para virar cavaleiros."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

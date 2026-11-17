@@ -890,6 +890,48 @@
           "Zaranda"
         ]
       }
+    },
+    {
+      "id": "organizacao-distante-pela-pergunta",
+      "description": "CR-2026-023 (lote F): uma organização de todo Faerûn (os Harpistas) fica fora do prompt até a pergunta nomeá-la; então entra e o habitante dá o núcleo popular.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Quem são os Harpistas?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "org:harpers"
+        ]
+      }
+    },
+    {
+      "id": "ordem-local-no-prompt",
+      "description": "Lote F: a ordem de cavaleiros de Athkatla (Ordem do Coração Radiante) é conhecida pelo habitante da cidade.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "O que é a Ordem do Coração Radiante?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "org:order-of-the-radiant-heart"
+        ]
+      }
     }
   ]
 }

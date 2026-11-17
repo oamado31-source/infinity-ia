@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:harpers",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Harpistas (Harpers)",
+  "summary": "Os Harpistas (Harpers) são uma sociedade semissecreta do bem que protege a civilização de goblins e dragões e das tramas dos Magos Vermelhos, do Culto do Dragão e da Zhentarim. Agem em segredo, sozinhos ou em pequenos grupos; seu sinal é uma harpa e uma lua.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 155–156, \"The Harpers\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 319, sinal dos Harpistas"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Os Harpistas (Harpers) são uma sociedade secreta do bem, que luta contra os Magos Vermelhos e a Zhentarim.",
+    "INFORMED": "Agem em segredo, sozinhos ou em pequenos grupos; seu sinal é uma harpa e uma lua.",
+    "STUDIED": "Os Harpistas protegem a civilização de goblins e dragões e das tramas do Culto do Dragão."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

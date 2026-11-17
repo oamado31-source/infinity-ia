@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:knights-of-the-shield",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Cavaleiros do Escudo (Knights of the Shield)",
+  "summary": "Os Cavaleiros do Escudo (Knights of the Shield) são uma sociedade secreta de mercadores e nobres, com poder em Amn, Tethyr e Baldur's Gate, que manipula a política e o comércio da Costa da Espada. Pouco se sabe; há boatos de que um paxá de Calimshan, ou até um demônio, os lidera.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:amn",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "villains-lorebook",
+      "locator": "p. 112, \"Knights of the Shield\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Os Cavaleiros do Escudo (Knights of the Shield) seriam uma sociedade secreta de mercadores e nobres.",
+    "INFORMED": "Os Cavaleiros manipulam a política e o comércio da Costa da Espada, com poder em Amn, Tethyr e Baldur's Gate.",
+    "STUDIED": "Pouco se sabe; há boatos de que um paxá de Calimshan, ou até um demônio, os lidera."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

@@ -15,7 +15,7 @@ PACK = load_partition(1369)
 BUILD = frozenset(a for e in PACK.entries.values() for a in e.area_resrefs)
 LOTE_D = {e.id for e in PACK.entries.values()
           if e.region_id in ('region:sword-coast', 'region:baldurs-gate', 'region:beregost')
-          or e.id == 'region:sword-coast'}
+          or e.id == 'region:sword-coast'} - {'org:iron-throne', 'char:larloch'}   # those are lote F
 
 
 def known(**kw):

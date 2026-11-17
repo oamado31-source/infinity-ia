@@ -1145,6 +1145,257 @@
           "^Isso eu não sei\\.$"
         ]
       }
+    },
+    {
+      "id": "loja-quartos",
+      "description": "ADR-0132: quem aluga quartos (loja inventada para o teste) confirma, com o preço da loja, e nunca nega.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-funcionario",
+        "name": "Bernard",
+        "wis": 9,
+        "int": 9,
+        "occupation": "taverneiro da Coroa de Cobre",
+        "affiliations": [
+          "place:copper-coronet:STAFF"
+        ],
+        "self_facts": [
+          "Você serve bebida no balcão da Coroa de Cobre e conhece bem a freguesia da casa."
+        ],
+        "offer": {
+          "place": "Taverna de Teste",
+          "kinds": [
+            "INN"
+          ],
+          "rooms": [
+            [
+              "PEASANT",
+              2
+            ],
+            [
+              "MERCHANT",
+              7
+            ]
+          ],
+          "drinks": [
+            [
+              "Cerveja da Casa",
+              2
+            ],
+            [
+              "Vinho Tinto",
+              5
+            ]
+          ],
+          "items": [
+            [
+              "Adaga Simples",
+              3,
+              "ARMAS"
+            ],
+            [
+              "Espada de Ferro",
+              20,
+              "ARMAS"
+            ],
+            [
+              "Escudo de Pinho",
+              6,
+              "ESCUDOS"
+            ]
+          ],
+          "cures": []
+        }
+      },
+      "question": "Vocês têm quartos para alugar?",
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "matches_none": [
+          "(?i)\\bn[ãa]o (?:temos|tenho|vendo|vendemos|alugamos)\\b",
+          "(?i)^n[ãa]o sei"
+        ],
+        "mentions_any": [
+          "2",
+          "7",
+          "camponês",
+          "mercador"
+        ]
+      }
+    },
+    {
+      "id": "loja-cerveja",
+      "description": "ADR-0132: o taverneiro diz o preço da bebida da loja, sem negar nem inventar.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-funcionario",
+        "name": "Bernard",
+        "wis": 9,
+        "int": 9,
+        "occupation": "taverneiro da Coroa de Cobre",
+        "affiliations": [
+          "place:copper-coronet:STAFF"
+        ],
+        "self_facts": [
+          "Você serve bebida no balcão da Coroa de Cobre e conhece bem a freguesia da casa."
+        ],
+        "offer": {
+          "place": "Taverna de Teste",
+          "kinds": [
+            "INN"
+          ],
+          "rooms": [
+            [
+              "PEASANT",
+              2
+            ],
+            [
+              "MERCHANT",
+              7
+            ]
+          ],
+          "drinks": [
+            [
+              "Cerveja da Casa",
+              2
+            ],
+            [
+              "Vinho Tinto",
+              5
+            ]
+          ],
+          "items": [
+            [
+              "Adaga Simples",
+              3,
+              "ARMAS"
+            ],
+            [
+              "Espada de Ferro",
+              20,
+              "ARMAS"
+            ],
+            [
+              "Escudo de Pinho",
+              6,
+              "ESCUDOS"
+            ]
+          ],
+          "cures": []
+        }
+      },
+      "question": "Quanto custa uma cerveja aqui?",
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "matches_none": [
+          "(?i)\\bn[ãa]o (?:temos|tenho|vendo|vendemos|alugamos)\\b",
+          "(?i)^n[ãa]o sei"
+        ],
+        "mentions_any": [
+          "2",
+          "Cerveja da Casa"
+        ]
+      }
+    },
+    {
+      "id": "loja-espada",
+      "description": "ADR-0132: quem vende armas confirma, com o item e o preço da loja.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-funcionario",
+        "name": "Bernard",
+        "wis": 9,
+        "int": 9,
+        "occupation": "taverneiro da Coroa de Cobre",
+        "affiliations": [
+          "place:copper-coronet:STAFF"
+        ],
+        "self_facts": [
+          "Você serve bebida no balcão da Coroa de Cobre e conhece bem a freguesia da casa."
+        ],
+        "offer": {
+          "place": "Taverna de Teste",
+          "kinds": [
+            "INN"
+          ],
+          "rooms": [
+            [
+              "PEASANT",
+              2
+            ],
+            [
+              "MERCHANT",
+              7
+            ]
+          ],
+          "drinks": [
+            [
+              "Cerveja da Casa",
+              2
+            ],
+            [
+              "Vinho Tinto",
+              5
+            ]
+          ],
+          "items": [
+            [
+              "Adaga Simples",
+              3,
+              "ARMAS"
+            ],
+            [
+              "Espada de Ferro",
+              20,
+              "ARMAS"
+            ],
+            [
+              "Escudo de Pinho",
+              6,
+              "ESCUDOS"
+            ]
+          ],
+          "cures": []
+        }
+      },
+      "question": "Você vende espadas?",
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "matches_none": [
+          "(?i)\\bn[ãa]o (?:temos|tenho|vendo|vendemos|alugamos)\\b",
+          "(?i)^n[ãa]o sei"
+        ],
+        "mentions_any": [
+          "Espada de Ferro",
+          "20"
+        ]
+      }
+    },
+    {
+      "id": "sem-loja-nao-vende",
+      "description": "ADR-0132: quem não tem loja continua podendo dizer que não vende.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Você vende espadas?",
+      "checks": {
+        "status": [
+          "OK"
+        ]
+      }
     }
   ]
 }

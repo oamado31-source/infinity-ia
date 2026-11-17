@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass
 
 from .claims import third_party_claim
+from .offers import denied_offer
 from .context import DialogueContext
 
 MAX_SPEECH = 400
@@ -169,6 +170,8 @@ _RETRY_HINTS = (
     ('SELF_CLAIM:BORN', 'não diga que nasceu aqui; isso não está nos seus FATOS'),
     ('SELF_CLAIM:WORK', 'você não trabalha neste lugar: não diga que trabalha aqui nem para o dono'),
     ('SELF_CLAIM:ORIGIN', 'não diga de onde veio além do que está nos seus FATOS'),
+    ('SELF_CLAIM:OFFER', 'você vende isso, está nos seus FATOS: não diga que não tem, que não vende '
+                         'nem que não sabe; confirme e, se falar de preço, use o dos FATOS'),
     ('SELF_CLAIM', 'sobre você, não afirme posse, cargo ou parentesco que não está nos seus FATOS'),
     ('THIRD_PARTY:ROLE', 'você deu a alguém um papel ou função que não está no que você sabe; '
                          'diga que não sabe isso, ou fale só do que sabe sobre essa pessoa'),
@@ -270,6 +273,8 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
         own = ' '.join(own_facts + [context.persona.display_name]).lower()
         if word not in own:
             reasons.append('SELF_CLAIM')
+    if denied_offer(speech, player_text, context.offer):
+        reasons.append('SELF_CLAIM:OFFER')       # ADR-0132: a seller denies what it sells
     why = _origin_contradicts(speech, context) if context.standing else None
     if why:
         reasons.append(f'SELF_CLAIM:{why}')      # the log shows which claim was refused

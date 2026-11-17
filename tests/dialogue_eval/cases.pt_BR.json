@@ -611,6 +611,60 @@
       }
     },
     {
+      "id": "preco-sem-lastro",
+      "description": "CR-2026-028 (lab 2026-11-17) com a ADR-0132: perguntado quanto vale uma espada, o taverneiro confirma que vende e só cita o preço da loja (inventada para o teste), sem inventar valores nem falar em \"golds\".",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-bernard",
+        "name": "Bernard",
+        "wis": 9,
+        "int": 9,
+        "occupation": "taverneiro da Coroa de Cobre",
+        "origin": "region:tethyr",
+        "affiliations": [
+          "place:copper-coronet:STAFF"
+        ],
+        "self_facts": [
+          "Você serve bebida no balcão da Coroa de Cobre e conhece bem a freguesia da casa."
+        ],
+        "offer": {
+          "place": "Taverna de Teste",
+          "kinds": [
+            "INN"
+          ],
+          "rooms": [],
+          "drinks": [
+            [
+              "Cerveja da Casa",
+              2
+            ]
+          ],
+          "items": [
+            [
+              "Espada de Ferro",
+              20,
+              "ARMAS"
+            ]
+          ],
+          "cures": []
+        }
+      },
+      "question": "Quanto vale uma boa espada aqui?",
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "mentions_none": [
+          "gold"
+        ],
+        "matches_none": [
+          "\\b(?!20\\b)\\d+\\b",
+          "(?i)\\bn[ãa]o (?:vendo|vendemos|temos|tenho)\\b"
+        ]
+      }
+    },
+    {
       "id": "cidade-vizinha-pela-pergunta",
       "description": "CR-2026-016: a cidade vizinha nomeada na pergunta entra no prompt e o habitante dá só o núcleo popular.",
       "speaker": {

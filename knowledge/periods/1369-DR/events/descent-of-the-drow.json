@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:descent-of-the-drow",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Descida dos drows (Descent of the Drow)",
+  "summary": "Em −10000 DR, no fim das Guerras da Coroa, a magia de Corellon, pelos sacerdotes e altos magos elfos, transformou os elfos negros corrompidos, os Ilythiiri, nos drows. Banidos da luz do sol, todos os drows desceram para Umbreterna em dois meses.",
+  "valid_from_dr": -10000,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 15, \"−10000 DR Descent of the Drow\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"História dos Drow, a Descida\", \"Ilythiiri\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Os drows, dizem, eram elfos que foram banidos para debaixo da terra.",
+    "INFORMED": "Foram os próprios deuses dos elfos que os baniram, no fim das Guerras da Coroa; eles desceram para Umbreterna.",
+    "STUDIED": "Em −10000 DR, a magia de Corellon transformou os elfos negros corrompidos, os Ilythiiri, nos drows."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

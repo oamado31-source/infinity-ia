@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:ahghairon",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Ahghairon",
+  "summary": "Ahghairon foi o grande mago que fundou o governo de Águas Profundas: em 1032 DR, enfrentou o senhor da guerra Raurlor e se tornou o primeiro Lorde da cidade, decidindo que ela seria regida pela sabedoria, não pelas armas. Morreu em 1256 DR.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:waterdeep",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 116, \"1032 DR Year of the Nightmaidens\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 128, \"1256 DR Year of the Dusty Throne\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Ahghairon\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Ahghairon foi o grande mago que fundou o governo de Águas Profundas, há muito tempo.",
+    "INFORMED": "Ele foi o primeiro Lorde da cidade e decidiu que ela seria regida pela sabedoria, não pelas armas.",
+    "STUDIED": "Em 1032 DR, enfrentou o senhor da guerra Raurlor; morreu em 1256 DR."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

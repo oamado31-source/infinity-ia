@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:uthgar",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Uthgar e os Uthgardt",
+  "summary": "Uthgar Gardolfsson foi um chefe guerreiro do mar que, em 95 DR, saqueou Illusk, a cidade que viria a ser Luskan, e depois foi expulso para o interior. Seus seguidores viraram as tribos bárbaras Uthgardt do Norte, que o veneram como ancestral.",
+  "valid_from_dr": 95,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:the-north",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 61, \"95 DR Year of the Reluctant Hero\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Uthgar\", \"Uthgardt\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "As tribos bárbaras do Norte, os Uthgardt, veneram um herói antigo chamado Uthgar.",
+    "INFORMED": "Uthgar foi um chefe guerreiro que saqueou Illusk, a cidade que viria a ser Luskan.",
+    "STUDIED": "Isso foi em 95 DR; depois ele foi expulso para o interior, e o nome dele era Uthgar Gardolfsson."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

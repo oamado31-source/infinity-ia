@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:jhaamdath",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Jhaamdath",
+  "summary": "Jhaamdath foi um império humano de psíquicos no sul do Mar Interior. Em −255 DR, depois que seus exércitos massacraram os elfos da floresta, quatro altos magos elfos ergueram uma onda gigante que destruiu as Doze Cidades da Espada e deu ao litoral a forma do Estreito de Vilhon.",
+  "valid_from_dr": -255,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 25, a onda de −255 DR"
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 21, \"−5800 DR\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Estreito de Vilhon, dizem, ganhou sua forma quando uma onda gigante destruiu um império antigo.",
+    "INFORMED": "O império se chamava Jhaamdath; a onda veio dos elfos, depois que os exércitos dele massacraram os elfos da floresta.",
+    "STUDIED": "Isso foi em −255 DR, e a onda destruiu as Doze Cidades da Espada; Jhaamdath era um império de psíquicos."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

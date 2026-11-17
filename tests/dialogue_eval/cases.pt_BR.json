@@ -1504,6 +1504,75 @@
           "debaixo"
         ]
       }
+    },
+    {
+      "id": "drows-pela-lenda",
+      "description": "Lote J: a Descida dos drows é de toda Faerûn; quem não é estudado conta só a lenda, sem datas.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ]
+      },
+      "question": "De onde vieram os drows?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "unknown": false,
+        "matches_none": [
+          "−?10\\.?000"
+        ]
+      }
+    },
+    {
+      "id": "contagem-dos-vales",
+      "description": "Lote J: \"Contagem dos Vales\" acha a Pedra Erguida, que está no título com os dois nomes.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-nobre",
+        "name": "Lorde Eval",
+        "wis": 10,
+        "int": 17,
+        "occupation": "nobre de Athkatla"
+      },
+      "question": "Por que contamos os anos pela Contagem dos Vales?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "event:standing-stone"
+        ]
+      }
+    },
+    {
+      "id": "guerras-da-coroa-estudado",
+      "description": "Lote J: um nobre estudado conta as Guerras da Coroa com os detalhes da camada erudita.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-nobre",
+        "name": "Lorde Eval",
+        "wis": 10,
+        "int": 17,
+        "occupation": "nobre de Athkatla"
+      },
+      "question": "O que foram as Guerras da Coroa?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "event:crown-wars"
+        ]
+      }
     }
   ]
 }

@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:imaskar",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Império de Imaskar (Imaskari)",
+  "summary": "Imaskar foi um império de magos do leste, mestres de espaços mágicos, que trouxe escravos de outro mundo. Em −2488 DR, os deuses desses escravos vieram a Faerûn e lideraram a revolta que destruiu o império; os libertos fundaram Mulhorand e Unther.",
+  "valid_from_dr": -2488,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 18, o fim de Imaskar em −2488 DR"
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Mulhorand e Unther, dizem, foram fundados por escravos libertos de um império antigo.",
+    "INFORMED": "O império se chamava Imaskar e era de magos do leste; os deuses dos escravos vieram libertá-los.",
+    "STUDIED": "Isso foi em −2488 DR; os escravos tinham sido trazidos de outro mundo."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

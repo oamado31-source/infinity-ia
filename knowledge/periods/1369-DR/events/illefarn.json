@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "event:illefarn",
+  "kind": "EVENT",
+  "partition_year_dr": 1369,
+  "title": "Illefarn",
+  "summary": "Illefarn foi um antigo reino élfico onde hoje ficam Águas Profundas e as florestas em volta, fundado há mais de vinte mil anos. Ficou neutro nas Guerras da Coroa, mas abrigou refugiados; seu último Coronal foi morto por drows em −206 DR, e os elfos partiram depois.",
+  "valid_from_dr": -206,
+  "valid_to_dr": null,
+  "date_precision": "YEAR_ONLY",
+  "region_id": "region:the-north",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 10, \"−22900 DR\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 53, \"−206 DR Year of Elfsorrows\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Illefarn\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Águas Profundas fica onde havia um antigo reino élfico, Illefarn.",
+    "INFORMED": "Illefarn ficou neutro nas Guerras da Coroa, mas abrigou refugiados.",
+    "STUDIED": "Foi fundado há mais de vinte mil anos; seu último Coronal foi morto por drows em −206 DR."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

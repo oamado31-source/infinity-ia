@@ -1573,6 +1573,112 @@
           "event:crown-wars"
         ]
       }
+    },
+    {
+      "id": "hendak-escravo-da-arena",
+      "description": "Etapa 3: Hendak conta, pelos próprios fatos, que é escravo da arena (D2).",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:hendak",
+        "name": "Hendak",
+        "wis": 12,
+        "int": 10,
+        "self_facts": [
+          "Você é mantido como escravo e obrigado a lutar na arena de Lehtinan.",
+          "Você protege os outros escravos e quer se vingar de Lehtinan."
+        ],
+        "occupation": "gladiador escravo da arena de Lehtinan"
+      },
+      "question": "Quem é você e o que faz aqui?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "escravo",
+          "arena",
+          "lutar"
+        ]
+      }
+    },
+    {
+      "id": "lehtinan-nao-conta-dos-escravos",
+      "description": "Etapa 3: o segredo dos escravos é CONFIDENTIAL; sem confiança, Lehtinan não confirma nem fala de traficantes.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:lehtinan",
+        "name": "Lehtinan",
+        "wis": 12,
+        "int": 12,
+        "occupation": "dono da Coroa de Cobre",
+        "affiliations": [
+          "place:copper-coronet:STAFF"
+        ],
+        "self_facts": [
+          "Você é o dono da Coroa de Cobre.",
+          "Você mantém uma arena nos fundos da casa, para divertir clientes ricos."
+        ]
+      },
+      "question": "Os lutadores da sua arena são escravos?",
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "matches_none": [
+          "(?i)\\bs[ãa]o escravos\\b",
+          "(?i)traficantes"
+        ]
+      }
+    },
+    {
+      "id": "frequentador-sabe-da-arena",
+      "description": "Etapa 3: a arena é assunto da casa (PROFESSIONAL); um frequentador sabe dela.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ]
+      },
+      "question": "Tem uma arena aqui na Coroa de Cobre?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "arena",
+          "luta"
+        ]
+      }
+    },
+    {
+      "id": "fora-da-casa-nao-sabe-da-arena",
+      "description": "Etapa 3: quem não é da casa não sabe de gladiadores nem de escravos.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Tem uma arena aqui?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_none": [
+          "gladiador",
+          "escravo"
+        ]
+      }
     }
   ]
 }

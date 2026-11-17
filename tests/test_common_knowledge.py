@@ -295,8 +295,11 @@ class RelationshipAccessTests(Story):
                                        affiliations=('place:copper-coronet:REGULAR',), **args)
         stranger = relationship_entries(PACK, npc_id='npc:cre-stranger',
                                          affiliations=(), **args)
-        self.assertEqual(staff, ['rel:bernard-manages-copper-coronet'])
-        self.assertEqual(regular, ['rel:bernard-manages-copper-coronet'])
+        self.assertEqual(staff, ['rel:arena-slaves', 'rel:bernard-manages-copper-coronet',
+                                 'rel:lehtinan-runs-arena'])
+        # Etapa 3: the slave trade behind the arena is for the staff only; the arena itself is
+        # house business that the regulars also know.
+        self.assertEqual(regular, ['rel:bernard-manages-copper-coronet', 'rel:lehtinan-runs-arena'])
         self.assertEqual(stranger, [])
 
     def test_parties_of_a_restricted_relationship_always_know_it(self):
@@ -305,9 +308,12 @@ class RelationshipAccessTests(Story):
         bernard_uncurated = relationship_entries(PACK, npc_id='npc:cre-bernard', affiliations=(),
                                                  **args)
         patron = relationship_entries(PACK, npc_id='npc:cre-ftown7', affiliations=(), **args)
-        self.assertEqual(owner, ['rel:bernard-manages-copper-coronet'])        # the object
+        self.assertEqual(owner, ['rel:arena-slaves', 'rel:bernard-manages-copper-coronet',
+                                 'rel:lehtinan-runs-arena'])          # subject or object
         self.assertEqual(bernard_uncurated, ['rel:bernard-manages-copper-coronet'])  # subject
         self.assertEqual(patron, [])
+        hendak = relationship_entries(PACK, npc_id='npc:hendak', affiliations=(), **args)
+        self.assertEqual(hendak, ['rel:arena-slaves'])     # Etapa 3: the slave is a party
 
     def test_restricted_relationship_is_not_shareable_by_default(self):
         self.see('AR0406', 100, '["imoen","jaheira"]')

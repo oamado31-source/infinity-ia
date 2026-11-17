@@ -361,7 +361,8 @@ def context_order(pack: CanonPack, entry_ids: Iterable[str], *, npc_id: str | No
     where it is (city, realm, Faerûn, then regions off that chain) take turns, one entry each, so
     no level fills the prompt alone, first among regions and organizations, then topics, places,
     characters and relations, then events (CR-2026-018). Region entries off the chain (sibling cities, distant lands)
-    and the continent itself come last: they matter when asked about. Within a level: the region
+    and the continent itself come last: they matter when asked about; so do organizations of the
+    whole continent or of lands off the chain (CR-2026-023: the Harpers, the Zhentarim). Within a level: the region
     itself, organizations, places, topics, characters, relations, then events, recent ones first;
     ties by id. Pure and deterministic."""
     chain = region_chain(pack, home_region)
@@ -386,6 +387,9 @@ def context_order(pack: CanonPack, entry_ids: Iterable[str], *, npc_id: str | No
             at_place.append(entry)
         elif entry.kind == 'REGION' and (entry.id not in chain or entry.id == WORLD_REGION):
             atlas.append(entry)            # other cities and lands, the continent: when asked
+        elif entry.kind == 'ORGANIZATION' and (entry.region_id not in chain
+                                               or entry.region_id == WORLD_REGION):
+            atlas.append(entry)            # CR-2026-023: far-off organizations, when asked
         else:
             region = entry.id if entry.kind == 'REGION' else entry.region_id
             levels.setdefault(chain.index(region) if region in chain else len(chain),

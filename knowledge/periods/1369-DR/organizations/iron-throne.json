@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:iron-throne",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Trono de Ferro (Iron Throne)",
+  "summary": "O Trono de Ferro (Iron Throne) é uma organização de mercadores que quer controlar o comércio de armas e de equipamento de transporte. É acusado de assassinatos, extorsão e contrabando, o que sempre nega. Em 1368 DR, tramou com Sarevok a crise entre Amn e Baldur's Gate.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:sword-coast",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "cloak-and-dagger",
+      "locator": "PDF p. 120, \"The Iron Throne\", \"Goals\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 148, \"1368 DR Year of the Banner\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Trono de Ferro\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Trono de Ferro (Iron Throne) é uma organização de mercadores acusada de crimes, ligada à crise com Amn.",
+    "INFORMED": "Ele quer controlar o comércio de armas e de equipamento de transporte; é acusado de assassinatos, extorsão e contrabando, o que sempre nega.",
+    "STUDIED": "Em 1368 DR, tramou com Sarevok a crise entre Amn e Baldur's Gate."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

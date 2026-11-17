@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:zhentarim",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Zhentarim (Rede Negra, Black Network)",
+  "summary": "A Zhentarim, ou Rede Negra (Black Network), une magos, sacerdotes, ladinos e guerreiros malignos para dominar o comércio entre o Mar da Lua e a Costa da Espada e depois todo Faerûn. É liderada por Manshoon, contrabandeia venenos, armas e escravos e tem os Harpistas como inimigos.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "villains-lorebook",
+      "locator": "p. 123, \"The Zhentarim\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 32, \"The Zhentarim\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A Zhentarim, ou Rede Negra (Black Network), é uma organização maligna que quer dominar o comércio e as terras de Faerûn.",
+    "INFORMED": "Ela contrabandeia venenos, armas e escravos e tem os Harpistas como inimigos.",
+    "STUDIED": "É liderada por Manshoon e une magos, sacerdotes, ladinos e guerreiros."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

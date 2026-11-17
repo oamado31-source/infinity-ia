@@ -1,0 +1,14 @@
+{
+  "schema": "infinity-ai.source.v1",
+  "source_id": "cloak-and-dagger",
+  "title": "Cloak & Dagger",
+  "publisher": "TSR",
+  "year": 2000,
+  "edition": "AD&D 2nd edition",
+  "creators": [],
+  "isbn": null,
+  "source_class": "S0_PRIMARY",
+  "setting_year_dr": 1370,
+  "bibliographic_status": "TO_CONFIRM",
+  "notes": "Organizações secretas de Faerûn (TSR, 2000), ambientado em 1370 DR; só entra o que já vale em 1369. O PDF do mantenedor é escaneado e foi lido com OCR local; as entradas citam a página do PDF. Dados bibliográficos a confirmar com o exemplar."
+}

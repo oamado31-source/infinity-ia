@@ -61,10 +61,25 @@ class OrderTests(unittest.TestCase):
         ranked = order()
         pos = {e: i for i, e in enumerate(ranked)}
         events = [pos[e] for e in PACK.entries if e.startswith('event:')]
-        orgs = [pos[e] for e in PACK.entries if e.startswith('org:')]
+        local = ('region:athkatla', 'region:amn')            # CR-2026-023: far ones wait
+        orgs = [pos[e] for e in PACK.entries if e.startswith('org:')
+                and PACK.get(e).region_id in local]
         self.assertLess(max(orgs), min(events))
         self.assertLess(pos['org:cowled-wizards'], 12)
         self.assertLess(pos['topic:amnian-currency'], pos['event:time-of-troubles'])
+
+    def test_far_off_organizations_wait_until_asked(self):
+        # CR-2026-023 (lote F): the Harpers, the Zhentarim and the like took the Cowled Wizards'
+        # place in Athkatla's prompt; now they come after everything near, unless named.
+        ranked = order()
+        pos = {e: i for i, e in enumerate(ranked)}
+        for far in ('org:harpers', 'org:zhentarim', 'org:cult-of-the-dragon', 'org:iron-throne'):
+            with self.subTest(org=far):
+                self.assertGreater(pos[far], pos['event:time-of-troubles'])
+        named = named_in(PACK, PACK.entries, 'Quem são os Harpistas?')
+        asked = context_order(PACK, PACK.entries, npc_id=BERNARD, area='AR0406',
+                              home_region='region:athkatla', named=named)
+        self.assertLess(asked.index('org:harpers'), 12)
 
     def test_pure_and_deterministic(self):
         self.assertEqual(order(), order())

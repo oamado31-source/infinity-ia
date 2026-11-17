@@ -45,7 +45,8 @@ LOTE_A_AMN = {'event:magic-ban-of-king-dhanar', 'event:end-of-amnian-monarchy',
               'topic:amnian-currency', 'topic:amnian-status-and-speech', 'topic:thorass-in-amn'}
 LOTE_A_CITY = {'place:waukeens-promenade', 'place:temple-district', 'place:bridge-district',
                'place:government-district', 'place:graveyard-district', 'place:athkatla-gates',
-               'place:docks', 'place:slums'}
+               'place:docks', 'place:slums',
+               'org:order-of-the-radiant-heart'}            # lote F: Athkatla's knightly order
 # Lote A2: a place of Amn as a whole (its cities are sub-regions: not taught by living elsewhere).
 LOTE_A_AMN = LOTE_A_AMN | {'place:arnise-hold'}
 # Lote B: what the whole continent knows (Faerûn level), and Tethyr's own.
@@ -63,9 +64,13 @@ LOTE_C2_WORLD = {'char:selune', 'char:ilmater', 'char:kelemvor', 'char:cyric', '
 LOTE_E_WORLD = {'event:shoon-imperium', 'topic:far-lands-renown'}
 LOTE_E_TETHYR = {'char:zaranda', 'region:darromar', 'region:zazesspur'}
 LOTE_B_TETHYR = LOTE_B_TETHYR | LOTE_E_TETHYR    # what someone from Tethyr knows of it (B and E)
+# Lote F: the organizations and villains the whole continent has heard of; Amn's and Athkatla's own.
+LOTE_F_WORLD = {'org:harpers', 'org:zhentarim', 'org:red-wizards', 'char:szass-tam',
+                'org:cult-of-the-dragon', 'org:lords-alliance'}
 WORLD = (LOTE_B_WORLD | LOTE_C_WORLD | LOTE_C2_WORLD
-         | LOTE_E_WORLD)                         # everyone placed in the pack knows the world level
-LOTE_A_AMN = LOTE_A_AMN | WORLD | {'topic:faiths-of-amn', 'topic:tymora-pearls-in-amn'}
+         | LOTE_E_WORLD | LOTE_F_WORLD)          # everyone placed in the pack knows the world level
+LOTE_A_AMN = LOTE_A_AMN | WORLD | {'topic:faiths-of-amn', 'topic:tymora-pearls-in-amn',
+                                   'org:knights-of-the-shield'}
 COUNTRY = {'region:faerun', 'region:amn', 'org:cowled-wizards'} | LOTE_A_AMN
 CITY = {'region:faerun', 'region:amn', 'region:athkatla', 'org:council-of-six', 'org:cowled-wizards',
         'place:copper-coronet', 'rel:lehtinan-owns-copper-coronet'} | LOTE_A_AMN | LOTE_A_CITY

@@ -1,0 +1,44 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:lords-alliance",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Aliança dos Lordes (Lords' Alliance)",
+  "summary": "A Aliança dos Lordes (Lords' Alliance) une governantes do Norte e da Costa da Espada, como os de Águas Profundas, Baldur's Gate, Inverno Remoto, Lua Prateada, Mirabar e Elturel, sob Lorde Piergeiron. Protege as rotas de comércio e combate a Zhentarim; Amn e Calimshan são rivais.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 157, \"The Lords' Alliance\""
+    },
+    {
+      "source_id": "the-north-1996",
+      "locator": "p. 68, \"The Lords' Alliance\""
+    },
+    {
+      "source_id": "volos-guide-to-the-sword-coast",
+      "locator": "p. 93, \"Elturel\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Aliança dos Lordes\", \"Inverno Remoto\", \"Lua Prateada\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A Aliança dos Lordes (Lords' Alliance) une cidades do Norte e da Costa da Espada, como Águas Profundas e Baldur's Gate, para proteger o comércio.",
+    "INFORMED": "Ela combate a Zhentarim; Amn e Calimshan são seus rivais.",
+    "STUDIED": "É liderada por Lorde Piergeiron, de Águas Profundas; Inverno Remoto, Lua Prateada, Mirabar e Elturel também são membros."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-16",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-16"
+  }
+}

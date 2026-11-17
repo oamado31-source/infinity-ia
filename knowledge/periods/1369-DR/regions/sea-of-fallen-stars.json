@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:sea-of-fallen-stars",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Mar das Estrelas Caídas (Mar Interior, Sea of Fallen Stars)",
+  "summary": "O Mar das Estrelas Caídas (Sea of Fallen Stars), ou Mar Interior, é o grande mar no coração de Faerûn. Em suas margens ficam Cormyr, Sembia, o Estreito de Vilhon e Turmish, e o Rio Lis o liga ao Mar da Lua; por ele passa boa parte do comércio entre o norte e o sul.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 58 e 63"
+    },
+    {
+      "source_id": "the-vilhon-reach",
+      "locator": "p. 3, \"Introduction\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Mar das Estrelas Caídas\", \"Mar Interior\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Mar das Estrelas Caídas (Sea of Fallen Stars), ou Mar Interior, é o grande mar no coração de Faerûn.",
+    "INFORMED": "Em suas margens ficam Cormyr, Sembia, o Estreito de Vilhon e Turmish.",
+    "STUDIED": "O Rio Lis o liga ao Mar da Lua, e por ele passa boa parte do comércio entre o norte e o sul."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

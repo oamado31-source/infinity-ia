@@ -1,0 +1,32 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:emerald-enclave",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Enclave Esmeralda (Emerald Enclave)",
+  "summary": "O Enclave Esmeralda (Emerald Enclave) é uma força de druidas, servos de Silvanus, que controla o Estreito de Vilhon para manter o equilíbrio da natureza. Afasta os Harpistas, a Zhentarim e os Magos Vermelhos; no Estreito, diz-se que quem veste vermelho atrai a morte.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:vilhon-reach",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-vilhon-reach",
+      "locator": "p. 14, \"The Emerald Enclave\" e \"The Red Wizards\"; p. 26, \"The Emerald Enclave\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Enclave Esmeralda (Emerald Enclave) é uma força de druidas que guarda a natureza do Estreito de Vilhon.",
+    "INFORMED": "Os druidas servem a Silvanus e afastam os Harpistas, a Zhentarim e os Magos Vermelhos.",
+    "STUDIED": "Ali, no Estreito, diz-se que quem veste vermelho atrai a morte."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

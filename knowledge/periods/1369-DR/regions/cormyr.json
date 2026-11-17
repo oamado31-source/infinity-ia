@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:cormyr",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Cormyr",
+  "summary": "Cormyr, o Reino da Floresta (Forest Kingdom), é governado pela casa Obarskyr desde a fundação; o rei é Azoun IV, em Suzail. Os Dragões Púrpura e os Magos de Guerra guardam o reino, e quem entra armado precisa atar a arma com um laço de paz num posto de guarda.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-cormyr",
+      "locator": "p. 7, \"The Forest Kingdom\" e \"Bearing Arms in Cormyr\""
+    },
+    {
+      "source_id": "cormyr-1994",
+      "locator": "p. 32, \"History of Cormyr\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Cormyr\", \"cormyrianos\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Cormyr é o Reino da Floresta (Forest Kingdom), governado pelo rei Azoun IV.",
+    "INFORMED": "Os Dragões Púrpura e os Magos de Guerra guardam o reino; a capital é Suzail.",
+    "STUDIED": "A casa Obarskyr reina desde a fundação, e quem entra armado precisa atar a arma com um laço de paz num posto de guarda."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

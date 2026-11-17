@@ -1,0 +1,44 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:elminster",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Elminster",
+  "summary": "Elminster, o Sábio do Vale das Sombras, é talvez o maior arquimago do seu tempo, e ninguém sabe a idade dele; diz-se que aprendeu magia há mais de quinhentos anos. Mora numa torre no Vale das Sombras e é aliado dos Harpistas; magos de todo Faerûn viajam para falar com ele.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-dalelands",
+      "locator": "p. 197, \"Shadowdale\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 163–164, \"Elminster\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 156, \"The Harpers\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Elminster\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Elminster, o Sábio do Vale das Sombras, é talvez o maior arquimago do seu tempo.",
+    "INFORMED": "Mora numa torre no Vale das Sombras, e magos de todo Faerûn viajam para falar com ele.",
+    "STUDIED": "A idade dele ninguém sabe; diz-se que aprendeu magia há mais de quinhentos anos e que é aliado dos Harpistas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

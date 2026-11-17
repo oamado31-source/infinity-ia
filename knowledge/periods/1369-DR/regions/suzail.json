@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:suzail",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Suzail",
+  "summary": "Suzail é a capital real de Cormyr e a maior cidade do reino, com cerca de 129 mil moradores registrados, e não tem rival em riqueza e beleza. Ali fica o castelo do rei Azoun IV, separado da cidade pelo Lago Azoun e pelos Jardins Reais.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:cormyr",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "cormyr-1994",
+      "locator": "p. 10, \"Suzail\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Suzail\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Suzail é a capital real de Cormyr e a maior cidade do reino.",
+    "INFORMED": "Ali fica o castelo do rei Azoun IV; nenhuma outra cidade de Cormyr a iguala em riqueza e beleza.",
+    "STUDIED": "Tem cerca de 129 mil moradores registrados, e o castelo é separado da cidade pelo Lago Azoun e pelos Jardins Reais."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:vilhon-reach",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Estreito de Vilhon (Vilhon Reach)",
+  "summary": "O Estreito de Vilhon (Vilhon Reach) é uma terra quente e úmida ao sul do Mar das Estrelas Caídas, conhecida no norte como celeiro de mercenários e exércitos. Ali os druidas do Enclave Esmeralda guardam o equilíbrio da natureza e mantêm longe os Magos Vermelhos e a Zhentarim.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-vilhon-reach",
+      "locator": "p. 3, \"Introduction\"; p. 14, \"Forces at Work\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Estreito de Vilhon\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Estreito de Vilhon (Vilhon Reach) é uma terra quente ao sul do Mar das Estrelas Caídas, conhecida pelos mercenários.",
+    "INFORMED": "Ali os druidas do Enclave Esmeralda guardam o equilíbrio da natureza.",
+    "STUDIED": "Os druidas mantêm longe os Magos Vermelhos e a Zhentarim; a terra é úmida e cheia de exércitos."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

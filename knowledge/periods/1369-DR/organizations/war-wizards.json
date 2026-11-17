@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:war-wizards",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Magos de Guerra (War Wizards)",
+  "summary": "Os Magos de Guerra (War Wizards) são os magos leais à coroa de Cormyr, presos ao rei por um juramento secreto. Usam túnicas negras e púrpura, são temidos em todo o reino e respondem a Vangerdahast, o mago real, que exige o registro de todo mago de Cormyr.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:cormyr",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "cormyr-1994",
+      "locator": "p. 55, \"The Military\"; p. 59, \"The War Wizards\""
+    },
+    {
+      "source_id": "volos-guide-to-cormyr",
+      "locator": "p. 7, \"Bearing Arms in Cormyr\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Vangerdahast\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Os Magos de Guerra (War Wizards) são os magos leais à coroa de Cormyr, temidos em todo o reino.",
+    "INFORMED": "Usam túnicas negras e púrpura e respondem a Vangerdahast, o mago real.",
+    "STUDIED": "Os magos estão presos ao rei por um juramento secreto, e Vangerdahast exige o registro de todo mago de Cormyr."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

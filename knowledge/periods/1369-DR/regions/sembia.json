@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:sembia",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Sembia",
+  "summary": "Sembia é um reino rico de mercadores a leste de Cormyr, na margem oeste do Mar das Estrelas Caídas. Não tem rei: o Supremo Mestre (Overmaster) é eleito por sete anos por um conselho mercante em Ordulin. Selgaunt é a cidade mais rica, e o povo tem fama de só pensar em dinheiro.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 58–59, \"Sembia\", \"The Overmaster\" e \"The Sembian Mindset\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 62, \"Selgaunt\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Sembia\", \"Selgaunt\", \"Ordulin\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Sembia é um reino rico de mercadores a leste de Cormyr, e o povo tem fama de só pensar em dinheiro.",
+    "INFORMED": "Não tem rei: o Supremo Mestre (Overmaster) é eleito por sete anos por um conselho mercante.",
+    "STUDIED": "O conselho fica em Ordulin; Selgaunt é a cidade mais rica, na margem oeste do Mar das Estrelas Caídas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

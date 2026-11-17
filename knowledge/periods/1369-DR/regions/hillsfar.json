@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:hillsfar",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Colinas Distantes (Hillsfar)",
+  "summary": "Colinas Distantes (Hillsfar) é uma cidade-estado do Mar da Lua governada por Maalthiir, o Primeiro Lorde, um mago mercador. Seus mercenários, os Plumas Vermelhas, patrulham as estradas, e elfos, anões, halflings e meio-elfos são proibidos ali: quem é pego vai para a arena.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:moonsea",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 66, \"Hillsfar\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Colinas Distantes\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Colinas Distantes (Hillsfar) é uma cidade-estado do Mar da Lua onde elfos, anões e halflings são proibidos.",
+    "INFORMED": "É governada por Maalthiir, o Primeiro Lorde, e seus mercenários, os Plumas Vermelhas, patrulham as estradas.",
+    "STUDIED": "Maalthiir é um mago mercador; meio-elfos também são proibidos, e quem é pego vai para a arena."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

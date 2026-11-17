@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:shadowdale",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Vale das Sombras (Shadowdale)",
+  "summary": "O Vale das Sombras (Shadowdale) é o vale mais famoso, por ser a morada de Elminster. É governado pelo lorde Mourngrym, da Torre Retorcida, e já repeliu muitas vezes os exércitos de Zhentil Keep (Torre Zhentil). Os Harpistas vão em peregrinação ao Monte dos Harpistas, ali.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:the-dales",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-dalelands",
+      "locator": "p. 197, \"Shadowdale\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 37, \"Shadowdale\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Vale das Sombras\", \"Torre Retorcida\", \"Mourngrym\", \"Torre Zhentil\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Vale das Sombras (Shadowdale) é o vale mais famoso, por ser a morada de Elminster.",
+    "INFORMED": "É governado pelo lorde Mourngrym, da Torre Retorcida.",
+    "STUDIED": "O vale já repeliu muitas vezes os exércitos de Zhentil Keep (Torre Zhentil), e os Harpistas vão em peregrinação ao Monte dos Harpistas, ali."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

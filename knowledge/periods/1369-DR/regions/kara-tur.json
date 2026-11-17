@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:kara-tur",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Kara-Tur",
+  "summary": "Kara-Tur é uma terra distante e mística além das Terras da Horda, no extremo leste, muito diferente dos Reinos. O império de Shou Lung, o maior e mais antigo de lá, é governado por um rei sábio; em Faerûn, Kara-Tur chega quase só em histórias de taverna.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 5, \"Kara-Tur\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Kara-Tur\", \"Shou Lung\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Kara-Tur é uma terra distante e mística no extremo leste, conhecida quase só por histórias de taverna.",
+    "INFORMED": "O império de Shou Lung, o maior e mais antigo de lá, é governado por um rei sábio.",
+    "STUDIED": "Fica além das Terras da Horda e é muito diferente dos Reinos."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

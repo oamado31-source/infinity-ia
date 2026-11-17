@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:rashemen",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Rashemen",
+  "summary": "Rashemen é uma terra fria e isolada ao norte de Thay, terra de berserkers que desconfiam de estranhos. É governada no nome por um Senhor de Ferro (huhrong), mas o poder de fato está com as Bruxas de Rashemen; os Magos Vermelhos já a invadiram umas vinte vezes, sempre derrotados.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "spellbound-1995",
+      "locator": "p. 68, \"Rashemen\" e \"Overview of Rashemen\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 120, \"Rashemen\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Rashemen\", \"rashemita\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Rashemen é uma terra fria ao norte de Thay, terra de berserkers que desconfiam de estranhos.",
+    "INFORMED": "O poder de fato está com as Bruxas de Rashemen; os Magos Vermelhos já a invadiram umas vinte vezes, sempre derrotados.",
+    "STUDIED": "É governada no nome por um Senhor de Ferro (huhrong)."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

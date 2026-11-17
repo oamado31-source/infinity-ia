@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:aglarond",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Aglarond",
+  "summary": "Aglarond é uma terra de bosques fundos e penhascos numa península do Mar das Estrelas Caídas, vizinha de Thay. É governada pela Simbul, a Rainha-Bruxa, e já derrotou várias vezes as legiões dos Magos Vermelhos. Metade do povo é de meio-elfos da floresta de Yuirwood.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "spellbound-1995",
+      "locator": "p. 46, \"Aglarond\" e \"Overview of Aglarond\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Simbul\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Aglarond é a terra da Simbul, a Rainha-Bruxa, vizinha de Thay.",
+    "INFORMED": "O reino já derrotou várias vezes as legiões dos Magos Vermelhos; fica numa península do Mar das Estrelas Caídas.",
+    "STUDIED": "É uma terra de bosques fundos e penhascos, e metade do povo é de meio-elfos da floresta de Yuirwood."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

@@ -287,8 +287,9 @@ def generate_identity(*, npc_id: str, role: str | None, gender: int, home_region
     """Deterministic background for a generic person; regions come only from the pack."""
     seed = json.dumps([POLICY, world_seed, campaign_id, branch_id, npc_id], ensure_ascii=False)
     rng = random.Random(int.from_bytes(hashlib.sha256(seed.encode()).digest(), 'big'))
+    # CR-2026-029: nobody generated here comes from, or went to, a land people only talk about.
     regions = sorted(e.id for e in pack.entries.values()
-                     if e.kind == 'REGION' and e.id != WORLD_REGION)
+                     if e.kind == 'REGION' and e.id != WORLD_REGION and e.id not in pack.talk_only)
     home_chain = _chain(pack, home_region)
     elsewhere = [r for r in regions if r not in home_chain]
     occupation = None

@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:thay",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Thay",
+  "summary": "Thay é uma terra de magia e maldade no leste, num planalto cercado de penhascos, governada de fato pelos zulkirs, o conselho de oito Magos Vermelhos. O país é dividido em onze tharchs e vive de plantações de escravos; só Aglarond e Rashemen seguram seus magos.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "spellbound-1995",
+      "locator": "p. 3, \"Overview of Thay\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Thay\", \"zulkir\", \"tharch\", \"thayanos\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Thay é uma terra de magia e maldade no leste, a terra dos Magos Vermelhos.",
+    "INFORMED": "É governada de fato pelos zulkirs, o conselho de oito Magos Vermelhos, e vive de plantações de escravos.",
+    "STUDIED": "O país fica num planalto cercado de penhascos e é dividido em onze tharchs; só Aglarond e Rashemen seguram seus magos."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

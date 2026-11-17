@@ -99,6 +99,9 @@ class CanonPack:
     # CR-2026-021: realms (regions right below the world root) that border each other, curated
     # by the maintainer in the partition manifest; symmetric.
     neighbors: Mapping[str, frozenset[str]] = field(default_factory=dict)
+    # CR-2026-029: regions people only talk about (Kara-Tur, the Underdark), with everything below
+    # them: a generated background never comes from or travelled to them.
+    talk_only: frozenset[str] = frozenset()
 
     def get(self, entry_id: str) -> CanonEntry | None:
         return self.entries.get(entry_id)
@@ -215,10 +218,13 @@ def _check_entry(doc: dict, year: int, sources: dict[str, Source], name: str) ->
 
 
 def _revision(entries: list[dict], used_sources: list[dict],
-              neighbors: list[list[str]] | None = None) -> str:
+              neighbors: list[list[str]] | None = None,
+              talk_only: list[str] | None = None) -> str:
     content: dict = {'entries': entries, 'sources': used_sources}
     if neighbors:                    # CR-2026-021: part of the pinned revision when present
         content['realm_neighbors'] = neighbors
+    if talk_only:                    # CR-2026-029: likewise
+        content['talk_only_regions'] = talk_only
     canonical = json.dumps(content, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
     return 'sha256:' + hashlib.sha256(canonical.encode('utf-8')).hexdigest()
 
@@ -261,6 +267,7 @@ def load_partition(year_dr: int, root: Path = KNOWLEDGE_ROOT) -> CanonPack:
                 if endpoint and not endpoint.startswith('npc:') and endpoint not in entries:
                     problems.append(f'{entry.id}: unresolved relationship endpoint {endpoint}')
     pairs, neighbors = _realm_neighbors(manifest.get('realm_neighbors'), entries, problems)
+    listed, talk_only = _talk_only(manifest.get('talk_only_regions'), entries, problems)
     if problems:
         raise CanonError(problems)
     used = sorted({r.source_id for e in entries.values() for r in e.source_refs})
@@ -268,8 +275,31 @@ def load_partition(year_dr: int, root: Path = KNOWLEDGE_ROOT) -> CanonPack:
                  for s in used]
     return CanonPack(year_dr, manifest.get('coverage_status', 'EMPTY'), entries,
                      {s: sources[s] for s in used},
-                     _revision(sorted(docs, key=lambda d: d['id']), used_docs, pairs),
-                     MappingProxyType(neighbors))
+                     _revision(sorted(docs, key=lambda d: d['id']), used_docs, pairs, listed),
+                     MappingProxyType(neighbors), talk_only)
+
+
+def _talk_only(raw: object, entries: Mapping[str, CanonEntry],
+               problems: list[str]) -> tuple[list[str], frozenset[str]]:
+    """CR-2026-029: the manifest's `talk_only_regions` (REGION entries) and every region below
+    them. Returns the sorted list (for the revision) and the closed set."""
+    if raw is None:
+        return [], frozenset()
+    if not (isinstance(raw, list) and all(isinstance(x, str) for x in raw)):
+        problems.append('manifest: talk_only_regions must be a list of region ids')
+        return [], frozenset()
+    bad = [x for x in raw if entries.get(x) is None or entries[x].kind != 'REGION']
+    if bad:
+        problems.append(f'manifest: talk_only_regions needs REGION entries: {bad}')
+        return [], frozenset()
+    closed = set(raw)
+    changed = True
+    while changed:
+        below = {e.id for e in entries.values()
+                 if e.kind == 'REGION' and e.region_id in closed} - closed
+        closed |= below
+        changed = bool(below)
+    return sorted(set(raw)), frozenset(closed)
 
 
 def _realm_neighbors(raw: object, entries: Mapping[str, CanonEntry],

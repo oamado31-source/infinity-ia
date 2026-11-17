@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:lolth",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Lolth",
+  "summary": "Lolth, a Rainha Aranha (Spider Queen), é a deusa cruel dos drows de Umbreterna (Underdark), o mundo debaixo da terra. Seu culto domina as cidades deles, como Menzoberranzan, e dá o poder às sacerdotisas e às mães matronas; ela fomenta as rivalidades entre as Casas nobres.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "menzoberranzan-1992",
+      "locator": "p. 4, \"Menzoberranzan the Mighty\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Lolth\", \"Rainha Aranha\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Lolth, a Rainha Aranha (Spider Queen), é a deusa cruel dos drows de Umbreterna (Underdark), o mundo debaixo da terra.",
+    "INFORMED": "Seu culto domina as cidades deles, como Menzoberranzan, e dá o poder às sacerdotisas.",
+    "STUDIED": "Ela fomenta as rivalidades entre as Casas nobres e favorece as mães matronas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

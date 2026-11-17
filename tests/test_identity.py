@@ -202,7 +202,7 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(ident.source, GENERATED)
         names = {w for f in ident.self_facts for w in re.findall(r'\b[A-ZÀ-Ý]\w+', f)}
         allowed = {'Você', 'Cliente', 'Taverna', 'Coroa', 'Cobre'} | \
-            {w for t in REGION_TITLES for w in t.split()}
+            {w for t in REGION_TITLES for w in re.findall(r'\b[A-ZÀ-Ý]\w+', t)}
         self.assertTrue(names <= allowed, names - allowed)
 
     def test_curation_wins_over_game_data_and_generation(self):
@@ -230,7 +230,7 @@ class CurationFileTests(unittest.TestCase):
             self.write(d)
             self.assertIn('npc:cre-bernard', load_curations(PACK, Path(d)))
             for over in ({'curation': {'checked_by': '', 'checked_at': ''}},
-                         {'origin_region': 'region:rashemen'}, {'schema': 'x'}):
+                         {'origin_region': 'region:vaasa'}, {'schema': 'x'}):
                 self.write(d, **over)
                 self.assertEqual(load_curations(PACK, Path(d)), {})
 
@@ -261,7 +261,7 @@ class HomelandAndHomeTests(unittest.TestCase):
                                        campaign_year=1369, build_areas=BUILD)
         self.assertEqual(set(countryside), {'region:faerun', 'region:amn', 'org:cowled-wizards'}
                          | LOTE_A_AMN)
-        self.assertEqual(identity_entries(PACK, homeland='region:rashemen', home=None,
+        self.assertEqual(identity_entries(PACK, homeland='region:vaasa', home=None,
                                           campaign_year=1369, build_areas=BUILD), [])
 
     def test_listeners_learn_the_homeland_from_what_is_said(self):

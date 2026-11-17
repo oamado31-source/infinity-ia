@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:underdark",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Umbreterna (Underdark)",
+  "summary": "Umbreterna (Underdark) é o mundo de cavernas e túneis debaixo de Faerûn, quase todo sem mapa; dizem que se anda da Espinha do Mundo a Calimshan sem ver o céu. É terra de devoradores de mentes, duergar e kuo-toa, e os mais conhecidos de lá são os drows, que atacam a superfície.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 21, \"The Underdark\""
+    },
+    {
+      "source_id": "menzoberranzan-1992",
+      "locator": "p. 3, \"Drow Cities of the Underdark\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Umbreterna\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Umbreterna (Underdark) é o mundo de cavernas e túneis debaixo de Faerûn.",
+    "INFORMED": "Os mais conhecidos de lá são os drows, que atacam a superfície.",
+    "STUDIED": "Ali quase não há mapa; dizem que se anda da Espinha do Mundo a Calimshan sem ver o céu. Há devoradores de mentes, duergar e kuo-toa."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

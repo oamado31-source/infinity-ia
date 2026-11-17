@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:menzoberranzan",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Menzoberranzan",
+  "summary": "Menzoberranzan é uma cidade drow de Umbreterna, com uns vinte mil habitantes, governada pelas mães matronas das oito Casas mais fortes, sob o culto de Lolth, que dá o poder às mulheres. É a terra natal de Drizzt; da superfície, quase todo mundo só ouviu falar dela.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:underdark",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "menzoberranzan-1992",
+      "locator": "p. 4, \"Menzoberranzan the Mighty\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 21, \"The Underdark\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Menzoberranzan\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Menzoberranzan, dizem, é uma cidade drow de Umbreterna, terra natal de Drizzt.",
+    "INFORMED": "É governada pelas mães matronas das oito Casas mais fortes, sob o culto de Lolth.",
+    "STUDIED": "Tem uns vinte mil habitantes, e o culto de Lolth dá o poder às mulheres."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

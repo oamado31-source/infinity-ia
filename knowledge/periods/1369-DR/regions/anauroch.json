@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:anauroch",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Anauroch (Grande Deserto, Great Desert)",
+  "summary": "Anauroch, o Grande Deserto (Great Desert), é uma imensa terra de areia, pedra e gelo que vai do extremo norte quase até o Mar do Dragão. Cresceu muito no último milênio e engoliu reinos antigos, como Netheril; ali vivem os nômades bedine.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 115, \"Anauroch\""
+    },
+    {
+      "source_id": "anauroch-1991",
+      "locator": "p. 3, \"Introduction: Anauroch, the Great Desert\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Anauroch\", \"o grande Deserto de Anauroch\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Anauroch, o Grande Deserto (Great Desert), é um deserto imenso no extremo norte.",
+    "INFORMED": "Cresceu muito no último milênio e engoliu reinos antigos, como Netheril.",
+    "STUDIED": "O deserto vai quase até o Mar do Dragão, com areia, pedra e gelo; ali vivem os nômades bedine."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:unther",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Unther",
+  "summary": "Unther é um império antigo vizinho de Mulhorand, que já foi enorme. Seu deus-rei, Gilgeam, governou por dois mil anos, até ser morto por Tiamat nas Perturbações dos deuses; desde então o povo expulsou os sacerdotes dele, e o reino vive em revolta e decadência.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 122, \"Unther\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 142, \"1358 DR\" (Tiamat mata Gilgeam)"
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 144, os sacerdotes de Gilgeam expulsos"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Unther\", \"o falecido deus Gilgeam\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Unther é um império antigo e decadente, vizinho de Mulhorand.",
+    "INFORMED": "Seu deus-rei, Gilgeam, governou por dois mil anos, até ser morto nas Perturbações dos deuses.",
+    "STUDIED": "Quem o matou foi Tiamat; depois o povo expulsou os sacerdotes dele, e o reino vive em revolta."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

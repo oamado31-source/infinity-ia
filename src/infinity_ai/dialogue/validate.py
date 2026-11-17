@@ -187,24 +187,66 @@ _RETRY_HINTS = (
                              'ela'),
     ('UNKNOWN_NAMES', 'você citou nomes que não estão no que você sabe ({names}); não os use, ou '
                       'diga que não os conhece'),
+    ('UNBACKED_DETAIL:PRICE', 'você deu um preço com números que não estão no que você sabe; '
+                              'responda de novo sem dizer valores nem números de preço'),
     ('UNBACKED_DETAIL', 'você citou metais ou moedas que não estão no que você sabe; fale só das '
-                        'moedas e metais que estão nas seções, ou diga que não sabe'),
+                        'moedas e metais que estão nas seções, com os nomes que aparecem lá, ou '
+                        'diga que não sabe'),
 )
 
 # Lab, 2026-11-15: asked about the local coins, the model said silver was common and gold rare,
 # against the item it had ("o danter de ouro e o fandar de cobre"). A metal (or coin material) the
 # person names must be in what it knows or in what the player said.
-_METALS = re.compile(r'\b(ouro|prata|cobre|platina|electro|eletro|mithral|adamantina?)\b',
-                     re.I)
+_METAL_WORDS = r'ouro|prata|cobre|platina|electro|eletro|mithral|adamantina?'
+_METALS = re.compile(r'\b(' + _METAL_WORDS + r')\b', re.I)
+# CR-2026-028 (lab, 2026-11-17: "custa 150 a 200 golds"): coin words in English, and the table
+# abbreviations after an amount ("200 po", "50gp"), are not how the person speaks. Each one is
+# backed only by itself, in what the person knows or in what the player said.
+_COIN_WORDS = re.compile(r'\b(golds?|silvers?|coppers?|platinum|electrum|coins?)\b', re.I)
+_COIN_ABBREVIATIONS = re.compile(r'\d\s*(po|pp|pc|pe|pl|gp|sp|cp|ep)\b', re.I)
+# CR-2026-028: an amount of money. A number next to a coin ("150 a 200 golds", "dez peças de
+# ouro", "5 moedas") or right after a price word ("custa 150", "sai por 30") is a price; each of
+# its numbers must be in what the person knows or in what the player said.
+_NUMBER = (r'(?:\d+(?:[.,]\d+)?|dois|duas|três|tres|quatro|cinco|seis|sete|oito|nove|dez|'
+           r'vinte|trinta|quarenta|cinquenta|cem|cento|duzent[oa]s|trezent[oa]s|quinhent[oa]s|'
+           r'mil)')
+_AMOUNT = _NUMBER + r'(?:\s*(?:a|até|ou|e|-|–)\s*' + _NUMBER + r')?'
+_COIN = (r'(?:golds?|silvers?|coppers?|coins?|platinum|electrum|po|pp|pc|pe|pl|gp|sp|cp|ep|'
+         r'moedas?|peças? de (?:' + _METAL_WORDS + r')|danters?|fandars?|tarans?|decimes?|'
+         r'roldons?|' + _METAL_WORDS + r')')
+_PRICE = re.compile(
+    r'\b(?P<a>' + _AMOUNT + r')\s*' + _COIN + r'\b'
+    r'|\b(?:custa|custam|custaria|custariam|vale|valem|valeria|sai por|saem por|cobro|cobramos|'
+    r'pago|pagamos|preço (?:é )?de)\s+(?:uns |umas |cerca de |uns? )?(?P<b>' + _AMOUNT + r')\b',
+    re.I)
+
+
+def _backing(context: DialogueContext, player_text: str) -> str:
+    """What may back a detail: the person's facts and knowledge, and the player's own words."""
+    return ' '.join([f.text for f in context.facts + context.knowledge
+                     + context.restricted_knowledge] + [player_text or '']).lower()
 
 
 def _unbacked_metals(speech: str, context: DialogueContext, player_text: str) -> list[str]:
     said = {m.lower() for m in _METALS.findall(speech)}
+    said |= {m.lower() for m in _COIN_WORDS.findall(speech)}           # CR-2026-028
+    said |= {m.lower() for m in _COIN_ABBREVIATIONS.findall(speech)}
     if not said:
         return []
-    backed = ' '.join([f.text for f in context.facts + context.knowledge
-                       + context.restricted_knowledge] + [player_text or '']).lower()
-    return sorted(w for w in said if not re.search(r'\b' + w + r'\b', backed))
+    backed = _backing(context, player_text)
+    stem = {w: w[:-1] if len(w) > 4 and w.endswith('s') else w for w in said}   # "golds": "gold"
+    return sorted(w for w in said if not re.search(r'\b' + re.escape(stem[w]) + r's?\b', backed))
+
+
+def _unbacked_price(speech: str, context: DialogueContext, player_text: str) -> bool:
+    """CR-2026-028: a concrete price ("custa 150 a 200") with a number that is nowhere in what the
+    person knows or in what the player said. "Custa caro" or "não sei o preço" give no number."""
+    backed = _backing(context, player_text)
+    for m in _PRICE.finditer(speech):
+        for number in re.findall(_NUMBER, m.group('a') or m.group('b'), re.I):
+            if not re.search(r'(?<![\w.,])' + re.escape(number.lower()) + r'(?!\w)', backed):
+                return True
+    return False
 
 
 def retry_hint(reasons: tuple[str, ...]) -> str:
@@ -285,6 +327,8 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
     metals = _unbacked_metals(speech, context, player_text if isinstance(player_text, str) else '')
     if metals:
         reasons.append('UNBACKED_DETAIL:' + ','.join(metals))
+    if _unbacked_price(speech, context, player_text if isinstance(player_text, str) else ''):
+        reasons.append('UNBACKED_DETAIL:PRICE')   # CR-2026-028
     vocabulary = context.vocabulary | asked       # CR-2026-008: with or without `unknown`
     names = _unknown_names(speech, vocabulary)
     if names:

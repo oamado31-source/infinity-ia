@@ -1,0 +1,29 @@
+{
+  "schema": "infinity-ai.npc-identity-curation.v1",
+  "npc_id": "npc:gpshout",
+  "language": "pt_BR",
+  "note": "Etapa 3 (Coroa de Cobre): função confirmada pelo diálogo do jogo, lido só em memória no laboratório; raça, classe e alinhamento vêm da ficha do jogo. Nada além dos fatos abaixo é afirmado.",
+  "occupation": "gladiador escravo da arena",
+  "origin_region": null,
+  "years_here": null,
+  "places_visited": [],
+  "self_facts": [
+    "Você é escravo e luta na arena; Hendak sabe como libertar vocês."
+  ],
+  "sources": [
+    {
+      "source_id": "game-data-local",
+      "locator": "AR0406, ator GLAD2.CRE e diálogo GLAD2.DLG (primeiras falas), colocado pelo jogo na Coroa de Cobre"
+    },
+    {
+      "source_id": "maintainer",
+      "locator": "Etapa 3 aprovada pelo mantenedor em 2026-11-17 (\"Etapa 3 aprovada\"); função lida no diálogo do jogo, frases escritas pelo projeto."
+    }
+  ],
+  "curation": {
+    "status": "CHECKED",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  },
+  "affiliations": []
+}

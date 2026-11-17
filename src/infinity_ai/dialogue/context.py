@@ -336,7 +336,12 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         own = scope == 'RESTRICTED' or subject_id == npc_id
         return (rank.get(entry_id, len(rank)), 0 if own else 1, _prefix_rank(entry_id), entry_id)
 
-    for i, entry_id in enumerate(sorted(subjects, key=closeness)[:MAX_KNOWLEDGE], 1):
+    # Etapa 3 (lab, 2026-11-17): a withheld item does not take one of the prompt's places (a
+    # CONFIDENTIAL secret left the staff with 11 of 12); at most MAX_KNOWLEDGE are withheld, as
+    # before, so a closed person still looks at the same closest items.
+    for i, entry_id in enumerate(sorted(subjects, key=closeness), 1):
+        if len(knowledge) + len(restricted) >= MAX_KNOWLEDGE or len(withheld_titles) >= MAX_KNOWLEDGE:
+            break
         t, s, layers, scope, subject_id, secrecy = subjects[entry_id]
         decision = decide(entry_id, access_scope=scope, secrecy=secrecy, disposition=disposition,
                           morale_outcome=morale[1] if morale is not None else None, trust=trust)

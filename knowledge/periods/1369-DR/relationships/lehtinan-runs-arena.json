@@ -1,0 +1,45 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "rel:lehtinan-runs-arena",
+  "kind": "RELATIONSHIP",
+  "partition_year_dr": 1369,
+  "title": "Arena de Lehtinan",
+  "summary": "Lehtinan mantém uma arena nos fundos da Coroa de Cobre, onde gladiadores e feras lutam para divertir clientes ricos, que assistem e apostam do balcão de cima.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:athkatla",
+  "area_resrefs": [],
+  "subject_id": "npc:lehtinan",
+  "predicate": "OWNER_OF",
+  "object_id": "place:copper-coronet",
+  "context_id": "place:copper-coronet",
+  "audience": "AFFILIATED",
+  "eligible_affiliations": [
+    "place:copper-coronet:STAFF",
+    "place:copper-coronet:REGULAR"
+  ],
+  "source_refs": [
+    {
+      "source_id": "game-data-local",
+      "locator": "AR0406: diálogos de COPGREET, ANNO1, HENDAK e GLAD2 (só em memória)"
+    },
+    {
+      "source_id": "maintainer-curation",
+      "locator": "Etapa 3 aprovada pelo mantenedor em 2026-11-17 (\"Etapa 3 aprovada\")."
+    }
+  ],
+  "verification_status": "CAMPAIGN_CANON",
+  "access_scope": "RESTRICTED",
+  "secrecy": "PROFESSIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Lehtinan mantém uma arena nos fundos da Coroa de Cobre.",
+    "INFORMED": "Ali gladiadores e feras lutam para divertir clientes ricos, que assistem e apostam do balcão de cima."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

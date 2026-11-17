@@ -32,8 +32,8 @@ def order(npc_id=BERNARD, area='AR0406', home='region:athkatla'):
 class OrderTests(unittest.TestCase):
     def test_own_ties_then_the_place_then_the_city_then_the_realm(self):
         ranked = order()
-        self.assertEqual(ranked[0], 'rel:bernard-manages-copper-coronet')    # restricted tie
-        self.assertEqual(set(ranked[1:4]), {'place:copper-coronet', 'place:slums',
+        self.assertEqual(set(ranked[:3]), {'rel:bernard-manages-copper-coronet', 'rel:arena-slaves', 'rel:lehtinan-runs-arena'})                           # restricted ties
+        self.assertEqual(set(ranked[3:6]), {'place:copper-coronet', 'place:slums',
                                             'rel:lehtinan-owns-copper-coronet'})
         pos = {e: i for i, e in enumerate(ranked)}
         self.assertLess(pos['region:athkatla'], pos['region:amn'])           # city, then realm;
@@ -42,7 +42,7 @@ class OrderTests(unittest.TestCase):
 
     def test_the_district_around_the_place_comes_with_it(self):
         ranked = order()
-        self.assertEqual(set(ranked[1:4]), {'place:copper-coronet', 'place:slums',
+        self.assertEqual(set(ranked[3:6]), {'place:copper-coronet', 'place:slums',
                                             'rel:lehtinan-owns-copper-coronet'})
         aliases = local_aliases(PACK, 'AR0406')
         self.assertEqual(aliases['taverna'], 'Coroa de Cobre')

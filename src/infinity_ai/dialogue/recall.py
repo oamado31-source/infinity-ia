@@ -93,6 +93,9 @@ def days_ago(last_game_time: int | None, now: int | None) -> int | None:
     return max(0, (now - last_game_time) // DAY)
 
 
+TOPICS_PREFIX, TOPICS_SUFFIX = 'Vocês falaram sobre: ', ':assuntos'
+
+
 def recall_lines(rec: Recall, titles: dict[str, str], now: int | None) -> tuple[tuple[str, str], ...]:
     """(event id, sentence) "SOBRE VOCÊ" facts for the prompt; empty without earlier talks."""
     if not rec:
@@ -105,5 +108,21 @@ def recall_lines(rec: Recall, titles: dict[str, str], now: int | None) -> tuple[
     lines = [(f'recall:{anchor}', f'Você já conversou com o jogador antes ({times}{when}).')]
     named = [titles[e] for e in rec.subjects if titles.get(e)]
     if named:
-        lines.append((f'recall:{anchor}:assuntos', 'Vocês falaram sobre: ' + ', '.join(named) + '.'))
+        lines.append((f'recall:{anchor}{TOPICS_SUFFIX}', TOPICS_PREFIX + ', '.join(named) + '.'))
     return tuple(lines)
+
+
+def without_topics(lines: tuple[tuple[str, str], ...],
+                   titles: frozenset[str] | set[str]) -> tuple[tuple[str, str], ...]:
+    """ADR-0133 (lab, 2026-11-17): the recall lines without the topics the person now keeps back.
+    Unger told the group about the arena; distrustful later, "Vocês falaram sobre: Arena de
+    Lehtinan" still put the withheld title in the prompt."""
+    out = []
+    for event_id, text in lines:
+        if event_id.endswith(TOPICS_SUFFIX) and text.startswith(TOPICS_PREFIX):
+            kept = [n for n in text[len(TOPICS_PREFIX):].rstrip('.').split(', ') if n not in titles]
+            if not kept:
+                continue
+            text = TOPICS_PREFIX + ', '.join(kept) + '.'
+        out.append((event_id, text))
+    return tuple(out)

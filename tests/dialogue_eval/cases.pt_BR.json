@@ -1679,6 +1679,35 @@
           "escravo"
         ]
       }
+    },
+    {
+      "id": "desconfiado-retem-a-arena",
+      "description": "ADR-0133: quem desconfia do grupo (intimidação, traição ou hostilidade) retém até o que é assunto da casa (PROFESSIONAL), como a arena.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ],
+        "trust": "DESCONFIADO"
+      },
+      "question": "Tem uma arena aqui na Coroa de Cobre?",
+      "checks": {
+        "status": [
+          "OK",
+          "FALLBACK"
+        ],
+        "matches_none": [
+          "(?i)lehtinan (?:mantém|tem|cuida)",
+          "(?i)\\bsim\\b.{0,40}arena"
+        ]
+      }
     }
   ]
 }

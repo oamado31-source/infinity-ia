@@ -20,8 +20,9 @@ from pathlib import Path
 from ..memory.common_knowledge import SHARED_EVENT, BackgroundRegion, other_names, spoken_words
 from ..gamedata.inventory import Offer
 from .absence import classify_absence
+from .recall import without_topics
 from .offers import offer_facts
-from .disclosure import NEUTRO, Decision, decide
+from .disclosure import DESCONFIADO, NEUTRO, Decision, decide
 from ..memory.model import KnowledgeBasis
 from ..personality.identity import (HABITANTE, KnowledgeTier, NpcIdentity, em,
                                     knowledge_tier, layered_text, popular_only)
@@ -255,7 +256,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            aliases: dict[str, str] | None = None,
                            order: tuple[str, ...] = (),
                            common_words: frozenset[str] = frozenset(),
-                           offer: Offer | None = None) -> ContextResult:
+                           offer: Offer | None = None,
+                           trust_own_only: bool = False) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
@@ -293,7 +295,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                    for i, text in enumerate(sold, 1))
     for text in sold:
         vocabulary |= set(_NAME.findall(text))
-    facts = _with_recall(facts, recall_lines, at_game_time, vocabulary)   # ADR-0124
+    # ADR-0124: earlier talks are added after the per-item decision (ADR-0133, below).
     # ADR-0120: a traveler or outsider was placed here by the game, but does not live here: its
     # game-placed RESIDENCE does not count (what it heard by INQUIRY or brought from home does).
     standing = identity.standing if identity is not None else HABITANTE
@@ -343,8 +345,12 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         if len(knowledge) + len(restricted) >= MAX_KNOWLEDGE or len(withheld_titles) >= MAX_KNOWLEDGE:
             break
         t, s, layers, scope, subject_id, secrecy = subjects[entry_id]
+        # ADR-0133 (D2): trust from acquaintance opens only the person's own confidences.
+        item_trust = trust if not trust_own_only or subject_id == npc_id \
+            or trust == DESCONFIADO else NEUTRO
         decision = decide(entry_id, access_scope=scope, secrecy=secrecy, disposition=disposition,
-                          morale_outcome=morale[1] if morale is not None else None, trust=trust)
+                          morale_outcome=morale[1] if morale is not None else None,
+                          trust=item_trust)
         decisions.append(decision)
         if not decision.allowed:
             withheld_titles.append(t)     # only for the absence check below; never the prompt
@@ -369,6 +375,9 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                             at_game_time or 0)
                 knowledge.append(fact)
                 vocabulary |= set(_NAME.findall(fact.text))
+    # ADR-0124 + ADR-0133: earlier talks, without the topics the person now keeps back.
+    facts = _with_recall(facts, without_topics(recall_lines, set(withheld_titles)), at_game_time,
+                         vocabulary)
     # ADR-0131: a question only about what the person cannot answer gets a fixed line (engine).
     absence = classify_absence(
         question, told_texts=[f.text for f in facts + tuple(knowledge) + tuple(restricted)],

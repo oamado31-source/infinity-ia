@@ -43,7 +43,8 @@ _BETRAY_VERB = re.compile(r'\b(?:contra|trair|traia|traí|roub\w*|engan\w*|escon
                           r'passar a perna)\b', re.I)
 _INTIMIDATE = re.compile(r'\b(?:te mato|vou te matar|te matar|te machuc\w*|vou te ferir|'
                          r'te arrebent\w*|te esfaque\w*|te quebr\w*|cortar sua|corto sua|'
-                         r'(?:fale|diga|conte|responda)\b[^.!?]{0,40}\bou (?:eu )?(?:te|vai)|'
+                         r'(?:fale|diga|conte|responda|fala|diz|conta|responde|desembucha)\b[^.!?]{0,40}'
+                         r'\bou (?:eu )?(?:te|vai)|'
                          r'senão (?:eu )?te\b)', re.I)
 # A bribe is an offer, not a mention: "Que moeda é usada aqui?" or "Como é o dinheiro aqui?" are
 # questions about money, not offers (lab, 2026-11-15).

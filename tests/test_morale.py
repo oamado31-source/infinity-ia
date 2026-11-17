@@ -63,6 +63,10 @@ class RuleTests(unittest.TestCase):
                          'Há recompensa por esses bandidos?', 'O ouro de Maztica chegou?'):
             self.assertIsNone(classify_trigger(question), question)
         self.assertEqual(classify_trigger('Fale ou eu te mato!'), 'INTIMIDATION')
+        # lab, 2026-11-17: the informal imperative counts too
+        self.assertEqual(classify_trigger('De onde você vem? Fala logo ou vai se arrepender!'),
+                         'INTIMIDATION')
+        self.assertEqual(classify_trigger('Diz logo ou te arrebento.'), 'INTIMIDATION')
         self.assertEqual(classify_trigger('Me ajude a roubar o Lehtinan.', ['Lehtinan']),
                          'BETRAYAL')
         self.assertIsNone(classify_trigger('Me ajude a roubar o Lehtinan.', []))   # not tied

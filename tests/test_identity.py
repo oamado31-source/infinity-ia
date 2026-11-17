@@ -673,6 +673,19 @@ class OriginClaimTests(unittest.TestCase):
         self.assertFalse(self.check('Trabalho na cidade, perto da Coroa de Cobre.', 'HABITANTE',
                                     **here))
 
+    def test_working_at_the_place_still_counts_with_its_district(self):
+        # CR-2026-024 (battery, lote F): since the place phrase carries its district (lab fix of
+        # 2026-11-15), "Trabalho na Coroa de Cobre, sim." slipped through: it was matched against
+        # "Coroa de Cobre, nas Favelas". The district itself is not the workplace.
+        here = {'resident_of': 'a Coroa de Cobre, nas Favelas'}
+        self.assertTrue(self.check('Trabalho na Coroa de Cobre, sim.', 'HABITANTE', **here))
+        self.assertTrue(self.check('Trabalho aqui na Coroa de Cobre.', 'HABITANTE', **here))
+        self.assertFalse(self.check('Trabalho na Coroa de Cobre.', 'HABITANTE', staff=True,
+                                    **here))
+        self.assertFalse(self.check('Trabalho nas Favelas, carregando caixas.', 'HABITANTE',
+                                    **here))
+        self.assertFalse(self.check('Trabalho na Coroa de Cobre? Não.', 'HABITANTE', **here))
+
     def test_the_question_repeated_back_is_not_a_claim(self):
         """CR-2026-009: qwen3:30b-a3b starts with the player's question ("Trabalho aqui? Não...")."""
         here = {'resident_of': 'a Coroa de Cobre'}

@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:witches-of-rashemen",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Bruxas de Rashemen (Witches of Rashemen)",
+  "summary": "As Bruxas de Rashemen (Witches of Rashemen), ou wychlaran, são mulheres mascaradas de magia poderosa que detêm o poder de fato em Rashemen. Escolhem o Senhor de Ferro e, dizem, tiram força da própria terra; são mais de sessenta, talvez cem.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:rashemen",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "spellbound-1995",
+      "locator": "p. 68, \"Overview of Rashemen\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 120, \"Rashemen\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"bruxa de Rashemen\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "As Bruxas de Rashemen (Witches of Rashemen) são mulheres mascaradas de magia poderosa.",
+    "INFORMED": "As bruxas detêm o poder de fato em Rashemen e escolhem o Senhor de Ferro.",
+    "STUDIED": "As bruxas tiram força da própria terra, dizem; são mais de sessenta, talvez cem, e se chamam wychlaran."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

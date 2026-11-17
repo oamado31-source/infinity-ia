@@ -30,7 +30,7 @@ class SiblingTests(TempKnowledge):
         self.assertEqual(realm_of(PACK, 'region:murann'), 'region:amn')
         self.assertEqual(realm_of(PACK, 'region:amn'), 'region:amn')
         self.assertIsNone(realm_of(PACK, 'region:faerun'))
-        self.assertIsNone(realm_of(PACK, 'region:rashemen'))
+        self.assertIsNone(realm_of(PACK, 'region:vaasa'))
 
     def test_a_resident_knows_the_popular_core_of_the_other_cities(self):
         full, popular = known(PACK, homeland=None, home='region:athkatla')

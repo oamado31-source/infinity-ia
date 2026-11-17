@@ -70,8 +70,9 @@ LOTE_F_WORLD = {'org:harpers', 'org:zhentarim', 'org:red-wizards', 'char:szass-t
 # Lote G: the northern heroes whose fame runs the whole continent.
 LOTE_G_WORLD = {'char:khelben', 'char:alustriel', 'char:drizzt'}
 LOTE_H_WORLD = {'char:elminster', 'char:azoun', 'topic:heartlands-renown'}
+LOTE_I_WORLD = {'char:simbul', 'char:lolth', 'topic:east-renown'}
 WORLD = (LOTE_B_WORLD | LOTE_C_WORLD | LOTE_C2_WORLD | LOTE_E_WORLD | LOTE_F_WORLD
-         | LOTE_G_WORLD | LOTE_H_WORLD)   # everyone placed in the pack knows it
+         | LOTE_G_WORLD | LOTE_H_WORLD | LOTE_I_WORLD)   # everyone placed in the pack knows it
 LOTE_A_AMN = LOTE_A_AMN | WORLD | {'topic:faiths-of-amn', 'topic:tymora-pearls-in-amn',
                                    'org:knights-of-the-shield'}
 COUNTRY = {'region:faerun', 'region:amn', 'org:cowled-wizards'} | LOTE_A_AMN
@@ -215,7 +216,7 @@ class ResidenceTests(Story):
     def test_residence_needs_evidence_and_a_known_region(self):
         self.see('AR0300', 0)
         self.pin(game_time=0)
-        for stay in (lives(evidence=' '), lives('region:rashemen'), lives(since='0')):
+        for stay in (lives(evidence=' '), lives('region:vaasa'), lives(since='0')):
             with self.subTest(stay=stay):
                 self.acquire(10 * DAY, residents=stay)
                 self.assertEqual(self.known(BERNARD), set())
@@ -525,7 +526,7 @@ class OriginTests(Story):
         self.see('AR0602', 100)
         self.pin(game_time=100)
         for over in ({'checked_by': ''}, {'locator': ' '}, {'source_id': 'unknown'},
-                     {'region_id': 'region:rashemen'}):
+                     {'region_id': 'region:vaasa'}):
             with self.subTest(over=over):
                 self.acquire(150, backgrounds=self.background(**over), sources=load_sources())
                 self.assertEqual(self.known(), set())

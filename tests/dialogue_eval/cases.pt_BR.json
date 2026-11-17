@@ -1450,6 +1450,60 @@
           "OK"
         ]
       }
+    },
+    {
+      "id": "simbul-por-todo-faerun",
+      "description": "Lote I: a Simbul é conhecida em toda Faerûn; Salvanas, de Athkatla, responde pela entrada.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ]
+      },
+      "question": "Quem é a Simbul?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "char:simbul"
+        ]
+      }
+    },
+    {
+      "id": "umbreterna-pela-lolth",
+      "description": "Lote I: Umbreterna fica fora do que um morador de Athkatla tem, mas Lolth (de toda Faerûn) a cita; a pergunta não vira \"não sei\" (CR-2026-026).",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ]
+      },
+      "question": "O que é Umbreterna?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "unknown": false,
+        "mentions_any": [
+          "drow",
+          "debaixo"
+        ]
+      }
     }
   ]
 }

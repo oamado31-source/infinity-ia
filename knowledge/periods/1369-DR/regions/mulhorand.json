@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:mulhorand",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Mulhorand",
+  "summary": "Mulhorand é a nação mais antiga de Faerûn, no extremo leste do Mar das Estrelas Caídas; sua capital, Skuld, tem mais de 3.500 anos. É governada por um faraó, tido como encarnação do deus supremo, mas o poder está com os sacerdócios rivais, à beira de uma guerra santa.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 122, \"Mulhorand\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 142, o faraó assassinado e Horustep III"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Mulhorand\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Mulhorand é a nação mais antiga de Faerûn, governada por um faraó.",
+    "INFORMED": "O faraó é tido como encarnação do deus supremo, mas o poder está com os sacerdócios rivais, à beira de uma guerra santa.",
+    "STUDIED": "A capital, Skuld, tem mais de 3.500 anos e fica no extremo leste do Mar das Estrelas Caídas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

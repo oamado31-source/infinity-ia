@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:simbul",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Simbul (The Simbul)",
+  "summary": "A Simbul (The Simbul), Rainha-Bruxa de Aglarond, é uma maga de poder imenso, temida e respeitada em todo Faerûn, e a maior inimiga dos Magos Vermelhos de Thay. É uma das Sete Irmãs, como Alustriel; muitos dizem que, sem ela, os magos de Thay já teriam chegado ao Mar Interior.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "spellbound-1995",
+      "locator": "p. 46, \"Aglarond\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 158, as Sete Irmãs"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Simbul\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "A Simbul (The Simbul) é a Rainha-Bruxa de Aglarond, uma maga temida em todo Faerûn.",
+    "INFORMED": "Ela é a maior inimiga dos Magos Vermelhos de Thay; muitos dizem que, sem ela, eles já teriam chegado ao Mar Interior.",
+    "STUDIED": "É uma das Sete Irmãs, como Alustriel."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

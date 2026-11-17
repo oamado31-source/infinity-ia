@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:east-renown",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "Terras do Leste: Thay, Rashemen, Aglarond, Mulhorand e Unther",
+  "summary": "Das terras do leste, todo mundo ouve falar: Thay, dos temidos Magos Vermelhos; Rashemen, de berserkers e bruxas; Aglarond, da Simbul; e os velhos impérios de Mulhorand e Unther, governados por reis que se dizem deuses.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "spellbound-1995",
+      "locator": "p. 3, 46 e 68"
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 122"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Thay\", \"Rashemen\", \"Mulhorand\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Das terras do leste, todo mundo ouve falar: Thay, Rashemen, Aglarond, Mulhorand e Unther.",
+    "INFORMED": "Thay é a terra dos temidos Magos Vermelhos; Rashemen, de berserkers e bruxas; Aglarond, da Simbul.",
+    "STUDIED": "Mulhorand e Unther são velhos impérios, governados por reis que se dizem deuses."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

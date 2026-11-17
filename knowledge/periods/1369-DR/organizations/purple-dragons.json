@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "org:purple-dragons",
+  "kind": "ORGANIZATION",
+  "partition_year_dr": 1369,
+  "title": "Dragões Púrpura (Purple Dragons)",
+  "summary": "Os Dragões Púrpura (Purple Dragons) são o exército permanente de Cormyr, com mais de 12 mil soldados nas cidades e fortalezas, chamados assim pelo estandarte. Lutam com ataques rápidos, e em seus postos de guarda o viajante armado precisa atar as armas.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:cormyr",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "cormyr-1994",
+      "locator": "p. 55, \"The Military\" e \"The Purple Dragons\""
+    },
+    {
+      "source_id": "volos-guide-to-cormyr",
+      "locator": "p. 7, \"Bearing Arms in Cormyr\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Dragão Púrpura\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Os Dragões Púrpura (Purple Dragons) são o exército de Cormyr, chamados assim pelo estandarte.",
+    "INFORMED": "Em seus postos de guarda o viajante armado precisa atar as armas.",
+    "STUDIED": "São mais de 12 mil soldados nas cidades e fortalezas, e lutam com ataques rápidos."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

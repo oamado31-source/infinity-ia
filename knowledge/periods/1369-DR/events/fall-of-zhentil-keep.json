@@ -3,8 +3,8 @@
   "id": "event:fall-of-zhentil-keep",
   "kind": "EVENT",
   "partition_year_dr": 1369,
-  "title": "Zhentil Keep saqueada",
-  "summary": "Nos últimos dias de 1368 DR, Zhentil Keep, antiga base dos Zhentarim, foi saqueada por gigantes, dragões e monstros invocados por Cyric, depois que a traição do deus a seus fiéis da cidade foi revelada. O sumo sacerdote de Cyric e seu templo arderam em fogo divino.",
+  "title": "Zhentil Keep (Torre Zhentil) saqueada",
+  "summary": "Nos últimos dias de 1368 DR, Zhentil Keep (Torre Zhentil), antiga base dos Zhentarim, foi saqueada por gigantes, dragões e monstros invocados por Cyric, depois que a traição do deus aos fiéis da cidade foi revelada. O sumo sacerdote de Cyric e seu templo arderam em fogo divino.",
   "valid_from_dr": 1368,
   "valid_to_dr": null,
   "date_precision": "MONTH_ONLY",
@@ -18,12 +18,16 @@
     {
       "source_id": "grand-history-of-the-realms",
       "locator": "p. 146, \"1361 DR\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Torre Zhentil\""
     }
   ],
   "verification_status": "SOURCE_CHECKED",
   "access_scope": "COMMON_REGIONAL",
   "knowledge_layers": {
-    "POPULAR": "Zhentil Keep foi saqueada por monstros no fim do ano passado.",
+    "POPULAR": "Zhentil Keep (Torre Zhentil) foi saqueada por monstros no fim do ano passado.",
     "INFORMED": "Aconteceu depois que se revelou a traição de Cyric aos seus próprios fiéis da cidade; os monstros foram invocados por ele.",
     "STUDIED": "O sumo sacerdote de Cyric e o templo dele arderam em fogo divino; a cidade era a antiga base dos Zhentarim."
   },

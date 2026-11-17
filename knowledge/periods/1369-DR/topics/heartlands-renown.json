@@ -1,0 +1,44 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "topic:heartlands-renown",
+  "kind": "TOPIC",
+  "partition_year_dr": 1369,
+  "title": "Terras Centrais: Cormyr, Sembia, os Vales e o Mar da Lua",
+  "summary": "Das Terras Centrais, a leste, todo mundo ouve falar: Cormyr, o reino dos Dragões Púrpura e do rei Azoun IV; Sembia, de mercadores ricos; os Vales, de fazendeiros livres e de Elminster; e o Mar da Lua, de cidades duras como Zhentil Keep (Torre Zhentil).",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 19, \"The Regions of Faerûn\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 37, 58–59 e 63"
+    },
+    {
+      "source_id": "cormyr-1994",
+      "locator": "p. 10 e 55"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Terras Centrais\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Das Terras Centrais, a leste, todo mundo ouve falar: Cormyr, Sembia, os Vales e o Mar da Lua.",
+    "INFORMED": "Cormyr é o reino dos Dragões Púrpura e do rei Azoun IV; Sembia é de mercadores ricos.",
+    "STUDIED": "Os Vales são de fazendeiros livres e de Elminster; o Mar da Lua tem cidades duras como Zhentil Keep (Torre Zhentil)."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

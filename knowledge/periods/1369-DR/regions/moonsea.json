@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:moonsea",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Mar da Lua (Moonsea)",
+  "summary": "O Mar da Lua (Moonsea) é um lago frio ao norte dos Vales, ligado ao Mar das Estrelas Caídas pelo Rio Lis. Suas maiores cidades, Colinas Distantes, Mulmaster e Zhentil Keep (Torre Zhentil), são governadas com mão de ferro por gente má; é terra de fronteira, intrigas e espiões.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 63, \"The Moonsea\" e \"The Moonsea Mindset\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Mar da Lua\", \"Colinas Distantes\", \"Torre Zhentil\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Mar da Lua (Moonsea) é um lago frio ao norte dos Vales, terra de fronteira.",
+    "INFORMED": "Suas maiores cidades, Colinas Distantes, Mulmaster e Zhentil Keep (Torre Zhentil), são governadas com mão de ferro por gente má.",
+    "STUDIED": "É ligado ao Mar das Estrelas Caídas pelo Rio Lis, e é terra de intrigas e espiões."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

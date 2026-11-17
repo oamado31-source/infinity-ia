@@ -226,7 +226,8 @@ class DialogueEngine:
                          morale: tuple[str, str] | None = None,
                          trust: str = NEUTRO, unheld_titles: tuple[str, ...] = (),
                          aliases: dict[str, str] | None = None,
-                         order: tuple[str, ...] = ()) -> DialogueResponse:
+                         order: tuple[str, ...] = (),
+                         common_words: frozenset[str] = frozenset()) -> DialogueResponse:
         """A person in the in-game box: SPEC-006 profile for style, only acquired knowledge."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_resident_context(
@@ -238,7 +239,8 @@ class DialogueEngine:
             game_alignment=game_alignment, popular_only_ids=popular_only_ids,
             recall_lines=recall_lines, disposition=disposition, morale=morale, trust=trust,
             question=request.player_text if isinstance(request.player_text, str) else '',
-            unheld_titles=unheld_titles, aliases=aliases, order=order),
+            unheld_titles=unheld_titles, aliases=aliases, order=order,
+            common_words=common_words),
             display_name=request.display_name, history=history)
 
     def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,

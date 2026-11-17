@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:the-dales",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Vales (Dalelands)",
+  "summary": "Os Vales (Dalelands) são pequenas terras livres de fazendas e bosques entre Cormyr, Sembia e o Mar da Lua, ditas o celeiro do Mar do Dragão. Cada vale se governa, e juntos mandam gente ao Conselho dos Vales; com a partida dos elfos de Cormanthor, feras e perigos voltaram.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-the-dalelands",
+      "locator": "p. 5–6, \"The Dalelands\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 28–30, \"The Dalelands\" e \"The Dales Council\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Vales\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Os Vales (Dalelands) são pequenas terras livres de fazendas e bosques entre Cormyr, Sembia e o Mar da Lua.",
+    "INFORMED": "São ditos o celeiro do Mar do Dragão, e cada vale se governa.",
+    "STUDIED": "Os vales mandam gente ao Conselho dos Vales; com a partida dos elfos de Cormanthor, feras e perigos voltaram."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

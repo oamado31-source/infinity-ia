@@ -27,7 +27,8 @@ from ..bridge.domain import (
 from ..canon.pack import CanonPack
 from ..canon.pin import pin_pack
 from ..memory.common_knowledge import (
-    context_order, home_region, identity_knowledge, local_aliases, mentioned_in, named_in,
+    common_words, context_order, home_region, identity_knowledge, local_aliases, mentioned_in,
+    named_in,
     relationship_entries,
 )
 from ..memory.model import KnowledgeBasis
@@ -247,7 +248,7 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
         morale=(s['morale']['trigger'], s['morale']['outcome']) if s.get('morale') else None,
         unheld_titles=tuple(entry.title for entry_id, entry in sorted(pack.entries.items())
                             if entry_id not in set(known)),
-        aliases=local_aliases(pack, area),
+        aliases=local_aliases(pack, area), common_words=common_words(pack),
         order=tuple(context_order(pack, known, npc_id=npc_id, area=area,
                                   home_region=identity.home_region,
                                   named=named_in(pack, known, case.question,

@@ -1,0 +1,44 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:azoun",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Rei Azoun IV",
+  "summary": "O rei Azoun IV, de Cormyr, é o 71º rei da casa Obarskyr e comandou a aliança que venceu a Horda Tuigan. É casado com a rainha Filfaeril e tem duas filhas, Tanalasta e Alusair; o mago real Vangerdahast é seu conselheiro. Em 1369 DR escapou de um atentado.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "cormyr-1994",
+      "locator": "p. 32, \"History of Cormyr\"; p. 42, \"The Royal Family\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 144, \"1360 DR\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 150, \"1369 DR\" (o caso Abraxus)"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Rei Azoun IV\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O rei Azoun IV, de Cormyr, comandou a aliança que venceu a Horda Tuigan.",
+    "INFORMED": "É casado com a rainha Filfaeril e tem duas filhas, Tanalasta e Alusair; é o 71º rei da casa Obarskyr.",
+    "STUDIED": "O mago real Vangerdahast é seu conselheiro, e em 1369 DR o rei escapou de um atentado."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

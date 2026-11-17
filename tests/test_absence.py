@@ -73,6 +73,20 @@ class ClassifyTests(unittest.TestCase):
                                   told_texts=('Khelben: arquimago de Águas Profundas.',)),
                          NOT_KNOWN)
 
+    def test_a_common_word_alone_is_not_a_name(self):                   # CR-2026-027
+        dales = dict(unheld_titles=('Vales (Dalelands)', 'Mar da Lua (Moonsea)', 'Rei Azoun IV'),
+                     common=frozenset({'vale', 'mar', 'lua', 'rei'}))
+        self.assertIsNone(classify('Quanto vale uma espada?', **dales))
+        self.assertIsNone(classify('Você já viajou pelo mar?', **dales))
+        self.assertIsNone(classify('O rei de Amn ainda existe?', **dales))
+        self.assertIsNone(classify('O que sabe dos Vales?', **dales))    # one common word
+        self.assertEqual(classify('E o Mar da Lua?', **dales), NOT_KNOWN)    # a whole name
+        self.assertEqual(classify('E os Dalelands?', **dales), NOT_KNOWN)    # a word of its own
+        self.assertEqual(classify('Quem é Azoun?', **dales), NOT_KNOWN)
+        # without the common words (before CR-2026-027) one word was enough
+        self.assertEqual(classify('Quanto vale uma espada?',
+                                  unheld_titles=('Vales (Dalelands)',)), NOT_KNOWN)
+
     def test_aliases_name_the_place(self):
         aliases = local_aliases(PACK, 'AR0406')
         self.assertEqual(classify('Quem cuida da taverna?', aliases=aliases,

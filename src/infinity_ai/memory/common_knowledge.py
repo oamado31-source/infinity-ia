@@ -430,11 +430,10 @@ def named_in(pack: CanonPack, entry_ids: Iterable[str], speech: str,
     asked = spoken_words(speech, aliases)
     held_set = set(held)
     names: set[str] = set()
+    common = common_words(pack)
     for entry in pack.entries.values():   # a whole name only: "cidade" is not "Dez Cidades"
-        if entry.id not in held_set:
-            sides = [title_words(name) for name in title_names(entry.title)]
-            if any(side <= asked for side in sides):
-                names |= frozenset().union(*sides)
+        if entry.id not in held_set and says_whole_name(entry.title, asked, common):
+            names |= frozenset().union(*(title_words(n) for n in title_names(entry.title)))
     for entry_id in held:                 # a word that already names a held entry ("Amn") is
         names -= title_words(pack.get(entry_id).title)     # answered by it, not by mentions
     if names:   # what everyone who holds it is told (the popular layer), not a scholar's detail
@@ -458,6 +457,26 @@ def title_words(title: str) -> frozenset[str]:
     """The words that name an entry: the capitalised words of its title (3+ letters), lowercase
     and without a plural -s."""
     return frozenset(_singular(w) for w in _TITLE_WORD.findall(title))
+
+
+def common_words(pack: CanonPack) -> frozenset[str]:
+    """CR-2026-027: the title words that are also ordinary words, because the pack's own texts use
+    them in lowercase ("vale", "mar", "norte", "rei"). Alone, they do not name an entry for the
+    typed absence; a whole name ("Mar da Lua") or a word of its own ("Cormyr") does."""
+    titles: set[str] = set()
+    lower: set[str] = set()
+    for entry in pack.entries.values():
+        titles |= title_words(entry.title)
+        for text in (entry.summary, *(entry.layers or {}).values()):
+            lower |= {_singular(w) for w in _SPOKEN_WORD.findall(text) if w[:1].islower()}
+    return frozenset(titles & lower)
+
+
+def says_whole_name(title: str, asked: frozenset[str], common: frozenset[str] = frozenset()) -> bool:
+    """CR-2026-026/027: the question says one of the title's names whole; a one-word name that is
+    a common word ("Vales", also "quanto vale") does not count alone."""
+    return any(words <= asked and (len(words) > 1 or not words <= common)
+               for words in (title_words(name) for name in title_names(title)))
 
 
 def title_names(title: str) -> list[str]:

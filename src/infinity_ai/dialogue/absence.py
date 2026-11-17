@@ -17,7 +17,7 @@ import hashlib
 import re
 from collections.abc import Iterable, Mapping
 
-from ..memory.common_knowledge import asked_names, spoken_words, title_words
+from ..memory.common_knowledge import asked_names, says_whole_name, spoken_words, title_words
 
 NOT_KNOWN, NOT_DEFINED, WITHHELD = 'NOT_KNOWN', 'NOT_DEFINED', 'WITHHELD'
 KINDS = (NOT_KNOWN, NOT_DEFINED, WITHHELD)
@@ -60,7 +60,7 @@ LINES = {
 def classify_absence(question: str, *, told_texts: Iterable[str],
                      withheld_titles: Iterable[str], unheld_titles: Iterable[str],
                      self_texts: Iterable[str], where_texts: Iterable[str] = (),
-                     told_titles: Iterable[str] = (),
+                     told_titles: Iterable[str] = (), common: frozenset[str] = frozenset(),
                      aliases: Mapping[str, str] | None = None) -> str | None:
     """The absence kind of this question, or None when the model should answer.
 
@@ -70,7 +70,9 @@ def classify_absence(question: str, *, told_texts: Iterable[str],
     keep a question about them from being NOT_KNOWN (but do not answer a withheld item);
     `told_titles`: titles of the items it may say. CR-2026-026: NOT_KNOWN only when no name of
     any unheld entry asked is said in what it tells (Silverymoon is "Lua Prateada" in Alustriel's
-    text) and the question names nothing it may tell ("Luskan and Khelben?" is answered)."""
+    text) and the question names nothing it may tell ("Luskan and Khelben?" is answered).
+    CR-2026-027: `common` are ordinary words of titles ("vale", "mar"): alone they do not name an
+    entry here, so "Quanto vale?" is not "I don't know"; a whole name or a word of its own does."""
     if not question or not question.strip():
         return None
     asked = spoken_words(question, aliases)
@@ -88,7 +90,13 @@ def classify_absence(question: str, *, told_texts: Iterable[str],
     withheld = named(withheld_titles)
     if withheld and not withheld & told:
         return WITHHELD
-    unheld = [names for names in (asked_names(t, asked) for t in unheld_titles) if names]
+    def unheld_named(title: str) -> frozenset[str]:
+        names = asked_names(title, asked)
+        if says_whole_name(title, asked, common):
+            return names                      # a whole name of the entry
+        return (title_words(title) & asked) - common   # a word of its own, never a common one
+
+    unheld = [names for names in map(unheld_named, unheld_titles) if names]
     for text in where_texts:
         told |= spoken_words(text)
     if (unheld and not any(words & told for words in unheld) and not named(told_titles)

@@ -1050,6 +1050,101 @@
           "Lua Prateada"
         ]
       }
+    },
+    {
+      "id": "elminster-por-todo-faerun",
+      "description": "Lote H: Elminster é conhecido em toda Faerûn; Salvanas, de Athkatla, responde pela entrada.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ]
+      },
+      "question": "Quem é Elminster?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "char:elminster"
+        ]
+      }
+    },
+    {
+      "id": "rei-de-cormyr",
+      "description": "Lote H: \"o rei de Cormyr\" acha o Rei Azoun IV (título com o papel, como a Rainha Zaranda).",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Quem é o rei de Cormyr?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "uses": [
+          "char:azoun"
+        ]
+      }
+    },
+    {
+      "id": "quanto-vale-nao-e-os-vales",
+      "description": "CR-2026-027: \"vale\" é palavra comum (título dos Vales); a pergunta de preço vai ao modelo, nunca à linha fixa de \"não sei\".",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Quanto vale uma boa espada aqui?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "matches_none": [
+          "^Não sei te dizer\\.$",
+          "^Não faço ideia\\.$",
+          "^Hum, não sei nada sobre isso\\.$",
+          "^Isso eu não sei\\.$"
+        ]
+      }
+    },
+    {
+      "id": "pelo-mar-nao-e-o-mar-da-lua",
+      "description": "CR-2026-027: \"mar\" sozinho não nomeia o Mar da Lua; a pergunta vai ao modelo.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-eval1",
+        "name": "Campesino(a)",
+        "wis": 9,
+        "int": 9,
+        "occupation": "carregador"
+      },
+      "question": "Você já viajou pelo mar?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "matches_none": [
+          "^Não sei te dizer\\.$",
+          "^Não faço ideia\\.$",
+          "^Hum, não sei nada sobre isso\\.$",
+          "^Isso eu não sei\\.$"
+        ]
+      }
     }
   ]
 }

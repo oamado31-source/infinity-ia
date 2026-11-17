@@ -17,7 +17,11 @@
     ["region:amn", "region:sword-coast"],
     ["region:tethyr", "region:calimshan"],
     ["region:amn", "region:calimshan"],
-    ["region:sword-coast", "region:the-north"]
+    ["region:sword-coast", "region:the-north"],
+    ["region:cormyr", "region:sembia"],
+    ["region:cormyr", "region:the-dales"],
+    ["region:sembia", "region:the-dales"],
+    ["region:the-dales", "region:moonsea"]
   ],
   "note": "Partição de 1369 DR (ADR-0013, ADR-0109). Entradas RESEARCH_ONLY nunca são afirmadas como fato; SOURCE_CHECKED exige conferência do mantenedor com obra e página. Relações tipadas e lugares entram na mesma revisão pinada do pacote (ADR-0119)."
 }

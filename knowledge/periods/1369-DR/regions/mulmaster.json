@@ -1,0 +1,40 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:mulmaster",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Mulmaster",
+  "summary": "Mulmaster é uma cidade fortificada nas encostas ao sul do Mar da Lua, rival de Zhentil Keep. É governada pelo Alto Lâmina (High Blade), e só os magos jurados ao trono, os Mantos (Cloaks), podem praticar magia ali; os outros magos são expulsos ou punidos.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:moonsea",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 67–68, \"Mulmaster\""
+    },
+    {
+      "source_id": "grand-history-of-the-realms",
+      "locator": "p. 149, \"1369 DR\" (o Alto Lâmina)"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Mulmaster\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Mulmaster é uma cidade fortificada ao sul do Mar da Lua, rival de Zhentil Keep.",
+    "INFORMED": "É governada pelo Alto Lâmina (High Blade).",
+    "STUDIED": "Ali, só os magos jurados ao trono, os Mantos (Cloaks), podem praticar magia; os outros magos são expulsos ou punidos."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

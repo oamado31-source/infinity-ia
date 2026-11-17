@@ -250,7 +250,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            trust: str = NEUTRO, question: str = '',
                            unheld_titles: tuple[str, ...] = (),
                            aliases: dict[str, str] | None = None,
-                           order: tuple[str, ...] = ()) -> ContextResult:
+                           order: tuple[str, ...] = (),
+                           common_words: frozenset[str] = frozenset()) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
@@ -357,6 +358,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
     absence = classify_absence(
         question, told_texts=[f.text for f in facts + tuple(knowledge) + tuple(restricted)],
         withheld_titles=withheld_titles, unheld_titles=unheld_titles, told_titles=told_titles,
+        common=common_words,
         self_texts=[f.text for f in facts], aliases=aliases,
         where_texts=[place, identity.place if identity and identity.place else '', name])
     return ContextResult(ContextStatus.OK, 'OK', DialogueContext(

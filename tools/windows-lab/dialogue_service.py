@@ -66,7 +66,8 @@ from infinity_ai.gamedata.inventory import (  # noqa: E402
     load_local_names, load_local_residents, load_local_resrefs,
 )
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
-    DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, context_order, entries_named,
+    DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, common_words, context_order,
+    entries_named,
     identity_knowledge, named_in,
     local_aliases, placement_regions, relationship_entries, residents_as_stays, share_knowledge,
 )
@@ -554,7 +555,7 @@ class Talker(threading.Thread):
                 popular_only_ids=shallow, history=history, recall_lines=lines,
                 disposition=reaction.disposition if reaction is not None else None,
                 morale=(check.trigger, check.outcome) if check is not None else None,
-                unheld_titles=unheld, aliases=aliases,
+                unheld_titles=unheld, aliases=aliases, common_words=common_words(pack),
                 order=tuple(context_order(pack, known_now, npc_id=speaker, area=req.area,
                                           home_region=home,
                                           named=named_in(pack, known_now, req.text,

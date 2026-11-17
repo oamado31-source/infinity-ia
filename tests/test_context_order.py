@@ -11,7 +11,8 @@ sys.path.insert(0, str(ROOT / 'src'))
 
 from infinity_ai.canon.pack import load_partition  # noqa: E402
 from infinity_ai.dialogue.context import MAX_KNOWLEDGE, Catalog, build_resident_context  # noqa: E402
-from infinity_ai.memory.common_knowledge import context_order, local_aliases, named_in  # noqa: E402
+from infinity_ai.memory.common_knowledge import (  # noqa: E402
+    common_words, context_order, local_aliases, named_in)
 from infinity_ai.memory.store import MemoryStore  # noqa: E402
 from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
 
@@ -133,6 +134,11 @@ class QuestionTests(unittest.TestCase):
         self.assertEqual(named_in(PACK, held, 'Como vai o movimento hoje?'), [])
         # the other name of the same city brings who its popular layer names (CR-2026-026)
         self.assertIn('char:alustriel', named_in(PACK, held, 'E Silvery Moon?'))
+        # a one-word name that is a common word does not pull either (CR-2026-027)
+        self.assertNotIn('region:amn', named_in(PACK, held, 'Quanto vale uma espada?'))
+        words = common_words(PACK)
+        self.assertTrue({'vale', 'mar', 'rei', 'norte'} <= words)
+        self.assertFalse({'cormyr', 'mulmaster', 'elminster', 'amn'} & words)
         # a common word of a name is not the name: "cidade" of "Dez Cidades (Ten-Towns)"
         self.assertEqual(named_in(PACK, held, 'Posso usar magia na cidade?'), [])
 

@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:the-north",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Norte (The North)",
+  "summary": "O Norte (The North), ou Norte Selvagem, é a terra selvagem e perigosa ao norte e a leste de Águas Profundas, até a Espinha do Mundo, as montanhas mais altas de Faerûn. É terra de bárbaros e tribos de goblins, com cidades muradas, antigas fortalezas anãs e florestas virgens.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 112, \"The Savage North\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"o Norte\", \"Norte Selvagem\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "O Norte (The North), ou Norte Selvagem, é a terra selvagem e perigosa ao norte de Águas Profundas.",
+    "INFORMED": "É terra de bárbaros e tribos de goblins, com cidades muradas e antigas fortalezas anãs.",
+    "STUDIED": "O Norte vai até a Espinha do Mundo, as montanhas mais altas de Faerûn, e tem florestas virgens."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:drizzt",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Drizzt Do'Urden",
+  "summary": "Drizzt Do'Urden é um patrulheiro drow que fugiu da crueldade de sua terra subterrânea e ficou famoso pelos feitos na superfície, combatendo goblins e malfeitores do Norte. Luta com duas cimitarras e tem a pantera mágica Guenhwyvar; os drow querem matá-lo para agradar a Lolth.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 163, \"Drizzt Do'Urden\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Drizzt\", \"Do'Urden\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Drizzt Do'Urden é um elfo negro, um drow do bem, famoso pelos feitos no Norte.",
+    "INFORMED": "É um patrulheiro que fugiu da terra subterrânea dos drow; luta com duas cimitarras e tem a pantera Guenhwyvar.",
+    "STUDIED": "Os drow querem matá-lo para agradar a Lolth."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

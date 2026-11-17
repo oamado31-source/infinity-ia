@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:silverymoon",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Lua Prateada (Silverymoon)",
+  "summary": "Lua Prateada (Silverymoon), a Joia do Norte, é uma cidade bonita entre as árvores da Floresta da Lua, onde humanos, anões, elfos e outros vivem em paz. É o centro de saber e cultura do Norte e é governada pela Grande Senhora Alustriel, uma feiticeira de cabelos prateados.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:the-north",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-north-1996",
+      "locator": "p. 145, \"Silverymoon\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Lua Prateada\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Lua Prateada (Silverymoon), a Joia do Norte, é a cidade bonita e pacífica governada pela Senhora Alustriel.",
+    "INFORMED": "É o centro de saber e cultura do Norte; humanos, anões, elfos e outros vivem ali em paz.",
+    "STUDIED": "Fica entre as árvores da Floresta da Lua; Alustriel é uma feiticeira de cabelos prateados."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

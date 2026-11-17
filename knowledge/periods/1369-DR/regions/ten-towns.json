@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:ten-towns",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Dez Cidades (Ten-Towns)",
+  "summary": "As Dez Cidades (Ten-Towns) ficam em volta de três lagos no Vale do Vento Gélido (Icewind Dale), uma terra varrida por tempestades geladas, além da Espinha do Mundo, cheia de bárbaros e monstros. A principal é Bryn Shander, a cidade murada do comércio; as outras vivem da pesca.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:the-north",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-north-1996",
+      "locator": "p. 128–129, \"Ten Towns\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Dez Cidades\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "As Dez Cidades (Ten-Towns) são vilas no Vale do Vento Gélido (Icewind Dale), no extremo norte gelado.",
+    "INFORMED": "É uma terra de tempestades geladas, bárbaros e monstros; as cidades ficam em volta de três lagos.",
+    "STUDIED": "A principal é Bryn Shander, a cidade murada do comércio; as outras vivem da pesca."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

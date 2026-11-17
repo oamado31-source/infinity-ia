@@ -42,10 +42,11 @@ class SiblingTests(TempKnowledge):
         _, popular = known(PACK, homeland='region:murann', home='region:tethyr',
                            standing='FORASTEIRO')
         self.assertIn('region:crimmor', popular)
-        full, popular = known(PACK, homeland='region:tethyr', home='region:athkatla',
+        # From a far land (not next door to Amn: CR-2026-025 would teach a neighbour's cities).
+        full, popular = known(PACK, homeland='region:halruaa', home='region:athkatla',
                               standing='FORASTEIRO')
         self.assertNotIn('region:crimmor', set(full) | set(popular))
-        full, popular = known(PACK, homeland='region:tethyr', home='region:athkatla',
+        full, popular = known(PACK, homeland='region:halruaa', home='region:athkatla',
                               standing='VIAJANTE')
         self.assertNotIn('region:crimmor', set(full) | set(popular))
 

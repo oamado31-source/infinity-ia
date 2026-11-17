@@ -1,0 +1,44 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:khelben",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Khelben Bastão Negro (Khelben Blackstaff)",
+  "summary": "Khelben Bastão Negro (Khelben Blackstaff) Arunsun é o arquimago de Águas Profundas e vive na Torre do Bastão Negro com sua dama, a maga Laeral. É um dos Harpistas, e dizem que é um dos Lordes secretos da cidade, talvez o principal.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "volos-guide-to-waterdeep",
+      "locator": "p. 12, Blackstaff Tower"
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 105, os Lordes"
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 156, \"The Harpers\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Khelben\", \"Bastão Negro\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Khelben Bastão Negro (Khelben Blackstaff) é o grande arquimago de Águas Profundas.",
+    "INFORMED": "Ele vive na Torre do Bastão Negro com sua dama, a maga Laeral; é um dos Harpistas.",
+    "STUDIED": "Ele seria um dos Lordes secretos de Águas Profundas, talvez o principal."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

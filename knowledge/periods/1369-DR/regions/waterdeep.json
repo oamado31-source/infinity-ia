@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:waterdeep",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Águas Profundas (Waterdeep)",
+  "summary": "Águas Profundas (Waterdeep), a Cidade dos Esplendores, é a cidade mais importante do Norte: um grande porto de mais de cem mil habitantes, centro do comércio entre o Norte, Amn, Calimshan e o Mar Interior. Fica ao pé de um monte de túneis, como Montanha Abaixo (Undermountain).",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:the-north",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 104, \"Waterdeep\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Águas Profundas\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Águas Profundas (Waterdeep), a Cidade dos Esplendores, é a cidade mais importante do Norte.",
+    "INFORMED": "É um grande porto de mais de cem mil habitantes, centro do comércio entre o Norte, Amn, Calimshan e o Mar Interior.",
+    "STUDIED": "Fica ao pé de um monte de túneis, como Montanha Abaixo (Undermountain)."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "char:alustriel",
+  "kind": "CHARACTER",
+  "partition_year_dr": 1369,
+  "title": "Alustriel",
+  "summary": "Alustriel, a Grande Senhora de Lua Prateada, é uma feiticeira de cabelos prateados com pelo menos duzentos anos, governante bondosa e diplomática, que defende das muralhas a beleza e o saber da cidade. É irmã da maga Laeral, de Águas Profundas.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:faerun",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-north-1996",
+      "locator": "p. 145, \"Silverymoon\""
+    },
+    {
+      "source_id": "fr-campaign-setting-1993",
+      "locator": "p. 158, as Sete Irmãs"
+    },
+    {
+      "source_id": "volos-guide-to-waterdeep",
+      "locator": "p. 12, Laeral"
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Alustriel\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Alustriel é a Grande Senhora de Lua Prateada, uma feiticeira bondosa.",
+    "INFORMED": "Tem cabelos prateados e pelo menos duzentos anos; defende a beleza e o saber de Lua Prateada.",
+    "STUDIED": "É irmã da maga Laeral, de Águas Profundas."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

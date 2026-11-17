@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.canon-entry.v1",
+  "id": "region:sundabar",
+  "kind": "REGION",
+  "partition_year_dr": 1369,
+  "title": "Sundabar",
+  "summary": "Sundabar é uma antiga cidade anã do Norte, hoje uma fortaleza de pedra com 36 mil humanos, quase todos de famílias refugiadas. É o posto mais a nordeste da civilização e membro da Aliança dos Lordes, e seus mercadores revendem com exclusividade produtos dos anões.",
+  "valid_from_dr": 1369,
+  "valid_to_dr": 1370,
+  "date_precision": "RANGE",
+  "region_id": "region:the-north",
+  "area_resrefs": [],
+  "source_refs": [
+    {
+      "source_id": "the-north-1996",
+      "locator": "p. 156, \"Sundabar\""
+    },
+    {
+      "source_id": "game-data-local",
+      "locator": "dialog.tlk pt_BR: \"Sundabar\""
+    }
+  ],
+  "verification_status": "SOURCE_CHECKED",
+  "access_scope": "COMMON_REGIONAL",
+  "knowledge_layers": {
+    "POPULAR": "Sundabar é uma cidade-fortaleza do Norte, antiga morada dos anões.",
+    "INFORMED": "É o posto mais a nordeste da civilização e membro da Aliança dos Lordes.",
+    "STUDIED": "Tem 36 mil humanos, quase todos de famílias refugiadas; seus mercadores revendem com exclusividade produtos dos anões."
+  },
+  "curation": {
+    "curated_by": "claude-code",
+    "curated_at": "2026-11-17",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17"
+  }
+}

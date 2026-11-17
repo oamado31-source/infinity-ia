@@ -57,6 +57,22 @@ class ClassifyTests(unittest.TestCase):
                                   withheld_titles=('Operação da Coroa de Cobre',),
                                   where_texts=('a Coroa de Cobre',)), WITHHELD)
 
+    def test_a_far_name_known_through_what_it_tells(self):              # CR-2026-026
+        silvery = dict(unheld_titles=('Lua Prateada (Silverymoon)',),
+                       told_texts=('Alustriel: é a Grande Senhora de Lua Prateada.',),
+                       told_titles=('Alustriel',))
+        self.assertIsNone(classify('O que sabe de Silverymoon?', **silvery))     # other name
+        self.assertIsNone(classify('E Silvery Moon?', **silvery))               # two words
+        luskan = dict(unheld_titles=('Luskan',), told_titles=('Khelben Bastão Negro',),
+                      told_texts=('Khelben Bastão Negro: é o arquimago de Águas Profundas.',))
+        self.assertIsNone(classify('E Luskan? E Khelben?', **luskan))   # something it may tell
+        self.assertEqual(classify('E Luskan?', **luskan), NOT_KNOWN)
+        # a part of a name is only itself: "Lordes" is not "Águas Profundas"
+        self.assertEqual(classify('Quem são os Lordes?',
+                                  unheld_titles=('Lordes de Águas Profundas (Lords of Waterdeep)',),
+                                  told_texts=('Khelben: arquimago de Águas Profundas.',)),
+                         NOT_KNOWN)
+
     def test_aliases_name_the_place(self):
         aliases = local_aliases(PACK, 'AR0406')
         self.assertEqual(classify('Quem cuida da taverna?', aliases=aliases,

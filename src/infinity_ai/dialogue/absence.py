@@ -87,8 +87,10 @@ def classify_absence(question: str, *, told_texts: Iterable[str],
             hits |= words
         return frozenset(hits)
 
-    withheld = named(withheld_titles)
-    if withheld and not withheld & told:
+    # ADR-0133: per title, like CR-2026-027: a withheld item is asked about when the question says
+    # a word of its title that nothing the person may say has ("arena" of the arena), even if
+    # another withheld title shares a word with what it tells ("Coroa de Cobre").
+    if any((title_words(t) & asked) - told for t in withheld_titles):
         return WITHHELD
     def unheld_named(title: str) -> frozenset[str]:
         names = asked_names(title, asked)

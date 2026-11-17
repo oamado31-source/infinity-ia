@@ -87,6 +87,12 @@ class ClassifyTests(unittest.TestCase):
         self.assertEqual(classify('Quanto vale uma espada?',
                                   unheld_titles=('Vales (Dalelands)',)), NOT_KNOWN)
 
+    def test_a_withheld_title_counts_alone_even_if_another_shares_told_words(self):   # ADR-0133
+        args = dict(withheld_titles=('Arena de Lehtinan', 'Bernard administra a Coroa de Cobre'),
+                    told_texts=('Você é frequentador assíduo da Coroa de Cobre.',))
+        self.assertEqual(classify('Tem uma arena aqui na Coroa de Cobre?', **args), WITHHELD)
+        self.assertIsNone(classify('Como é a Coroa de Cobre?', **args))   # all said words told
+
     def test_aliases_name_the_place(self):
         aliases = local_aliases(PACK, 'AR0406')
         self.assertEqual(classify('Quem cuida da taverna?', aliases=aliases,

@@ -85,6 +85,7 @@ from infinity_ai.personality.morale import (  # noqa: E402
     base_morale, classify_trigger, ethical_axis, modifiers, morale_for,
 )
 from infinity_ai.personality.reaction import reaction_for  # noqa: E402
+from infinity_ai.personality.trust import revise_trust  # noqa: E402
 from infinity_ai.personality.in_game import (  # noqa: E402
     profile_for, record_dialogue_start, resolve_speaker,
 )
@@ -413,6 +414,7 @@ class Talker(threading.Thread):
         flags: list[str] = []
         wisdom = intelligence = None
         tier, known_texts, standing = '-', {}, '-'
+        trust = None
         reaction = check = None
         # ADR-0124: earlier conversations with the player (ids and game time only).
         memory_key = npc_key(speaker, stable=bool(req.speaker_party or req.speaker_script
@@ -543,6 +545,9 @@ class Talker(threading.Thread):
                                    trigger=trigger),
                     world_seed=self.args.world_seed, game_time=view.game_time,
                     launch=self.observer.source.launch)
+            # ADR-0133: trust by event, after this turn's reaction and morale check are recorded.
+            trust = revise_trust(store, view.branch_id, memory_key or speaker,
+                                 game_time=view.game_time, host_epoch=req.session_seq or 0)
             aliases = local_aliases(pack, req.area)   # "taverna" = the place where it is
             # ADR-0131: titles of what the person does not hold, for the typed-absence check only.
             held_now = set(known_now)
@@ -558,6 +563,7 @@ class Talker(threading.Thread):
                 morale=(check.trigger, check.outcome) if check is not None else None,
                 unheld_titles=unheld, aliases=aliases, common_words=common_words(pack),
                 offer=self.observer.offers.get(speaker),
+                trust=trust.level, trust_own_only=trust.own_only,
                 order=tuple(context_order(pack, known_now, npc_id=speaker, area=req.area,
                                           home_region=home,
                                           named=named_in(pack, known_now, req.text,
@@ -614,6 +620,7 @@ class Talker(threading.Thread):
               f'turno={turn or "-"} lembra={earlier.conversations} '
               f'reacao={reaction.summary() if reaction is not None else "-"} '
               f'moral={check.summary() if check is not None else "-"} '
+              f'confianca={(trust.level + ("/" + trust.rule if trust.rule else "")) if trust is not None else "-"} '
               f'habitante={bool(areas)} estatuto={standing} perfil={scope} '
               f'identidade={ident_source} '
               f'wis={wisdom or "-"} int={intelligence or "-"} camada={tier} '

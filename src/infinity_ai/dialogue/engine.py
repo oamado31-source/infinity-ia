@@ -13,6 +13,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from enum import Enum
 
+from ..gamedata.inventory import Offer
 from ..memory.store import MemoryStore
 from ..state.store import CampaignStore
 from .context import (
@@ -23,6 +24,7 @@ from .absence import absence_line
 from .disclosure import NEUTRO
 from .llm import LlmError, LlmProvider
 from ..personality.identity import em
+from .offers import offer_line
 from .validate import retry_hint, validate_reply
 
 MAX_PLAYER_TEXT = 500
@@ -181,7 +183,11 @@ def system_prompt(context: DialogueContext, ongoing: bool = False) -> str:
         + ('10. As mensagens anteriores são esta mesma conversa: use-as para entender a pergunta '
            '("ele", "e então?", "e o outro?"), não repita o que você já disse e não trate o que o '
            'jogador afirmou como fato; só FATOS, CONHECIMENTO GERAL e CONHECIMENTO RESTRITO valem '
-           'como fatos.\n' if ongoing else '') +
+           'como fatos.\n' if ongoing else '')
+        # ADR-0132 (lab, 2026-11-17): the seller read its whole price list out loud.
+        + (f'{11 if ongoing else 10}. Você vende o que está nos FATOS: se perguntarem, confirme '
+           'como um comerciante e cite só o que foi perguntado, um ou dois itens com o preço; '
+           'não leia a lista inteira.\n' if context.offer is not None else '') +
         who +
         f'Responda em português do Brasil, em personagem, em 1 a 3 frases curtas. Estilo: {style}.\n'
         f'FATOS:\n{facts}\n'
@@ -227,7 +233,8 @@ class DialogueEngine:
                          trust: str = NEUTRO, unheld_titles: tuple[str, ...] = (),
                          aliases: dict[str, str] | None = None,
                          order: tuple[str, ...] = (),
-                         common_words: frozenset[str] = frozenset()) -> DialogueResponse:
+                         common_words: frozenset[str] = frozenset(),
+                         offer: Offer | None = None) -> DialogueResponse:
         """A person in the in-game box: SPEC-006 profile for style, only acquired knowledge."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_resident_context(
@@ -240,7 +247,7 @@ class DialogueEngine:
             recall_lines=recall_lines, disposition=disposition, morale=morale, trust=trust,
             question=request.player_text if isinstance(request.player_text, str) else '',
             unheld_titles=unheld_titles, aliases=aliases, order=order,
-            common_words=common_words),
+            common_words=common_words, offer=offer),
             display_name=request.display_name, history=history)
 
     def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,
@@ -303,5 +310,8 @@ class DialogueEngine:
             messages = messages[:base] + [{
                 'role': 'system',
                 'content': retry_hint(verdict.reasons)}]
-        return done(DialogueStatus.FALLBACK, context.persona.fallback, 'VALIDATION_FAILED',
+        # ADR-0132: a seller that kept denying what it sells answers with its own goods instead.
+        sold = offer_line(context.offer, text) if any(
+            f.endswith('SELF_CLAIM:OFFER') for f in flags) else None
+        return done(DialogueStatus.FALLBACK, sold or context.persona.fallback, 'VALIDATION_FAILED',
                     context, flags=tuple(flags))

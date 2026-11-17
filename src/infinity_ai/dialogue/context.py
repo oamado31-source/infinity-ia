@@ -18,7 +18,9 @@ from enum import Enum
 from pathlib import Path
 
 from ..memory.common_knowledge import SHARED_EVENT, BackgroundRegion, other_names, spoken_words
+from ..gamedata.inventory import Offer
 from .absence import classify_absence
+from .offers import offer_facts
 from .disclosure import NEUTRO, Decision, decide
 from ..memory.model import KnowledgeBasis
 from ..personality.identity import (HABITANTE, KnowledgeTier, NpcIdentity, em,
@@ -89,6 +91,7 @@ class DialogueContext:
     morale: tuple[str, str] | None = None  # ADR-0126: (trigger, HOLD|YIELD) of this line
     disclosure: tuple[Decision, ...] = ()  # ADR-0131: per-item decision with reason (no text)
     absence: str | None = None   # ADR-0131: NOT_KNOWN/NOT_DEFINED/WITHHELD, answered by code
+    offer: Offer | None = None   # ADR-0132: what the person sells (from the game's stores)
 
 
 @dataclass(frozen=True)
@@ -251,7 +254,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            unheld_titles: tuple[str, ...] = (),
                            aliases: dict[str, str] | None = None,
                            order: tuple[str, ...] = (),
-                           common_words: frozenset[str] = frozenset()) -> ContextResult:
+                           common_words: frozenset[str] = frozenset(),
+                           offer: Offer | None = None) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
@@ -283,6 +287,12 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                       for i, text in enumerate(identity.self_facts, 1))
         for text in identity.self_facts + identity.regions_named:
             vocabulary |= set(_NAME.findall(text))
+    # ADR-0132: what the person sells is a fact about itself, with the store's prices.
+    sold = offer_facts(offer, question)
+    facts += tuple(Fact(f'F{len(facts) + i}', f'offer:{npc_id}:{i}', text, at_game_time or 0)
+                   for i, text in enumerate(sold, 1))
+    for text in sold:
+        vocabulary |= set(_NAME.findall(text))
     facts = _with_recall(facts, recall_lines, at_game_time, vocabulary)   # ADR-0124
     # ADR-0120: a traveler or outsider was placed here by the game, but does not live here: its
     # game-placed RESIDENCE does not count (what it heard by INQUIRY or brought from home does).
@@ -366,7 +376,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         identity.place if identity and identity.place else place, orientation,
         identity.occupation if identity else None, tier.style, tuple(restricted), standing,
         any(a.endswith(':STAFF') for a in identity.affiliations) if identity else False,
-        identity.home_names if identity else (), disposition, morale, tuple(decisions), absence))
+        identity.home_names if identity else (), disposition, morale, tuple(decisions), absence,
+        offer))
 
 
 def _with_recall(facts: tuple[Fact, ...], lines: tuple[tuple[str, str], ...],

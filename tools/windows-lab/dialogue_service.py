@@ -63,7 +63,7 @@ from infinity_ai.dialogue.recall import (  # noqa: E402
     NO_RECALL, npc_key, recall, recall_lines, record_turn,
 )
 from infinity_ai.gamedata.inventory import (  # noqa: E402
-    load_local_names, load_local_residents, load_local_resrefs,
+    load_local_names, load_local_offers, load_local_residents, load_local_resrefs,
 )
 from infinity_ai.memory.common_knowledge import (  # noqa: E402
     DEFAULT_RESIDENCE_THRESHOLD, acquire_common_knowledge, common_words, context_order,
@@ -176,6 +176,7 @@ class Observer(threading.Thread):
         self.sources = load_sources()
         self.build_areas = load_local_resrefs(live_build, args.language)
         self.residents = load_local_residents(live_build, args.language)
+        self.offers = load_local_offers(live_build, args.language)   # ADR-0132: who sells what
         self.stays = residents_as_stays(self.pack, self.residents, live_build)
         self.curations = load_curations(self.pack)
         self._knowledge_status = None
@@ -556,6 +557,7 @@ class Talker(threading.Thread):
                 disposition=reaction.disposition if reaction is not None else None,
                 morale=(check.trigger, check.outcome) if check is not None else None,
                 unheld_titles=unheld, aliases=aliases, common_words=common_words(pack),
+                offer=self.observer.offers.get(speaker),
                 order=tuple(context_order(pack, known_now, npc_id=speaker, area=req.area,
                                           home_region=home,
                                           named=named_in(pack, known_now, req.text,
@@ -782,6 +784,7 @@ def main() -> int:
           f'areas da build: {len(observer.build_areas or ())}, '
           f'habitantes locais: {len(observer.stays)}, '
           f'identidades curadas: {len(observer.curations)}, '
+          f'vendedores: {len(observer.offers)}, '
           f'limite de residencia: {args.residence_threshold}')
     CampaignStore.open(args.db, args.campaign).close()   # migrate once before the threads open it
     # The reply file must exist when the game starts, or Infinity_DoFile never finds it.

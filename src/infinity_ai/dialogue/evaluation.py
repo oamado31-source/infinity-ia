@@ -26,6 +26,7 @@ from ..bridge.domain import (
 )
 from ..canon.pack import CanonPack
 from ..canon.pin import pin_pack
+from ..gamedata.inventory import Offer
 from ..memory.common_knowledge import (
     common_words, context_order, home_region, identity_knowledge, local_aliases, mentioned_in,
     named_in,
@@ -137,6 +138,8 @@ def _check_case(case: Case, pack: CanonPack) -> None:
     s = case.speaker
     if s.get('kind') not in KINDS or not str(s.get('npc_id', '')).startswith('npc:'):
         raise CaseError(f'{where}: speaker kind/npc_id')
+    if s.get('offer') is not None and not isinstance(s['offer'], dict):
+        raise CaseError(f'{where}: offer must be an object like a local store offer (ADR-0132)')
     if s.get('disposition') is not None and s['disposition'] not in DISPOSITIONS:
         raise CaseError(f'{where}: unknown disposition {s["disposition"]}')
     m = s.get('morale')
@@ -249,6 +252,7 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
         unheld_titles=tuple(entry.title for entry_id, entry in sorted(pack.entries.items())
                             if entry_id not in set(known)),
         aliases=local_aliases(pack, area), common_words=common_words(pack),
+        offer=Offer.from_json(s['offer']) if s.get('offer') else None,   # ADR-0132 (made up)
         order=tuple(context_order(pack, known, npc_id=npc_id, area=area,
                                   home_region=identity.home_region,
                                   named=named_in(pack, known, case.question,

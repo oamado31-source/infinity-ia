@@ -8,6 +8,7 @@ GameDataError.
 """
 from __future__ import annotations
 
+import re
 import struct
 from dataclasses import dataclass
 
@@ -277,3 +278,97 @@ def parse_cre_identity(data: bytes) -> CreatureIdentity:
     return CreatureIdentity(_strref(name), script, data[0x270], data[0x271], data[0x272],
                             data[0x273], data[0x275], data[0x27B], data[0x23B], data[0x23A],
                             data[0x23E], data[0x23F], data[0x240])
+
+
+# ADR-0132: what a person sells comes from the store its dialogue opens (STO), read locally.
+ITM_TYPE = 0x3ED
+DLG_TYPE = 0x3F3
+STO_TYPE = 0x3F6
+CRE_DIALOG_OFFSET = 0x2CC
+STORE_KINDS = {0: 'STORE', 1: 'TAVERN', 2: 'INN', 3: 'TEMPLE', 4: 'STORE', 5: 'CONTAINER'}
+ROOM_TIERS = ('PEASANT', 'MERCHANT', 'NOBLE', 'ROYAL')
+STO_SELLS, STO_CURES, STO_DRINKS = 0x01, 0x20, 0x40   # what the store does (flags)
+_START_STORE = re.compile(r'StartStore\(\s*"([^"]{1,8})"', re.I)
+
+
+@dataclass(frozen=True)
+class StoreData:
+    kind: str                                   # STORE, TAVERN, INN, TEMPLE, CONTAINER
+    name: int | None                            # strref of the store's name
+    sell_markup: int                            # percent of an item's base price
+    rooms: tuple[tuple[str, int], ...]          # (tier, price) of the rooms it rents
+    drinks: tuple[tuple[int | None, int], ...]  # (name strref, price)
+    items: tuple[str, ...]                      # ITM resrefs for sale
+    cures: tuple[tuple[str, int], ...]          # (SPL resref, price)
+
+
+@dataclass(frozen=True)
+class ItemSummary:
+    name: int | None        # identified name strref (unidentified when there is none)
+    price: int              # base price, before the store's markup
+    item_type: int          # ITM item category
+
+
+def parse_cre_dialog(data: bytes) -> str:
+    """The dialogue resref of a CRE V1.0 creature ('' when none)."""
+    _need(data, 0, CRE_DIALOG_OFFSET + 8, 'CRE header')
+    if data[:8] != b'CRE V1.0':
+        raise GameDataError('not a CRE V1.0 file')
+    ref = _resref(data[CRE_DIALOG_OFFSET:CRE_DIALOG_OFFSET + 8])
+    return '' if ref.lower() == 'none' else ref
+
+
+def parse_dlg_store_refs(data: bytes) -> tuple[str, ...]:
+    """Stores a dialogue opens (StartStore actions), in order, without repeats."""
+    _need(data, 0, 0x30, 'DLG header')
+    if data[:8] != b'DLG V1.0':
+        raise GameDataError('not a DLG V1.0 file')
+    offset, count = struct.unpack_from('<II', data, 0x28)
+    _need(data, offset, 8 * count, 'DLG actions')
+    found: list[str] = []
+    for i in range(count):
+        start, length = struct.unpack_from('<II', data, offset + 8 * i)
+        _need(data, start, length, 'DLG action text')
+        text = data[start:start + length].decode('latin-1', 'replace')
+        found += [m.upper() for m in _START_STORE.findall(text)]
+    return tuple(dict.fromkeys(found))
+
+
+def parse_sto(data: bytes) -> StoreData:
+    """A STOR V1.0 store: kind, name, markup, rooms, drinks, items for sale and cures. Items,
+    drinks and cures count only when the store's flags say it sells them."""
+    _need(data, 0, 0x9C, 'STO header')
+    if data[:8] != b'STORV1.0':
+        raise GameDataError('not a STOR V1.0 file')
+    kind, name, flags, sell = struct.unpack_from('<IiII', data, 0x08)
+    sale_off, sale_n = struct.unpack_from('<II', data, 0x34)
+    drink_off, drink_n = struct.unpack_from('<II', data, 0x4C)
+    room_flags, *prices = struct.unpack_from('<IIIII', data, 0x5C)
+    cure_off, cure_n = struct.unpack_from('<II', data, 0x70)
+    _need(data, sale_off, 28 * sale_n, 'STO items')
+    _need(data, drink_off, 20 * drink_n, 'STO drinks')
+    _need(data, cure_off, 12 * cure_n, 'STO cures')
+    items = tuple(_resref(data[sale_off + 28 * i:sale_off + 28 * i + 8]) for i in range(sale_n))
+    drinks = tuple((_strref(struct.unpack_from('<I', data, drink_off + 20 * i + 8)[0]),
+                    struct.unpack_from('<i', data, drink_off + 20 * i + 12)[0])
+                   for i in range(drink_n))
+    cures = tuple((_resref(data[cure_off + 12 * i:cure_off + 12 * i + 8]),
+                   struct.unpack_from('<i', data, cure_off + 12 * i + 8)[0]) for i in range(cure_n))
+    rooms = tuple((tier, price) for bit, (tier, price) in enumerate(zip(ROOM_TIERS, prices))
+                  if room_flags & (1 << bit))
+    return StoreData(STORE_KINDS.get(kind, 'STORE'), _strref(name & 0xFFFFFFFF), sell, rooms,
+                     drinks if flags & STO_DRINKS else (),
+                     tuple(i for i in items if i) if flags & STO_SELLS else (),
+                     cures if flags & STO_CURES else ())
+
+
+def parse_itm_summary(data: bytes) -> ItemSummary:
+    """Name, base price and category of an ITM V1 item."""
+    _need(data, 0, 0x38, 'ITM header')
+    if data[:4] != b'ITM ':
+        raise GameDataError('not an ITM file')
+    unidentified, identified = struct.unpack_from('<II', data, 0x08)
+    item_type, = struct.unpack_from('<H', data, 0x1C)
+    price, = struct.unpack_from('<I', data, 0x34)
+    name = _strref(identified) if _strref(identified) is not None else _strref(unidentified)
+    return ItemSummary(name, price, item_type)

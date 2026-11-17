@@ -3,10 +3,11 @@
 
 Reads KEY/BIF/WMP/TLK slices over SSH into memory and writes only the derived inventory to
 ~/.infinity-ai/knowledge/ (outside the repository, REQ-CANON-004). `--residents` also lists the
-creatures the game places in the areas of the pinned canon pack (ADR-0116 established residents).
+creatures the game places in the areas of the pinned canon pack (ADR-0116 established residents);
+`--stores` lists what each of those residents sells, from the stores its dialogue opens (ADR-0132).
 
   export INFINITY_LAB_SSH='ssh -i ~/.ssh/<key> -o IdentitiesOnly=yes -o BatchMode=yes -l "<user>" <vm-ip>'
-  python tools/windows-lab/build_area_inventory.py --language pt_BR [--residents]
+  python tools/windows-lab/build_area_inventory.py --language pt_BR [--residents] [--stores]
 """
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from infinity_ai.bridge.manifest import build_fingerprint  # noqa: E402
 from infinity_ai.canon.pack import load_partition  # noqa: E402
 from infinity_ai.gamedata.inventory import (  # noqa: E402
-    build_inventory, build_residents, write_inventory,
+    build_inventory, build_residents, build_stores, load_local_residents, write_inventory,
 )
 from lab_ssh import SshByteSource, live_manifest, ssh_from_env  # noqa: E402
 
@@ -32,6 +33,8 @@ def main() -> int:
     ap.add_argument('--language', default='pt_BR')
     ap.add_argument('--residents', action='store_true',
                     help='also list creatures placed in the canon pack areas')
+    ap.add_argument('--stores', action='store_true',
+                    help='also list what the residents sell (needs the residents inventory)')
     ap.add_argument('--year', type=int, default=1369, help='canon pack partition (DR year)')
     args = ap.parse_args()
     ssh = ssh_from_env('INFINITY_LAB_SSH')
@@ -43,6 +46,16 @@ def main() -> int:
         path = write_inventory(residents)
         print(f'habitantes={len(residents.residents)} areas={len(residents.areas)} '
               f'sem_script={residents.skipped_without_script}')
+        print(f'gravado em {path}')
+    if args.stores:
+        residents = load_local_residents(fingerprint, args.language)
+        if not residents:
+            print('sem inventario de habitantes desta build: rode antes com --residents')
+            return 1
+        stores = build_stores(SshByteSource(ssh, args.game_root), language=args.language,
+                              build_fingerprint=fingerprint, residents=residents)
+        path = write_inventory(stores)
+        print(f'vendedores={len(stores.offers)} de {len(residents)} habitantes')
         print(f'gravado em {path}')
     inventory = build_inventory(SshByteSource(ssh, args.game_root), language=args.language,
                                 build_fingerprint=fingerprint)

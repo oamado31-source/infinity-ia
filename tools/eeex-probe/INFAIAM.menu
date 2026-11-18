@@ -1,0 +1,9 @@
+menu
+{
+	name "INFAI_ACT_Menu"
+	ignoreEsc
+	label
+	{
+		enabled "INFAI_ACT_Tick()"
+	}
+}

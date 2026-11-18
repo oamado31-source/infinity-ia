@@ -26,12 +26,13 @@ from infinity_ai.bridge.talk import (  # noqa: E402
     parse_talk_requests,
     render_reply,
 )
+from infinity_ai.actions.gateway import ACT_RESREF, PLACEHOLDER_ACT  # noqa: E402
 from lab_ssh import (  # noqa: E402
     SshLogSource, now_iso, put_override_file, ssh_from_env,
 )
 
 PROBE_DIR = ROOT / 'tools' / 'eeex-probe'
-FILES = ('M_INFAIT.lua', 'INFAITLK.menu')
+FILES = ('M_INFAIT.lua', 'INFAITLK.menu', 'M_INFAIA.lua', 'INFAIAM.menu')   # ADR-0136: action module
 
 
 def main() -> int:
@@ -52,6 +53,8 @@ def main() -> int:
         print(f'copiado: override\\{PTT_RESREF}.lua (estado da voz vazio, ADR-0127)')
         put_override_file(ssh, args.game_root, f'{QUEST_RESREF}.lua', PLACEHOLDER_QUEST.encode())
         print(f'copiado: override\\{QUEST_RESREF}.lua (lista de variaveis vazia, ADR-0134)')
+        put_override_file(ssh, args.game_root, f'{ACT_RESREF}.lua', PLACEHOLDER_ACT.encode())
+        print(f'copiado: override\\{ACT_RESREF}.lua (pedido de acao vazio, ADR-0136)')
         print('reabra o jogo para carregar o modulo')
         return 0
 

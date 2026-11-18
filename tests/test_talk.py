@@ -13,9 +13,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from infinity_ai.bridge.manifest import modpack_hash  # noqa: E402
 from infinity_ai.bridge.talk import (  # noqa: E402
-    PLACEHOLDER_PTT, PLACEHOLDER_REPLY, TALK_SCHEMA, fresh_ptt_signals, lua_string,
-    parse_ptt_signals,
-    parse_talk_line, parse_talk_requests, render_ptt_state, render_reply,
+    PLACEHOLDER_PTT, PLACEHOLDER_QUEST, PLACEHOLDER_REPLY, TALK_SCHEMA, fresh_ptt_signals,
+    lua_string, parse_ptt_signals,
+    parse_talk_line, parse_talk_requests, render_ptt_state, render_quest_probes, render_reply,
 )
 from types import SimpleNamespace  # noqa: E402
 
@@ -48,6 +48,8 @@ ALLOWED = frozenset({
     'EEex_EngineGlobal_CBaldurChitin',  # only to close the open name tooltip (m_tempCursor = 4)
     # ADR-0129: default line from the creature's own sound set, played and shown by the engine
     'EEex_Resource_LoadIDS', 'EEex_Resource_IterateUnpackedIDSEntries', 'EEex_Sprite_DisplayTextRef',
+    # ADR-0134: looks up an allowlisted global variable; never creates or writes one
+    'EEex_Variable_Find',
 })
 
 
@@ -86,6 +88,22 @@ class ParseTests(unittest.TestCase):
         conv = parse_talk_line(line(conv='0-123456'))
         self.assertEqual(conv.conversation_id, '0-123456')
         self.assertIsNone(parse_talk_line(line(conv='abc; drop')).conversation_id)
+
+    def test_probe_readings_are_strict(self):
+        """ADR-0134: {probe_id: int or null}; anything odd is no reading, never a guess."""
+        self.assertIsNone(parse_talk_line(line()).probes)
+        ok = parse_talk_line(line(probes={'teste-1': 3, 'teste-2': None, 'teste-3': -1}))
+        self.assertEqual(dict(ok.probes), {'teste-1': 3, 'teste-2': None, 'teste-3': -1})
+        for bad in ({'Teste': 1}, {'teste-1': True}, {'teste-1': '3'}, {'teste-1': 2**31},
+                    {f'p{i}': 0 for i in range(17)}, ['teste-1']):
+            self.assertIsNone(parse_talk_line(line(probes=bad)).probes, bad)
+
+    def test_the_allowlist_file_cannot_inject(self):
+        self.assertEqual(render_quest_probes([('teste-1', 'TesteVar')]),
+                         'INFAI_QUEST_Probes = {{id = "teste-1", name = "TesteVar"}}\n')
+        for bad in ([('teste-1', 'a"b')], [('Teste', 'x')], [('teste-1', 'x')] * 17):
+            with self.assertRaises(ValueError):
+                render_quest_probes(bad)
 
     def test_social_stats_and_selected_leader_are_observations_only(self):
         req = parse_talk_line(line(
@@ -234,6 +252,8 @@ class ReplyTests(unittest.TestCase):
             ('override/M_INFAIT.lua', 'a'), ('override/INFAIRSP.lua', 'b'))))
         self.assertEqual(modpack_hash(base), modpack_hash(manifest(        # ADR-0127
             ('override/M_INFAIT.lua', 'a'), ('override/INFAIPTT.lua', 'c'))))
+        self.assertEqual(modpack_hash(base), modpack_hash(manifest(        # ADR-0134
+            ('override/M_INFAIT.lua', 'a'), ('override/INFAIQST.lua', 'd'))))
         self.assertNotEqual(modpack_hash(base), modpack_hash(manifest(
             ('override/M_INFAIT.lua', 'a'), ('override/OTHER.lua', 'b'))))
 
@@ -474,6 +494,62 @@ class PushToTalkBoxTests(unittest.TestCase):
         self.assertEqual(parse_talk_requests('\n'.join(self.printed()) + '\n')[-1].input, 'TEXT')
 
 
+class QuestProbeBoxTests(unittest.TestCase):
+    """ADR-0134: the box reads the listed variables when the player sends, and nothing else."""
+
+    STUBS = PushToTalkBoxTests.STUBS + """
+    lookups = {}
+    variables = { TesteVar = 3, TesteZero = 0 }
+    EEex_EngineGlobal_CBaldurChitin = { m_pObjectGame = { m_variables = "hash" } }
+    EEex_Variable_Find = function(hash, name)
+        table.insert(lookups, name)
+        local v = variables[name]
+        if v == nil then return nil end
+        return { m_intValue = v }
+    end
+    """
+
+    def setUp(self):
+        if lupa is None:
+            self.skipTest('lupa not installed')
+        self.lua = lupa.LuaRuntime()
+        self.lua.execute(self.STUBS)
+        self.lua.execute(MODULE.read_text(encoding='utf-8'))
+        self.g = self.lua.globals()
+        self.lua.execute("""
+        INFAI_TALK_State.open = true
+        INFAI_TALK_State.speaker = { id = 7, script = "", name = "Bernard", cre = "BERNARD",
+                                     dead = false, party = false, wis = 10, int = 10, x = 0, y = 0 }
+        INFAI_TALK_State.lines = {}
+        """)
+
+    def send(self):
+        self.g.INFAI_TALK_Input = 'Olá'
+        self.g.INFAI_TALK_Send()
+        printed = [self.g.printed[i] for i in range(1, len(self.g.printed) + 1)]
+        request = parse_talk_line(printed[-1])
+        self.assertIsNotNone(request)
+        return request
+
+    def test_values_of_the_list_only_and_absent_is_null(self):
+        self.lua.execute(render_quest_probes([('teste-1', 'TesteVar'), ('teste-2', 'TesteZero'),
+                                              ('teste-3', 'TesteNaoExiste')]))
+        request = self.send()
+        self.assertEqual(dict(request.probes), {'teste-1': 3, 'teste-2': 0, 'teste-3': None})
+        lookups = [self.g.lookups[i] for i in range(1, len(self.g.lookups) + 1)]
+        self.assertEqual(lookups, ['TesteVar', 'TesteZero', 'TesteNaoExiste'])
+
+    def test_no_list_reads_nothing(self):
+        self.lua.execute(PLACEHOLDER_QUEST)
+        self.assertIsNone(self.send().probes)
+        self.assertEqual(len(self.g.lookups), 0)
+
+    def test_a_malformed_list_entry_is_skipped(self):
+        self.lua.execute('INFAI_QUEST_Probes = { {id = "Mal", name = "TesteVar"}, '
+                         '{id = "teste-1", name = "x y"}, {id = "teste-2", name = "TesteVar"} }')
+        self.assertEqual(dict(self.send().probes), {'teste-2': 3})
+
+
 class ModuleStaticTests(unittest.TestCase):
     def setUp(self):
         self.raw = MODULE.read_text(encoding='utf-8')
@@ -527,16 +603,17 @@ class ModuleStaticTests(unittest.TestCase):
     def test_only_the_service_files_are_dropped_from_cache(self):
         # ADR-0127: the reply and the push-to-talk state, behind an explicit guard.
         self.assertEqual(re.findall(r'EEex_Resource_Fetch\(([^)]*)\)', self.raw), ['resref, "LUA"'])
-        self.assertIn('if resref ~= "INFAIRSP" and resref ~= "INFAIPTT" then return false', self.raw)
+        self.assertIn('if resref ~= "INFAIRSP" and resref ~= "INFAIPTT" and resref ~= "INFAIQST" then',
+                      self.raw)
         self.assertEqual(sorted(re.findall(r'infai_drop_cached\("(\w+)"\)', self.raw)),
-                         ['INFAIPTT', 'INFAIRSP'])
+                         ['INFAIPTT', 'INFAIQST', 'INFAIRSP'])
         self.assertEqual(self.code.count('EngineGlobals.'), 1)
         self.assertIn('EngineGlobals.dimmDump(res)', self.raw)
 
     def test_reads_only_the_service_files(self):
-        self.assertEqual(self.code.count('Infinity_DoFile'), 2)
+        self.assertEqual(self.code.count('Infinity_DoFile'), 3)
         rest = self.raw.replace('pcall(Infinity_DoFile, "INFAIRSP")', '').replace(
-            'pcall(Infinity_DoFile, "INFAIPTT")', '')
+            'pcall(Infinity_DoFile, "INFAIPTT")', '').replace('pcall(Infinity_DoFile, "INFAIQST")', '')
         self.assertEqual(strip_lua(rest).count('Infinity_DoFile'), 0)
 
     def test_push_to_talk_signals_and_marks_voice_input(self):
@@ -559,6 +636,14 @@ class ModuleStaticTests(unittest.TestCase):
                     self.assertNotRegex(lhs, r'\.m_|:|EngineGlobals')
                     root = lhs.split('.')[0].split('[')[0]
                     self.assertTrue(root.startswith(('INFAI_', 'infai_')) or root.islower(), lhs)
+
+    def test_reads_only_listed_variables_and_never_writes_one(self):
+        """ADR-0134: one lookup per listed name, by the service's list; no Set/Get by name."""
+        self.assertEqual(self.code.count('EEex_Variable_Find'), 1)
+        self.assertIn('EEex_Variable_Find(hash, p.name)', self.raw)
+        self.assertIn('for i, p in ipairs(list) do', self.raw)
+        self.assertNotRegex(self.code, r'SetGlobal|GetGlobal|SetVariable|GetOrCreate|Variable_Set')
+        self.assertIn(',"probes":\' .. infai_quest_probes()', self.raw)
 
     def test_menu_is_bound_to_the_module(self):
         menu = MENU.read_text(encoding='utf-8')

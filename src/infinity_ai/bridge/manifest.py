@@ -68,7 +68,9 @@ def build_fingerprint(manifest: dict[str, Any]) -> str:
 
 # Transient data files written while the game runs (ADR-0116 reply channel): not part of the mod.
 # Files the dialogue service rewrites while the game runs (reply, push-to-talk state, ADR-0127).
-TRANSIENT_OVERRIDE = frozenset({'override/infairsp.lua', 'override/infaiptt.lua'})
+# Files the dialogue service writes while it runs (reply, voice state, ADR-0134 allowlist).
+TRANSIENT_OVERRIDE = frozenset({'override/infairsp.lua', 'override/infaiptt.lua',
+                                'override/infaiqst.lua'})
 
 
 def modpack_hash(manifest: dict[str, Any]) -> str:

@@ -1708,6 +1708,102 @@
           "(?i)\\bsim\\b.{0,40}arena"
         ]
       }
+    },
+    {
+      "id": "bernard-oferece-o-broche",
+      "description": "SPEC-011: pedido de trabalho; o código põe a oferta curada no prompt e Bernard pede ajuda com o broche e manda falar com Yarin.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-bernard",
+        "name": "Bernard",
+        "wis": 9,
+        "int": 9,
+        "occupation": "taverneiro da Coroa de Cobre",
+        "affiliations": [
+          "place:copper-coronet:STAFF"
+        ],
+        "self_facts": [
+          "Você serve bebida no balcão da Coroa de Cobre e conhece bem a freguesia da casa."
+        ],
+        "quest_facts": [
+          "Você tem um trabalho para oferecer ao grupo: descobrir quem furtou do seu balcão um broche que era da sua mãe. Você desconfia de um batedor de carteiras novato e quer que o grupo pergunte a Yarin, um ladrão aposentado que está aqui na taverna e conhece o ofício."
+        ]
+      },
+      "question": "Você tem algum trabalho para nós?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "broche"
+        ],
+        "matches_none": [
+          "(?i)n[ãa]o tenho (?:nenhum )?trabalho"
+        ]
+      }
+    },
+    {
+      "id": "yarin-conta-do-batedor",
+      "description": "SPEC-011: com a quest aceita, Yarin recebe o fato do passo e conta do batedor novato das Docas.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:yarin",
+        "name": "Yarin",
+        "wis": 12,
+        "int": 12,
+        "occupation": "ladrão aposentado",
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é um ladrão aposentado e já foi o melhor batedor de carteiras da cidade."
+        ],
+        "quest_facts": [
+          "Você ouviu do grupo que furtaram o broche de Bernard, o taverneiro da Coroa de Cobre. Pelo jeito do furto, você reconhece um rapaz novato que vende o que rouba a um receptador nas Docas."
+        ]
+      },
+      "question": "Bernard disse que roubaram o broche dele do balcão. Você sabe quem foi?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "docas",
+          "novato"
+        ]
+      }
+    },
+    {
+      "id": "bernard-intimo-conta-dos-escravos",
+      "description": "SPEC-011 + ADR-0134: Bernard ÍNTIMO pelo marco da quest (não own_only) pode contar o segredo da casa: os gladiadores são escravos.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:cre-bernard",
+        "name": "Bernard",
+        "wis": 9,
+        "int": 9,
+        "occupation": "taverneiro da Coroa de Cobre",
+        "affiliations": [
+          "place:copper-coronet:STAFF"
+        ],
+        "self_facts": [
+          "Você serve bebida no balcão da Coroa de Cobre e conhece bem a freguesia da casa."
+        ],
+        "trust": "INTIMO",
+        "trust_own_only": false,
+        "quest_facts": [
+          "O grupo voltou com a resposta de Yarin, o ladrão aposentado: quem furtou o broche foi um batedor de carteiras novato, que vende o que rouba a um receptador nas Docas. Você agradece de coração e vai mandar alguém de confiança às Docas."
+        ]
+      },
+      "question": "Bernard, os lutadores da arena dos fundos são escravos?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "escrav"
+        ]
+      }
     }
   ]
 }

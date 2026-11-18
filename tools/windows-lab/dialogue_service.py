@@ -47,8 +47,9 @@ from infinity_ai.bridge.eeex_log import (  # noqa: E402
 from infinity_ai.bridge.manifest import build_fingerprint, modpack_hash  # noqa: E402
 from infinity_ai.bridge.service import ReadOnlyBridge  # noqa: E402
 from infinity_ai.bridge.talk import (  # noqa: E402
-    PLACEHOLDER_PTT, PLACEHOLDER_REPLY, PTT_RESREF, REPLY_RESREF, fresh_ptt_signals,
-    parse_ptt_signals, parse_talk_requests, render_ptt_state, render_reply,
+    PLACEHOLDER_PTT, PLACEHOLDER_QUEST, PLACEHOLDER_REPLY, PTT_RESREF, QUEST_RESREF, REPLY_RESREF,
+    fresh_ptt_signals, parse_ptt_signals, parse_talk_requests, render_ptt_state,
+    render_quest_probes, render_reply,
 )
 from infinity_ai.canon.pack import load_partition, load_sources  # noqa: E402
 from infinity_ai.dialogue.context import (  # noqa: E402
@@ -86,6 +87,11 @@ from infinity_ai.personality.morale import (  # noqa: E402
 )
 from infinity_ai.personality.reaction import reaction_for  # noqa: E402
 from infinity_ai.personality.trust import revise_trust  # noqa: E402
+from infinity_ai.quests.milestones import (  # noqa: E402
+    DEFAULT_CATALOG, evaluate, load_catalog, record_milestones,
+)
+from infinity_ai.quests.narrative import advance, load_quests, with_journal  # noqa: E402
+from infinity_ai.dialogue.disclosure import CLOSED_DISPOSITIONS  # noqa: E402
 from infinity_ai.personality.in_game import (  # noqa: E402
     profile_for, record_dialogue_start, resolve_speaker,
 )
@@ -180,6 +186,10 @@ class Observer(threading.Thread):
         self.offers = load_local_offers(live_build, args.language)   # ADR-0132: who sells what
         self.stays = residents_as_stays(self.pack, self.residents, live_build)
         self.curations = load_curations(self.pack)
+        # ADR-0134: the local quest catalog (allowlist and curated meaning), outside the repo.
+        self.live_build = live_build
+        self.quest_catalog = load_catalog(args.quest_catalog)
+        self.quests = load_quests()          # SPEC-011: curated narrative quests
         self._knowledge_status = None
         self._pin_warned: set[str] = set()
         self.pin = (pin_build, pin_modpack)
@@ -416,6 +426,16 @@ class Talker(threading.Thread):
         tier, known_texts, standing = '-', {}, '-'
         trust = None
         reaction = check = None
+        quests = None
+        story = None          # SPEC-011: this turn of the narrative quests
+        # ADR-0134: the box's reading of the allowlisted variables -> this branch's milestones.
+        if view.branch_id is not None and self.observer.quest_catalog is not None:
+            quests = record_milestones(
+                store, view.branch_id, self.observer.quest_catalog,
+                evaluate(self.observer.quest_catalog, req.probes, self.observer.live_build),
+                game_time=view.game_time, host_epoch=req.session_seq or 0)
+            if self.args.watch_probes:       # lab curation only (D4): never in the evidence
+                print(f'{now_iso()} probes {dict(req.probes) if req.probes is not None else None}')
         # ADR-0124: earlier conversations with the player (ids and game time only).
         memory_key = npc_key(speaker, stable=bool(req.speaker_party or req.speaker_script
                                                    or curation is not None),
@@ -545,9 +565,17 @@ class Talker(threading.Thread):
                                    trigger=trigger),
                     world_seed=self.args.world_seed, game_time=view.game_time,
                     launch=self.observer.source.launch)
+            # SPEC-011: the narrative quests this person is part of move by what the player said;
+            # a resolved quest records its milestone before trust is revised.
+            story = advance(store, view.branch_id, self.observer.quests, speaker=speaker,
+                            text=req.text, area=req.area, game_time=view.game_time,
+                            host_epoch=req.session_seq or 0,
+                            closed=reaction is not None
+                            and reaction.disposition in CLOSED_DISPOSITIONS)
             # ADR-0133: trust by event, after this turn's reaction and morale check are recorded.
             trust = revise_trust(store, view.branch_id, memory_key or speaker,
-                                 game_time=view.game_time, host_epoch=req.session_seq or 0)
+                                 game_time=view.game_time, host_epoch=req.session_seq or 0,
+                                 effects=dict(curation.milestones) if curation else None)
             aliases = local_aliases(pack, req.area)   # "taverna" = the place where it is
             # ADR-0131: titles of what the person does not hold, for the typed-absence check only.
             held_now = set(known_now)
@@ -564,6 +592,7 @@ class Talker(threading.Thread):
                 unheld_titles=unheld, aliases=aliases, common_words=common_words(pack),
                 offer=self.observer.offers.get(speaker),
                 trust=trust.level, trust_own_only=trust.own_only,
+                quest_facts=story.facts,
                 order=tuple(context_order(pack, known_now, npc_id=speaker, area=req.area,
                                           home_region=home,
                                           named=named_in(pack, known_now, req.text,
@@ -571,6 +600,7 @@ class Talker(threading.Thread):
             status, reason = result.status.value, result.reason
             flags = list(result.flags)
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
+            speech = with_journal(speech, story.journal)       # SPEC-011: the box's journal
             used = tuple(e.split(':', 1)[1] for e in result.used_event_ids
                          if e.startswith('canon:'))
             if result.status is DialogueStatus.OK and speaker:
@@ -621,6 +651,12 @@ class Talker(threading.Thread):
               f'reacao={reaction.summary() if reaction is not None else "-"} '
               f'moral={check.summary() if check is not None else "-"} '
               f'confianca={(trust.level + ("/" + trust.rule if trust.rule else "")) if trust is not None else "-"} '
+              f'marcos={list(quests.held) if quests is not None else "-"}'
+              f'{" marco_novo=" + str(list(quests.recorded)) if quests and quests.recorded else ""}'
+              f'{" marco_regrediu=" + str(list(quests.regressed)) if quests and quests.regressed else ""}'
+              f'{" marco_ambiguo=" + str(list(quests.unclear)) if quests and quests.unclear else ""} '
+              f'quests={list(story.states) if story is not None else "-"}'
+              f'{" quest_mudou=" + str(list(story.changes)) if story and story.changes else ""} '
               f'habitante={bool(areas)} estatuto={standing} perfil={scope} '
               f'identidade={ident_source} '
               f'wis={wisdom or "-"} int={intelligence or "-"} camada={tier} '
@@ -774,6 +810,10 @@ def main() -> int:
     ap.add_argument('--residence-threshold', type=int, default=DEFAULT_RESIDENCE_THRESHOLD,
                     help='game time an NPC outside the party lives in a region before it knows its '
                          'common knowledge (ADR-0114; party members never learn by time)')
+    ap.add_argument('--quest-catalog', type=Path, default=DEFAULT_CATALOG,
+                    help='local quest catalog (ADR-0134): allowlisted variables and milestones')
+    ap.add_argument('--watch-probes', action='store_true',
+                    help='print the allowlisted variable values per question (curation, D4)')
     args = ap.parse_args()
 
     pinned = json.loads(args.pinned_manifest.read_text(encoding='utf-8-sig'))
@@ -799,6 +839,16 @@ def main() -> int:
     # ADR-0127: same for the push-to-talk state (written even without --voice, so the box finds an
     # empty state instead of a missing file).
     put_override_file(ssh, args.game_root, f'{PTT_RESREF}.lua', PLACEHOLDER_PTT.encode('utf-8'))
+    # ADR-0134: the variables the box may read, from the local catalog (empty without one). A
+    # catalog of another build reads nothing.
+    quests = observer.quest_catalog
+    allow = [(q.probe_id, q.name) for q in quests.probes] \
+        if quests is not None and quests.build_fingerprint == live_build else []
+    put_override_file(ssh, args.game_root, f'{QUEST_RESREF}.lua',
+                      (render_quest_probes(allow) if allow else PLACEHOLDER_QUEST).encode('utf-8'))
+    print(f'quests narrativas: {sorted(observer.quests)}')
+    print(f'catalogo de quests: {"nenhum" if quests is None else quests.status + " rev " + quests.revision}'
+          f', variaveis permitidas: {len(allow)}')
     # S1i: one long-lived shell reads the log a few times a second, another writes the box files.
     observer.source.refresh()
     LogTail(observer.source, args.tail_interval).start()

@@ -226,6 +226,9 @@ class AreaActor:
     cre_resref: str
     flags: int
     embedded: bytes | None = None   # CRE stored inside the ARE (flag bit 0), if any
+    x: int = 0                      # SPEC-012 census: where the actor stands in the area
+    y: int = 0
+    schedule: int = 0               # bit n = present at hour n (0..23)
 
 
 @dataclass(frozen=True)
@@ -263,7 +266,9 @@ def parse_are_actors(data: bytes) -> tuple[AreaActor, ...]:
             cre_off, cre_size = struct.unpack_from('<2I', data, base + 0x88)
             if cre_size >= CRE_IDENTITY_SIZE and cre_off + cre_size <= len(data):
                 embedded = data[cre_off:cre_off + cre_size]
-        actors.append(AreaActor(name, cre, flags, embedded))
+        x, y = struct.unpack_from('<HH', data, base + 0x20)
+        schedule, = struct.unpack_from('<I', data, base + 0x40)
+        actors.append(AreaActor(name, cre, flags, embedded, x, y, schedule & 0xFFFFFF))
     return tuple(actors)
 
 

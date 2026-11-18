@@ -1,0 +1,36 @@
+{
+  "schema": "infinity-ai.encyclopedia.character.v1",
+  "canonical_id": "character:scdur",
+  "category": "CHARACTER",
+  "display_name": "Unger Colinaescura",
+  "summary": "Frequentador da Coroa de Cobre.",
+  "source_records": [
+    {
+      "game": "BG2",
+      "expansion": "SOA",
+      "verification_status": "SOURCE_VERIFIED",
+      "resref": "SCDUR"
+    }
+  ],
+  "verification_status": "CURATED",
+  "entity_type": "RESIDENT",
+  "refs": {
+    "curation": "knowledge/npcs/scdur.pt_BR.json"
+  },
+  "source_refs": [
+    "game-data-local",
+    "maintainer"
+  ],
+  "curation": {
+    "status": "CHECKED",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17",
+    "note": "Registro inicial da SPEC-012 (fase 1), a partir da ficha curada; identidade e conhecimento seguem na ficha."
+  },
+  "area_refs": [
+    "AR0406"
+  ],
+  "faction_refs": [
+    "place:copper-coronet:REGULAR"
+  ]
+}

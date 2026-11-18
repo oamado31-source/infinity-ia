@@ -1,0 +1,33 @@
+{
+  "schema": "infinity-ai.encyclopedia.character.v1",
+  "canonical_id": "character:firkra01",
+  "category": "CHARACTER",
+  "display_name": "Lorde Jierdan",
+  "summary": "Nobre de Athkatla, na Coroa de Cobre.",
+  "source_records": [
+    {
+      "game": "BG2",
+      "expansion": "SOA",
+      "verification_status": "SOURCE_VERIFIED",
+      "resref": "FIRKRA01"
+    }
+  ],
+  "verification_status": "CURATED",
+  "entity_type": "RESIDENT",
+  "refs": {
+    "curation": "knowledge/npcs/firkra01.pt_BR.json"
+  },
+  "source_refs": [
+    "game-data-local",
+    "maintainer"
+  ],
+  "curation": {
+    "status": "CHECKED",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-10",
+    "note": "Registro inicial da SPEC-012 (fase 1), a partir da ficha curada; identidade e conhecimento seguem na ficha."
+  },
+  "area_refs": [
+    "AR0406"
+  ]
+}

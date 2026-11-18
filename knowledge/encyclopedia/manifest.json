@@ -1,0 +1,115 @@
+{
+  "schema": "infinity-ai.encyclopedia-manifest.v1",
+  "spec": "SPEC-012",
+  "change_request": "CR-2026-030",
+  "note": "Curated records only. The extracted catalog (attributes, appearances, game texts) lives locally in ~/.infinity-ai/encyclopedia/install-<build>/ and is rebuilt by tools/windows-lab/build_encyclopedia.py.",
+  "games": [
+    {
+      "game": "BG1",
+      "expansions": [
+        "TOTSC",
+        "EE"
+      ],
+      "lab_installed": false
+    },
+    {
+      "game": "SOD",
+      "expansions": [],
+      "lab_installed": false
+    },
+    {
+      "game": "BG2",
+      "expansions": [
+        "SOA",
+        "TOB",
+        "EE"
+      ],
+      "lab_installed": true,
+      "lab_install": "BG2EE-P1 (BG2:EE + EEex)"
+    },
+    {
+      "game": "IWD1",
+      "expansions": [
+        "HOW",
+        "TOTLM",
+        "EE"
+      ],
+      "lab_installed": false
+    },
+    {
+      "game": "IWD2",
+      "expansions": [],
+      "lab_installed": false
+    },
+    {
+      "game": "NWN",
+      "expansions": [
+        "SOU",
+        "HOTU"
+      ],
+      "lab_installed": false
+    }
+  ],
+  "categories": [
+    {
+      "category": "CHARACTER",
+      "dir": "characters",
+      "schema": "schemas/character.v1.schema.json",
+      "spec_category": "01"
+    },
+    {
+      "category": "CREATURE",
+      "dir": "creatures",
+      "schema": "schemas/creature.v1.schema.json",
+      "spec_category": "02"
+    },
+    {
+      "category": "ITEM",
+      "dir": "items",
+      "schema": "schemas/item.v1.schema.json",
+      "spec_category": "03"
+    },
+    {
+      "category": "SPELL",
+      "dir": "spells",
+      "schema": "schemas/spell.v1.schema.json",
+      "spec_category": "04"
+    },
+    {
+      "category": "RACE",
+      "dir": "races",
+      "schema": "schemas/race.v1.schema.json",
+      "spec_category": "05"
+    },
+    {
+      "category": "CLASS",
+      "dir": "classes",
+      "schema": "schemas/class.v1.schema.json",
+      "spec_category": "05"
+    },
+    {
+      "category": "FACTION",
+      "dir": "factions",
+      "schema": "schemas/faction.v1.schema.json",
+      "spec_category": "06"
+    },
+    {
+      "category": "QUEST",
+      "dir": "quests",
+      "schema": "schemas/quest.v1.schema.json",
+      "spec_category": "07"
+    },
+    {
+      "category": "EVENT",
+      "dir": "events",
+      "schema": "schemas/event.v1.schema.json",
+      "spec_category": "07"
+    },
+    {
+      "category": "LOCATION",
+      "dir": "locations",
+      "schema": "schemas/location.v1.schema.json",
+      "spec_category": "08"
+    }
+  ]
+}

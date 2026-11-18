@@ -1,0 +1,65 @@
+{
+  "schema": "infinity-ai.encyclopedia-sources.v1",
+  "note": "Community sources are for discovery and manual cross-checking only in phase 1 (CR-2026-030, D4): no automatic scraping, no copied text. Terms must be confirmed before any reuse.",
+  "sources": [
+    {
+      "source_id": "game-data-local",
+      "kind": "GAME_FILES",
+      "scope": "BG2:EE files of the lab install, read in memory",
+      "evidence_rank": 1,
+      "terms": "Proprietary game data: never copied into the repository (REQ-CANON-004)."
+    },
+    {
+      "source_id": "maintainer",
+      "kind": "CURATION",
+      "scope": "Maintainer checks and approvals",
+      "evidence_rank": 2,
+      "terms": "Project curation."
+    },
+    {
+      "source_id": "thgl-bgee",
+      "kind": "COMMUNITY_DB",
+      "url": "https://baldursgateee.th.gl/",
+      "scope": "BG1, SoD",
+      "evidence_rank": 4,
+      "consulted_at": null,
+      "terms": "TO_CONFIRM"
+    },
+    {
+      "source_id": "pbg-bgforge",
+      "kind": "COMMUNITY_DB",
+      "url": "https://pbg.bgforge.net/",
+      "scope": "BG2, ToB, IWD, IWD2",
+      "evidence_rank": 4,
+      "consulted_at": null,
+      "terms": "TO_CONFIRM"
+    },
+    {
+      "source_id": "gamebanshee",
+      "kind": "COMMUNITY_DB",
+      "url": "https://www.gamebanshee.com/",
+      "scope": "BG2, ToB, IWD, IWD2",
+      "evidence_rank": 5,
+      "consulted_at": null,
+      "terms": "TO_CONFIRM"
+    },
+    {
+      "source_id": "nwn-vault",
+      "kind": "COMMUNITY_DB",
+      "url": "https://neverwintervault.org/",
+      "scope": "NWN and expansions",
+      "evidence_rank": 4,
+      "consulted_at": null,
+      "terms": "TO_CONFIRM"
+    },
+    {
+      "source_id": "nwn-wiki",
+      "kind": "WIKI",
+      "url": "https://nwn.wiki/",
+      "scope": "NWN and expansions",
+      "evidence_rank": 5,
+      "consulted_at": null,
+      "terms": "TO_CONFIRM"
+    }
+  ]
+}

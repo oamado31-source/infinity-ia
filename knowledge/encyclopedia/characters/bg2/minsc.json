@@ -1,0 +1,30 @@
+{
+  "schema": "infinity-ai.encyclopedia.character.v1",
+  "canonical_id": "character:minsc",
+  "category": "CHARACTER",
+  "display_name": "Minsc",
+  "summary": "Patrulheiro de Rashemen.",
+  "source_records": [
+    {
+      "game": "BG2",
+      "expansion": "SOA",
+      "verification_status": "SOURCE_VERIFIED"
+    }
+  ],
+  "verification_status": "CURATED",
+  "entity_type": "COMPANION",
+  "refs": {
+    "curation": "knowledge/npcs/minsc.pt_BR.json",
+    "persona": "knowledge/personas/minsc.pt_BR.json"
+  },
+  "source_refs": [
+    "game-data-local",
+    "maintainer"
+  ],
+  "curation": {
+    "status": "CHECKED",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-10",
+    "note": "Registro inicial da SPEC-012 (fase 1), a partir da ficha curada; identidade e conhecimento seguem na ficha."
+  }
+}

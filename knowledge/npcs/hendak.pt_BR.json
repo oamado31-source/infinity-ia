@@ -26,5 +26,11 @@
     "checked_by": "mantenedor",
     "checked_at": "2026-11-17"
   },
-  "affiliations": []
+  "affiliations": [],
+  "milestones": [
+    {
+      "milestone": "quest:coronet-slaves:RESOLVED",
+      "trust": "INTIMO"
+    }
+  ]
 }

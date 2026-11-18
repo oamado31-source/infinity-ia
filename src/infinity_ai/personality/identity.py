@@ -229,6 +229,8 @@ class Curation:
     affiliations: tuple[str, ...] = ()
     standing: str | None = None          # ADR-0120; None = not curated (game data decides)
     morale: int | None = None            # ADR-0126: curated base morale (2..20), else Table 49
+    # ADR-0134: quest milestone (semantic id) -> the trust it gives the person in the group.
+    milestones: tuple[tuple[str, str], ...] = ()
 
 
 def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[str, Curation]:
@@ -257,13 +259,38 @@ def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[s
         if morale is not None and (isinstance(morale, bool) or not isinstance(morale, int)
                                    or not 2 <= morale <= 20):
             continue
+        milestones = _milestones(doc.get('milestones'))
+        if milestones is None:
+            continue
         years = doc.get('years_here')
         out[doc['npc_id']] = Curation(
             doc['npc_id'], doc.get('occupation'), doc.get('origin_region'),
             years if isinstance(years, int) and years > 0 else None,
             tuple(doc.get('places_visited') or ()), facts,
-            tuple(sorted(set(raw_affiliations))), standing, morale)
+            tuple(sorted(set(raw_affiliations))), standing, morale, milestones)
     return out
+
+
+MILESTONE_TRUST = ('DESCONFIADO', 'CONFIANTE', 'INTIMO')
+_SEMANTIC_ID = re.compile(r'quest:[a-z0-9][a-z0-9-]{0,47}:[A-Z][A-Z_]{0,31}')
+
+
+def _milestones(raw: object) -> tuple[tuple[str, str], ...] | None:
+    """ADR-0134: `[{"milestone": "quest:...:RESOLVED", "trust": "INTIMO"}]`; None if invalid."""
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        return None
+    out: dict[str, str] = {}
+    for item in raw:
+        if not isinstance(item, dict) or set(item) != {'milestone', 'trust'}:
+            return None
+        sid, level = item['milestone'], item['trust']
+        if not isinstance(sid, str) or not _SEMANTIC_ID.fullmatch(sid) or sid in out \
+                or level not in MILESTONE_TRUST:
+            return None
+        out[sid] = level
+    return tuple(sorted(out.items()))
 
 
 def _is_region(pack: CanonPack, region_id: str) -> bool:

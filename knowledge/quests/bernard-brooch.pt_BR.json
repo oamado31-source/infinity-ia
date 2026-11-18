@@ -1,0 +1,82 @@
+{
+  "schema": "infinity-ai.narrative-quest.v1",
+  "quest_id": "bernard-brooch",
+  "language": "pt_BR",
+  "title": "O broche de Bernard",
+  "area": "AR0406",
+  "note": "SPEC-011, primeiro corte: quest narrativa curada pelo projeto, só de conversas pela caixa. Conteúdo da campanha, não cânone do jogo; nada é escrito no jogo.",
+  "giver": {
+    "npc_id": "npc:cre-bernard",
+    "offer_cues": [
+      "trabalh*",
+      "serviço",
+      "servico",
+      "tarefa",
+      "missão",
+      "missao",
+      "ajud*",
+      "precisa de algo",
+      "posso fazer algo"
+    ],
+    "offer_fact": "Você tem um trabalho para oferecer ao grupo: descobrir quem furtou do seu balcão um broche que era da sua mãe. Você desconfia de um batedor de carteiras novato e quer que o grupo pergunte a Yarin, um ladrão aposentado que está aqui na taverna e conhece o ofício.",
+    "accept_cues": [
+      "aceito",
+      "aceitamos",
+      "pode deixar",
+      "deixa comigo",
+      "deixe comigo",
+      "conte comigo",
+      "conte com a gente",
+      "vou ver",
+      "vamos ver",
+      "vou falar",
+      "vamos falar",
+      "vou perguntar",
+      "vamos perguntar",
+      "combinado",
+      "farei",
+      "faremos",
+      "claro",
+      "sim"
+    ],
+    "waiting_fact": "Você pediu ao grupo que perguntasse a Yarin sobre o broche furtado do seu balcão e ainda espera a resposta.",
+    "accept_journal": "Bernard pediu que você perguntasse a Yarin sobre o broche furtado do balcão."
+  },
+  "steps": [
+    {
+      "step_id": "ask-yarin",
+      "npc_id": "npc:yarin",
+      "cues": [
+        "broche",
+        "furt*",
+        "roub*",
+        "batedor",
+        "bernard",
+        "balcão",
+        "balcao"
+      ],
+      "fact": "Você ouviu do grupo que furtaram o broche de Bernard, o taverneiro da Coroa de Cobre. Pelo jeito do furto, você reconhece um rapaz novato que vende o que rouba a um receptador nas Docas.",
+      "journal": "Yarin acha que foi um batedor novato que vende o que rouba a um receptador nas Docas. Volte a Bernard."
+    }
+  ],
+  "turn_in": {
+    "cues": [
+      "yarin",
+      "docas",
+      "novato",
+      "batedor",
+      "receptador",
+      "broche",
+      "descobri*"
+    ],
+    "fact": "O grupo voltou com a resposta de Yarin, o ladrão aposentado: quem furtou o broche foi um batedor de carteiras novato, que vende o que rouba a um receptador nas Docas. Você agradece de coração e vai mandar alguém de confiança às Docas.",
+    "journal": "Bernard agradeceu e vai mandar alguém às Docas. Tarefa concluída."
+  },
+  "milestone": "quest:bernard-brooch:RESOLVED",
+  "curation": {
+    "status": "CHECKED",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-17",
+    "approval": "SPEC-011 aprovada como proposta em 2026-11-17 (\"Aprovar como proposta\"), quest de exemplo como está."
+  }
+}

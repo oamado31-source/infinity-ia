@@ -29,5 +29,11 @@
   },
   "affiliations": [
     "place:copper-coronet:STAFF"
+  ],
+  "milestones": [
+    {
+      "milestone": "quest:coronet-slaves:RESOLVED",
+      "trust": "DESCONFIADO"
+    }
   ]
 }

@@ -8,6 +8,7 @@
 -- A resposta volta pelo arquivo override\INFAIRSP.lua, gravado pelo servico, que define so a
 -- tabela INFAI_TALK_Reply = {req_id=..., speech=...}; o painel descarta o cache do recurso e o
 -- rele (Infinity_DoFile) ate o req_id bater. Nada aqui altera o estado do motor: sem variaveis, diario, dialogos ou save.
+-- Marcos de quest (ADR-0134): le, sem escrever, so as variaveis globais da lista do servico.
 -- Voz (ADR-0127): o botao "Falar" publica INFAI-PTT {START|STOP|CANCEL}; o servico abre o
 -- microfone no proprio host, transcreve localmente e devolve estado e texto em override\INFAIPTT.lua
 -- (so a tabela INFAI_PTT_State). O texto vai para o campo de edicao para revisao; enviar marca
@@ -311,6 +312,57 @@ local function infai_greet(speaker)
 	end
 end
 
+-- O motor guarda em cache o conteudo de override\INFAIRSP.lua (e INFAIPTT.lua) lido na primeira
+-- vez; descartar o recurso (como faz EEex_Menu_Eval) obriga a proxima leitura a buscar o arquivo.
+-- So estes tres arquivos do servico sao descartados (o terceiro e a lista de variaveis, ADR-0134).
+local function infai_drop_cached(resref)
+	if resref ~= "INFAIRSP" and resref ~= "INFAIPTT" and resref ~= "INFAIQST" then
+		return false, "recurso nao permitido"
+	end
+	return pcall(function()
+		local res = EEex_Resource_Fetch(resref, "LUA")
+		if res ~= nil then EngineGlobals.dimmDump(res) end
+	end)
+end
+
+-- ADR-0134: variaveis do jogo que a caixa pode ler, so as da lista do servico (override\INFAIQST.lua,
+-- tabela INFAI_QUEST_Probes = { {id=..., name=...}, ... }), relida a cada abertura. A leitura e so
+-- busca na tabela de globais (EEex_Variable_Find nao cria nada); variavel ausente vai como null,
+-- nunca como 0. Nada e escrito, e nenhum outro nome e consultado.
+INFAI_QUEST_MAX_PROBES = 16
+
+local function infai_quest_load()
+	INFAI_QUEST_Probes = nil
+	infai_drop_cached("INFAIQST")
+	pcall(Infinity_DoFile, "INFAIQST")
+end
+
+local function infai_quest_probes()
+	local list = INFAI_QUEST_Probes
+	if type(list) ~= "table" or #list == 0 then return "null" end
+	local hash = nil
+	pcall(function() hash = EEex_EngineGlobal_CBaldurChitin.m_pObjectGame.m_variables end)
+	local parts = {}
+	for i, p in ipairs(list) do
+		if i > INFAI_QUEST_MAX_PROBES then break end
+		if type(p) == "table" and type(p.id) == "string" and type(p.name) == "string"
+				and string.match(p.id, "^[a-z0-9][a-z0-9%-]*$") and #p.id <= 32
+				and string.match(p.name, "^[%w_#%-]+$") and #p.name <= 32 then
+			local value = nil
+			if hash ~= nil then
+				local ok, v = pcall(function()
+					local found = EEex_Variable_Find(hash, p.name)
+					if found == nil then return nil end
+					return found.m_intValue
+				end)
+				if ok then value = v end
+			end
+			table.insert(parts, infai_json_string(p.id) .. ":" .. infai_json_number(value))
+		end
+	end
+	return "{" .. table.concat(parts, ",") .. "}"
+end
+
 function INFAI_TALK_Open()
 	local st = INFAI_TALK_State
 	if st.open then return false end
@@ -324,6 +376,7 @@ function INFAI_TALK_Open()
 	st.conv = string.format("%d-%d", (INFAI_P2_State and INFAI_P2_State.session_seq) or 0,
 		Infinity_GetClockTicks())
 	INFAI_TALK_Input = ""
+	infai_quest_load()
 	if speaker.dead then infai_add_line("(" .. speaker.name .. " não pode responder.)") end
 	infai_greet(speaker)
 	infai_layout()
@@ -413,7 +466,8 @@ function INFAI_TALK_Send()
 		',"engine_morale_break_base":' .. infai_json_number(st.speaker.engine_morale_break_base) .. '}' ..
 		',"selected_leader":' .. selected_leader_json ..
 		',"text":' .. infai_json_string(text) ..
-		',"listeners":' .. (listeners and infai_json_array(listeners) or "null") .. '}')
+		',"listeners":' .. (listeners and infai_json_array(listeners) or "null") ..
+		',"probes":' .. infai_quest_probes() .. '}')
 	infai_add_line("Você: " .. text)
 	INFAI_TALK_Input = ""
 	st.from_voice = false
@@ -421,16 +475,6 @@ function INFAI_TALK_Send()
 	st.read_error_logged, st.empty_logged = false, false
 end
 
--- O motor guarda em cache o conteudo de override\INFAIRSP.lua (e INFAIPTT.lua) lido na primeira
--- vez; descartar o recurso (como faz EEex_Menu_Eval) obriga a proxima leitura a buscar o arquivo.
--- So estes dois arquivos do servico sao descartados.
-local function infai_drop_cached(resref)
-	if resref ~= "INFAIRSP" and resref ~= "INFAIPTT" then return false, "recurso nao permitido" end
-	return pcall(function()
-		local res = EEex_Resource_Fetch(resref, "LUA")
-		if res ~= nil then EngineGlobals.dimmDump(res) end
-	end)
-end
 
 -- ADR-0127: estado do push-to-talk vindo do servico (REC, TEXT, FAILED, CANCELLED).
 local function infai_ptt_poll(now)

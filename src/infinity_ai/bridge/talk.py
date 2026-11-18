@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 
 TALK_PREFIX = 'INFAI-TALK '
 TALK_SCHEMA = 'infinity-ai.talk.v1'
@@ -28,6 +30,9 @@ _REQ_ID = re.compile(r'[0-9]{1,10}-[0-9]{1,12}-[0-9]{1,8}')
 _CONV = re.compile(r'\d{1,15}-\d{1,15}')     # ADR-0123: "<session>-<clock_ms>" per box opening
 _CRE = re.compile(r'(?=.{1,8}$)\*?[A-Za-z0-9_#-]+')
 INPUTS = frozenset({'TEXT', 'VOICE'})
+MAX_PROBES = 16
+_PROBE_ID = re.compile(r'[a-z0-9][a-z0-9-]{0,31}')
+_VARIABLE = re.compile(r'[A-Za-z0-9_#-]{1,32}')
 
 
 @dataclass(frozen=True)
@@ -66,6 +71,9 @@ class TalkRequest:
     speaker_engine_morale_break_base: int | None = None
     selected_leader: SelectedPartyLeader | None = None  # candidate only; validate in pinned lab
     conversation_id: str | None = None   # ADR-0123: one per box opening; None = old box
+    # ADR-0134: allowlisted game variables read by the box ({probe_id: value, None = absent});
+    # None = the box sent no reading. Values stay in memory and never reach a prompt or log.
+    probes: Mapping[str, int | None] | None = None
 
     @property
     def speaker_id(self) -> str | None:
@@ -170,7 +178,25 @@ def parse_talk_line(line: str) -> TalkRequest | None:
         selected_leader=_selected_party_leader(doc.get('selected_leader')),
         conversation_id=conv if isinstance(conv := doc.get('conv'), str)
         and _CONV.fullmatch(conv) else None,
+        probes=_probes(doc.get('probes')),
     )
+
+
+def _probes(value: object) -> Mapping[str, int | None] | None:
+    """ADR-0134: the box's reading of the allowlisted variables; anything odd is no reading."""
+    if not isinstance(value, dict) or len(value) > MAX_PROBES:
+        return None
+    out: dict[str, int | None] = {}
+    for key, raw in value.items():
+        if not isinstance(key, str) or not _PROBE_ID.fullmatch(key):
+            return None
+        if raw is None:
+            out[key] = None
+        elif isinstance(raw, bool) or not isinstance(raw, int) or not -2**31 <= raw < 2**31:
+            return None
+        else:
+            out[key] = raw
+    return MappingProxyType(out)
 
 
 def parse_talk_requests(text: str) -> list[TalkRequest]:
@@ -208,6 +234,26 @@ def render_reply(req_id: str, speech: str) -> str:
         raise ValueError('bad req_id')
     speech = ' '.join(speech.split())[:MAX_SPEECH]
     return f'INFAI_TALK_Reply = {{req_id = {lua_string(req_id)}, speech = {lua_string(speech)}}}\n'
+
+
+# ADR-0134: the allowlist of game variables the box may read, from the local quest catalog. The
+# file defines only `INFAI_QUEST_Probes`, a list of {id, name} string pairs; the box reads it on
+# each opening and reads those variables, and nothing else, when the player sends a question.
+QUEST_RESREF = 'INFAIQST'
+PLACEHOLDER_QUEST = 'INFAI_QUEST_Probes = {}\n'
+"""Kept in override/ at all times (present at launch); empty = the box reads no variable."""
+
+
+def render_quest_probes(probes: list[tuple[str, str]]) -> str:
+    """Contents of `override/INFAIQST.lua` for (probe_id, variable name) pairs."""
+    if len(probes) > MAX_PROBES:
+        raise ValueError('too many probes')
+    items = []
+    for probe_id, name in probes:
+        if not _PROBE_ID.fullmatch(probe_id) or not _VARIABLE.fullmatch(name):
+            raise ValueError('bad probe')
+        items.append(f'{{id = {lua_string(probe_id)}, name = {lua_string(name)}}}')
+    return 'INFAI_QUEST_Probes = {' + ', '.join(items) + '}\n'
 
 
 # ADR-0127: push-to-talk. The box prints `INFAI-PTT {json}` on each press (START), release (STOP)

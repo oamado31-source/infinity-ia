@@ -140,6 +140,9 @@ def _check_case(case: Case, pack: CanonPack) -> None:
         raise CaseError(f'{where}: speaker kind/npc_id')
     if s.get('trust') is not None and s['trust'] not in ('DESCONFIADO', 'NEUTRO', 'CONFIANTE', 'INTIMO'):
         raise CaseError(f'{where}: trust must be DESCONFIADO, NEUTRO, CONFIANTE or INTIMO (ADR-0133)')
+    if s.get('quest_facts') is not None and (not isinstance(s['quest_facts'], list) or not all(
+            isinstance(f, str) and f for f in s['quest_facts'])):
+        raise CaseError(f'{where}: quest_facts must be a list of sentences (SPEC-011)')
     if s.get('offer') is not None and not isinstance(s['offer'], dict):
         raise CaseError(f'{where}: offer must be an object like a local store offer (ADR-0132)')
     if s.get('disposition') is not None and s['disposition'] not in DISPOSITIONS:
@@ -256,6 +259,7 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
         aliases=local_aliases(pack, area), common_words=common_words(pack),
         offer=Offer.from_json(s['offer']) if s.get('offer') else None,   # ADR-0132 (made up)
         trust=s.get('trust', 'NEUTRO'), trust_own_only=bool(s.get('trust_own_only')),   # ADR-0133
+        quest_facts=tuple(s.get('quest_facts') or ()),                                   # SPEC-011
         order=tuple(context_order(pack, known, npc_id=npc_id, area=area,
                                   home_region=identity.home_region,
                                   named=named_in(pack, known, case.question,

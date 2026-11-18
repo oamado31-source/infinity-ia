@@ -31,5 +31,11 @@
   },
   "affiliations": [
     "place:copper-coronet:STAFF"
+  ],
+  "milestones": [
+    {
+      "milestone": "quest:bernard-brooch:RESOLVED",
+      "trust": "INTIMO"
+    }
   ]
 }

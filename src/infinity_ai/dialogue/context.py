@@ -257,7 +257,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            order: tuple[str, ...] = (),
                            common_words: frozenset[str] = frozenset(),
                            offer: Offer | None = None,
-                           trust_own_only: bool = False) -> ContextResult:
+                           trust_own_only: bool = False,
+                           quest_facts: tuple[str, ...] = ()) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
@@ -294,6 +295,11 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
     facts += tuple(Fact(f'F{len(facts) + i}', f'offer:{npc_id}:{i}', text, at_game_time or 0)
                    for i, text in enumerate(sold, 1))
     for text in sold:
+        vocabulary |= set(_NAME.findall(text))
+    # SPEC-011: what a narrative quest lets the person say this turn, decided by code.
+    facts += tuple(Fact(f'F{len(facts) + i}', f'quest:{npc_id}:{i}', text, at_game_time or 0)
+                   for i, text in enumerate(quest_facts, 1))
+    for text in quest_facts:
         vocabulary |= set(_NAME.findall(text))
     # ADR-0124: earlier talks are added after the per-item decision (ADR-0133, below).
     # ADR-0120: a traveler or outsider was placed here by the game, but does not live here: its

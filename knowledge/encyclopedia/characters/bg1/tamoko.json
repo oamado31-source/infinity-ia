@@ -1,0 +1,24 @@
+{
+  "schema": "infinity-ai.encyclopedia.character.v1",
+  "canonical_id": "character:tamoko",
+  "category": "CHARACTER",
+  "display_name": "Tamoko",
+  "summary": "Clériga humana de Kara-Tur, aliada e amante de Sarevok em Baldur's Gate (1368 DR). Pelo BG2, morreu antes de Shadows of Amn, de causa incerta; nesta campanha, o mistério de uma quest.",
+  "source_records": [
+    {
+      "game": "BG1",
+      "expansion": "EE",
+      "verification_status": "CROSS_REFERENCED"
+    }
+  ],
+  "verification_status": "CROSS_REFERENCED",
+  "entity_type": "ANTAGONIST",
+  "refs": {
+    "curation": "knowledge/npcs/tamoko.pt_BR.json"
+  },
+  "source_refs": [
+    "thgl-bgee",
+    "bg-fandom-wiki",
+    "maintainer"
+  ]
+}

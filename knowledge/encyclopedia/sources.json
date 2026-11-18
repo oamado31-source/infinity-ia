@@ -60,6 +60,15 @@
       "evidence_rank": 5,
       "consulted_at": null,
       "terms": "TO_CONFIRM"
+    },
+    {
+      "source_id": "bg-fandom-wiki",
+      "kind": "WIKI",
+      "url": "https://baldursgate.fandom.com/",
+      "scope": "BG1, SoD, BG2, ToB (personagens, missões)",
+      "evidence_rank": 5,
+      "consulted_at": "2026-11-18",
+      "terms": "TO_CONFIRM"
     }
   ]
 }

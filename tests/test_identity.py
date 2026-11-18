@@ -554,6 +554,27 @@ class StandingTests(unittest.TestCase):
         self.assertTrue(any(f.startswith('Você é de Tethyr, terra distante')
                             for f in outsider.self_facts))
         self.assertEqual(facts('HABITANTE', 'region:athkatla').standing, 'HABITANTE')
+        self.assertEqual(facts('VISAO', 'region:tethyr').standing, 'HABITANTE')   # never generated
+
+    def test_a_curated_vision_is_not_passing_through(self):
+        curation = SimpleNamespace(occupation='clériga', origin_region='region:tethyr',
+                                   years_here=None, places_visited=(),
+                                   self_facts=('Você está morta.',), affiliations=(),
+                                   standing='VISAO')
+        ident = build_identity(npc_id='npc:infai_x', name='Visão', pack=PACK,
+                               place='a Coroa de Cobre', home_region='region:athkatla',
+                               curation=curation)
+        self.assertEqual(ident.standing, 'VISAO')
+        self.assertIn('Você aparece na Coroa de Cobre como uma visão: não está viva, nem de '
+                      'passagem, nem mora aqui.', ident.self_facts)
+        self.assertIn('Em vida, você era de Tethyr.', ident.self_facts)
+        self.assertFalse(any('de passagem por' in f or 'costumes' in f for f in ident.self_facts))
+        ghost, _ = identity_knowledge(PACK, homeland='region:tethyr', home='region:athkatla',
+                                      campaign_year=1369, build_areas=BUILD, standing='VISAO')
+        outsider, _ = identity_knowledge(PACK, homeland='region:tethyr', home='region:athkatla',
+                                         campaign_year=1369, build_areas=BUILD,
+                                         standing='FORASTEIRO')
+        self.assertEqual(set(ghost), set(outsider))           # knows what an outsider knows
 
     def test_curated_standing_wins_and_must_be_known(self):
         curation = SimpleNamespace(occupation='nobre de Athkatla', origin_region=None,
@@ -653,6 +674,11 @@ class OriginClaimTests(unittest.TestCase):
         self.assertTrue(self.check('Sou daqui, claro.', 'VIAJANTE'))
         self.assertTrue(self.check('Sou de aqui.', 'FORASTEIRO'))
         self.assertFalse(self.check('Não sou daqui, estou de passagem.', 'VIAJANTE'))
+
+    def test_a_vision_does_not_pass_through(self):
+        self.assertTrue(self.check('Estou de passagem, não conheço esses costumes.', 'VISAO'))
+        self.assertTrue(self.check('Moro aqui.', 'VISAO'))
+        self.assertFalse(self.check('Sou uma visão; morri e não sei como.', 'VISAO'))
 
     def test_born_here_and_named_origin_need_the_facts(self):
         self.assertTrue(self.check('Nasci aqui.', 'HABITANTE'))

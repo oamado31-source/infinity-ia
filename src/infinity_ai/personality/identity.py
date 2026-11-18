@@ -34,8 +34,10 @@ GAME_DATA, CURATED, GENERATED = 'GAME_DATA', 'CURATED', 'GENERATED'
 
 # ADR-0120: local standing. A resident knows the place; a traveler (same realm, passing through)
 # knows only its popular core; an outsider (distant land) knows nothing of it, only its homeland.
-HABITANTE, VIAJANTE, FORASTEIRO = 'HABITANTE', 'VIAJANTE', 'FORASTEIRO'
-STANDINGS = (HABITANTE, VIAJANTE, FORASTEIRO)
+# ADR-0137: a vision (the dead, appearing) knows what an outsider knows, but is neither passing
+# through nor living here: curated only, never generated.
+HABITANTE, VIAJANTE, FORASTEIRO, VISAO = 'HABITANTE', 'VIAJANTE', 'FORASTEIRO', 'VISAO'
+STANDINGS = (HABITANTE, VIAJANTE, FORASTEIRO, VISAO)
 # Chance that a generic person of this role is not a resident (design tuning, ADR-0120).
 AWAY_CHANCE = {'TRAVELER': 1.0, 'SAILOR': 0.6, 'PATRON': 0.3, 'MERCHANT': 0.3, 'FIGHTER': 0.2,
                'COMMONER': 0.05, 'PEASANT': 0.05}
@@ -394,7 +396,8 @@ def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None
     # ADR-0120: curation > generated > resident (the game placed it here).
     if curation and getattr(curation, 'standing', None) in STANDINGS:
         standing, prov['standing'] = curation.standing, CURATED
-    elif not curation and generated and generated.get('standing') in STANDINGS:
+    elif not curation and generated and generated.get('standing') in STANDINGS \
+            and generated['standing'] != VISAO:
         standing, prov['standing'] = generated['standing'], GENERATED
     else:
         standing = HABITANTE
@@ -405,6 +408,9 @@ def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None
         if standing == HABITANTE:
             facts.append(f'Você vive {em(region_title)} e está {em(place)}.' if region_title
                          else f'Você está {em(place)}.')
+        elif standing == VISAO:
+            facts.append(f'Você aparece {em(place)} como uma visão: não está viva, nem de '
+                         'passagem, nem mora aqui.')
         else:
             facts.append(f'Você está de passagem {por(region_title)} e está agora {em(place)}.'
                          if region_title else f'Você está de passagem {por(place)}.')
@@ -443,6 +449,8 @@ def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None
         if standing == FORASTEIRO:
             facts.append(f'Você é de {title(origin)}, terra distante, e não conhece bem os '
                          'costumes daqui.')
+        elif standing == VISAO:
+            facts.append(f'Em vida, você era de {title(origin)}.')
         elif standing == VIAJANTE:
             facts.append(f'Você veio de {title(origin)}.')
         elif born_here:

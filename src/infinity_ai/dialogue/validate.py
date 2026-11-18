@@ -114,6 +114,8 @@ def _origin_contradicts(speech: str, context: DialogueContext) -> str | None:
     facts = ' '.join(f.text for f in context.facts).lower()
     if resident and _stated(_AWAY_CLAIM, speech):
         return 'AWAY'
+    if context.standing == 'VISAO' and _stated(_AWAY_CLAIM, speech):
+        return 'VISION'                          # ADR-0137: the dead do not pass through
     if not resident and _stated(_HOME_CLAIM, speech):
         return 'HOME'
     if 'nasceu' not in facts and _stated(_BORN_CLAIM, speech):
@@ -167,6 +169,8 @@ _RETRY_HINTS = (
     ('ECHO', 'você repetiu a pergunta do jogador; responda a ela, em personagem'),
     ('SELF_CLAIM:AWAY', 'você mora aqui: não diga que é de fora nem que está de passagem'),
     ('SELF_CLAIM:HOME', 'você não mora aqui: não diga que é daqui nem que mora aqui'),
+    ('SELF_CLAIM:VISION', 'você é uma visão de alguém que morreu: não diga que está de passagem '
+                          'nem que é viajante ou forasteira'),
     ('SELF_CLAIM:BORN', 'não diga que nasceu aqui; isso não está nos seus FATOS'),
     ('SELF_CLAIM:WORK', 'você não trabalha neste lugar: não diga que trabalha aqui nem para o dono'),
     ('SELF_CLAIM:ORIGIN', 'não diga de onde veio além do que está nos seus FATOS'),

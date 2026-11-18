@@ -65,6 +65,8 @@ STANDING_TEXT = {
                  'chegar, e não diz que mora aqui.'),
     'FORASTEIRO': ('você é de uma terra distante e está de passagem: não conhece este lugar nem '
                    'seus costumes, e não diz que mora aqui.'),
+    'VISAO': ('você é uma visão de alguém que já morreu: não está de passagem, não é viajante '
+              'nem mora aqui; fala do que viveu e do que quer que descubram.'),
 }
 MAX_ATTEMPTS = 2
 PLAYER_TURN, OWN_TURN = 'Jogador: ', 'Você: '      # CR-2026-019: who speaks in earlier turns

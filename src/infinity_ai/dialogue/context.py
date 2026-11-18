@@ -85,7 +85,7 @@ class DialogueContext:
     occupation: str | None = None    # ADR-0117 identity: what the person does, when known
     manner: str | None = None        # ADR-0117 Wisdom tier: how the person speaks and reasons
     restricted_knowledge: tuple[Fact, ...] = ()  # ADR-0119: role/affiliation-bound facts
-    standing: str | None = None      # ADR-0120: HABITANTE, VIAJANTE or FORASTEIRO (residents)
+    standing: str | None = None      # ADR-0120: HABITANTE, VIAJANTE or FORASTEIRO; ADR-0137 VISAO
     staff: bool = False              # ADR-0119/0120: a curated STAFF tie to a place (may say it works there)
     home_names: tuple[str, ...] = ()  # CR-2026-004: a resident may say it is from these places
     disposition: str | None = None    # ADR-0125: encounter reaction (FRIENDLY .. HOSTILE, FLIGHT)

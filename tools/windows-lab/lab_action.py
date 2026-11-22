@@ -11,6 +11,11 @@ back to empty at the end. Use a disposable save (INFINITY-P3-DESCARTAVEL). Only 
   python tools/windows-lab/lab_action.py spawn --cre IA<...> --area AR0406 [--x N --y N --facing N]
   python tools/windows-lab/lab_action.py despawn --name INFAI_<id> --area AR0406
   python tools/windows-lab/lab_action.py owned
+  python tools/windows-lab/lab_action.py resume --quest <quest_id> --presence <presence_id>
+
+ADR-0138: the presence director of the dialogue service (`--quest-presence`) uses the same request
+file through `SshTransport`. When the game does not confirm one of its requests, that presence is
+suspended on the branch; `resume` lets it act again, after the maintainer has looked at the game.
 """
 from __future__ import annotations
 
@@ -30,6 +35,7 @@ from infinity_ai.actions.gateway import (  # noqa: E402
     parse_receipts, record_requested, record_result, render_request, spawn_request,
 )
 from infinity_ai.bridge.manifest import build_fingerprint  # noqa: E402
+from infinity_ai.quests.presence import record_resumed  # noqa: E402
 from infinity_ai.state.store import CampaignStore  # noqa: E402
 from lab_ssh import SshByteSource, grep_log, put_override_file, run_ps, ssh_from_env  # noqa: E402
 
@@ -71,9 +77,28 @@ def wait_receipt(ssh, game_root: str, action_id: str, timeout: float):
     return last
 
 
+class SshTransport:
+    """ADR-0138: one request to the game through override/INFAIACT.lua, the module's answer from
+    the loader log; the request file goes back to empty whatever happens."""
+
+    def __init__(self, ssh, game_root: str, timeout: float = 30.0) -> None:
+        self.ssh, self.game_root, self.timeout = ssh, game_root, timeout
+
+    def send(self, req):
+        put_override_file(self.ssh, self.game_root, f'{ACT_RESREF}.lua',
+                          render_request(req).encode('utf-8'))
+        try:
+            return wait_receipt(self.ssh, self.game_root, req.action_id, self.timeout)
+        finally:
+            put_override_file(self.ssh, self.game_root, f'{ACT_RESREF}.lua',
+                              PLACEHOLDER_ACT.encode('utf-8'))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('op', choices=('spawn', 'despawn', 'owned'))
+    ap.add_argument('op', choices=('spawn', 'despawn', 'owned', 'resume'))
+    ap.add_argument('--quest', help='resume: the quest id (ADR-0138)')
+    ap.add_argument('--presence', help='resume: the presence id in that quest')
     ap.add_argument('--cre')
     ap.add_argument('--name')
     ap.add_argument('--area')
@@ -93,6 +118,16 @@ def main() -> int:
     owned = owned_creatures(store, branch)
     if args.op == 'owned':
         print(f'ramo {branch}: {owned or "nenhuma criatura nossa"}')
+        return 0
+    if args.op == 'resume':
+        if not args.quest or not args.presence:
+            print('resume precisa de --quest e --presence')
+            return 2
+        ssh = ssh_from_env('INFINITY_LAB_SSH')
+        record_resumed(store, branch, args.quest, args.presence,
+                       game_time=current_game_time(ssh, args.game_root),
+                       key=str(int(time.time())))
+        print(f'presenca {args.quest}/{args.presence} liberada no ramo {branch}')
         return 0
     ssh = ssh_from_env('INFINITY_LAB_SSH')
     try:

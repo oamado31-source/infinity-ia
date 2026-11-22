@@ -12,7 +12,8 @@ The request goes to the game as `override/INFAIACT.lua`: one table of validated 
 text to execute. The EEex module (`tools/eeex-probe/M_INFAIA.lua`) builds the engine action from a
 fixed template and answers in the log (`INFAI-ACT {json}`), counting our creatures with that name in
 the area before and after. One more (SPAWN) or none left (DESPAWN) is the host's confirmation; without it nothing counts as done, and nothing is resent
-blindly. In this gate only the maintainer dispatches, by a lab command (D2).
+blindly. In this gate only the maintainer dispatches, by a lab command (D2). ADR-0138: the code of a
+curated quest may dispatch too (the presence director), and the request then carries its cause.
 """
 from __future__ import annotations
 
@@ -185,23 +186,39 @@ def parse_receipts(text: str) -> list[ActionReceipt]:
 
 
 def confirmed(req: ActionRequest, receipt: ActionReceipt) -> bool:
-    """The host's word that the action happened: one more of ours (SPAWN), or none left."""
-    if receipt.action_id != req.action_id or receipt.status != DONE or receipt.observed is None:
+    """The host's word that the action happened: one more of ours (SPAWN), or none left.
+    ADR-0138: for DESPAWN, the module's NOT_FOUND (in the right area, it counted none) is also the
+    host's word that none is left: the branch believed one present that the loaded save does not
+    hold (a save of another timeline, with a later game time, inherits the record; lab 2026-11-22)."""
+    if receipt.action_id != req.action_id or receipt.observed is None:
         return False
     if req.op == SPAWN:
-        return receipt.before is not None and receipt.observed == receipt.before + 1
-    return receipt.observed == 0
+        return receipt.status == DONE and receipt.before is not None \
+            and receipt.observed == receipt.before + 1
+    return receipt.observed == 0 and (receipt.status == DONE or (
+        receipt.status == REFUSED and receipt.reason == 'NOT_FOUND'))
+
+
+def _with_cause(payload: dict, cause: dict | None) -> dict:
+    """ADR-0138: who asked (a quest's presence and the rule), never any player text."""
+    if cause is not None:
+        if not isinstance(cause, dict) or not all(
+                isinstance(k, str) and isinstance(v, str) and len(v) <= 64
+                for k, v in cause.items()):
+            raise ActionError('BAD_CAUSE')
+        payload['cause'] = dict(cause)
+    return payload
 
 
 def record_requested(store: CampaignStore, branch_id: str, req: ActionRequest, *,
                      game_time: int | None, host_epoch: int = 0,
-                     evidence: str = 'LAB_OBSERVED') -> None:
+                     evidence: str = 'LAB_OBSERVED', cause: dict | None = None) -> None:
     """Every action is placed on the game's timeline: without the game time an older save would
     inherit it (a branch admits earlier events that carry no time; lab, S1x)."""
     if isinstance(game_time, bool) or not isinstance(game_time, int) or game_time < 0:
         raise ActionError('NO_GAME_TIME')
-    payload = {'action_id': req.action_id, 'op': req.op, 'area': req.area, 'name': req.name,
-               'cre': req.cre, 'policy': POLICY}
+    payload = _with_cause({'action_id': req.action_id, 'op': req.op, 'area': req.area,
+                           'name': req.name, 'cre': req.cre, 'policy': POLICY}, cause)
     with store.transaction():
         store.append_event(branch_id=branch_id, host_epoch=host_epoch, event_type=REQUESTED,
                            category='CAMPAIGN_OBSERVATION', game_time=game_time, payload=payload,
@@ -210,7 +227,7 @@ def record_requested(store: CampaignStore, branch_id: str, req: ActionRequest, *
 
 def record_result(store: CampaignStore, branch_id: str, req: ActionRequest,
                   receipt: ActionReceipt | None, *, game_time: int | None, host_epoch: int = 0,
-                  evidence: str = 'LAB_OBSERVED') -> str:
+                  evidence: str = 'LAB_OBSERVED', cause: dict | None = None) -> str:
     """CONFIRMED with the host's word; FAILED with a refusal; nothing recorded while uncertain.
     Returns the gateway state: HOST_CONFIRMED, DENIED or UNCERTAIN."""
     if receipt is not None and confirmed(req, receipt):
@@ -223,6 +240,7 @@ def record_result(store: CampaignStore, branch_id: str, req: ActionRequest,
                'cre': req.cre, 'observed': receipt.observed, 'before': receipt.before,
                'reason': receipt.reason,
                'policy': POLICY}
+    _with_cause(payload, cause)
     with store.transaction():
         store.append_event(branch_id=branch_id, host_epoch=host_epoch, event_type=event_type,
                            category='CAMPAIGN_OBSERVATION', game_time=game_time, payload=payload,

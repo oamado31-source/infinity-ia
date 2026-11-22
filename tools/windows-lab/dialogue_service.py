@@ -91,6 +91,7 @@ from infinity_ai.quests.milestones import (  # noqa: E402
     DEFAULT_CATALOG, evaluate, load_catalog, record_milestones,
 )
 from infinity_ai.quests.narrative import advance, load_quests, with_journal  # noqa: E402
+from infinity_ai.quests.presence import decide, dispatch  # noqa: E402
 from infinity_ai.dialogue.disclosure import CLOSED_DISPOSITIONS  # noqa: E402
 from infinity_ai.personality.in_game import (  # noqa: E402
     profile_for, record_dialogue_start, resolve_speaker,
@@ -190,6 +191,9 @@ class Observer(threading.Thread):
         self.live_build = live_build
         self.quest_catalog = load_catalog(args.quest_catalog)
         self.quests = load_quests()          # SPEC-011: curated narrative quests
+        if getattr(args, "local_quests", None):   # lab only: test quests kept out of the repository
+            self.quests.update({q: v for q, v in load_quests(args.local_quests).items()
+                                if q not in self.quests})
         self._knowledge_status = None
         self._pin_warned: set[str] = set()
         self.pin = (pin_build, pin_modpack)
@@ -270,6 +274,44 @@ class Observer(threading.Thread):
         for k in report.granted:
             print(f'{now_iso()} conhecimento comum adquirido: npc={k.npc_id} entrada={k.entry_id} '
                   f'base={k.basis.value} regiao={k.region_id} t={k.game_time}')
+
+
+class PresenceDirector(threading.Thread):
+    """ADR-0138 (lab, `--quest-presence`): at each reading of the game, the quests decide who must
+    be on the map and ask the action gateway once; what the game does not confirm is suspended."""
+
+    def __init__(self, args, ssh, observer: Observer, fingerprint: str) -> None:
+        super().__init__(daemon=True)
+        self.args, self.ssh, self.observer, self.fingerprint = args, ssh, observer, fingerprint
+
+    def run(self) -> None:
+        from lab_action import SshTransport, deployed_templates
+        store = CampaignStore.open(self.args.db, self.args.campaign)
+        templates = deployed_templates(self.ssh, self.args.game_root, self.fingerprint)
+        transport = SshTransport(self.ssh, self.args.game_root)
+        print(f'{now_iso()} presenca por quest ligada: criaturas nossas instaladas '
+              f'{sorted(templates)}')
+        last_held: tuple[str, ...] = ()
+        while True:
+            try:
+                view = self.observer.snapshot()
+                if view.observed and view.branch_id and view.area and view.game_time is not None:
+                    decision, held = decide(store, view.branch_id, self.observer.quests,
+                                            area=view.area)
+                    if held != last_held and held:
+                        print(f'{now_iso()} presenca retida: {list(held)} (lab_action.py resume)')
+                    last_held = held
+                    if decision is not None:
+                        p = decision.presence
+                        print(f'{now_iso()} presenca {decision.quest_id}/{p.presence_id}: '
+                              f'{decision.rule} {p.cre if decision.rule == "ENTER" else p.name} '
+                              f'em {p.area} (ramo {view.branch_id}, t={view.game_time})')
+                        state = dispatch(store, view.branch_id, decision, transport=transport,
+                                         templates=templates, game_time=view.game_time)
+                        print(f'{now_iso()} presenca {decision.quest_id}/{p.presence_id}: {state}')
+            except Exception as exc:  # keep directing; a failed round leaves its events as they are
+                print(f'{now_iso()} presenca falhou: {type(exc).__name__}')
+            time.sleep(max(self.args.interval, 2.0))
 
 
 class VoiceListener(threading.Thread):
@@ -812,6 +854,11 @@ def main() -> int:
                          'common knowledge (ADR-0114; party members never learn by time)')
     ap.add_argument('--quest-catalog', type=Path, default=DEFAULT_CATALOG,
                     help='local quest catalog (ADR-0134): allowlisted variables and milestones')
+    ap.add_argument('--quest-presence', action='store_true',
+                    help='ADR-0138: the quests may create and remove our creatures through the '
+                         'action gateway (lab, off by default)')
+    ap.add_argument('--local-quests', type=Path, default=None,
+                    help='lab only: a folder of test quests kept out of the repository')
     ap.add_argument('--watch-probes', action='store_true',
                     help='print the allowlisted variable values per question (curation, D4)')
     args = ap.parse_args()
@@ -856,6 +903,8 @@ def main() -> int:
     observer.start()
     talker = Talker(args, ssh, observer, catalog, writer)
     talker.start()
+    if args.quest_presence:              # ADR-0138 D1: off by default
+        PresenceDirector(args, ssh, observer, pin_build).start()
 
     def warm_up() -> None:
         # Load the dialogue model before the first question (a cold load can pass the timeout).

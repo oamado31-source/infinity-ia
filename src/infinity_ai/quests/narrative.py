@@ -12,6 +12,8 @@ A narrative quest happens only in conversations: nothing is written to the game.
 - Resolution records the quest's milestone (`QuestMilestoneObserved`, source OVERLAY, ADR-0134);
   curations say what it does to trust (rule MILESTONE).
 - A step's fact never reaches a prompt before the quest is accepted (REQ-QUEST-006).
+- ADR-0138: a quest may declare who must be on the map while it runs (`presence`); the presence
+  director (`quests/presence.py`) asks the action gateway for it. The quest file only declares.
 """
 from __future__ import annotations
 
@@ -35,6 +37,9 @@ MAX_FACT, MAX_JOURNAL = 400, 200
 _ID = re.compile(r'[a-z0-9][a-z0-9-]{0,47}')
 _NPC = re.compile(r'npc:[a-z0-9_#*-]{1,40}')
 _AREA = re.compile(r'[A-Z0-9]{1,8}')
+_CRE = re.compile(r'IA[A-Z0-9]{1,6}')
+_OWN_NAME = re.compile(r'INFAI_[A-Z0-9_]{1,26}')
+START_ACCEPTED, END_RESOLVED = 'ACCEPTED', 'RESOLVED'
 
 
 @dataclass(frozen=True)
@@ -44,6 +49,21 @@ class Step:
     cues: tuple[str, ...]
     fact: str
     journal: str
+
+
+@dataclass(frozen=True)
+class Presence:
+    """ADR-0138: one of our creatures that must be in an area while the quest is between two
+    points: from `start` (ACCEPTED or a step id done) until `end` (RESOLVED or a step id done)."""
+    presence_id: str
+    cre: str                  # our creature file (IA*)
+    name: str                 # the script name inside it (INFAI_*)
+    area: str
+    start: str
+    end: str
+    x: int = -1               # -1: near the party leader (D2)
+    y: int = -1
+    facing: int = 0
 
 
 @dataclass(frozen=True)
@@ -62,6 +82,7 @@ class NarrativeQuest:
     turn_in_fact: str
     turn_in_journal: str
     milestone: str
+    presence: tuple[Presence, ...] = ()
 
 
 def _norm(text: str) -> str:
@@ -88,6 +109,36 @@ def _cues(raw: object) -> tuple[str, ...] | None:
 
 def _text(raw: object, limit: int) -> str | None:
     return raw.strip() if isinstance(raw, str) and 0 < len(raw.strip()) <= limit else None
+
+
+def _presence(raw: object, step_ids: set[str]) -> tuple[Presence, ...] | None:
+    """The quest's presence list (ADR-0138), strictly; None drops the whole quest."""
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        return None
+    points = {START_ACCEPTED} | step_ids, {END_RESOLVED} | step_ids
+    out: list[Presence] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            return None
+        pid, cre, name, area = (item.get('presence_id'), item.get('cre'), item.get('name'),
+                                item.get('area'))
+        start, end = item.get('from', START_ACCEPTED), item.get('until', END_RESOLVED)
+        x, y, facing = item.get('x', -1), item.get('y', -1), item.get('facing', 0)
+        numbers = (x, y, facing)
+        if not (isinstance(pid, str) and _ID.fullmatch(pid) and isinstance(cre, str)
+                and _CRE.fullmatch(cre) and isinstance(name, str) and _OWN_NAME.fullmatch(name)
+                and isinstance(area, str) and _AREA.fullmatch(area)
+                and start in points[0] and end in points[1] and start != end
+                and all(isinstance(n, int) and not isinstance(n, bool) for n in numbers)
+                and -1 <= x <= 32767 and -1 <= y <= 32767 and (x < 0) == (y < 0)
+                and 0 <= facing <= 15):
+            return None
+        if pid in {o.presence_id for o in out} or name in {o.name for o in out}:
+            return None
+        out.append(Presence(pid, cre, name, area, start, end, x, y, facing))
+    return tuple(out)
 
 
 def parse_quest(doc: object) -> NarrativeQuest | None:
@@ -130,9 +181,12 @@ def parse_quest(doc: object) -> NarrativeQuest | None:
         return None
     title, giver_id, offer_cues, offer_fact, accept_cues, waiting, accept_journal, \
         turn_cues, turn_fact, turn_journal = fields
+    presence = _presence(doc.get('presence'), {s.step_id for s in steps})
+    if presence is None:
+        return None
     return NarrativeQuest(qid, title, area, giver_id, offer_cues, offer_fact, accept_cues,
                           waiting, accept_journal, tuple(steps), turn_cues, turn_fact,
-                          turn_journal, doc['milestone'])
+                          turn_journal, doc['milestone'], presence)
 
 
 def load_quests(base: Path = DEFAULT_QUEST_DIR) -> dict[str, NarrativeQuest]:

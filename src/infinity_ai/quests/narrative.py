@@ -14,6 +14,8 @@ A narrative quest happens only in conversations: nothing is written to the game.
 - A step's fact never reaches a prompt before the quest is accepted (REQ-QUEST-006).
 - ADR-0138: a quest may declare who must be on the map while it runs (`presence`); the presence
   director (`quests/presence.py`) asks the action gateway for it. The quest file only declares.
+- ADR-0140: a step may be done when a presence of the quest falls (`defeated`: its count in the game
+  drops to zero without the quest removing it), and a presence may have several copies.
 - ADR-0139: a step may be done by arriving somewhere (`arrive`, optionally only at night), steps may
   require others first (`after`), and a talk step may name its own area. Arrival steps are recorded
   by the service's observer, with their journal line on the box's next reply.
@@ -43,7 +45,7 @@ _AREA = re.compile(r'[A-Z0-9]{1,8}')
 _CRE = re.compile(r'IA[A-Z0-9]{1,6}')
 _OWN_NAME = re.compile(r'INFAI_[A-Z0-9_]{1,26}')
 START_ACCEPTED, END_RESOLVED = 'ACCEPTED', 'RESOLVED'
-TALK, ARRIVE = 'TALK', 'ARRIVE'
+TALK, ARRIVE, DEFEATED = 'TALK', 'ARRIVE', 'DEFEATED'
 WHEN_ANY, WHEN_NIGHT = 'ANY', 'NIGHT'
 JOURNAL_SHOWN = 'NarrativeQuestJournalShown'
 
@@ -59,6 +61,7 @@ class Step:
     area: str | None = None            # ARRIVE: where; TALK: optional, where the person is
     night: bool = False                # ARRIVE: only at night (ADR-0139 D1)
     after: tuple[str, ...] = ()        # steps that must be done first
+    presence_id: str | None = None     # DEFEATED (ADR-0140): the presence whose count falls to 0
 
 
 @dataclass(frozen=True)
@@ -75,6 +78,7 @@ class Presence:
     y: int = -1
     facing: int = 0
     when: str = WHEN_ANY      # ADR-0139: ANY, or NIGHT (only at night; gone at dawn, D2)
+    copies: int = 1           # ADR-0140: how many, created one at a time up to this count
 
 
 @dataclass(frozen=True)
@@ -138,18 +142,19 @@ def _presence(raw: object, step_ids: set[str]) -> tuple[Presence, ...] | None:
         start, end = item.get('from', START_ACCEPTED), item.get('until', END_RESOLVED)
         x, y, facing = item.get('x', -1), item.get('y', -1), item.get('facing', 0)
         when = item.get('when', WHEN_ANY)
-        numbers = (x, y, facing)
+        copies = item.get('copies', 1)
+        numbers = (x, y, facing, copies)
         if not (isinstance(pid, str) and _ID.fullmatch(pid) and isinstance(cre, str)
                 and _CRE.fullmatch(cre) and isinstance(name, str) and _OWN_NAME.fullmatch(name)
                 and isinstance(area, str) and _AREA.fullmatch(area)
                 and start in points[0] and end in points[1] and start != end
                 and all(isinstance(n, int) and not isinstance(n, bool) for n in numbers)
                 and -1 <= x <= 32767 and -1 <= y <= 32767 and (x < 0) == (y < 0)
-                and 0 <= facing <= 15 and when in (WHEN_ANY, WHEN_NIGHT)):
+                and 0 <= facing <= 15 and when in (WHEN_ANY, WHEN_NIGHT) and 1 <= copies <= 8):
             return None
         if pid in {o.presence_id for o in out} or name in {o.name for o in out}:
             return None
-        out.append(Presence(pid, cre, name, area, start, end, x, y, facing, when))
+        out.append(Presence(pid, cre, name, area, start, end, x, y, facing, when, copies))
     return tuple(out)
 
 
@@ -164,6 +169,13 @@ def _step(s: object, earlier: set[str]) -> Step | None:
                                                       for a in after):
         return None
     after = tuple(dict.fromkeys(after))
+    if 'defeated' in s:                        # ADR-0140: checked against the presences later
+        fell = s['defeated']
+        if not isinstance(fell, dict) or set(fell) != {'presence'} \
+                or not isinstance(fell['presence'], str) or not _ID.fullmatch(fell['presence']) \
+                or any(k in s for k in ('npc_id', 'cues', 'fact', 'arrive')):
+            return None
+        return Step(sid, None, (), None, journal, DEFEATED, None, False, after, fell['presence'])
     if 'arrive' in s:
         where = s['arrive']
         if not isinstance(where, dict) or set(where) - {'area', 'night'} \
@@ -218,6 +230,10 @@ def parse_quest(doc: object) -> NarrativeQuest | None:
         turn_cues, turn_fact, turn_journal = fields
     presence = _presence(doc.get('presence'), {s.step_id for s in steps})
     if presence is None:
+        return None
+    fallen = [s.presence_id for s in steps if s.kind == DEFEATED]
+    if any(f not in {p.presence_id for p in presence} for f in fallen) \
+            or len(fallen) != len(set(fallen)):
         return None
     return NarrativeQuest(qid, title, area, giver_id, offer_cues, offer_fact, accept_cues,
                           waiting, accept_journal, tuple(steps), turn_cues, turn_fact,
@@ -375,9 +391,17 @@ def arrive(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQues
     return tuple(done)
 
 
+def mark_step(store: CampaignStore, branch_id: str, quest: NarrativeQuest, step_id: str, *,
+              game_time: int | None, host_epoch: int = 0, evidence: str = 'LAB_OBSERVED') -> None:
+    """A step done by code without a conversation (ADR-0140: the defeat seen by the count)."""
+    _record(store, branch_id, STEP_DONE, quest, game_time=game_time, host_epoch=host_epoch,
+            evidence=evidence, step_id=step_id)
+
+
 def pending_journal(store: CampaignStore, branch_id: str,
                     quests: dict[str, NarrativeQuest]) -> tuple[tuple[str, str, str], ...]:
-    """Arrival steps whose journal line the box has not shown yet: (quest_id, step_id, line)."""
+    """Steps done without a conversation (arrival, ADR-0139; defeat, ADR-0140) whose journal line
+    the box has not shown yet: (quest_id, step_id, line)."""
     shown = {(e.payload.get('quest_id'), e.payload.get('step_id'))
              for e in store.visible_events(branch_id, JOURNAL_SHOWN)}
     out: list[tuple[str, str, str]] = []
@@ -385,7 +409,8 @@ def pending_journal(store: CampaignStore, branch_id: str,
         quest = quests.get(e.payload.get('quest_id'))
         step = next((s for s in quest.steps if s.step_id == e.payload.get('step_id')), None) \
             if quest else None
-        if step is not None and step.kind == ARRIVE and (quest.quest_id, step.step_id) not in shown:
+        if step is not None and step.kind in (ARRIVE, DEFEATED) \
+                and (quest.quest_id, step.step_id) not in shown:
             out.append((quest.quest_id, step.step_id, step.journal))
     return tuple(out)
 

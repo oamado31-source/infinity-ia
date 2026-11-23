@@ -11,12 +11,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 
 from infinity_ai.actions.gateway import (  # noqa: E402
-    CONFIRMED, DESPAWN, FAILED, REQUESTED, SPAWN, ActionReceipt, despawn_request,
+    CONFIRMED, COUNT, DESPAWN, FAILED, REQUESTED, SPAWN, ActionReceipt, despawn_request,
     owned_creatures, record_requested, record_result, spawn_request,
 )
 from infinity_ai.quests.narrative import advance, parse_quest  # noqa: E402
 from infinity_ai.quests.presence import (  # noqa: E402
-    ENTER, LEAVE, RESUMED, SUSPENDED, decide, dispatch, record_resumed, wanted,
+    COUNT_RULES, ENTER, LEAVE, RESUMED, SUSPENDED, decide, dispatch, record_resumed, wanted,
 )
 from infinity_ai.quests.narrative import QuestState  # noqa: E402
 from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
@@ -35,12 +35,19 @@ def quest_with(*presence, **change):
 
 
 class FakeGame:
-    """The EEex module's answers: counts our creatures with the name in the area."""
+    """The EEex module's answers: counts our creatures with the name in the area. `sent` keeps
+    the writes (SPAWN, DESPAWN); `counts` the reads (ADR-0140), answered by `count_answer`."""
 
-    def __init__(self, answer='DONE'):
-        self.answer, self.here, self.sent = answer, 0, []
+    def __init__(self, answer='DONE', count_answer='DONE'):
+        self.answer, self.count_answer, self.here, self.sent, self.counts = \
+            answer, count_answer, 0, [], []
 
     def send(self, req):
+        if req.op == COUNT:
+            self.counts.append(req)
+            if self.count_answer is None:
+                return None
+            return ActionReceipt(req.action_id, 'DONE', self.here, None, self.here)
         self.sent.append(req)
         if self.answer is None:
             return None                                   # no word from the game
@@ -101,11 +108,15 @@ class DirectorTests(unittest.TestCase):
                        game_time=self.t)
 
     def tick(self, game, area='AR0406', branch=ROOT_BRANCH):
-        """One reading of the game: decide and, if needed, ask once."""
-        self.t += 1
-        decision, held = decide(self.store, branch, self.quests, area=area)
-        state = dispatch(self.store, branch, decision, transport=game, templates=TEMPLATES,
-                         game_time=self.t) if decision else None
+        """One reading of the game: decide and, if needed, ask; the counts the director asks
+        first (ADR-0140) are followed by what it decides next, in the same reading."""
+        for _ in range(4):
+            self.t += 1
+            decision, held = decide(self.store, branch, self.quests, area=area, game_time=self.t)
+            state = dispatch(self.store, branch, decision, transport=game, templates=TEMPLATES,
+                             game_time=self.t) if decision else None
+            if decision is None or decision.rule not in COUNT_RULES or state != 'HOST_CONFIRMED':
+                return decision, state, held
         return decision, state, held
 
     def test_accept_creates_resolve_removes_and_nothing_repeats(self):

@@ -652,9 +652,11 @@ class Talker(threading.Thread):
             status, reason = result.status.value, result.reason
             flags = list(result.flags)
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
-            # ADR-0139: arrival steps have no conversation; their line goes on the next reply.
+            # ADR-0139/0140: arrival and defeat steps have no conversation; their line goes on the
+            # next reply.
             arrived = pending_journal(store, view.branch_id, self.observer.quests)
-            speech = with_journal(speech, story.journal + tuple(line for _, _, line in arrived))
+            # what happened before this turn (arrival, defeat) comes before this turn's own lines
+            speech = with_journal(speech, tuple(line for _, _, line in arrived) + story.journal)
             mark_journal_shown(store, view.branch_id, arrived, game_time=view.game_time,
                                host_epoch=req.session_seq or 0)
             used = tuple(e.split(':', 1)[1] for e in result.used_event_ids

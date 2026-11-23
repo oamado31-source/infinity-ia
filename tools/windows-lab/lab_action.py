@@ -11,6 +11,7 @@ back to empty at the end. Use a disposable save (INFINITY-P3-DESCARTAVEL). Only 
   python tools/windows-lab/lab_action.py spawn --cre IA<...> --area AR0406 [--x N --y N --facing N]
   python tools/windows-lab/lab_action.py despawn --name INFAI_<id> --area AR0406
   python tools/windows-lab/lab_action.py owned
+  python tools/windows-lab/lab_action.py count --name INFAI_<id> --area AR0406     (ADR-0140, read only)
   python tools/windows-lab/lab_action.py resume --quest <quest_id> --presence <presence_id>
 
 ADR-0138: the presence director of the dialogue service (`--quest-presence`) uses the same request
@@ -31,7 +32,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import json  # noqa: E402
 
 from infinity_ai.actions.gateway import (  # noqa: E402
-    ACT_RESREF, ActionError, PLACEHOLDER_ACT, despawn_request, load_templates, owned_creatures,
+    ACT_RESREF, ActionError, PLACEHOLDER_ACT, count_request, despawn_request, load_templates,
+    owned_creatures,
     parse_receipts, record_requested, record_result, render_request, spawn_request,
 )
 from infinity_ai.bridge.manifest import build_fingerprint  # noqa: E402
@@ -96,7 +98,7 @@ class SshTransport:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('op', choices=('spawn', 'despawn', 'owned', 'resume'))
+    ap.add_argument('op', choices=('spawn', 'despawn', 'count', 'owned', 'resume'))
     ap.add_argument('--quest', help='resume: the quest id (ADR-0138)')
     ap.add_argument('--presence', help='resume: the presence id in that quest')
     ap.add_argument('--cre')
@@ -137,6 +139,8 @@ def main() -> int:
             req = spawn_request(args.cre or '', args.area or '', x=args.x, y=args.y,
                                 facing=args.facing,
                                 templates=deployed_templates(ssh, args.game_root, fingerprint))
+        elif args.op == 'count':
+            req = count_request(args.name or '', args.area or '')
         else:
             req = despawn_request(args.name or '', args.area or '', owned=set(owned))
     except ActionError as exc:

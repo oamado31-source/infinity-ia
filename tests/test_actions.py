@@ -13,7 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from infinity_ai.actions.gateway import (  # noqa: E402
     ACT_SCHEMA, DESPAWN, PLACEHOLDER_ACT, SPAWN, TEMPLATES_SCHEMA, ActionError, ActionReceipt,
-    confirmed, despawn_request, load_templates, make_template, owned_creatures, parse_receipt,
+    confirmed, count_request, despawn_request, load_templates, make_template, owned_creatures,
+    parse_receipt,
     record_requested, record_result, render_request, spawn_request, templates_path,
 )
 from infinity_ai.bridge.manifest import modpack_hash  # noqa: E402
@@ -189,7 +190,8 @@ EEex_Menu_LoadFile = function() end
 EEex_GameState_AddInitializedListener = function() end
 EEex_Menu_AddAfterMainFileReloadedListener = function() end
 local function sprite(name, x, y)
-  return { m_scriptName = { get = function() return name end }, m_pos = { x = x, y = y } }
+  return { m_scriptName = { get = function() return name end }, m_pos = { x = x, y = y },
+           m_baseStats = { m_generalState = 0 } }
 end
 area = { m_resref = { get = function() return "AR0406" end }, sprites = { sprite("Bernard", 5, 5) } }
 leader = sprite("Player1", 100, 200)
@@ -250,6 +252,29 @@ class ModuleTests(unittest.TestCase):
         self.tick(3500)
         self.assertEqual(self.queued()[-1], 'DestroySelf()')
         self.assertEqual(self.acts()[-1], ActionReceipt('0123456789', 'DONE', 0, None, 1))
+
+    def test_count_reads_without_queueing(self):
+        self.serve(spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES,
+                                 action_id='abcdef0123'))
+        self.tick()
+        self.tick(3500)
+        self.serve(count_request('INFAI_P3TEST', 'AR0406', action_id='2222222222'))
+        self.tick()
+        self.assertEqual(self.acts()[-1], ActionReceipt('2222222222', 'DONE', 1, None, 1))
+        self.assertEqual(len(self.queued()), 1)                         # nothing queued
+        for i in range(1, len(self.g.area.sprites) + 1):                 # it falls: a corpse
+            sp = self.g.area.sprites[i]
+            if sp.m_scriptName.get() == 'INFAI_P3TEST':
+                sp.m_baseStats.m_generalState = 0x800 | 0x1
+        self.serve(count_request('INFAI_P3TEST', 'AR0406', action_id='6666666666'))
+        self.tick()
+        self.assertEqual(self.acts()[-1], ActionReceipt('6666666666', 'DONE', 0, None, 0))
+        self.serve(count_request('INFAI_NINGUEM', 'AR0406', action_id='4444444444'))
+        self.tick()
+        self.assertEqual(self.acts()[-1], ActionReceipt('4444444444', 'DONE', 0, None, 0))
+        self.serve(count_request('INFAI_P3TEST', 'AR0300', action_id='5555555555'))
+        self.tick()
+        self.assertEqual(self.acts()[-1].reason, 'WRONG_AREA')
 
     def test_refusals(self):
         self.g.files['INFAIACT'] = ('INFAI_ACT_Request = {action_id = "abcdef0123", '

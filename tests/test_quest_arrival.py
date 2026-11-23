@@ -10,13 +10,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 
-from infinity_ai.actions.gateway import SPAWN, ActionReceipt, owned_creatures  # noqa: E402
+from infinity_ai.actions.gateway import COUNT, SPAWN, ActionReceipt, owned_creatures  # noqa: E402
 from infinity_ai.quests.clock import UNITS_PER_HOUR, hour_of, is_night  # noqa: E402
 from infinity_ai.quests.narrative import (  # noqa: E402
     ARRIVE, STEP_DONE, TALK, advance, arrive, mark_journal_shown, parse_quest, pending_journal,
     state_of,
 )
-from infinity_ai.quests.presence import ENTER, LEAVE, decide, dispatch  # noqa: E402
+from infinity_ai.quests.presence import COUNT_RULES, ENTER, LEAVE, decide, dispatch  # noqa: E402
 from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
 
 BERNARD, YARIN = 'npc:cre-bernard', 'npc:yarin'
@@ -157,17 +157,22 @@ class NightPresenceTests(unittest.TestCase):
                 here = 0
 
                 def send(self, req):
+                    if req.op == COUNT:
+                        return ActionReceipt(req.action_id, 'DONE', self.here, None, self.here)
                     before = self.here
                     self.here = before + 1 if req.op == SPAWN else 0
                     return ActionReceipt(req.action_id, 'DONE', self.here, None, before)
             game = Game()
 
             def tick(t):
-                decision, _ = decide(store, ROOT_BRANCH, quests, area='AR0406', game_time=t)
-                if decision:
-                    dispatch(store, ROOT_BRANCH, decision, transport=game, templates=TEMPLATES,
-                             game_time=t)
-                return decision.rule if decision else None
+                for _ in range(3):
+                    decision, _ = decide(store, ROOT_BRANCH, quests, area='AR0406', game_time=t)
+                    if decision:
+                        dispatch(store, ROOT_BRANCH, decision, transport=game,
+                                 templates=TEMPLATES, game_time=t)
+                    if decision is None or decision.rule not in COUNT_RULES:
+                        return decision.rule if decision else None
+                return decision.rule
             self.assertEqual(tick(NOON + 10), None)                        # day: not yet
             self.assertEqual(tick(MIDNIGHT - 2 * HOUR), ENTER)             # 22:00
             self.assertEqual(tick(MIDNIGHT + HOUR), None)                  # still night

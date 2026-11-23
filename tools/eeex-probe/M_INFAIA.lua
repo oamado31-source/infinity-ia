@@ -8,7 +8,10 @@
 --     CreateCreature("<CRE nosso>",[x.y],<direcao>), montada de um modelo fixo. No BG2:EE essa
 --     acao nao recebe nome de script (ACTION.IDS): o nome nosso (INFAI_*) vem dentro do arquivo da
 --     criatura, um dos nossos (IA*.CRE), instalado com o jogo fechado;
---   DESPAWN: acha na area a criatura com o nosso nome de script e enfileira nela DestroySelf().
+--   DESPAWN: acha na area a criatura com o nosso nome de script e enfileira nela DestroySelf();
+--   COUNT (ADR-0140): so le. Conta na area as criaturas VIVAS com o nosso nome e responde na hora,
+--     sem enfileirar nada. O seletor do jogo devolve tambem os corpos: o estado de morte (0x800,
+--     a mesma checagem da caixa) os tira da conta, de COUNT, de SPAWN e de DESPAWN.
 -- Responde no console (espelhado no InfinityLoader.log):
 --   INFAI-ACT {"schema":"infinity-ai.act.v1","action_id":...,"status":"ACCEPTED|DONE|REFUSED",
 --              "observed":N,"reason":...}
@@ -21,6 +24,7 @@ INFAI_ACT_SCHEMA = "infinity-ai.act.v1"
 INFAI_ACT_POLL_MS = 500
 INFAI_ACT_CHECK_MS = 3000        -- espera antes de contar o resultado (o lider pode estar ocupado)
 INFAI_ACT_RANGE = 30000          -- a area inteira; o motor usa raio de 16 bits com sinal (65535 vira -1)
+INFAI_ACT_STATE_DEAD = 0x800     -- STATE.IDS: o seletor do jogo devolve tambem os corpos (lab, ADR-0140)
 
 INFAI_ACT_State = INFAI_ACT_State or { done = {}, check = nil, next_poll = 0 }
 
@@ -53,7 +57,7 @@ local function infai_act_drop_cached()
 end
 
 local function infai_act_op_ok(op)
-	return op == "SPAWN_CREATURE" or op == "DESPAWN"
+	return op == "SPAWN_CREATURE" or op == "DESPAWN" or op == "COUNT"
 end
 
 local function infai_act_valid(req)
@@ -92,8 +96,15 @@ local function infai_act_area_name(area)
 	return nil
 end
 
--- As criaturas da area com este nome de script (comparacao sem caixa), e quantas a busca viu ao
--- todo (diagnostico: zero visto quer dizer busca quebrada, nao criatura ausente).
+-- Morta pelo estado do proprio jogo (bit 0x800), como a caixa faz; sem leitura, conta como viva.
+local function infai_act_dead(sprite)
+	local ok, state = pcall(function() return sprite.m_baseStats.m_generalState end)
+	if not ok or type(state) ~= "number" then return false end
+	return math.floor(state / INFAI_ACT_STATE_DEAD) % 2 == 1
+end
+
+-- As criaturas VIVAS da area com este nome de script (comparacao sem caixa), e quantas a busca viu
+-- ao todo (diagnostico: zero visto quer dizer busca quebrada, nao criatura ausente).
 local function infai_act_find(area, name)
 	local found, seen = {}, 0
 	pcall(function()
@@ -103,7 +114,8 @@ local function infai_act_find(area, name)
 		seen = #all
 		for _, sprite in ipairs(all) do
 			local okn, script = pcall(function() return sprite.m_scriptName:get() end)
-			if okn and type(script) == "string" and string.upper(script) == string.upper(name) then
+			if okn and type(script) == "string" and string.upper(script) == string.upper(name)
+					and not infai_act_dead(sprite) then
 				table.insert(found, sprite)
 			end
 		end
@@ -116,6 +128,11 @@ local function infai_act_run(req, now)
 	local area = infai_act_area()
 	if area == nil or infai_act_area_name(area) ~= req.area then
 		infai_act_emit(req.action_id, "REFUSED", nil, "WRONG_AREA")
+		return
+	end
+	if req.op == "COUNT" then
+		local found, seen = infai_act_find(area, req.name)
+		infai_act_emit(req.action_id, "DONE", #found, nil, #found, seen)
 		return
 	end
 	local before = #infai_act_find(area, req.name)

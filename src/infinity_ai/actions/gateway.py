@@ -29,8 +29,8 @@ from ..state.store import CampaignStore
 ACT_RESREF = 'INFAIACT'
 ACT_PREFIX = 'INFAI-ACT '
 ACT_SCHEMA = 'infinity-ai.act.v1'
-SPAWN, DESPAWN = 'SPAWN_CREATURE', 'DESPAWN'
-OPERATIONS = (SPAWN, DESPAWN)
+SPAWN, DESPAWN, COUNT = 'SPAWN_CREATURE', 'DESPAWN', 'COUNT'
+OPERATIONS = (SPAWN, DESPAWN, COUNT)     # COUNT (ADR-0140): read only
 OWN_PREFIX = 'INFAI_'
 POLICY = 'adr-0136-gate-p3-v1'
 REQUESTED, CONFIRMED, FAILED = 'GameActionRequested', 'GameActionConfirmed', 'GameActionFailed'
@@ -135,6 +135,20 @@ def despawn_request(name: str, area: str, *, owned: set[str] | frozenset[str],
     return ActionRequest(action_id, DESPAWN, area, name)
 
 
+def count_request(name: str, area: str, *, action_id: str | None = None) -> ActionRequest:
+    """ADR-0140: how many of our creatures with this name the loaded area holds (read only)."""
+    area = (area or '').upper()
+    action_id = action_id or new_action_id()
+    if not _ID.fullmatch(action_id):
+        raise ActionError('BAD_ACTION_ID')
+    name = (name or '').upper() if isinstance(name, str) else ''
+    if not _NAME.fullmatch(name):
+        raise ActionError('NOT_OURS')
+    if not _AREA.fullmatch(area):
+        raise ActionError('BAD_AREA')
+    return ActionRequest(action_id, COUNT, area, name)
+
+
 def render_request(req: ActionRequest) -> str:
     """Contents of `override/INFAIACT.lua`: escaped literals only (like INFAIRSP.lua)."""
     if req.op not in OPERATIONS or not _ID.fullmatch(req.action_id) \
@@ -195,6 +209,8 @@ def confirmed(req: ActionRequest, receipt: ActionReceipt) -> bool:
     if req.op == SPAWN:
         return receipt.status == DONE and receipt.before is not None \
             and receipt.observed == receipt.before + 1
+    if req.op == COUNT:                       # the count itself is the host's word
+        return receipt.status == DONE
     return receipt.observed == 0 and (receipt.status == DONE or (
         receipt.status == REFUSED and receipt.reason == 'NOT_FOUND'))
 
@@ -248,19 +264,26 @@ def record_result(store: CampaignStore, branch_id: str, req: ActionRequest,
     return state
 
 
-def owned_creatures(store: CampaignStore, branch_id: str) -> dict[str, str]:
-    """Our creatures this branch confirms as present: script name -> area. An action without the
-    game time cannot be placed on the timeline, so it does not count (lab, S1x)."""
-    out: dict[str, str] = {}
+def creature_counts(store: CampaignStore, branch_id: str) -> dict[str, tuple[str, int]]:
+    """ADR-0140: per name of ours, the area and how many the game last said are there (after a
+    SPAWN, a DESPAWN or a COUNT). An action without the game time cannot be placed on the
+    timeline, so it does not count (lab, S1x)."""
+    out: dict[str, tuple[str, int]] = {}
     for event in store.visible_events(branch_id, CONFIRMED):
         if event.game_time is None:
             continue
         p = event.payload
-        if p.get('op') == SPAWN:
-            out[p['name']] = p['area']
-        elif p.get('op') == DESPAWN:
-            out.pop(p['name'], None)
+        if p.get('op') == DESPAWN:
+            out[p['name']] = (p['area'], 0)
+        elif p.get('op') in (SPAWN, COUNT) and isinstance(p.get('observed'), int):
+            out[p['name']] = (p['area'], p['observed'])
     return out
+
+
+def owned_creatures(store: CampaignStore, branch_id: str) -> dict[str, str]:
+    """Our creatures this branch confirms as present: script name -> area."""
+    return {name: area for name, (area, count) in creature_counts(store, branch_id).items()
+            if count > 0}
 
 
 def templates_path(build_fingerprint: str, base: Path = DEFAULT_TEMPLATE_DIR) -> Path:

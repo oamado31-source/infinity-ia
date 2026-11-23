@@ -14,6 +14,9 @@ A narrative quest happens only in conversations: nothing is written to the game.
 - A step's fact never reaches a prompt before the quest is accepted (REQ-QUEST-006).
 - ADR-0138: a quest may declare who must be on the map while it runs (`presence`); the presence
   director (`quests/presence.py`) asks the action gateway for it. The quest file only declares.
+- ADR-0139: a step may be done by arriving somewhere (`arrive`, optionally only at night), steps may
+  require others first (`after`), and a talk step may name its own area. Arrival steps are recorded
+  by the service's observer, with their journal line on the box's next reply.
 """
 from __future__ import annotations
 
@@ -40,15 +43,22 @@ _AREA = re.compile(r'[A-Z0-9]{1,8}')
 _CRE = re.compile(r'IA[A-Z0-9]{1,6}')
 _OWN_NAME = re.compile(r'INFAI_[A-Z0-9_]{1,26}')
 START_ACCEPTED, END_RESOLVED = 'ACCEPTED', 'RESOLVED'
+TALK, ARRIVE = 'TALK', 'ARRIVE'
+WHEN_ANY, WHEN_NIGHT = 'ANY', 'NIGHT'
+JOURNAL_SHOWN = 'NarrativeQuestJournalShown'
 
 
 @dataclass(frozen=True)
 class Step:
     step_id: str
-    npc_id: str
+    npc_id: str | None                 # TALK: the person to ask; ARRIVE: None
     cues: tuple[str, ...]
-    fact: str
+    fact: str | None                   # TALK: what that person may tell; ARRIVE: None
     journal: str
+    kind: str = TALK
+    area: str | None = None            # ARRIVE: where; TALK: optional, where the person is
+    night: bool = False                # ARRIVE: only at night (ADR-0139 D1)
+    after: tuple[str, ...] = ()        # steps that must be done first
 
 
 @dataclass(frozen=True)
@@ -64,6 +74,7 @@ class Presence:
     x: int = -1               # -1: near the party leader (D2)
     y: int = -1
     facing: int = 0
+    when: str = WHEN_ANY      # ADR-0139: ANY, or NIGHT (only at night; gone at dawn, D2)
 
 
 @dataclass(frozen=True)
@@ -126,6 +137,7 @@ def _presence(raw: object, step_ids: set[str]) -> tuple[Presence, ...] | None:
                                 item.get('area'))
         start, end = item.get('from', START_ACCEPTED), item.get('until', END_RESOLVED)
         x, y, facing = item.get('x', -1), item.get('y', -1), item.get('facing', 0)
+        when = item.get('when', WHEN_ANY)
         numbers = (x, y, facing)
         if not (isinstance(pid, str) and _ID.fullmatch(pid) and isinstance(cre, str)
                 and _CRE.fullmatch(cre) and isinstance(name, str) and _OWN_NAME.fullmatch(name)
@@ -133,12 +145,40 @@ def _presence(raw: object, step_ids: set[str]) -> tuple[Presence, ...] | None:
                 and start in points[0] and end in points[1] and start != end
                 and all(isinstance(n, int) and not isinstance(n, bool) for n in numbers)
                 and -1 <= x <= 32767 and -1 <= y <= 32767 and (x < 0) == (y < 0)
-                and 0 <= facing <= 15):
+                and 0 <= facing <= 15 and when in (WHEN_ANY, WHEN_NIGHT)):
             return None
         if pid in {o.presence_id for o in out} or name in {o.name for o in out}:
             return None
-        out.append(Presence(pid, cre, name, area, start, end, x, y, facing))
+        out.append(Presence(pid, cre, name, area, start, end, x, y, facing, when))
     return tuple(out)
+
+
+def _step(s: object, earlier: set[str]) -> Step | None:
+    """One step, strictly: TALK (a person, cues, a fact) or ARRIVE (an area, maybe at night).
+    `after` may only name earlier steps, so the order can never loop."""
+    if not isinstance(s, dict):
+        return None
+    sid, journal, after = s.get('step_id'), _text(s.get('journal'), MAX_JOURNAL), s.get('after', [])
+    if not isinstance(sid, str) or not _ID.fullmatch(sid) or sid in earlier or journal is None \
+            or not isinstance(after, list) or not all(isinstance(a, str) and a in earlier
+                                                      for a in after):
+        return None
+    after = tuple(dict.fromkeys(after))
+    if 'arrive' in s:
+        where = s['arrive']
+        if not isinstance(where, dict) or set(where) - {'area', 'night'} \
+                or not isinstance(where.get('area'), str) or not _AREA.fullmatch(where['area']) \
+                or not isinstance(where.get('night', False), bool) \
+                or any(k in s for k in ('npc_id', 'cues', 'fact')):
+            return None
+        return Step(sid, None, (), None, journal, ARRIVE, where['area'],
+                    where.get('night', False), after)
+    npc, cues, fact, area = s.get('npc_id'), _cues(s.get('cues')), \
+        _text(s.get('fact'), MAX_FACT), s.get('area')
+    if not isinstance(npc, str) or not _NPC.fullmatch(npc) or None in (cues, fact) \
+            or (area is not None and (not isinstance(area, str) or not _AREA.fullmatch(area))):
+        return None
+    return Step(sid, npc, cues, fact, journal, TALK, area, False, after)
 
 
 def parse_quest(doc: object) -> NarrativeQuest | None:
@@ -159,25 +199,20 @@ def parse_quest(doc: object) -> NarrativeQuest | None:
     raw_steps = doc.get('steps')
     if not isinstance(raw_steps, list) or not raw_steps:
         return None
-    steps = []
+    steps: list[Step] = []
     for s in raw_steps:
-        if not isinstance(s, dict):
+        step = _step(s, {x.step_id for x in steps})
+        if step is None:
             return None
-        sid, npc = s.get('step_id'), s.get('npc_id')
-        cues, fact, journal = _cues(s.get('cues')), _text(s.get('fact'), MAX_FACT), \
-            _text(s.get('journal'), MAX_JOURNAL)
-        if not isinstance(sid, str) or not _ID.fullmatch(sid) or not isinstance(npc, str) \
-                or not _NPC.fullmatch(npc) or None in (cues, fact, journal) \
-                or sid in {x.step_id for x in steps}:
-            return None
-        steps.append(Step(sid, npc, cues, fact, journal))
+        steps.append(step)
     fields = (_text(doc.get('title'), 80), giver.get('npc_id'), _cues(giver.get('offer_cues')),
               _text(giver.get('offer_fact'), MAX_FACT), _cues(giver.get('accept_cues')),
               _text(giver.get('waiting_fact'), MAX_FACT),
               _text(giver.get('accept_journal'), MAX_JOURNAL), _cues(turn_in.get('cues')),
               _text(turn_in.get('fact'), MAX_FACT), _text(turn_in.get('journal'), MAX_JOURNAL))
+    talkers = [s.npc_id for s in steps if s.kind == TALK]
     if None in fields or not isinstance(fields[1], str) or not _NPC.fullmatch(fields[1]) \
-            or any(s.npc_id == fields[1] for s in steps):
+            or fields[1] in talkers or len(talkers) != len(set(talkers)):
         return None
     title, giver_id, offer_cues, offer_fact, accept_cues, waiting, accept_journal, \
         turn_cues, turn_fact, turn_journal = fields
@@ -262,7 +297,7 @@ def advance(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQue
     milestones: list[str] = []
     states: list[str] = []
     for quest in quests.values():
-        step_of = {s.npc_id: s for s in quest.steps}
+        step_of = {s.npc_id: s for s in quest.steps if s.kind == TALK}
         if speaker != quest.giver and speaker not in step_of:
             continue
         if quest.area is not None and area != quest.area:
@@ -305,13 +340,67 @@ def advance(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQue
             step = step_of[speaker]
             if step.step_id in st.steps_done:
                 facts.append(step.fact)
-            elif st.accepted and not st.resolved and says(text, step.cues):
+            elif st.accepted and not st.resolved and set(step.after) <= st.steps_done \
+                    and (step.area is None or area == step.area) and says(text, step.cues):
                 mark(STEP_DONE, step.step_id)
                 facts.append(step.fact)
                 journal.append(step.journal)
         states.append(f'{quest.quest_id}={state_of(store, branch_id, quest.quest_id).label()}')
     return QuestTurn(tuple(facts), tuple(journal), tuple(changes), tuple(milestones),
                      tuple(states))
+
+
+def arrive(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQuest], *,
+           area: str | None, game_time: int | None, night: bool, host_epoch: int = 0,
+           evidence: str = 'LAB_OBSERVED') -> tuple[str, ...]:
+    """ADR-0139: arrival steps done now that the party is in `area` ("quest_id:step_id").
+    Only for an accepted, unresolved quest, with the steps of `after` done, and at night when
+    the step asks for it. Recorded once per branch, like any step; no game write."""
+    done: list[str] = []
+    if not area:
+        return ()
+    for quest in quests.values():
+        if quest.area is not None and area != quest.area:
+            continue
+        for step in quest.steps:
+            st = state_of(store, branch_id, quest.quest_id)
+            if not st.accepted or st.resolved:
+                break
+            if step.kind != ARRIVE or step.step_id in st.steps_done or step.area != area \
+                    or (step.night and not night) or not set(step.after) <= st.steps_done:
+                continue
+            _record(store, branch_id, STEP_DONE, quest, game_time=game_time,
+                    host_epoch=host_epoch, evidence=evidence, step_id=step.step_id)
+            done.append(f'{quest.quest_id}:{step.step_id}')
+    return tuple(done)
+
+
+def pending_journal(store: CampaignStore, branch_id: str,
+                    quests: dict[str, NarrativeQuest]) -> tuple[tuple[str, str, str], ...]:
+    """Arrival steps whose journal line the box has not shown yet: (quest_id, step_id, line)."""
+    shown = {(e.payload.get('quest_id'), e.payload.get('step_id'))
+             for e in store.visible_events(branch_id, JOURNAL_SHOWN)}
+    out: list[tuple[str, str, str]] = []
+    for e in store.visible_events(branch_id, STEP_DONE):
+        quest = quests.get(e.payload.get('quest_id'))
+        step = next((s for s in quest.steps if s.step_id == e.payload.get('step_id')), None) \
+            if quest else None
+        if step is not None and step.kind == ARRIVE and (quest.quest_id, step.step_id) not in shown:
+            out.append((quest.quest_id, step.step_id, step.journal))
+    return tuple(out)
+
+
+def mark_journal_shown(store: CampaignStore, branch_id: str,
+                       items: tuple[tuple[str, str, str], ...], *, game_time: int | None,
+                       host_epoch: int = 0, evidence: str = 'LAB_OBSERVED') -> None:
+    for quest_id, step_id, _ in items:
+        with store.transaction():
+            store.append_event(branch_id=branch_id, host_epoch=host_epoch,
+                               event_type=JOURNAL_SHOWN, category='CAMPAIGN_OBSERVATION',
+                               game_time=game_time, evidence=evidence,
+                               payload={'quest_id': quest_id, 'step_id': step_id,
+                                        'policy': POLICY},
+                               idempotency_key=f'nquest|{branch_id}|{quest_id}|journal|{step_id}')
 
 
 def with_journal(speech: str, journal: tuple[str, ...]) -> str:

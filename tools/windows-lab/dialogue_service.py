@@ -90,7 +90,10 @@ from infinity_ai.personality.trust import revise_trust  # noqa: E402
 from infinity_ai.quests.milestones import (  # noqa: E402
     DEFAULT_CATALOG, evaluate, load_catalog, record_milestones,
 )
-from infinity_ai.quests.narrative import advance, load_quests, with_journal  # noqa: E402
+from infinity_ai.quests.clock import hour_of, is_night  # noqa: E402
+from infinity_ai.quests.narrative import (  # noqa: E402
+    advance, arrive, load_quests, mark_journal_shown, pending_journal, with_journal,
+)
 from infinity_ai.quests.presence import decide, dispatch  # noqa: E402
 from infinity_ai.dialogue.disclosure import CLOSED_DISPOSITIONS  # noqa: E402
 from infinity_ai.personality.in_game import (  # noqa: E402
@@ -232,6 +235,12 @@ class Observer(threading.Thread):
                 observed = result.action is not RecordAction.SKIPPED
                 if observed:
                     self._acquire(store, recorder.branch_id, int(envs[1].value))
+                if observed and envs[0].value:     # ADR-0139: arrival steps (no game write)
+                    now_t = int(envs[1].value)
+                    for done in arrive(store, recorder.branch_id, self.quests, area=envs[0].value,
+                                       game_time=now_t, night=is_night(now_t)):
+                        print(f'{now_iso()} chegada: {done} em {envs[0].value} '
+                              f'(t={now_t}, hora {hour_of(now_t)})')
                 view = GameView(
                     observed=observed, branch_id=recorder.branch_id,
                     game_time=int(envs[1].value) if observed else None,
@@ -297,7 +306,7 @@ class PresenceDirector(threading.Thread):
                 view = self.observer.snapshot()
                 if view.observed and view.branch_id and view.area and view.game_time is not None:
                     decision, held = decide(store, view.branch_id, self.observer.quests,
-                                            area=view.area)
+                                            area=view.area, game_time=view.game_time)
                     if held != last_held and held:
                         print(f'{now_iso()} presenca retida: {list(held)} (lab_action.py resume)')
                     last_held = held
@@ -305,7 +314,8 @@ class PresenceDirector(threading.Thread):
                         p = decision.presence
                         print(f'{now_iso()} presenca {decision.quest_id}/{p.presence_id}: '
                               f'{decision.rule} {p.cre if decision.rule == "ENTER" else p.name} '
-                              f'em {p.area} (ramo {view.branch_id}, t={view.game_time})')
+                              f'em {p.area} (ramo {view.branch_id}, t={view.game_time}, '
+                              f'hora {hour_of(view.game_time)})')
                         state = dispatch(store, view.branch_id, decision, transport=transport,
                                          templates=templates, game_time=view.game_time)
                         print(f'{now_iso()} presenca {decision.quest_id}/{p.presence_id}: {state}')
@@ -642,7 +652,11 @@ class Talker(threading.Thread):
             status, reason = result.status.value, result.reason
             flags = list(result.flags)
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
-            speech = with_journal(speech, story.journal)       # SPEC-011: the box's journal
+            # ADR-0139: arrival steps have no conversation; their line goes on the next reply.
+            arrived = pending_journal(store, view.branch_id, self.observer.quests)
+            speech = with_journal(speech, story.journal + tuple(line for _, _, line in arrived))
+            mark_journal_shown(store, view.branch_id, arrived, game_time=view.game_time,
+                               host_epoch=req.session_seq or 0)
             used = tuple(e.split(':', 1)[1] for e in result.used_event_ids
                          if e.startswith('canon:'))
             if result.status is DialogueStatus.OK and speaker:

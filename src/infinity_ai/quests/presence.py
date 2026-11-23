@@ -8,6 +8,8 @@ the director compares what the quest wants with what the branch holds:
 - it must no longer be there, the quest put it there, and the party is in that area: DESPAWN
   (LEAVE; the engine only removes in the loaded area);
 - the party elsewhere: nothing (the creature stays in the save like any other).
+ADR-0139: a NIGHT presence is wanted only at night; at dawn it is no longer wanted, and the quest
+removes what it placed when the party is in the area (D2).
 
 Never twice blindly (doc. 26): one action at a time; a request the game did not confirm (DENIED or
 UNCERTAIN) suspends that presence on the branch until the maintainer resumes it, after looking at
@@ -26,15 +28,20 @@ from ..actions.gateway import (
     despawn_request, owned_creatures, record_requested, record_result, spawn_request,
 )
 from ..state.store import CampaignStore
-from .narrative import END_RESOLVED, START_ACCEPTED, NarrativeQuest, Presence, QuestState, state_of
+from .clock import is_night
+from .narrative import (
+    END_RESOLVED, START_ACCEPTED, WHEN_NIGHT, NarrativeQuest, Presence, QuestState, state_of,
+)
 
 POLICY = 'adr-0138-quest-presence-v1'
 SUSPENDED, RESUMED = 'QuestPresenceSuspended', 'QuestPresenceResumed'
 ENTER, LEAVE = 'ENTER', 'LEAVE'
 
 
-def wanted(state: QuestState, presence: Presence) -> bool:
-    """Between its two points of the quest."""
+def wanted(state: QuestState, presence: Presence, game_time: int | None = None) -> bool:
+    """Between its two points of the quest; a NIGHT presence only at night (ADR-0139)."""
+    if presence.when == WHEN_NIGHT and not is_night(game_time):
+        return False
     started = state.accepted if presence.start == START_ACCEPTED \
         else presence.start in state.steps_done
     ended = state.resolved if presence.end == END_RESOLVED else presence.end in state.steps_done
@@ -88,7 +95,8 @@ class Decision:
 
 
 def decide(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQuest], *,
-           area: str | None) -> tuple[Decision | None, tuple[str, ...]]:
+           area: str | None, game_time: int | None = None
+           ) -> tuple[Decision | None, tuple[str, ...]]:
     """The one action the quests want now in the party's area, and the presences held back
     ("quest/presence=SUSPENDED|PENDING") for the log."""
     if not area:
@@ -99,7 +107,7 @@ def decide(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQues
         for presence in quest.presence:
             if presence.area != area:
                 continue
-            want = wanted(state_of(store, branch_id, quest.quest_id), presence)
+            want = wanted(state_of(store, branch_id, quest.quest_id), presence, game_time)
             here = owned.get(presence.name) == area
             if want == here:
                 continue

@@ -8,6 +8,8 @@ the director compares what the quest wants with what the branch holds:
 - it must no longer be there, the quest put it there, and the party is in that area: DESPAWN
   (LEAVE; the engine only removes in the loaded area);
 - the party elsewhere: nothing (the creature stays in the save like any other).
+ADR-0142: a presence with `hostile_from` is made hostile (SET_HOSTILE) once that point of the quest is
+reached and all its copies are there; never twice after the same creation.
 ADR-0140: the director asks the game to count (read only) before trusting the branch, keeps
 several copies, and sees a presence's defeat when its count falls to zero.
 ADR-0139: a NIGHT presence is wanted only at night; at dawn it is no longer wanted, and the quest
@@ -26,9 +28,9 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from ..actions.gateway import (
-    CONFIRMED, COUNT, DESPAWN, FAILED, REQUESTED, SPAWN, ActionError, ActionReceipt,
-    ActionRequest, count_request, creature_counts, despawn_request, owned_creatures,
-    record_requested, record_result, spawn_request,
+    CONFIRMED, COUNT, DESPAWN, FAILED, REQUESTED, SET_HOSTILE, SPAWN, ActionError,
+    ActionReceipt, ActionRequest, count_request, creature_counts, despawn_request,
+    hostile_request, owned_creatures, record_requested, record_result, spawn_request,
 )
 from ..state.store import CampaignStore
 from .clock import is_night
@@ -41,6 +43,7 @@ POLICY = 'adr-0138-quest-presence-v1'
 SUSPENDED, RESUMED = 'QuestPresenceSuspended', 'QuestPresenceResumed'
 ENTER, LEAVE = 'ENTER', 'LEAVE'
 VERIFY, DEFEAT_WATCH, DEFEAT = 'VERIFY', 'DEFEAT_WATCH', 'DEFEAT'   # ADR-0140
+HOSTILE = 'HOSTILE'                                                   # ADR-0142
 COUNT_RULES = (VERIFY, DEFEAT_WATCH)
 ENTRY_EVENTS = ('AreaEntered', 'SessionStarted', 'BranchForked')
 WATCH_EVERY = 90          # game-time ticks between counts while a defeat is awaited (~6 s)
@@ -71,6 +74,7 @@ class PresenceStatus:
     count: int = 0                 # how many the game last said are in the presence's area
     filled: bool = False           # the count reached `copies` after the quest created them
     last_count_at: int | None = None   # game time of the last COUNT of this name
+    made_hostile: bool = False     # ADR-0142: a SET_HOSTILE confirmed after the last creation
 
 
 def status_of(store: CampaignStore, branch_id: str, quest_id: str,
@@ -103,16 +107,18 @@ def status_of(store: CampaignStore, branch_id: str, quest_id: str,
     fresh = bool(told) and told[-1].seq > max(entries, default=-1)
     area, count = creature_counts(store, branch_id).get(presence.name, (presence.area, 0))
     counts = [e.game_time for e in told if e.payload.get('op') == COUNT]
+    last_spawn = max((e.seq for e in told if e.payload.get('op') == SPAWN), default=-1)
+    hostile = any(e.payload.get('op') == SET_HOSTILE and e.seq > last_spawn for e in told)
     return PresenceStatus('SUSPENDED' if suspended else 'PENDING' if pending else None, placed,
                           fresh, count if area == presence.area else 0, filled,
-                          counts[-1] if counts else None)
+                          counts[-1] if counts else None, hostile)
 
 
 @dataclass(frozen=True)
 class Decision:
     quest_id: str
     presence: Presence
-    rule: str                      # ENTER, LEAVE, VERIFY, DEFEAT_WATCH or DEFEAT
+    rule: str                      # ENTER, LEAVE, VERIFY, DEFEAT_WATCH, DEFEAT or HOSTILE
     step_id: str | None = None     # DEFEAT: the step it does
 
     def cause(self) -> dict:
@@ -151,6 +157,12 @@ def decide(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQues
             if status.blocked:
                 held.append(f'{quest.quest_id}/{presence.presence_id}={status.blocked}')
                 continue
+            turn = presence.hostile_from is not None and window and status.count > 0 \
+                and status.fresh and not status.made_hostile and (
+                    state.accepted if presence.hostile_from == START_ACCEPTED
+                    else presence.hostile_from in state.steps_done)
+            if turn and status.filled:                  # ADR-0142: they fight from now on
+                return Decision(quest.quest_id, presence, HOSTILE), tuple(held)
             if awaiting:
                 if status.fresh and status.count == 0:
                     return Decision(quest.quest_id, presence, DEFEAT, fall.step_id), tuple(held)
@@ -213,6 +225,8 @@ def request_for(decision: Decision, store: CampaignStore, branch_id: str, *,
     p = decision.presence
     if decision.rule in COUNT_RULES:
         return count_request(p.name, p.area)
+    if decision.rule == HOSTILE:
+        return hostile_request(p.name, p.area, owned=set(owned_creatures(store, branch_id)))
     if decision.rule == ENTER:
         req = spawn_request(p.cre, p.area, x=p.x, y=p.y, facing=p.facing, templates=templates)
         if req.name != p.name:                     # the file holds another name of ours
@@ -252,6 +266,6 @@ def dispatch(store: CampaignStore, branch_id: str, decision: Decision, *, transp
     return state
 
 
-__all__ = ['ENTER', 'LEAVE', 'VERIFY', 'DEFEAT_WATCH', 'DEFEAT', 'SUSPENDED', 'RESUMED', 'Decision', 'PresenceStatus', 'Transport',
+__all__ = ['ENTER', 'LEAVE', 'VERIFY', 'DEFEAT_WATCH', 'DEFEAT', 'HOSTILE', 'SUSPENDED', 'RESUMED', 'Decision', 'PresenceStatus', 'Transport',
            'decide', 'dispatch', 'record_resumed', 'record_suspended', 'request_for', 'status_of',
            'wanted']

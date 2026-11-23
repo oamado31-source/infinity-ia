@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from infinity_ai.actions.gateway import (  # noqa: E402
     ACT_SCHEMA, DESPAWN, PLACEHOLDER_ACT, SPAWN, TEMPLATES_SCHEMA, ActionError, ActionReceipt,
-    confirmed, count_request, despawn_request, load_templates, make_template, owned_creatures,
+    SET_HOSTILE, confirmed, count_request, despawn_request, hostile_request, load_templates, make_template, owned_creatures,
     parse_receipt,
     record_requested, record_result, render_request, spawn_request, templates_path,
 )
@@ -32,7 +32,7 @@ TEMPLATES = {'IAP3TEST': 'INFAI_P3TEST', 'IATESTE': 'INFAI_TESTE'}
 ALLOWED = frozenset({
     'EEex_Resource_Fetch', 'Infinity_DoFile', 'Infinity_GetClockTicks', 'EEex_Area_GetVisible',
     'EEex_Sprite_GetInPortrait', 'EEex_Area_GetAllOfTypeStringInRange',
-    'EEex_Action_QueueResponseStringOnAIBase',   # queues the game's own actions only
+    'EEex_Action_ExecuteResponseStringOnAIBaseInstantly',  # the game's own INSTANT.IDS actions only
     'EEex_Menu_AddMainFileLoadedListener', 'EEex_Menu_LoadFile', 'Infinity_PushMenu',
     'EEex_GameState_AddInitializedListener', 'EEex_Menu_AddAfterMainFileReloadedListener',
 })
@@ -191,17 +191,18 @@ EEex_GameState_AddInitializedListener = function() end
 EEex_Menu_AddAfterMainFileReloadedListener = function() end
 local function sprite(name, x, y)
   return { m_scriptName = { get = function() return name end }, m_pos = { x = x, y = y },
-           m_baseStats = { m_generalState = 0 } }
+           m_baseStats = { m_generalState = 0 }, m_typeAI = { m_EnemyAlly = 128 } }
 end
 area = { m_resref = { get = function() return "AR0406" end }, sprites = { sprite("Bernard", 5, 5) } }
 leader = sprite("Player1", 100, 200)
 EEex_Area_GetVisible = function() return area end
 EEex_Sprite_GetInPortrait = function(i) if i == 0 then return leader end end
 EEex_Area_GetAllOfTypeStringInRange = function(a) return a.sprites end
-EEex_Action_QueueResponseStringOnAIBase = function(s, target)
+EEex_Action_ExecuteResponseStringOnAIBaseInstantly = function(s, target)
   table.insert(queued, s)
   local cre, x, y = string.match(s, '^CreateCreature%("([^"]+)",%[(%d+)%.(%d+)%]')
   if cre and templates[cre] then table.insert(area.sprites, sprite(templates[cre], tonumber(x), tonumber(y))) end
+  if s == "Enemy()" and target.m_typeAI then target.m_typeAI.m_EnemyAlly = 255 end
   if s == "DestroySelf()" then
     for i, sp in ipairs(area.sprites) do if sp == target then table.remove(area.sprites, i) end end
   end
@@ -276,6 +277,34 @@ class ModuleTests(unittest.TestCase):
         self.tick()
         self.assertEqual(self.acts()[-1].reason, 'WRONG_AREA')
 
+    def test_set_hostile_queues_enemy_and_counts_the_hostile(self):
+        for action_id in ('abcdef0123', '1234512345'):
+            self.serve(spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES,
+                                     action_id=action_id))
+            self.tick()
+            self.tick(3500)
+        req = hostile_request('INFAI_P3TEST', 'AR0406', owned={'INFAI_P3TEST'},
+                              action_id='7777777777')
+        self.assertEqual(req.op, SET_HOSTILE)
+        self.serve(req)
+        self.tick()
+        self.assertEqual(self.queued()[-2:], ['Enemy()', 'Enemy()'])         # both of ours
+        self.tick(3500)
+        receipt = self.acts()[-1]
+        self.assertEqual((receipt.status, receipt.before, receipt.observed), ('DONE', 2, 2))
+        self.assertTrue(confirmed(req, receipt))
+        self.assertFalse(confirmed(req, ActionReceipt('7777777777', 'DONE', 1, None, 2)))
+        self.assertFalse(confirmed(req, ActionReceipt('7777777777', 'DONE', 0, None, 0)))
+        bernard = self.g.area.sprites[1]
+        self.assertEqual(bernard.m_typeAI.m_EnemyAlly, 128)                 # never the game's
+        nobody = hostile_request('INFAI_NINGUEM', 'AR0406', owned={'INFAI_NINGUEM'},
+                                 action_id='8888888888')
+        self.serve(nobody)
+        self.tick()
+        self.assertEqual(self.acts()[-1].reason, 'NOT_FOUND')
+        with self.assertRaises(ActionError):
+            hostile_request('Bernard', 'AR0406', owned={'Bernard'})
+
     def test_refusals(self):
         self.g.files['INFAIACT'] = ('INFAI_ACT_Request = {action_id = "abcdef0123", '
                                     'op = "DESPAWN", area = "AR0406", name = "Bernard", '
@@ -319,7 +348,10 @@ class StaticTests(unittest.TestCase):
         # the engine's search radius is a signed 16-bit value: 65535 would be -1 (lab, S1x)
         self.assertLessEqual(int(re.search(r'INFAI_ACT_RANGE = (\d+)', self.raw).group(1)), 32767)
         self.assertEqual(self.raw.count('"DestroySelf()"'), 1)
-        self.assertNotRegex(self.code, r'SetGlobal|ActionOverride|StartCutScene|GiveItem|Kill\(')
+        self.assertEqual(self.raw.count('"Enemy()"'), 1)                   # ADR-0142
+        # INSTANT.IDS actions run at once: a queue on the leader is lost in a fight (lab, ADR-0142)
+        self.assertNotIn('QueueResponseString', self.code)
+        self.assertNotRegex(self.code, r'SetGlobal|ActionOverride|StartCutScene|GiveItem|Kill\(|Ally\(')
 
     def test_never_assigns_to_engine_state(self):
         for src_line in self.code.splitlines():

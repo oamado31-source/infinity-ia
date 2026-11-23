@@ -14,6 +14,7 @@ A narrative quest happens only in conversations: nothing is written to the game.
 - A step's fact never reaches a prompt before the quest is accepted (REQ-QUEST-006).
 - ADR-0138: a quest may declare who must be on the map while it runs (`presence`); the presence
   director (`quests/presence.py`) asks the action gateway for it. The quest file only declares.
+- ADR-0142: a presence may turn hostile from a point of the quest (`hostile_from`).
 - ADR-0140: a step may be done when a presence of the quest falls (`defeated`: its count in the game
   drops to zero without the quest removing it), and a presence may have several copies.
 - ADR-0139: a step may be done by arriving somewhere (`arrive`, optionally only at night), steps may
@@ -79,6 +80,7 @@ class Presence:
     facing: int = 0
     when: str = WHEN_ANY      # ADR-0139: ANY, or NIGHT (only at night; gone at dawn, D2)
     copies: int = 1           # ADR-0140: how many, created one at a time up to this count
+    hostile_from: str | None = None   # ADR-0142: from this point (ACCEPTED or a step) they fight
 
 
 @dataclass(frozen=True)
@@ -143,6 +145,7 @@ def _presence(raw: object, step_ids: set[str]) -> tuple[Presence, ...] | None:
         x, y, facing = item.get('x', -1), item.get('y', -1), item.get('facing', 0)
         when = item.get('when', WHEN_ANY)
         copies = item.get('copies', 1)
+        hostile_from = item.get('hostile_from')
         numbers = (x, y, facing, copies)
         if not (isinstance(pid, str) and _ID.fullmatch(pid) and isinstance(cre, str)
                 and _CRE.fullmatch(cre) and isinstance(name, str) and _OWN_NAME.fullmatch(name)
@@ -150,11 +153,13 @@ def _presence(raw: object, step_ids: set[str]) -> tuple[Presence, ...] | None:
                 and start in points[0] and end in points[1] and start != end
                 and all(isinstance(n, int) and not isinstance(n, bool) for n in numbers)
                 and -1 <= x <= 32767 and -1 <= y <= 32767 and (x < 0) == (y < 0)
-                and 0 <= facing <= 15 and when in (WHEN_ANY, WHEN_NIGHT) and 1 <= copies <= 8):
+                and 0 <= facing <= 15 and when in (WHEN_ANY, WHEN_NIGHT) and 1 <= copies <= 8
+                and (hostile_from is None or hostile_from in points[0])):
             return None
         if pid in {o.presence_id for o in out} or name in {o.name for o in out}:
             return None
-        out.append(Presence(pid, cre, name, area, start, end, x, y, facing, when, copies))
+        out.append(Presence(pid, cre, name, area, start, end, x, y, facing, when, copies,
+                            hostile_from))
     return tuple(out)
 
 

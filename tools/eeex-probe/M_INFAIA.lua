@@ -4,13 +4,15 @@
 -- O servico grava em override\INFAIACT.lua so a tabela INFAI_ACT_Request, com literais ja
 -- validados: {action_id, op, area, name, cre, x, y, facing}. Este modulo a rele a cada meio segundo
 -- e, para um action_id novo:
---   SPAWN_CREATURE: enfileira no lider do grupo a acao do proprio jogo
+--   SPAWN_CREATURE: o lider do grupo executa na hora a acao do proprio jogo
 --     CreateCreature("<CRE nosso>",[x.y],<direcao>), montada de um modelo fixo. No BG2:EE essa
 --     acao nao recebe nome de script (ACTION.IDS): o nome nosso (INFAI_*) vem dentro do arquivo da
 --     criatura, um dos nossos (IA*.CRE), instalado com o jogo fechado;
---   DESPAWN: acha na area a criatura com o nosso nome de script e enfileira nela DestroySelf();
+--   DESPAWN: acha na area a criatura com o nosso nome de script e executa nela, na hora, DestroySelf();
+--   SET_HOSTILE (ADR-0142): executa Enemy() (acao do proprio jogo) nas criaturas vivas com o nosso
+--     nome; depois de 3 s conta as vivas (before) e as hostis (observed, alianca >= 200).
 --   COUNT (ADR-0140): so le. Conta na area as criaturas VIVAS com o nosso nome e responde na hora,
---     sem enfileirar nada. O seletor do jogo devolve tambem os corpos: o estado de morte (0x800,
+--     sem executar nada. O seletor do jogo devolve tambem os corpos: o estado de morte (0x800,
 --     a mesma checagem da caixa) os tira da conta, de COUNT, de SPAWN e de DESPAWN.
 -- Responde no console (espelhado no InfinityLoader.log):
 --   INFAI-ACT {"schema":"infinity-ai.act.v1","action_id":...,"status":"ACCEPTED|DONE|REFUSED",
@@ -18,13 +20,17 @@
 -- DONE traz quantas criaturas com o nosso nome a area tinha antes (before) e tem depois (observed):
 -- uma a mais, ou nenhuma, e a confirmacao do host. So arquivos IA* sao criados e so nomes INFAI_
 -- sao removidos; nada do jogo original e tocado. O modulo
--- nunca atribui valores ao motor: so enfileira acoes do proprio jogo.
+-- nunca atribui valores ao motor: so executa acoes do proprio jogo.
+-- As tres acoes estao no INSTANT.IDS e rodam na hora (EEex ...Instantly), sem passar pela fila de
+-- quem age: no laboratorio (ADR-0142), um CreateCreature na fila do lider se perdeu quando o
+-- primeiro inimigo nascido hostil pausou o jogo e o grupo entrou em combate.
 
 INFAI_ACT_SCHEMA = "infinity-ai.act.v1"
 INFAI_ACT_POLL_MS = 500
-INFAI_ACT_CHECK_MS = 3000        -- espera antes de contar o resultado (o lider pode estar ocupado)
+INFAI_ACT_CHECK_MS = 3000        -- espera antes de contar o resultado
 INFAI_ACT_RANGE = 30000          -- a area inteira; o motor usa raio de 16 bits com sinal (65535 vira -1)
 INFAI_ACT_STATE_DEAD = 0x800     -- STATE.IDS: o seletor do jogo devolve tambem os corpos (lab, ADR-0140)
+INFAI_ACT_EVILCUTOFF = 200       -- EA.IDS: de 200 para cima e inimigo do grupo (ADR-0142)
 
 INFAI_ACT_State = INFAI_ACT_State or { done = {}, check = nil, next_poll = 0 }
 
@@ -57,7 +63,7 @@ local function infai_act_drop_cached()
 end
 
 local function infai_act_op_ok(op)
-	return op == "SPAWN_CREATURE" or op == "DESPAWN" or op == "COUNT"
+	return op == "SPAWN_CREATURE" or op == "DESPAWN" or op == "COUNT" or op == "SET_HOSTILE"
 end
 
 local function infai_act_valid(req)
@@ -103,6 +109,12 @@ local function infai_act_dead(sprite)
 	return math.floor(state / INFAI_ACT_STATE_DEAD) % 2 == 1
 end
 
+-- Hostil pela alianca do proprio jogo (EA.IDS); sem leitura, nao conta como hostil.
+local function infai_act_hostile(sprite)
+	local ok, ea = pcall(function() return sprite.m_typeAI.m_EnemyAlly end)
+	return ok and type(ea) == "number" and ea >= INFAI_ACT_EVILCUTOFF
+end
+
 -- As criaturas VIVAS da area com este nome de script (comparacao sem caixa), e quantas a busca viu
 -- ao todo (diagnostico: zero visto quer dizer busca quebrada, nao criatura ausente).
 local function infai_act_find(area, name)
@@ -135,6 +147,20 @@ local function infai_act_run(req, now)
 		infai_act_emit(req.action_id, "DONE", #found, nil, #found, seen)
 		return
 	end
+	if req.op == "SET_HOSTILE" then
+		local targets = infai_act_find(area, req.name)
+		if #targets == 0 then
+			infai_act_emit(req.action_id, "REFUSED", 0, "NOT_FOUND")
+			return
+		end
+		for _, sprite in ipairs(targets) do
+			pcall(EEex_Action_ExecuteResponseStringOnAIBaseInstantly, "Enemy()", sprite)
+		end
+		infai_act_emit(req.action_id, "ACCEPTED", nil, nil)
+		INFAI_ACT_State.check = { id = req.action_id, name = req.name, before = #targets,
+			at = now + INFAI_ACT_CHECK_MS, op = "SET_HOSTILE" }
+		return
+	end
 	local before = #infai_act_find(area, req.name)
 	if req.op == "SPAWN_CREATURE" then
 		local okl, leader = pcall(EEex_Sprite_GetInPortrait, 0)
@@ -151,7 +177,7 @@ local function infai_act_run(req, now)
 			end
 		end
 		local action = string.format('CreateCreature("%s",[%d.%d],%d)', req.cre, x, y, req.facing)
-		local okq = pcall(EEex_Action_QueueResponseStringOnAIBase, action, leader)
+		local okq = pcall(EEex_Action_ExecuteResponseStringOnAIBaseInstantly, action, leader)
 		if not okq then
 			infai_act_emit(req.action_id, "REFUSED", nil, "QUEUE_FAILED")
 			return
@@ -163,7 +189,7 @@ local function infai_act_run(req, now)
 			return
 		end
 		for _, sprite in ipairs(targets) do
-			pcall(EEex_Action_QueueResponseStringOnAIBase, "DestroySelf()", sprite)
+			pcall(EEex_Action_ExecuteResponseStringOnAIBaseInstantly, "DestroySelf()", sprite)
 		end
 	end
 	infai_act_emit(req.action_id, "ACCEPTED", nil, nil)
@@ -176,13 +202,20 @@ function INFAI_ACT_Tick()
 	local now = Infinity_GetClockTicks()
 	if st.check ~= nil and now >= st.check.at then
 		local area = infai_act_area()
-		local count, seen = nil, nil
+		local count, seen, before = nil, nil, st.check.before
 		if area ~= nil then
 			local found
 			found, seen = infai_act_find(area, st.check.name)
 			count = #found
+			if st.check.op == "SET_HOSTILE" then        -- vivas (before) e hostis (observed)
+				before = #found
+				count = 0
+				for _, sprite in ipairs(found) do
+					if infai_act_hostile(sprite) then count = count + 1 end
+				end
+			end
 		end
-		infai_act_emit(st.check.id, "DONE", count, nil, st.check.before, seen)
+		infai_act_emit(st.check.id, "DONE", count, nil, before, seen)
 		st.check = nil
 	end
 	if now < st.next_poll or st.check ~= nil then return false end

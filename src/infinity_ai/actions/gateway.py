@@ -14,6 +14,8 @@ fixed template and answers in the log (`INFAI-ACT {json}`), counting our creatur
 the area before and after. One more (SPAWN) or none left (DESPAWN) is the host's confirmation; without it nothing counts as done, and nothing is resent
 blindly. In this gate only the maintainer dispatches, by a lab command (D2). ADR-0138: the code of a
 curated quest may dispatch too (the presence director), and the request then carries its cause.
+ADR-0142: SET_HOSTILE queues the game's own Enemy() on our creatures with a name; the module counts
+how many living ones there are (before) and how many are hostile after (observed).
 """
 from __future__ import annotations
 
@@ -29,8 +31,9 @@ from ..state.store import CampaignStore
 ACT_RESREF = 'INFAIACT'
 ACT_PREFIX = 'INFAI-ACT '
 ACT_SCHEMA = 'infinity-ai.act.v1'
-SPAWN, DESPAWN, COUNT = 'SPAWN_CREATURE', 'DESPAWN', 'COUNT'
-OPERATIONS = (SPAWN, DESPAWN, COUNT)     # COUNT (ADR-0140): read only
+SPAWN, DESPAWN, COUNT, SET_HOSTILE = 'SPAWN_CREATURE', 'DESPAWN', 'COUNT', 'SET_HOSTILE'
+OPERATIONS = (SPAWN, DESPAWN, COUNT, SET_HOSTILE)   # COUNT (ADR-0140): read only; SET_HOSTILE
+#                                                     (ADR-0142): Enemy() on our creatures
 OWN_PREFIX = 'INFAI_'
 POLICY = 'adr-0136-gate-p3-v1'
 REQUESTED, CONFIRMED, FAILED = 'GameActionRequested', 'GameActionConfirmed', 'GameActionFailed'
@@ -149,6 +152,14 @@ def count_request(name: str, area: str, *, action_id: str | None = None) -> Acti
     return ActionRequest(action_id, COUNT, area, name)
 
 
+def hostile_request(name: str, area: str, *, owned: set[str] | frozenset[str],
+                    action_id: str | None = None) -> ActionRequest:
+    """ADR-0142: make our creatures with this name hostile (the game's own Enemy()); only ours,
+    only those this branch knows; never anyone of the game."""
+    req = despawn_request(name, area, owned=owned, action_id=action_id)
+    return ActionRequest(req.action_id, SET_HOSTILE, req.area, req.name)
+
+
 def render_request(req: ActionRequest) -> str:
     """Contents of `override/INFAIACT.lua`: escaped literals only (like INFAIRSP.lua)."""
     if req.op not in OPERATIONS or not _ID.fullmatch(req.action_id) \
@@ -211,6 +222,9 @@ def confirmed(req: ActionRequest, receipt: ActionReceipt) -> bool:
             and receipt.observed == receipt.before + 1
     if req.op == COUNT:                       # the count itself is the host's word
         return receipt.status == DONE
+    if req.op == SET_HOSTILE:                 # every living one of ours with the name is hostile
+        return receipt.status == DONE and receipt.before is not None and receipt.before >= 1 \
+            and receipt.observed == receipt.before
     return receipt.observed == 0 and (receipt.status == DONE or (
         receipt.status == REFUSED and receipt.reason == 'NOT_FOUND'))
 

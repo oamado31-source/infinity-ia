@@ -78,6 +78,83 @@
       "evidence_rank": 5,
       "consulted_at": "2026-11-22",
       "terms": "TO_CONFIRM"
+    },
+    {
+      "source_id": "infinity-animations",
+      "kind": "CONVERSION_PROJECT",
+      "url": "https://github.com/GwendolyneFreddy/Infinity-Animations",
+      "scope": "Animações de criaturas para BG2/ToB e jogos EE; restaura nos EE desenhos e sons de IWD que o jogo só define (verbeeg entre eles)",
+      "evidence_rank": 6,
+      "consulted_at": "2026-11-23",
+      "terms": "TO_CONFIRM",
+      "license": "NONE",
+      "license_note": "Sem licença declarada; redistribui arte dos jogos. Só uso local no laboratório (CR-2026-032)."
+    },
+    {
+      "source_id": "totlm-bg2ee",
+      "kind": "CONVERSION_PROJECT",
+      "url": "https://github.com/Argent77/A7-TotLM-BG2EE",
+      "scope": "Trials of the Luremaster (IWD) no BG2:EE, SoD e EET: áreas, criaturas, itens, magias e animações adaptadas",
+      "evidence_rank": 6,
+      "consulted_at": "2026-11-23",
+      "terms": "TO_CONFIRM",
+      "license": "CC-BY-SA-4.0",
+      "license_note": "Licença aberta para o mod; a arte dos jogos continua fora do repositório."
+    },
+    {
+      "source_id": "iwd1-eet",
+      "kind": "CONVERSION_PROJECT",
+      "url": "https://github.com/The-Gate-Project/IWD1_EET",
+      "scope": "Icewind Dale com HoW e TotL dentro do EET; criaturas e scripts já convertidos",
+      "evidence_rank": 6,
+      "consulted_at": "2026-11-23",
+      "terms": "TO_CONFIRM",
+      "license": "NONE",
+      "license_note": "Exige o EET (o laboratório tem só o BG2:EE): só consulta."
+    },
+    {
+      "source_id": "iwd2-eet",
+      "kind": "CONVERSION_PROJECT",
+      "url": "https://github.com/The-Gate-Project/IWD2_EET",
+      "scope": "Icewind Dale II dentro do EET; criaturas e scripts já convertidos",
+      "evidence_rank": 6,
+      "consulted_at": "2026-11-23",
+      "terms": "TO_CONFIRM",
+      "license": "NONE",
+      "license_note": "Exige o EET: só consulta."
+    },
+    {
+      "source_id": "nwnforbg",
+      "kind": "CONVERSION_PROJECT",
+      "url": "https://github.com/abalabokhin/NWNForBG",
+      "scope": "A campanha de Neverwinter Nights no BG2:EE e no EET: áreas, criaturas, itens e magias",
+      "evidence_rank": 6,
+      "consulted_at": "2026-11-23",
+      "terms": "TO_CONFIRM",
+      "license": "NONE",
+      "license_note": "Sem licença; o README avisa que há arte de outros jogos (Pillars of Eternity, Witcher 3). Só uso local, com aceite por recurso."
+    },
+    {
+      "source_id": "iwdification",
+      "kind": "CONVERSION_PROJECT",
+      "url": "https://github.com/Gibberlings3/iwdification",
+      "scope": "Magias, itens e kits de Icewind Dale no BG; sem criaturas",
+      "evidence_rank": 6,
+      "consulted_at": "2026-11-23",
+      "terms": "TO_CONFIRM",
+      "license": "NONE",
+      "license_note": "Sem licença declarada."
+    },
+    {
+      "source_id": "portraitscout",
+      "kind": "TOOL",
+      "url": "https://github.com/smeagolheart/PortraitScout",
+      "scope": "Lista as criaturas que falam numa instalação, com contagem de falas e retratos (censo e curadoria)",
+      "evidence_rank": 6,
+      "consulted_at": "2026-11-23",
+      "terms": "TO_CONFIRM",
+      "license": "MIT",
+      "license_note": "Ferramenta com licença MIT."
     }
   ]
 }

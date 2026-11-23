@@ -18,6 +18,7 @@ Pontos a decidir na revisão, antes de qualquer implementação. O texto da SPEC
 4. **Jogos instalados.** O laboratório tem só o BG2:EE com EEex (`BG2EE-P1`). Extrair BG1, SoD, IWD, IWD2 e NWN pede instalações próprias, com permissão e tamanho informados antes de qualquer download.
 5. **Consumidores atuais.** `knowledge/npcs/` (fichas curadas da etapa 3), o pacote de cânone (`knowledge/periods/`) e os inventários locais de habitantes e lojas continuam valendo durante a transição (critério 11).
 6. **Uso nas quests (SPEC-011, segundo corte).** Localizar um criminoso ou saber onde está um item cabe em quests narrativas. Recuperar um item ou eliminar uma criatura no jogo pede escrita no jogo (portão P3 e gateway, DEC-012).
+7. **Recursos convertidos (CR-2026-032, aprovada em 2026-11-23).** Módulo novo desta SPEC: um inventário local (`~/.infinity-ai/resources/install-<build>/`) do que foi trazido de outros jogos para o BG2:EE, com animação, desenhos, sons, scripts, as duas fichas (de origem e convertida), o projeto de onde veio, os direitos e o estado de validação (`DECLARED`, `ASSETS_PRESENT`, `DRAWN_IN_GAME`, `APPROVED`). No repositório fica só o esquema `converted-resource.v1`. Os projetos de conversão da comunidade entram em `sources.json` como `CONVERSION_PROJECT`.
 
 ---
 

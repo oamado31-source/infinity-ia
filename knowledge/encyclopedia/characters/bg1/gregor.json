@@ -1,0 +1,23 @@
+{
+  "schema": "infinity-ai.encyclopedia.character.v1",
+  "canonical_id": "character:gregor",
+  "category": "CHARACTER",
+  "display_name": "Gregor",
+  "summary": "Filho de Brunos, um dos líderes do Trono de Ferro mortos em Baldur's Gate (1368 DR). Nesta campanha, entra na célula de Athkatla para vingar o pai, recusa a nova guerra e é preso ao tentar desertar.",
+  "source_records": [
+    {
+      "game": "BG1",
+      "expansion": "EE",
+      "verification_status": "CROSS_REFERENCED"
+    }
+  ],
+  "verification_status": "CROSS_REFERENCED",
+  "entity_type": "QUEST_CHARACTER",
+  "refs": {
+    "curation": "knowledge/npcs/gregor.pt_BR.json"
+  },
+  "source_refs": [
+    "bg-fandom-wiki",
+    "maintainer"
+  ]
+}

@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 
 from infinity_ai.actions.creatures import (  # noqa: E402
-    COLOR_FIELDS, EFFECT_SIZE, SHEET_SCHEMA, SLOT_WORDS, Effect, build_creature, parse_sheet,
-    vision_effects,
+    COLOR_FIELDS, EFFECT_SIZE, INVENTORY_SLOTS, SHEET_SCHEMA, SLOT_WORDS, Effect, build_creature,
+    choose_item, parse_sheet, vision_effects,
 )
 from infinity_ai.actions.gateway import ActionError  # noqa: E402
 from infinity_ai.personality.identity import load_curations  # noqa: E402
@@ -169,7 +169,83 @@ class BuildTests(unittest.TestCase):
                            name_strref=1, animation=0x6010, items={'BOLSO': 'X'})
 
 
+class MonsterAndBackpackTests(unittest.TestCase):
+    """ADR-0141: a creature that is not a character, the backpack and the item choice."""
+    JAILER = dict(SHEET, sheet_id='teste:verbeeg', race='BASE', **{'class': 'FIGHTER'},
+                  alignment='NEUTRAL_EVIL', gender='MALE', level=5, hp=28, thac0=15, attacks=2,
+                  natural_ac=4, str_extra=76,
+                  items=[{'slot': 'WEAPON1', 'name': 'Clava', 'resref': 'BLUN01'},
+                         {'slot': 'SHIELD', 'name': 'Escudo Médio'}])
+
+    def test_new_fields_and_pins_are_strict(self):
+        sheet = parse_sheet(self.JAILER)
+        self.assertEqual((sheet.race, sheet.natural_ac, sheet.str_extra), (0, 4, 76))
+        self.assertEqual(sheet.pinned, (('WEAPON1', 'Clava', 'BLUN01'),))
+        two = dict(SHEET, items=[{'slot': 'INVENTORY', 'name': 'a'},
+                                 {'slot': 'INVENTORY', 'name': 'b'}])
+        self.assertEqual([s for s, _ in parse_sheet(two).items], ['INVENTORY', 'INVENTORY'])
+        for change, code in (({'natural_ac': 11}, 'BAD_SHEET_NATURAL_AC'),
+                             ({'str_extra': 101}, 'BAD_SHEET_STR_EXTRA'),
+                             ({'race': 'GIGANTE'}, 'BAD_SHEET_RACE'),
+                             ({'items': [{'slot': 'ARMOR', 'name': 'x', 'resref': 'A B'}]},
+                              'BAD_SHEET_ITEMS'),
+                             ({'items': [{'slot': 'INVENTORY', 'name': 'x'}] * 17},
+                              'BAD_SHEET_ITEMS')):
+            with self.assertRaises(ActionError) as ctx:
+                parse_sheet(dict(self.JAILER, **change))
+            self.assertEqual(ctx.exception.code, code)
+
+    def test_body_race_ac_strength_backpack_and_carry(self):
+        body = bytearray(base_cre())
+        body[0x271], body[0x272] = 5, 113                      # a giant-kin body (ogre)
+        d = build_creature(bytes(body), parse_sheet(self.JAILER), script_name='INFAI_TESTE',
+                           name_strref=29887, animation=0xE251,
+                           items=[('WEAPON1', 'BLUN01'), ('SHIELD', 'SHLD03'),
+                                  ('INVENTORY', 'MISC01')],
+                           carry=('SCRL3F',))
+        self.assertEqual((d[0x271], d[0x272], d[0x273]), (5, 113, 2))   # body kept, fighter
+        self.assertEqual(struct.unpack_from('<hh', d, 0x46), (4, 4))
+        self.assertEqual((d[0x238], d[0x239]), (17, 76))
+        slots_at, items_at, items_n = struct.unpack_from('<III', d, 0x2B8)
+        refs = [d[items_at + 20 * i:items_at + 20 * i + 8].rstrip(b'\0').decode()
+                for i in range(items_n)]
+        self.assertEqual(refs, ['SHLD03', 'BLUN01', 'MISC01', 'SCRL3F'])
+        slots = struct.unpack_from(f'<{SLOT_WORDS}H', d, slots_at)
+        self.assertEqual((slots[2], slots[9], slots[INVENTORY_SLOTS[0]], slots[INVENTORY_SLOTS[1]]),
+                         (0, 1, 2, 3))
+        for i in (2, 3):                                        # identified, droppable
+            self.assertEqual(struct.unpack_from('<I', d, items_at + 20 * i + 16)[0], 1)
+        with self.assertRaises(ActionError):
+            build_creature(base_cre(), parse_sheet(SHEET), script_name='INFAI_TESTE',
+                           name_strref=1, animation=0x6010, items={},
+                           carry=('X',) * 17)
+
+    def test_the_item_choice_follows_the_slot_and_the_pin(self):
+        swords = [('ARROPHEO', 15), ('MYBOLT', 15), ('SW1H08', 19), ('SW1H14', 19)]
+        self.assertEqual(choose_item('ARMOR', 'Traje', [('CLCK09', 2)]), 'CLCK09')
+        with self.assertRaises(ActionError) as ctx:                     # three fit a weapon slot
+            choose_item('WEAPON1', 'Espada Curta +1', swords)
+        self.assertEqual(ctx.exception.code, 'ITEM_AMBIGUOUS')
+        self.assertEqual(choose_item('WEAPON1', 'Espada Curta +1', swords, 'sw1h08'), 'SW1H08')
+        self.assertEqual(choose_item('INVENTORY', 'Diário', [('SCRL3F', 11)]), 'SCRL3F')
+        for slot, pin, code in (('ARMOR', None, 'ITEM_NOT_FOUND'),           # no armor among them
+                                ('WEAPON1', 'CLCK09', 'ITEM_PIN_MISMATCH')):
+            with self.assertRaises(ActionError) as ctx:
+                choose_item(slot, 'x', swords, pin)
+            self.assertEqual(ctx.exception.code, code)
+
+
 class CurationTests(unittest.TestCase):
+    def test_gregor_and_kalessia_are_curated_and_the_hideout_does_not_leak(self):
+        curations = load_curations(load_partition(1369))
+        gregor, kalessia = curations['npc:infai_gregor'], curations['npc:infai_kalessia']
+        self.assertEqual((gregor.standing, gregor.origin_region), ('FORASTEIRO', 'region:baldurs-gate'))
+        self.assertEqual((kalessia.standing, kalessia.origin_region), ('FORASTEIRO', 'region:sembia'))
+        self.assertEqual((len(gregor.self_facts), len(kalessia.self_facts)), (3, 3))
+        told = ' '.join(gregor.self_facts).lower()
+        for leak in ('docas', 'esconderijo', 'kalessia'):            # comes from the quest, later
+            self.assertNotIn(leak, told)
+
     def test_the_draft_story_waits_for_approval(self):
         doc = json.loads((ROOT / 'knowledge' / 'npcs' / 'tamoko.pt_BR.json').read_text())
         self.assertEqual(doc['npc_id'], 'npc:infai_tamoko')         # the box's id from our name

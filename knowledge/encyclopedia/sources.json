@@ -69,6 +69,15 @@
       "evidence_rank": 5,
       "consulted_at": "2026-11-18",
       "terms": "TO_CONFIRM"
+    },
+    {
+      "source_id": "complete-compendium",
+      "kind": "COMMUNITY_DB",
+      "url": "https://www.completecompendium.com/",
+      "scope": "AD&D 2ª edição: todos os monstros com página em qualquer fonte da edição (cerca de 3.400), por criatura (/appendix/), por cenário, Forgotten Realms incluído, e por livro (/catalog/); para criaturas sem ficha nos jogos",
+      "evidence_rank": 5,
+      "consulted_at": "2026-11-22",
+      "terms": "TO_CONFIRM"
     }
   ]
 }

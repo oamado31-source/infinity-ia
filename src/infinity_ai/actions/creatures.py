@@ -7,7 +7,9 @@ attacks, abilities, saving throws, morale, experience value, gold and equipment 
 CRE of the build gives the body (it is copied, never edited in place). The result keeps the base's
 spell-memorization table, empties spells and effects, drops the base's scripts and dialogue (the
 creature talks through our box, ADR-0136 D5: neutral, no combat), and lays out a new item table and
-slot table with the sheet's items, found in the build by the same name (strref). Optional: the
+slot table with the sheet's items, found in the build by the same name (strref) and the slot's item
+type, a resref pinned in the local sheet when several remain (ADR-0141), backpack items and
+campaign items carried (`carry`, ADR-0141: the diary in Kalessia's backpack). Optional: the
 sheet's seven body colors (gradient indices of the build's palette) and a few embedded effects, such
 as the vision look (translucent, with a pale glow) that the campaign gives the dead.
 
@@ -32,7 +34,16 @@ ALIGNMENTS = {'LAWFUL_GOOD': 0x11, 'LAWFUL_NEUTRAL': 0x12, 'LAWFUL_EVIL': 0x13,
 SLOTS = {'HELMET': 0, 'ARMOR': 1, 'SHIELD': 2, 'GLOVES': 3, 'RING_LEFT': 4, 'RING_RIGHT': 5,
          'AMULET': 6, 'BELT': 7, 'BOOTS': 8, 'WEAPON1': 9, 'WEAPON2': 10, 'WEAPON3': 11,
          'WEAPON4': 12, 'CLOAK': 17}
+INVENTORY = 'INVENTORY'               # ADR-0141: the 16 backpack slots, filled in order
+INVENTORY_SLOTS = tuple(range(21, 37))
 SLOT_WORDS = 40                      # 38 slots + selected weapon + selected weapon ability
+BASE_RACE = 'BASE'                   # ADR-0141: keep the body's race and general (giant-kin...)
+# ADR-0141 (D4): the item types (ITM 0x1C) each slot takes; INVENTORY takes any.
+WEAPON_TYPES = frozenset({15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 44,
+                          57, 69})
+SLOT_TYPES = {'HELMET': {7}, 'ARMOR': {2}, 'SHIELD': {12}, 'GLOVES': {6},
+              'RING_LEFT': {10}, 'RING_RIGHT': {10}, 'AMULET': {1}, 'BELT': {3}, 'BOOTS': {4},
+              'CLOAK': {32}, **{f'WEAPON{i}': WEAPON_TYPES for i in range(1, 5)}}
 NEUTRAL_EA = 128
 HEADER_SIZE = 0x2D4
 ITEM_SIZE = 0x14
@@ -64,6 +75,9 @@ class Sheet:
     saves: tuple[int, int, int, int, int]            # death, wands, poly, breath, spells
     items: tuple[tuple[str, str], ...]                # (slot, item name)
     colors: tuple[int, ...] | None = None              # COLOR_FIELDS order, or keep the base's
+    natural_ac: int = 10                               # ADR-0141: AC without armor items
+    str_extra: int = 0                                 # ADR-0141: exceptional strength (18/xx)
+    pinned: tuple[tuple[str, str, str], ...] = ()      # ADR-0141: (slot, name, resref) fixed locally
 
 
 @dataclass(frozen=True)
@@ -112,7 +126,7 @@ def parse_sheet(doc: object) -> Sheet:
         raise ActionError('BAD_SHEET_NAME')
     for key, table in (('race', RACES), ('class', CLASSES), ('gender', GENDERS),
                        ('alignment', ALIGNMENTS)):
-        if doc.get(key) not in table:
+        if doc.get(key) not in table and not (key == 'race' and doc.get(key) == BASE_RACE):
             raise ActionError(f'BAD_SHEET_{key.upper()}')
     abilities = doc.get('abilities') or {}
     saves = doc.get('saves') or {}
@@ -121,35 +135,68 @@ def parse_sheet(doc: object) -> Sheet:
     raw_items = doc.get('items') or []
     if not isinstance(raw_items, list):
         raise ActionError('BAD_SHEET_ITEMS')
-    items = []
+    items, pinned = [], []
     for item in raw_items:
-        if not isinstance(item, dict) or item.get('slot') not in SLOTS \
+        slot, resref = (item.get('slot'), item.get('resref')) if isinstance(item, dict) \
+            else (None, None)
+        if not isinstance(item, dict) or (slot not in SLOTS and slot != INVENTORY) \
                 or not isinstance(item.get('name'), str) or not item['name'].strip() \
-                or item['slot'] in {s for s, _ in items}:
+                or (slot != INVENTORY and slot in {s for s, _ in items}) \
+                or (resref is not None and (not isinstance(resref, str)
+                                            or not 1 <= len(resref) <= 8
+                                            or not resref.isalnum())):
             raise ActionError('BAD_SHEET_ITEMS')
-        items.append((item['slot'], item['name'].strip()))
+        items.append((slot, item['name'].strip()))
+        if resref is not None:
+            pinned.append((slot, item['name'].strip(), resref.upper()))
+    if sum(1 for s, _ in items if s == INVENTORY) > len(INVENTORY_SLOTS):
+        raise ActionError('BAD_SHEET_ITEMS')
     colors = None
     if doc.get('colors') is not None:
         if not isinstance(doc['colors'], dict) or set(doc['colors']) != set(COLOR_FIELDS):
             raise ActionError('BAD_SHEET_COLORS')
         colors = tuple(_int(doc['colors'], k, 0, 255) for k in COLOR_FIELDS)
+    natural_ac = _int(doc, 'natural_ac', -10, 10) if 'natural_ac' in doc else 10
+    str_extra = _int(doc, 'str_extra', 0, 100) if 'str_extra' in doc else 0
     return Sheet(
-        doc['sheet_id'], doc['name'].strip(), RACES[doc['race']], CLASSES[doc['class']],
+        doc['sheet_id'], doc['name'].strip(),
+        0 if doc['race'] == BASE_RACE else RACES[doc['race']], CLASSES[doc['class']],
         GENDERS[doc['gender']], ALIGNMENTS[doc['alignment']],
         _int(doc, 'level', 1, 40), _int(doc, 'hp', 1, 999), _int(doc, 'ac', -20, 10),
         _int(doc, 'thac0', -10, 20), _int(doc, 'attacks', 1, 5), _int(doc, 'xp_value', 0, 10**7),
         _int(doc, 'gold', 0, 10**6), _int(doc, 'morale', 0, 20),
         tuple(_int(abilities, k, 1, 25) for k in ('str', 'dex', 'con', 'int', 'wis', 'cha')),
         tuple(_int(saves, k, 1, 20) for k in ('death', 'wands', 'poly', 'breath', 'spells')),
-        tuple(items), colors)
+        tuple(items), colors, natural_ac, str_extra, tuple(pinned))
+
+
+def choose_item(slot: str, name: str, candidates: list[tuple[str, int]],
+                pinned: str | None = None) -> str:
+    """ADR-0141 (D4): the build's item for a sheet item. `candidates`: (resref, ITM type) of the
+    items whose identified name is the sheet's. Only types the slot takes count; with more than
+    one left, the local sheet must pin a resref (ITEM_AMBIGUOUS lists nothing by itself: the
+    lab tool prints the candidates). A pinned resref must be one of the candidates."""
+    allowed = SLOT_TYPES.get(slot)
+    fit = [(ref.upper(), typ) for ref, typ in candidates if allowed is None or typ in allowed]
+    if pinned is not None:
+        if pinned.upper() not in {ref for ref, _ in fit}:
+            raise ActionError('ITEM_PIN_MISMATCH')
+        return pinned.upper()
+    if not fit:
+        raise ActionError('ITEM_NOT_FOUND')
+    if len(fit) > 1:
+        raise ActionError('ITEM_AMBIGUOUS')
+    return fit[0][0]
 
 
 def build_creature(base: bytes, sheet: Sheet, *, script_name: str, name_strref: int,
-                   animation: int, items: dict[str, str],
-                   effects: tuple[Effect, ...] = ()) -> bytes:
+                   animation: int, items: dict[str, str] | list[tuple[str, str]],
+                   effects: tuple[Effect, ...] = (), carry: tuple[str, ...] = ()) -> bytes:
     """Our creature file: the base's body with the sheet's identity, colors and equipment.
     `items`: slot -> ITM resref of the build (only the sheet's items found by name);
-    `effects`: embedded on the creature (for instance `vision_effects()`)."""
+    `effects`: embedded on the creature (for instance `vision_effects()`);
+    `carry` (ADR-0141): campaign items put in the backpack after the sheet's own, identified and
+    droppable (they fall when the creature falls)."""
     data = bytearray(make_template(base, script_name))   # our name; refuses a dead base
     if len(data) < HEADER_SIZE:
         raise ActionError('BAD_SOURCE_CRE')
@@ -157,8 +204,15 @@ def build_creature(base: bytes, sheet: Sheet, *, script_name: str, name_strref: 
     meminfo = bytes(data[meminfo_off:meminfo_off + MEMINFO_SIZE * meminfo_n])
     if len(meminfo) != MEMINFO_SIZE * meminfo_n:
         raise ActionError('BAD_SOURCE_CRE')
-    for slot, resref in items.items():
-        if slot not in SLOTS or not isinstance(resref, str) or not 1 <= len(resref) <= 8:
+    pairs = list(items.items()) if isinstance(items, dict) else list(items)
+    pairs += [(INVENTORY, ref) for ref in carry]
+    worn = [s for s, _ in pairs if s != INVENTORY]
+    if len(worn) != len(set(worn)) or sum(1 for s, _ in pairs if s == INVENTORY) \
+            > len(INVENTORY_SLOTS):
+        raise ActionError('BAD_ITEM')
+    for slot, resref in pairs:
+        if (slot not in SLOTS and slot != INVENTORY) or not isinstance(resref, str) \
+                or not 1 <= len(resref) <= 8:
             raise ActionError('BAD_ITEM')
     effect_table = b''.join(_effect_bytes(e) for e in effects)
     head = data[:HEADER_SIZE]
@@ -171,26 +225,30 @@ def build_creature(base: bytes, sheet: Sheet, *, script_name: str, name_strref: 
     if sheet.colors is not None:
         head[0x2C:0x33] = bytes(sheet.colors)
     head[0x33] = 1                                                   # effects are EFF V2
-    struct.pack_into('<hh', head, 0x46, 10, 10)    # unarmored: the engine adds armor and Dex
+    struct.pack_into('<hh', head, 0x46, sheet.natural_ac, sheet.natural_ac)  # + armor and Dex
     head[0x52], head[0x53] = sheet.thac0 & 0xFF, sheet.attacks
     head[0x54:0x59] = bytes(sheet.saves)
     head[0x234:0x237] = bytes((sheet.level, 0, 0))
     head[0x237] = sheet.gender
     st, dex, con, it, wis, cha = sheet.abilities
-    head[0x238:0x23F] = bytes((st, 0, it, wis, dex, con, cha))
+    head[0x238:0x23F] = bytes((st, sheet.str_extra, it, wis, dex, con, cha))
     head[0x23F] = sheet.morale
     struct.pack_into('<I', head, 0x244, 0)                           # no kit
     head[0x248:0x270] = bytes(40)                                    # no AI scripts
-    head[0x270], head[0x271], head[0x272], head[0x273] = NEUTRAL_EA, 1, sheet.race, sheet.klass
+    head[0x270], head[0x273] = NEUTRAL_EA, sheet.klass
+    if sheet.race:                         # BASE keeps the body's race and general (ADR-0141)
+        head[0x271], head[0x272] = 1, sheet.race
     head[0x275], head[0x27B] = sheet.gender, sheet.alignment
     head[0x2CC:0x2D4] = bytes(8)                                     # no game dialogue
-    order = [s for s in SLOTS if s in items]
-    table = b''.join(items[s].upper().encode('ascii').ljust(8, b'\0')
-                     + struct.pack('<HHHHI', 0, 1, 0, 0, 1) for s in order)   # identified
+    worn_of = dict((s, r) for s, r in pairs if s != INVENTORY)
+    order = [(SLOTS[s], worn_of[s]) for s in SLOTS if s in worn_of]
+    order += list(zip(INVENTORY_SLOTS, [r for s, r in pairs if s == INVENTORY]))
+    table = b''.join(ref.upper().encode('ascii').ljust(8, b'\0')
+                     + struct.pack('<HHHHI', 0, 1, 0, 0, 1) for _, ref in order)   # identified
     slots = [EMPTY_SLOT] * SLOT_WORDS
-    for index, slot in enumerate(order):
-        slots[SLOTS[slot]] = index
-    slots[38], slots[39] = (0 if 'WEAPON1' in items else 1000), 0    # selected weapon, ability
+    for index, (word, _) in enumerate(order):
+        slots[word] = index
+    slots[38], slots[39] = (0 if 'WEAPON1' in worn_of else 1000), 0  # selected weapon, ability
     meminfo_at = HEADER_SIZE
     items_at = meminfo_at + len(meminfo)
     slots_at = items_at + len(table)

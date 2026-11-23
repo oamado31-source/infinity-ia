@@ -45,6 +45,12 @@ SLOT_TYPES = {'HELMET': {7}, 'ARMOR': {2}, 'SHIELD': {12}, 'GLOVES': {6},
               'RING_LEFT': {10}, 'RING_RIGHT': {10}, 'AMULET': {1}, 'BELT': {3}, 'BOOTS': {4},
               'CLOAK': {32}, **{f'WEAPON{i}': WEAPON_TYPES for i in range(1, 5)}}
 NEUTRAL_EA = 128
+ENEMY_EA = 255                       # ADR-0142: born hostile
+# ADR-0142: the five script slots of a CRE V1.0, by name, and the meminfo spell types.
+SCRIPT_SLOTS = {'override': 0x248, 'class': 0x250, 'race': 0x258, 'general': 0x260,
+                'default': 0x268}
+SPELL_TYPES = {'PRIEST': 0, 'WIZARD': 1, 'INNATE': 2}
+KNOWN_SIZE, MEMORIZED_SIZE = 0x0C, 0x0C
 HEADER_SIZE = 0x2D4
 ITEM_SIZE = 0x14
 MEMINFO_SIZE = 0x10
@@ -78,6 +84,8 @@ class Sheet:
     natural_ac: int = 10                               # ADR-0141: AC without armor items
     str_extra: int = 0                                 # ADR-0141: exceptional strength (18/xx)
     pinned: tuple[tuple[str, str, str], ...] = ()      # ADR-0141: (slot, name, resref) fixed locally
+    scripts: tuple[tuple[str, str], ...] = ()          # ADR-0142: (slot, BCS name) of the build
+    spells: tuple[tuple[str, int], ...] = ()           # ADR-0142: (SPL resref, memorized count)
 
 
 @dataclass(frozen=True)
@@ -156,6 +164,27 @@ def parse_sheet(doc: object) -> Sheet:
         if not isinstance(doc['colors'], dict) or set(doc['colors']) != set(COLOR_FIELDS):
             raise ActionError('BAD_SHEET_COLORS')
         colors = tuple(_int(doc['colors'], k, 0, 255) for k in COLOR_FIELDS)
+    scripts = []
+    raw_scripts = doc.get('scripts') or {}
+    if not isinstance(raw_scripts, dict):
+        raise ActionError('BAD_SHEET_SCRIPTS')
+    for slot, name in raw_scripts.items():
+        if slot not in SCRIPT_SLOTS or not isinstance(name, str) or not 1 <= len(name) <= 8 \
+                or not name.replace('_', '').replace('#', '').isalnum():
+            raise ActionError('BAD_SHEET_SCRIPTS')
+        scripts.append((slot, name.upper()))
+    spells = []
+    raw_spells = doc.get('spells') or []
+    if not isinstance(raw_spells, list):
+        raise ActionError('BAD_SHEET_SPELLS')
+    for spell in raw_spells:
+        ref = spell.get('resref') if isinstance(spell, dict) else None
+        count = spell.get('count', 1) if isinstance(spell, dict) else None
+        if not isinstance(ref, str) or not 1 <= len(ref) <= 8 or not ref.isalnum() \
+                or isinstance(count, bool) or not isinstance(count, int) or not 1 <= count <= 9 \
+                or ref.upper() in {r for r, _ in spells}:
+            raise ActionError('BAD_SHEET_SPELLS')
+        spells.append((ref.upper(), count))
     natural_ac = _int(doc, 'natural_ac', -10, 10) if 'natural_ac' in doc else 10
     str_extra = _int(doc, 'str_extra', 0, 100) if 'str_extra' in doc else 0
     return Sheet(
@@ -167,7 +196,7 @@ def parse_sheet(doc: object) -> Sheet:
         _int(doc, 'gold', 0, 10**6), _int(doc, 'morale', 0, 20),
         tuple(_int(abilities, k, 1, 25) for k in ('str', 'dex', 'con', 'int', 'wis', 'cha')),
         tuple(_int(saves, k, 1, 20) for k in ('death', 'wands', 'poly', 'breath', 'spells')),
-        tuple(items), colors, natural_ac, str_extra, tuple(pinned))
+        tuple(items), colors, natural_ac, str_extra, tuple(pinned), tuple(scripts), tuple(spells))
 
 
 def choose_item(slot: str, name: str, candidates: list[tuple[str, int]],
@@ -191,19 +220,24 @@ def choose_item(slot: str, name: str, candidates: list[tuple[str, int]],
 
 def build_creature(base: bytes, sheet: Sheet, *, script_name: str, name_strref: int,
                    animation: int, items: dict[str, str] | list[tuple[str, str]],
-                   effects: tuple[Effect, ...] = (), carry: tuple[str, ...] = ()) -> bytes:
+                   effects: tuple[Effect, ...] = (), carry: tuple[str, ...] = (),
+                   spell_info: dict[str, tuple[str, int]] | None = None,
+                   hostile: bool = False) -> bytes:
     """Our creature file: the base's body with the sheet's identity, colors and equipment.
     `items`: slot -> ITM resref of the build (only the sheet's items found by name);
     `effects`: embedded on the creature (for instance `vision_effects()`);
     `carry` (ADR-0141): campaign items put in the backpack after the sheet's own, identified and
-    droppable (they fall when the creature falls)."""
+    droppable (they fall when the creature falls);
+    `spell_info` (ADR-0142): SPL resref -> (PRIEST|WIZARD|INNATE, level 1..9), read from the build
+    by the lab tool, for the sheet's spells; `hostile` (ADR-0142): born an enemy (EA 255)."""
     data = bytearray(make_template(base, script_name))   # our name; refuses a dead base
     if len(data) < HEADER_SIZE:
         raise ActionError('BAD_SOURCE_CRE')
     meminfo_off, meminfo_n = struct.unpack_from('<II', data, 0x2A8)
-    meminfo = bytes(data[meminfo_off:meminfo_off + MEMINFO_SIZE * meminfo_n])
+    meminfo = bytearray(data[meminfo_off:meminfo_off + MEMINFO_SIZE * meminfo_n])
     if len(meminfo) != MEMINFO_SIZE * meminfo_n:
         raise ActionError('BAD_SOURCE_CRE')
+    known, memorized = _spell_tables(sheet, meminfo, meminfo_n, spell_info or {})
     pairs = list(items.items()) if isinstance(items, dict) else list(items)
     pairs += [(INVENTORY, ref) for ref in carry]
     worn = [s for s, _ in pairs if s != INVENTORY]
@@ -234,8 +268,10 @@ def build_creature(base: bytes, sheet: Sheet, *, script_name: str, name_strref: 
     head[0x238:0x23F] = bytes((st, sheet.str_extra, it, wis, dex, con, cha))
     head[0x23F] = sheet.morale
     struct.pack_into('<I', head, 0x244, 0)                           # no kit
-    head[0x248:0x270] = bytes(40)                                    # no AI scripts
-    head[0x270], head[0x273] = NEUTRAL_EA, sheet.klass
+    head[0x248:0x270] = bytes(40)                                    # no AI scripts...
+    for slot, name in sheet.scripts:                                 # ...but the game's own (ADR-0142)
+        head[SCRIPT_SLOTS[slot]:SCRIPT_SLOTS[slot] + 8] = name.encode('ascii').ljust(8, b'\0')
+    head[0x270], head[0x273] = (ENEMY_EA if hostile else NEUTRAL_EA), sheet.klass
     if sheet.race:                         # BASE keeps the body's race and general (ADR-0141)
         head[0x271], head[0x272] = 1, sheet.race
     head[0x275], head[0x27B] = sheet.gender, sheet.alignment
@@ -249,14 +285,49 @@ def build_creature(base: bytes, sheet: Sheet, *, script_name: str, name_strref: 
     for index, (word, _) in enumerate(order):
         slots[word] = index
     slots[38], slots[39] = (0 if 'WEAPON1' in worn_of else 1000), 0  # selected weapon, ability
-    meminfo_at = HEADER_SIZE
-    items_at = meminfo_at + len(meminfo)
+    known_at = HEADER_SIZE
+    meminfo_at = known_at + len(known)
+    memorized_at = meminfo_at + len(meminfo)
+    items_at = memorized_at + len(memorized)
     slots_at = items_at + len(table)
     end = slots_at + 2 * SLOT_WORDS
     struct.pack_into('<IIIIIIIIIII', head, 0x2A0,   # 0x2A0..0x2CB; 0x2CC is the dialogue
-                     meminfo_at, 0,               # known spells
-                     meminfo_at, meminfo_n,       # memorization info (kept)
-                     items_at, 0,                 # memorized spells
+                     known_at, len(known) // KNOWN_SIZE,                 # known spells
+                     meminfo_at, meminfo_n,                             # memorization info
+                     memorized_at, len(memorized) // MEMORIZED_SIZE,    # memorized spells
                      slots_at, items_at, len(order),
                      end, len(effects))           # effects, after the slots
-    return bytes(head) + meminfo + table + struct.pack(f'<{SLOT_WORDS}H', *slots) + effect_table
+    return bytes(head) + known + bytes(meminfo) + memorized + table \
+        + struct.pack(f'<{SLOT_WORDS}H', *slots) + effect_table
+
+
+def _spell_tables(sheet: Sheet, meminfo: bytearray, meminfo_n: int,
+                  info: dict[str, tuple[str, int]]) -> tuple[bytes, bytes]:
+    """ADR-0142: the known and memorized spell tables for the sheet's spells, and the base's
+    memorization entries updated in place (how many per level, where they start). Without spells,
+    the base's entries are kept with nothing memorized."""
+    by_slot: dict[tuple[int, int], list[tuple[str, int]]] = {}
+    for ref, count in sheet.spells:
+        if ref not in info or info[ref][0] not in SPELL_TYPES or not 1 <= info[ref][1] <= 9:
+            raise ActionError('UNKNOWN_SPELL')
+        kind, level = info[ref]
+        by_slot.setdefault((SPELL_TYPES[kind], level - 1), []).append((ref, count))
+    known = b''.join(ref.encode('ascii').ljust(8, b'\0')
+                     + struct.pack('<HH', level - 1, SPELL_TYPES[kind])
+                     for ref, (kind, level) in ((r, info[r]) for r, _ in sheet.spells))
+    memorized = b''
+    used: set[tuple[int, int]] = set()
+    for i in range(meminfo_n):
+        at = i * MEMINFO_SIZE
+        level, _, _, kind = struct.unpack_from('<HHHH', meminfo, at)
+        mine = by_slot.get((kind, level), [])
+        total = sum(c for _, c in mine)
+        if mine:
+            used.add((kind, level))
+        struct.pack_into('<HHHHII', meminfo, at, level, total, total, kind,
+                         len(memorized) // MEMORIZED_SIZE, total)
+        for ref, count in mine:
+            memorized += (ref.encode('ascii').ljust(8, b'\0') + struct.pack('<I', 1)) * count
+    if set(by_slot) - used:
+        raise ActionError('NO_SPELL_SLOT')          # the body has no memorization for that level
+    return known, memorized

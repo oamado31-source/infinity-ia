@@ -12,6 +12,7 @@ back to empty at the end. Use a disposable save (INFINITY-P3-DESCARTAVEL). Only 
   python tools/windows-lab/lab_action.py despawn --name INFAI_<id> --area AR0406
   python tools/windows-lab/lab_action.py owned
   python tools/windows-lab/lab_action.py count --name INFAI_<id> --area AR0406     (ADR-0140, read only)
+  python tools/windows-lab/lab_action.py hostile --name INFAI_<id> --area AR0406   (ADR-0142, Enemy())
   python tools/windows-lab/lab_action.py resume --quest <quest_id> --presence <presence_id>
 
 ADR-0138: the presence director of the dialogue service (`--quest-presence`) uses the same request
@@ -32,7 +33,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import json  # noqa: E402
 
 from infinity_ai.actions.gateway import (  # noqa: E402
-    ACT_RESREF, ActionError, PLACEHOLDER_ACT, count_request, despawn_request, load_templates,
+    ACT_RESREF, ActionError, PLACEHOLDER_ACT, count_request, despawn_request, hostile_request,
+    load_templates,
     owned_creatures,
     parse_receipts, record_requested, record_result, render_request, spawn_request,
 )
@@ -98,7 +100,7 @@ class SshTransport:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('op', choices=('spawn', 'despawn', 'count', 'owned', 'resume'))
+    ap.add_argument('op', choices=('spawn', 'despawn', 'count', 'hostile', 'owned', 'resume'))
     ap.add_argument('--quest', help='resume: the quest id (ADR-0138)')
     ap.add_argument('--presence', help='resume: the presence id in that quest')
     ap.add_argument('--cre')
@@ -141,6 +143,8 @@ def main() -> int:
                                 templates=deployed_templates(ssh, args.game_root, fingerprint))
         elif args.op == 'count':
             req = count_request(args.name or '', args.area or '')
+        elif args.op == 'hostile':
+            req = hostile_request(args.name or '', args.area or '', owned=set(owned))
         else:
             req = despawn_request(args.name or '', args.area or '', owned=set(owned))
     except ActionError as exc:

@@ -81,7 +81,25 @@ def item_exists(res: _Resources, resref: str) -> bool:
     return res.locate(resref.upper(), ITM_TYPE, 'itm', set()) is not None
 
 
-INI_TYPE, BAM_TYPE = 0x802, 0x3E8
+INI_TYPE, BAM_TYPE, BCS_TYPE, SPL_TYPE = 0x802, 0x3E8, 0x3EF, 0x3EE
+SPL_KINDS = {1: 'WIZARD', 2: 'PRIEST', 4: 'INNATE'}
+
+
+def spell_info(source, res: _Resources, refs) -> dict[str, tuple[str, int]]:
+    """ADR-0142: SPL resref -> (kind, level) from the build's spell headers (0x1C type, 0x34
+    level); a spell missing from the build is left out (the generator refuses it)."""
+    located = {r: loc for r in refs if (loc := res.locate(r, SPL_TYPE, 'spl', set())) is not None}
+    out = {}
+    for ref, head in _read_located(source, located, limit=0x38).items():
+        if len(head) >= 0x38 and struct.unpack_from('<H', head, 0x1C)[0] in SPL_KINDS:
+            out[ref] = (SPL_KINDS[struct.unpack_from('<H', head, 0x1C)[0]],
+                        struct.unpack_from('<I', head, 0x34)[0])
+    return out
+
+
+def script_exists(source, res: _Resources, name: str) -> bool:
+    return res.locate(name.upper(), BCS_TYPE, 'bcs', set()) is not None or \
+        f'{name.upper()}.BCS' in {n.upper() for n in source.list_dir('override', '.bcs')}
 
 
 def animation_drawn(source, res: _Resources, animation: int) -> bool:
@@ -121,6 +139,8 @@ def main() -> int:
     ap.add_argument('--animation', help='ANIMATE.IDS symbol (with --from-sheet)')
     ap.add_argument('--carry', action='append', default=[], metavar='ITM',
                     help='a campaign item for the backpack, droppable (ADR-0141); repeatable')
+    ap.add_argument('--hostile', action='store_true',
+                    help='born an enemy (ADR-0142), for creatures that fight at once')
     ap.add_argument('--vision', action='store_true',
                     help='translucent with a pale glow (with --from-sheet)')
     ap.add_argument('--as', dest='target', required=True, help='our resref (IA + up to 6)')
@@ -135,8 +155,8 @@ def main() -> int:
     if bool(args.copy) == bool(args.from_sheet):
         print('use --copy ou --from-sheet (um dos dois)')
         return 2
-    if (args.vision or args.carry) and not args.from_sheet:
-        print('--vision e --carry so valem com --from-sheet')
+    if (args.vision or args.carry or args.hostile) and not args.from_sheet:
+        print('--vision, --carry e --hostile so valem com --from-sheet')
         return 2
     ssh = ssh_from_env('INFINITY_LAB_SSH')
     running = run_ps(ssh, "(Get-Process -Name Baldur,InfinityLoader -ErrorAction SilentlyContinue"
@@ -194,15 +214,26 @@ def main() -> int:
                     print(f'recusado: o item {ref!r} nao existe nesta build')
                     return 2
                 print(f'item INVENTORY (campanha): {ref.upper()}')
+            for slot, name in sheet.scripts:
+                if not script_exists(source, res, name):
+                    print(f'recusado: o script {name!r} ({slot}) nao existe nesta build')
+                    return 2
+            spells = spell_info(source, res, [r for r, _ in sheet.spells])
+            for ref, count in sheet.spells:
+                print(f'magia: {ref} x{count} -> {spells.get(ref, "NAO EXISTE")}')
+            if sheet.scripts:
+                print('scripts:', dict(sheet.scripts))
             print('cores:', 'as da base' if sheet.colors is None else list(sheet.colors))
             effects = vision_effects() if args.vision else ()
             data = build_creature(base, sheet, script_name=args.name.upper(),
                                   name_strref=strrefs[sheet.name][0], animation=animation,
                                   items=items, effects=effects,
-                                  carry=tuple(r.upper() for r in args.carry))
+                                  carry=tuple(r.upper() for r in args.carry),
+                                  spell_info=spells, hostile=args.hostile)
             record.update(kind='SHEET', sheet_id=sheet.sheet_id, name_strref=strrefs[sheet.name][0],
                           animation=args.animation.upper(), items=items,
-                          carry=[r.upper() for r in args.carry],
+                          carry=[r.upper() for r in args.carry], hostile=args.hostile,
+                          scripts=dict(sheet.scripts), spells=[r for r, _ in sheet.spells],
                           colors=list(sheet.colors) if sheet.colors else None,
                           vision=args.vision)
     except ActionError as exc:

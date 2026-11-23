@@ -137,7 +137,8 @@ class BuildTests(unittest.TestCase):
         (known_at, known_n, mem_at, mem_n, memorized_at, memorized_n, slots_at, items_at,
          items_n, eff_at, eff_n) = struct.unpack_from('<IIIIIIIIIII', d, 0x2A0)
         self.assertEqual((known_n, mem_n, memorized_n, items_n, eff_n), (0, 17, 0, 3, 0))
-        self.assertEqual(d[mem_at:mem_at + 16 * 17], bytes(range(16)) * 17)   # kept
+        kept = (bytes(range(2)) + bytes(4) + bytes(range(6, 8)) + bytes(8)) * 17
+        self.assertEqual(d[mem_at:mem_at + 16 * 17], kept)   # level and type kept, no counts
         resrefs = [d[items_at + 20 * i:items_at + 20 * i + 8].rstrip(b'\0').decode()
                    for i in range(items_n)]
         self.assertEqual(resrefs, ['PLAT05', 'SHLD06', 'BLUN03'])        # slot order

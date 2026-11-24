@@ -4,12 +4,13 @@
   "language": "pt_BR",
   "note": "Etapa 3 (Coroa de Cobre): função confirmada pelo diálogo do jogo, lido só em memória no laboratório; raça, classe e alinhamento vêm da ficha do jogo. Nada além dos fatos abaixo é afirmado.",
   "standing": "HABITANTE",
-  "occupation": null,
+  "occupation": "coveiro do cemitério",
   "origin_region": null,
   "years_here": null,
   "places_visited": [],
   "self_facts": [
-    "Você bebe muito na Coroa de Cobre e vive pedindo que paguem uma bebida."
+    "Você bebe muito na Coroa de Cobre e vive pedindo que paguem uma bebida.",
+    "Você trabalha de coveiro no cemitério de Athkatla e bebe depois do turno."
   ],
   "sources": [
     {
@@ -19,14 +20,29 @@
     {
       "source_id": "maintainer",
       "locator": "Etapa 3 aprovada pelo mantenedor em 2026-11-17 (\"Etapa 3 aprovada\"); função lida no diálogo do jogo, frases escritas pelo projeto."
+    },
+    {
+      "source_id": "maintainer",
+      "locator": "Quest \"O diário perdido de Sarevok\": proposta v4 (D1, Garoll como coveiro) aprovada em 2026-11-18 e montagem aprovada em 2026-11-24 (função, fato novo e marco)."
+    },
+    {
+      "source_id": "maintainer",
+      "locator": "CR-2026-033 aprovada em 2026-11-24 (D3): o jeito de falar de bêbado, como a voz do jogo dele."
     }
   ],
   "curation": {
     "status": "CHECKED",
     "checked_by": "mantenedor",
-    "checked_at": "2026-11-17"
+    "checked_at": "2026-11-24"
   },
   "affiliations": [
     "place:copper-coronet:REGULAR"
-  ]
+  ],
+  "milestones": [
+    {
+      "milestone": "quest:sarevok-diary:RESOLVED",
+      "trust": "INTIMO"
+    }
+  ],
+  "speech": "bêbado: arrasta e enrola as palavras, solta um hic ou um arroto no meio da frase, ri à toa (rá, rá) e às vezes repete uma palavra"
 }

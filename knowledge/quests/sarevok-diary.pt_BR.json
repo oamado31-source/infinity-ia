@@ -1,0 +1,249 @@
+{
+  "schema": "infinity-ai.narrative-quest.v1",
+  "quest_id": "sarevok-diary",
+  "language": "pt_BR",
+  "title": "O diário perdido de Sarevok",
+  "note": "SPEC-011, segundo corte: quest da campanha (proposta v4 de 2026-11-18 e montagem de 2026-11-24, aprovadas pelo mantenedor). Conteúdo da campanha, não cânone do jogo. As criaturas (IA*) são locais, no override do laboratório; a quest só as cita. O esconderijo aponta para a área nova IA0001 (CR-2026-034), que ainda não existe: até ela ser instalada, a quest para no passo do esconderijo.",
+  "giver": {
+    "npc_id": "npc:drunk1",
+    "offer_cues": [
+      "fantasma",
+      "assombr*",
+      "cemitério",
+      "cemiterio",
+      "visão",
+      "visao",
+      "trabalh*",
+      "ajud*"
+    ],
+    "offer_fact": "Você é coveiro no cemitério de Athkatla. Há três noites, depois que escureceu, viu perto de um túmulo sem nome, na ala velha, o fantasma de uma sacerdotisa pálida, brilhando, procurando algo no chão e sussurrando numa língua estrangeira. Você largou a lanterna e fugiu; agora fica aqui na Coroa e não pisa mais lá. Pergunte se o grupo aceita ir lá à noite, sem você, e fazer a alma descansar.",
+    "accept_cues": [
+      "aceito",
+      "aceitamos",
+      "pode deixar",
+      "pode contar",
+      "conte com*",
+      "deixa com*",
+      "deixe com*",
+      "vamos ajud*",
+      "ajudaremos",
+      "vou ajud*",
+      "vamos investig*",
+      "investigaremos",
+      "iremos",
+      "irei",
+      "vamos ver",
+      "vamos lá",
+      "vamos sim",
+      "a gente vai",
+      "combinado",
+      "claro",
+      "sim",
+      "tudo bem",
+      "certo",
+      "podemos ir",
+      "podemos ajud*",
+      "posso ajud*",
+      "investig*",
+      "vamos ir",
+      "vou lá",
+      "nós vamos",
+      "nos vamos",
+      "a gente vai lá"
+    ],
+    "waiting_fact": "Você espera aqui na Coroa o grupo voltar do cemitério. A sacerdotisa fantasma continua aparecendo à noite perto do túmulo sem nome, na ala velha, e você não volta lá até isso acabar.",
+    "accept_journal": "Garoll, coveiro, viu à noite o fantasma de uma sacerdotisa perto de um túmulo sem nome, na ala velha do cemitério. Ir lá à noite e fazê-la descansar."
+  },
+  "call": {
+    "script_name": "DRUNK1",
+    "area": "AR0406",
+    "strref": 102877,
+    "every": 1500
+  },
+  "steps": [
+    {
+      "step_id": "visao",
+      "npc_id": "npc:infai_tamoko",
+      "area": "AR0800",
+      "cues": [
+        "morte",
+        "morreu",
+        "matou",
+        "quem",
+        "diário",
+        "diario",
+        "sarevok",
+        "garoll",
+        "descans*"
+      ],
+      "fact": "Agora você se lembra: agentes do Trono de Ferro a mataram pelo diário de Sarevok, que você guardava. Eles querem reacender a guerra entre Baldur's Gate e Amn. Um deles, Gregor, não concordava e está preso num casarão abandonado das Favelas.",
+      "journal": "A visão de Tamoko contou que o Trono de Ferro a matou pelo diário de Sarevok. Gregor, que não concordava, está preso nas Favelas."
+    },
+    {
+      "step_id": "cativeiro",
+      "arrive": {
+        "area": "AR0409"
+      },
+      "journal": "No casarão das Favelas, carcereiros enormes guardam Gregor."
+    },
+    {
+      "step_id": "carcereiros-cairam",
+      "defeated": {
+        "presence": "carcereiros"
+      },
+      "after": [
+        "cativeiro"
+      ],
+      "journal": "Os carcereiros caíram. Gregor está livre."
+    },
+    {
+      "step_id": "gregor-conta",
+      "npc_id": "npc:infai_gregor",
+      "area": "AR0409",
+      "after": [
+        "carcereiros-cairam"
+      ],
+      "cues": [
+        "livre",
+        "salv*",
+        "obrigad*",
+        "esconderijo",
+        "célula",
+        "celula",
+        "kalessia",
+        "onde",
+        "diário",
+        "diario"
+      ],
+      "fact": "O grupo acabou de te salvar dos carcereiros. Agradeça primeiro. Depois conte: Kalessia, emissária de Sembia, comanda a célula do Trono de Ferro e guarda o diário de Sarevok; o esconderijo é um galpão vazio no norte das Docas. Diga que vai embora de Athkatla agora.",
+      "journal": "Gregor contou que a célula de Kalessia se esconde num galpão das Docas, e foi embora."
+    },
+    {
+      "step_id": "esconderijo",
+      "arrive": {
+        "area": "IA0001"
+      },
+      "journal": "No galpão das Docas, Kalessia e os guardas do Trono de Ferro esperam."
+    },
+    {
+      "step_id": "intimidacao",
+      "npc_id": "npc:infai_kalessia",
+      "area": "IA0001",
+      "after": [
+        "esconderijo"
+      ],
+      "cues": [
+        "diário",
+        "diario",
+        "entregue",
+        "entregar",
+        "sarevok",
+        "trono",
+        "tamoko",
+        "gregor"
+      ],
+      "fact": "O grupo exige o diário de Sarevok. Você ri, ameaça o grupo e manda os guardas atacarem.",
+      "journal": "Kalessia se recusou a entregar o diário e mandou os guardas atacarem."
+    },
+    {
+      "step_id": "kalessia-caiu",
+      "defeated": {
+        "presence": "kalessia"
+      },
+      "after": [
+        "intimidacao"
+      ],
+      "journal": "Kalessia caiu. O diário de Sarevok estava com ela."
+    },
+    {
+      "step_id": "agentes-cairam",
+      "defeated": {
+        "presence": "agentes"
+      },
+      "after": [
+        "intimidacao"
+      ],
+      "journal": "Os guardas do Trono de Ferro caíram."
+    },
+    {
+      "step_id": "descanso",
+      "npc_id": "npc:infai_tamoko",
+      "area": "AR0800",
+      "after": [
+        "visao",
+        "kalessia-caiu"
+      ],
+      "cues": [
+        "diário",
+        "diario",
+        "kalessia",
+        "guard*",
+        "promet*",
+        "descans*",
+        "sarevok"
+      ],
+      "fact": "O grupo traz o diário de Sarevok e promete guardá-lo longe do Trono de Ferro. Você agradece, em paz, e se despede.",
+      "journal": "A visão de Tamoko descansou. O diário fica com o grupo. Volte a Garoll."
+    }
+  ],
+  "turn_in": {
+    "cues": [
+      "fantasma",
+      "descans*",
+      "tamoko",
+      "cemitério",
+      "cemiterio",
+      "acabou",
+      "resolv*"
+    ],
+    "fact": "O grupo fez o fantasma do cemitério descansar. Você respira aliviado, agradece de coração e jura que vai voltar ao trabalho sem medo.",
+    "journal": "Garoll agradeceu: o cemitério está em paz. Quest concluída."
+  },
+  "presence": [
+    {
+      "presence_id": "tamoko",
+      "cre": "IATAMOKO",
+      "name": "INFAI_TAMOKO",
+      "area": "AR0800",
+      "until": "descanso",
+      "when": "NIGHT"
+    },
+    {
+      "presence_id": "gregor",
+      "cre": "IAGREGOR",
+      "name": "INFAI_GREGOR",
+      "area": "AR0409",
+      "until": "gregor-conta",
+      "leave": "ESCAPE"
+    },
+    {
+      "presence_id": "carcereiros",
+      "cre": "IACARCER",
+      "name": "INFAI_CARCEREIRO",
+      "area": "AR0409",
+      "copies": 2
+    },
+    {
+      "presence_id": "kalessia",
+      "cre": "IAKALESS",
+      "name": "INFAI_KALESSIA",
+      "area": "IA0001",
+      "hostile_from": "intimidacao"
+    },
+    {
+      "presence_id": "agentes",
+      "cre": "IAAGENTE",
+      "name": "INFAI_AGENTE",
+      "area": "IA0001",
+      "copies": 3,
+      "hostile_from": "intimidacao"
+    }
+  ],
+  "milestone": "quest:sarevok-diary:RESOLVED",
+  "curation": {
+    "status": "CHECKED",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-24",
+    "approval": "Proposta v4 aprovada em 2026-11-18 (D1 a D11) e montagem aprovada em 2026-11-24: Garoll oferece sozinho, com o chamado sobre a cabeça (ADR-0144, frase 102877); novo texto de Tamoko; Gregor sai pela porta (ADR-0144); textos como estão. Cativeiro na AR0409 (casa vazia das Favelas, sem NPC nem script), escolhida pelo mantenedor em 2026-11-24: a AR0416 da v4 fica dentro da AR0415, que se entra pelas Docas. Textos de Garoll (oferta, espera e diário) mais concretos, aprovados pelo mantenedor no teste de 2026-11-24. Aceite mais amplo e Garoll pergunta se o grupo aceita (mantenedor, teste de 2026-11-24). Garoll não vai junto: fica na Coroa (mantenedor, teste de 2026-11-24). Fato do passo gregor-conta reescrito como fala direta (mantenedor, teste de 2026-11-24). ADR-0145 D2: fato de gregor-conta com agradecimento e lugar concreto. Presenças do casarão e do galpão desde o aceite, e chegadas sem passos anteriores (mantenedor, teste de 2026-11-24, ADR-0145). Esconderijo na AR0318 (galpão vazio no norte das Docas): a AR0331 se entra pela AR0330, que tem minotauros do jogo (mantenedor, 2026-11-24, ADR-0145 D3). A AR0318 tem pontos de surgimento de contrabandistas (RDSMUG) e não criou a célula; o esconderijo passa para a área nova IA0001 (CR-2026-034, aprovada em 2026-11-24)."
+  }
+}

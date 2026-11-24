@@ -28,6 +28,7 @@ POLICY = 'spec-006-identity-v1'
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CURATION_DIR = ROOT / 'knowledge' / 'npcs'
 MAX_FACT = 200
+MAX_SPEECH = 200                         # CR-2026-033
 AFFILIATION_PATTERN = re.compile(r'^place:[a-z0-9-]{1,64}:[A-Z][A-Z0-9_]{0,31}$')
 
 GAME_DATA, CURATED, GENERATED = 'GAME_DATA', 'CURATED', 'GENERATED'
@@ -233,6 +234,7 @@ class Curation:
     morale: int | None = None            # ADR-0126: curated base morale (2..20), else Table 49
     # ADR-0134: quest milestone (semantic id) -> the trust it gives the person in the group.
     milestones: tuple[tuple[str, str], ...] = ()
+    speech: str | None = None            # CR-2026-033: how it talks (form only, never a fact)
 
 
 def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[str, Curation]:
@@ -264,12 +266,17 @@ def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[s
         milestones = _milestones(doc.get('milestones'))
         if milestones is None:
             continue
+        speech = doc.get('speech')
+        if speech is not None and (not isinstance(speech, str)
+                                   or not 0 < len(speech.strip()) <= MAX_SPEECH):
+            continue
         years = doc.get('years_here')
         out[doc['npc_id']] = Curation(
             doc['npc_id'], doc.get('occupation'), doc.get('origin_region'),
             years if isinstance(years, int) and years > 0 else None,
             tuple(doc.get('places_visited') or ()), facts,
-            tuple(sorted(set(raw_affiliations))), standing, morale, milestones)
+            tuple(sorted(set(raw_affiliations))), standing, morale, milestones,
+            speech.strip() if speech else None)
     return out
 
 
@@ -371,6 +378,7 @@ class NpcIdentity:
     affiliations: tuple[str, ...] = ()   # ADR-0119 curated ties to places (e.g. ...:STAFF)
     home_names: tuple[str, ...] = ()     # CR-2026-004: where it lives and the regions above it
     visited_regions: tuple[str, ...] = ()  # CR-2026-012: regions it passed through (popular core)
+    speech: str | None = None            # CR-2026-033: curated way of talking (form only)
 
     @property
     def source(self) -> str:
@@ -473,7 +481,8 @@ def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None
                        tuple(getattr(curation, 'affiliations', ()) or ()) if curation else (),
                        tuple(title(r) for r in _chain(pack, home_region) if title(r))
                        if standing == HABITANTE else (),
-                       tuple(r for r in visited if title(r)))
+                       tuple(r for r in visited if title(r)),
+                       getattr(curation, 'speech', None) if curation else None)
 
 
 IdentityFactory = Callable[[str], dict]

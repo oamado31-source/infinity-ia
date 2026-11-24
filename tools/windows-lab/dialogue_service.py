@@ -94,7 +94,12 @@ from infinity_ai.quests.clock import hour_of, is_night  # noqa: E402
 from infinity_ai.quests.narrative import (  # noqa: E402
     advance, arrive, load_quests, mark_journal_shown, pending_journal, with_journal,
 )
-from infinity_ai.quests.presence import decide, dispatch  # noqa: E402
+from infinity_ai.quests.presence import (  # noqa: E402
+    arrival_plan, call_due, decide, dispatch, dispatch_call, record_arrival,
+)
+from infinity_ai.actions.gateway import (  # noqa: E402
+    ARR_RESREF, ActionRequest, parse_receipts, render_arrival_plan,
+)
 from infinity_ai.dialogue.disclosure import CLOSED_DISPOSITIONS  # noqa: E402
 from infinity_ai.personality.in_game import (  # noqa: E402
     profile_for, record_dialogue_start, resolve_speaker,
@@ -105,13 +110,15 @@ from infinity_ai.voice.session import VoiceSession  # noqa: E402
 from infinity_ai.voice.stt import WhisperServerStt, vocabulary_prompt  # noqa: E402
 from infinity_ai.state.store import CampaignStore  # noqa: E402
 from lab_ssh import (  # noqa: E402
-    OverrideWriter, RemoteShell, SshLogSource, live_manifest, now_iso, put_override_file,
+    OverrideWriter, RemoteShell, SshLogSource, grep_log, live_manifest, now_iso,
+    put_override_file,
     ssh_from_env,
 )
 
 FIELDS = (AREA_FIELD, GAME_TIME_FIELD, PARTY_FIELD)
 PENDING_WINDOW_MS = 55_000   # the in-game box gives up after 60 s
 MAX_BODY = 4096
+ARRIVAL_WAIT_S = 12.0        # ADR-0145: how long the module's arrival answers may take
 
 
 @dataclass(frozen=True)
@@ -301,10 +308,63 @@ class PresenceDirector(threading.Thread):
         print(f'{now_iso()} presenca por quest ligada: criaturas nossas instaladas '
               f'{sorted(templates)}')
         last_held: tuple[str, ...] = ()
+        plan: dict[str, tuple] = {}          # ADR-0145: action_id -> (decision, request)
+        written = None
+        entered: tuple[str | None, float] = (None, 0.0)
         while True:
             try:
                 view = self.observer.snapshot()
                 if view.observed and view.branch_id and view.area and view.game_time is not None:
+                    if entered[0] != view.area:
+                        entered = (view.area, time.monotonic())
+                    # ADR-0145: what the module made on entering this area, as the director would
+                    here = {a: e for a, e in plan.items() if e[1].area == view.area}
+                    answers = {}
+                    for aid in here:
+                        receipts = [r for r in parse_receipts('\n'.join(grep_log(
+                            self.ssh, self.args.game_root, f'INFAI-ACT .*{aid}', limit=5)))
+                            if r.action_id == aid and r.status in ('DONE', 'REFUSED')]
+                        if receipts:
+                            answers[aid] = receipts[-1]
+                    if here and len(answers) == len(here):
+                        made = sum(r.observed - r.before for r in answers.values()
+                                   if r.status == 'DONE' and r.observed is not None
+                                   and r.before is not None)
+                        for aid, (dec, req) in here.items():
+                            r = answers[aid]
+                            state = record_arrival(store, view.branch_id, dec, req, r,
+                                                   game_time=view.game_time, arrival_made=made)
+                            print(f'{now_iso()} chegada preparada {dec.quest_id}/'
+                                  f'{dec.presence.presence_id}: {r.before} -> {r.observed} em '
+                                  f'{req.area} (area {r.seen_before} -> {r.seen}): {state}')
+                            plan.pop(aid)
+                    elif here and time.monotonic() - entered[1] > ARRIVAL_WAIT_S:
+                        for aid, (dec, req) in here.items():   # some unanswered: record what came
+                            if aid in answers:
+                                record_arrival(store, view.branch_id, dec, req, answers[aid],
+                                               game_time=view.game_time)
+                            plan.pop(aid)                       # the director creates as before
+                    if any(e[1].area == view.area for e in plan.values()):
+                        time.sleep(1.0)
+                        continue
+                    wanted_now = arrival_plan(store, view.branch_id, self.observer.quests,
+                                              area=view.area, game_time=view.game_time,
+                                              templates=templates)
+                    keep = {(d.quest_id, d.presence.presence_id, r.area, r.count): aid
+                            for aid, (d, r) in plan.items()}
+                    plan = {}
+                    for d, r in wanted_now:
+                        aid = keep.get((d.quest_id, d.presence.presence_id, r.area, r.count),
+                                       r.action_id)
+                        plan[aid] = (d, ActionRequest(aid, r.op, r.area, r.name, r.cre, r.x, r.y,
+                                                      r.facing, r.count))
+                    text = render_arrival_plan([r for _, r in plan.values()])
+                    if text != written:
+                        put_override_file(self.ssh, self.args.game_root, f'{ARR_RESREF}.lua',
+                                          text.encode('utf-8'))
+                        written = text
+                        print(f'{now_iso()} plano de chegada: '
+                              f'{sorted((r.area, r.name, r.count) for _, r in plan.values())}')
                     decision, held = decide(store, view.branch_id, self.observer.quests,
                                             area=view.area, game_time=view.game_time)
                     if held != last_held and held:
@@ -319,6 +379,15 @@ class PresenceDirector(threading.Thread):
                         state = dispatch(store, view.branch_id, decision, transport=transport,
                                          templates=templates, game_time=view.game_time)
                         print(f'{now_iso()} presenca {decision.quest_id}/{p.presence_id}: {state}')
+                    else:                        # ADR-0144: a giver calling for help, if due
+                        quest = call_due(store, view.branch_id, self.observer.quests,
+                                         area=view.area, game_time=view.game_time)
+                        if quest is not None:
+                            state = dispatch_call(store, view.branch_id, quest,
+                                                  transport=transport, game_time=view.game_time)
+                            print(f'{now_iso()} chamado {quest.quest_id}: '
+                                  f'{quest.call.script_name} em {quest.call.area} '
+                                  f'(frase {quest.call.strref}): {state}')
             except Exception as exc:  # keep directing; a failed round leaves its events as they are
                 print(f'{now_iso()} presenca falhou: {type(exc).__name__}')
             time.sleep(max(self.args.interval, 2.0))
@@ -644,7 +713,7 @@ class Talker(threading.Thread):
                 unheld_titles=unheld, aliases=aliases, common_words=common_words(pack),
                 offer=self.observer.offers.get(speaker),
                 trust=trust.level, trust_own_only=trust.own_only,
-                quest_facts=story.facts,
+                quest_facts=story.facts, quest_now=story.fresh,
                 order=tuple(context_order(pack, known_now, npc_id=speaker, area=req.area,
                                           home_region=home,
                                           named=named_in(pack, known_now, req.text,

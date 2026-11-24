@@ -69,6 +69,8 @@ STANDING_TEXT = {
               'nem mora aqui; fala do que viveu e do que quer que descubram.'),
 }
 MAX_ATTEMPTS = 2
+QUEST_FACT_HINT = ('A resposta anterior deixou de fora o fato marcado (agora), que é o assunto '
+                   'desta fala. Responda de novo, em personagem, dizendo esse fato.')
 PLAYER_TURN, OWN_TURN = 'Jogador: ', 'Você: '      # CR-2026-019: who speaks in earlier turns
 
 
@@ -118,7 +120,11 @@ class DialogueResponse:
 def system_prompt(context: DialogueContext, ongoing: bool = False) -> str:
     persona = context.persona
     style = '; '.join(persona.style) or 'natural e breve'
-    facts = '\n'.join(f'{f.fact_id}: {f.text}' for f in context.facts) or \
+    # CR-2026-033: what a quest lets the person say in this line is its subject (marked by code)
+    now = any(f.event_id.startswith('quest:') for f in context.facts)
+    ordered = sorted(context.facts, key=lambda f: not f.event_id.startswith('quest:'))
+    facts = '\n'.join(f'{f.fact_id}: {"(agora) " if f.event_id.startswith("quest:") else ""}'
+                      f'{f.text}' for f in ordered) or \
         '(nenhum: você não se lembra de nada específico)'
     general = '\n'.join(
         f'{k.fact_id}: {"(sobre você) " if k.subject_id == persona.npc_id else ""}{k.text}'
@@ -189,9 +195,16 @@ def system_prompt(context: DialogueContext, ongoing: bool = False) -> str:
         # ADR-0132 (lab, 2026-11-17): the seller read its whole price list out loud.
         + (f'{11 if ongoing else 10}. Você vende o que está nos FATOS: se perguntarem, confirme '
            'como um comerciante e cite só o que foi perguntado, um ou dois itens com o preço; '
-           'não leia a lista inteira.\n' if context.offer is not None else '') +
+           'não leia a lista inteira.\n' if context.offer is not None else '')
+        + (f'{10 + bool(ongoing) + (context.offer is not None)}. Um fato marcado (agora) é o '
+           'assunto desta fala e precisa aparecer nela, mesmo que a pergunta seja sobre outra '
+           'coisa: diga-o antes de qualquer outro fato.\n' if now else '') +
         who +
         f'Responda em português do Brasil, em personagem, em 1 a 3 frases curtas. Estilo: {style}.\n'
+        # CR-2026-033: the curated way of talking, form only, shown in every line
+        + (f'Seu jeito de falar: {context.speech}. Mostre esse jeito na própria escrita da '
+           'frase, sem asteriscos, parênteses nem rubricas; ele é só forma: não acrescenta fato '
+           'nenhum e não deixa de fora o fato marcado (agora).\n' if context.speech else '') +
         f'FATOS:\n{facts}\n'
         f'CONHECIMENTO GERAL:\n{general}\n'
         f'CONHECIMENTO RESTRITO:\n{restricted}\n'
@@ -238,7 +251,8 @@ class DialogueEngine:
                          common_words: frozenset[str] = frozenset(),
                          offer: Offer | None = None,
                          trust_own_only: bool = False,
-                         quest_facts: tuple[str, ...] = ()) -> DialogueResponse:
+                         quest_facts: tuple[str, ...] = (),
+                         quest_now: tuple[str, ...] = ()) -> DialogueResponse:
         """A person in the in-game box: SPEC-006 profile for style, only acquired knowledge."""
         npc_id = request.npc_id if isinstance(request.npc_id, str) else ''
         return self._converse(npc_id, request.player_text, lambda: build_resident_context(
@@ -252,7 +266,7 @@ class DialogueEngine:
             question=request.player_text if isinstance(request.player_text, str) else '',
             unheld_titles=unheld_titles, aliases=aliases, order=order,
             common_words=common_words, offer=offer, trust_own_only=trust_own_only,
-            quest_facts=quest_facts),
+            quest_facts=quest_facts, quest_now=quest_now),
             display_name=request.display_name, history=history)
 
     def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,
@@ -299,6 +313,10 @@ class DialogueEngine:
                     *earlier, {'role': 'user', 'content': current}]
         base = len(messages)
         flags: list[str] = []
+        # CR-2026-033: a valid reply that leaves out the quest's fact (agora) is asked once more;
+        # if the second try is no better, the first valid reply stands (never the fallback).
+        now_ids = {f.fact_id for f in context.facts if f.event_id.startswith('quest:')}
+        kept = None
         for attempt in range(MAX_ATTEMPTS):
             try:
                 raw = self._provider.generate(messages)
@@ -307,6 +325,14 @@ class DialogueEngine:
                 return done(DialogueStatus.FALLBACK, context.persona.fallback,
                             'MODEL_UNAVAILABLE', context, flags=tuple(flags))
             verdict = validate_reply(raw, context, text)
+            if verdict.ok and now_ids and not now_ids & set(verdict.used_facts) \
+                    and attempt + 1 < MAX_ATTEMPTS:
+                kept = verdict
+                flags.append(f'attempt{attempt + 1}:QUEST_FACT_MISSING')
+                messages = messages[:base] + [{'role': 'system', 'content': QUEST_FACT_HINT}]
+                continue
+            if verdict.ok and kept is not None and not now_ids & set(verdict.used_facts):
+                verdict = kept                     # no better than the first: the first stands
             if verdict.ok:
                 return done(DialogueStatus.OK, verdict.speech, 'OK', context,
                             used_event_ids=tuple(fact_events[f] for f in verdict.used_facts),
@@ -315,6 +341,10 @@ class DialogueEngine:
             messages = messages[:base] + [{
                 'role': 'system',
                 'content': retry_hint(verdict.reasons)}]
+        if kept is not None:
+            return done(DialogueStatus.OK, kept.speech, 'OK', context,
+                        used_event_ids=tuple(fact_events[f] for f in kept.used_facts),
+                        flags=tuple(flags), unknown=kept.unknown)
         # ADR-0132: a seller that kept denying what it sells answers with its own goods instead.
         sold = offer_line(context.offer, text) if any(
             f.endswith('SELF_CLAIM:OFFER') for f in flags) else None

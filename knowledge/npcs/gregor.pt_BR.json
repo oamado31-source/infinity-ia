@@ -21,12 +21,17 @@
     {
       "source_id": "maintainer",
       "locator": "ADR-0141 aprovada em 2026-11-22 (\"Aprovar como proposta\"), D6: os três fatos como escritos na proposta."
+    },
+    {
+      "source_id": "maintainer",
+      "locator": "Teste da quest em 2026-11-24: jeito de falar de Gregor (CR-2026-033), aprovado pelo mantenedor."
     }
   ],
   "curation": {
     "status": "CHECKED",
     "checked_by": "mantenedor",
-    "checked_at": "2026-11-22"
+    "checked_at": "2026-11-24"
   },
-  "affiliations": []
+  "affiliations": [],
+  "speech": "desertor assustado e grato: fala baixo e rápido, olhando para a porta, frases curtas e diretas"
 }

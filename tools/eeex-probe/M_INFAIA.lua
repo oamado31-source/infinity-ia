@@ -2,7 +2,7 @@
 -- Infinity AI - portao P3 (ADR-0136): a primeira escrita no jogo, por um gateway minimo.
 --
 -- O servico grava em override\INFAIACT.lua so a tabela INFAI_ACT_Request, com literais ja
--- validados: {action_id, op, area, name, cre, x, y, facing, count}. Este modulo a rele a cada meio segundo
+-- validados: {action_id, op, area, name, cre, x, y, facing, count, strref}. Este modulo a rele a cada meio segundo
 -- e, para um action_id novo:
 --   SPAWN_CREATURE: o lider do grupo executa na hora a acao do proprio jogo, uma vez por copia
 --     (count, ADR-0143), todas no mesmo instante,
@@ -12,6 +12,12 @@
 --   DESPAWN: acha na area a criatura com o nosso nome de script e executa nela, na hora, DestroySelf();
 --   SET_HOSTILE (ADR-0142): executa Enemy() (acao do proprio jogo) nas criaturas vivas com o nosso
 --     nome; depois de 3 s conta as vivas (before) e as hostis (observed, alianca >= 200).
+--   CALL (ADR-0144): mostra sobre a cabeca de quem oferece a quest (criatura do jogo, pelo nome
+--     de script) uma frase do dialog.tlk; so exibicao, responde na hora;
+--   ESCAPE (ADR-0144): enfileira EscapeArea() nas nossas vivas com o nome; elas andam ate a saida
+--     mais proxima e somem; conta a cada segundo, ate 30 s, ate nao sobrar nenhuma;
+--   CHEGADA (ADR-0145): ao carregar uma area, cumpre o plano de chegada (INFAIARR.lua) dela: cria o
+--     que falta de cada nome nosso no mesmo instante e responde cada entrada como um SPAWN;
 --   COUNT (ADR-0140): so le. Conta na area as criaturas VIVAS com o nosso nome e responde na hora,
 --     sem executar nada. O seletor do jogo devolve tambem os corpos: o estado de morte (0x800,
 --     a mesma checagem da caixa) os tira da conta, de COUNT, de SPAWN e de DESPAWN.
@@ -35,8 +41,12 @@ INFAI_ACT_STATE_DEAD = 0x800     -- STATE.IDS: o seletor do jogo devolve tambem 
 INFAI_ACT_EVILCUTOFF = 200       -- EA.IDS: de 200 para cima e inimigo do grupo (ADR-0142)
 INFAI_ACT_MAX_COUNT = 8          -- ADR-0143: copias criadas juntas num pedido
 INFAI_ACT_COPY_STEP = 40         -- ADR-0143: pixels entre uma copia e a seguinte
+INFAI_ACT_ESCAPE_MS = 30000      -- ADR-0144: quanto a saida pela porta pode levar
+INFAI_ACT_ESCAPE_STEP_MS = 1000  -- ADR-0144: de quanto em quanto se conta durante a saida
+INFAI_ARR_SETTLE_MS = 300        -- ADR-0145: espera minima depois da troca de area
 
-INFAI_ACT_State = INFAI_ACT_State or { done = {}, check = nil, next_poll = 0 }
+INFAI_ACT_State = INFAI_ACT_State or { done = {}, check = nil, next_poll = 0, arrivals = {},
+	arr_area = nil }
 
 local function infai_json_string(s)
 	s = string.gsub(s, '[%c"\\]', function(c)
@@ -60,15 +70,16 @@ local function infai_act_emit(id, status, observed, reason, before, seen, seen_b
 end
 
 -- So o arquivo de pedido do servico e descartado do cache (como INFAIRSP na caixa).
-local function infai_act_drop_cached()
+local function infai_act_drop_cached(resref)
 	return pcall(function()
-		local res = EEex_Resource_Fetch("INFAIACT", "LUA")
+		local res = EEex_Resource_Fetch(resref or "INFAIACT", "LUA")
 		if res ~= nil then EngineGlobals.dimmDump(res) end
 	end)
 end
 
 local function infai_act_op_ok(op)
 	return op == "SPAWN_CREATURE" or op == "DESPAWN" or op == "COUNT" or op == "SET_HOSTILE"
+		or op == "CALL" or op == "ESCAPE"
 end
 
 local function infai_act_valid(req)
@@ -78,8 +89,19 @@ local function infai_act_valid(req)
 	if type(req.area) ~= "string" or not string.match(req.area, "^[A-Z0-9]+$") or #req.area > 8 then
 		return false
 	end
+	if type(req.name) ~= "string" or #req.name > 32 then return false end
+	if req.op == "CALL" then
+		-- ADR-0144: o nome de script de quem oferece a quest (do jogo, nunca nosso) e uma frase do
+		-- dialog.tlk; so exibicao.
+		if not string.match(req.name, "^[A-Z0-9_]+$") or string.match(req.name, "^INFAI_") then
+			return false
+		end
+		local r = req.strref
+		if type(r) ~= "number" or r ~= math.floor(r) or r < 0 or r > 999999 then return false end
+		return true
+	end
 	-- O nome e sempre nosso: INFAI_ e letras, numeros ou sublinhado, ate 32 caracteres.
-	if type(req.name) ~= "string" or #req.name > 32 or not string.match(req.name, "^INFAI_[A-Z0-9_]+$") then
+	if not string.match(req.name, "^INFAI_[A-Z0-9_]+$") then
 		return false
 	end
 	if req.op == "SPAWN_CREATURE" then
@@ -145,6 +167,66 @@ local function infai_act_find(area, name)
 	return found, seen
 end
 
+-- O lider executa na hora CreateCreature uma vez por copia, um passo ao lado a cada uma (ADR-0143).
+-- Devolve nil se deu certo, ou o motivo da recusa.
+local function infai_act_create(cre, x, y, facing, n)
+	local okl, leader = pcall(EEex_Sprite_GetInPortrait, 0)
+	if not okl or leader == nil then return "NO_PARTY" end
+	if x < 0 then
+		local okp = pcall(function() x, y = leader.m_pos.x + 60, leader.m_pos.y + 30 end)
+		if not okp then return "NO_POINT" end
+	end
+	for i = 0, n - 1 do
+		local xi = math.min(x + INFAI_ACT_COPY_STEP * i, 32767)
+		local action = string.format('CreateCreature("%s",[%d.%d],%d)', cre, xi, y, facing)
+		local okq = pcall(EEex_Action_ExecuteResponseStringOnAIBaseInstantly, action, leader)
+		if not okq then return "ACTION_FAILED" end
+	end
+	return nil
+end
+
+-- O lider do grupo ja esta nesta area (o motor o poe depois de trocar a area visivel).
+local function infai_act_leader_in(area)
+	local ok, same = pcall(function()
+		local leader = EEex_Sprite_GetInPortrait(0)
+		return leader ~= nil and EEex_UDEqual(leader.m_pArea, area)
+	end)
+	return ok and same == true
+end
+
+-- ADR-0145: ao carregar uma area do plano de chegada (INFAIARR), conta e cria no mesmo instante o
+-- que falta de cada nome, antes de o grupo dar o primeiro passo; cada entrada responde como um
+-- SPAWN (antes, depois e o total da area), depois da mesma espera.
+local function infai_arr_enter(area, name, now)
+	local st = INFAI_ACT_State
+	INFAI_ARR_Plan = nil
+	infai_act_drop_cached("INFAIARR")
+	pcall(Infinity_DoFile, "INFAIARR")
+	local plan = INFAI_ARR_Plan
+	if type(plan) ~= "table" then return end
+	for _, e in ipairs(plan) do
+		local req = type(e) == "table" and { action_id = e.action_id, op = "SPAWN_CREATURE",
+			area = e.area, name = e.name, cre = e.cre, x = e.x, y = e.y, facing = e.facing,
+			count = e.count } or nil
+		if req ~= nil and req.area == name and type(req.action_id) == "string"
+				and not st.done[req.action_id] and infai_act_valid(req) then
+			st.done[req.action_id] = true
+			local found, seen_before = infai_act_find(area, req.name)
+			local missing = req.count - #found
+			local refused = nil
+			if missing > 0 then
+				refused = infai_act_create(req.cre, req.x, req.y, req.facing, missing)
+			end
+			if refused ~= nil then
+				infai_act_emit(req.action_id, "REFUSED", nil, refused)
+			else
+				table.insert(st.arrivals, { id = req.action_id, name = req.name, before = #found,
+					seen_before = seen_before, at = now + INFAI_ACT_CHECK_MS })
+			end
+		end
+	end
+end
+
 local function infai_act_run(req, now)
 	local st = INFAI_ACT_State
 	local area = infai_act_area()
@@ -155,6 +237,37 @@ local function infai_act_run(req, now)
 	if req.op == "COUNT" then
 		local found, seen = infai_act_find(area, req.name)
 		infai_act_emit(req.action_id, "DONE", #found, nil, #found, seen)
+		return
+	end
+	if req.op == "CALL" then
+		-- ADR-0144: a frase sobre a cabeca, pela mensagem que o jogo usa nas falas de ambiente;
+		-- nada muda no jogo nem no save.
+		local targets = infai_act_find(area, req.name)
+		if #targets == 0 then
+			infai_act_emit(req.action_id, "REFUSED", 0, "NOT_FOUND")
+			return
+		end
+		for _, sprite in ipairs(targets) do
+			pcall(EEex_Sprite_DisplayTextRef, sprite, req.strref, { overHead = true })
+		end
+		infai_act_emit(req.action_id, "DONE", #targets, nil, #targets)
+		return
+	end
+	if req.op == "ESCAPE" then
+		-- ADR-0144: EscapeArea() anda ate a saida mais proxima e some la; nao e instantanea (a
+		-- criatura anda), entao vai na fila dela, nossa e fora de combate. A conta espera ate 30 s.
+		local targets, seen_before = infai_act_find(area, req.name)
+		if #targets == 0 then
+			infai_act_emit(req.action_id, "REFUSED", 0, "NOT_FOUND")
+			return
+		end
+		for _, sprite in ipairs(targets) do
+			pcall(EEex_Action_QueueResponseStringOnAIBase, "EscapeArea()", sprite)
+		end
+		infai_act_emit(req.action_id, "ACCEPTED", nil, nil)
+		INFAI_ACT_State.check = { id = req.action_id, name = req.name, before = #targets,
+			seen_before = seen_before, at = now + INFAI_ACT_ESCAPE_STEP_MS,
+			deadline = now + INFAI_ACT_ESCAPE_MS, op = "ESCAPE" }
 		return
 	end
 	if req.op == "SET_HOSTILE" then
@@ -174,29 +287,11 @@ local function infai_act_run(req, now)
 	local found_before, seen_before = infai_act_find(area, req.name)
 	local before = #found_before
 	if req.op == "SPAWN_CREATURE" then
-		local okl, leader = pcall(EEex_Sprite_GetInPortrait, 0)
-		if not okl or leader == nil then
-			infai_act_emit(req.action_id, "REFUSED", nil, "NO_PARTY")
+		-- ADR-0143: todas as copias no mesmo instante, antes que uma luta comece.
+		local refused = infai_act_create(req.cre, req.x, req.y, req.facing, req.count)
+		if refused ~= nil then
+			infai_act_emit(req.action_id, "REFUSED", nil, refused)
 			return
-		end
-		local x, y = req.x, req.y
-		if x < 0 then
-			local okp = pcall(function() x, y = leader.m_pos.x + 60, leader.m_pos.y + 30 end)
-			if not okp then
-				infai_act_emit(req.action_id, "REFUSED", nil, "NO_POINT")
-				return
-			end
-		end
-		-- ADR-0143: todas as copias no mesmo instante, antes que uma luta comece; cada uma um passo
-		-- ao lado da anterior, no mesmo modelo fixo de acao.
-		for i = 0, req.count - 1 do
-			local xi = math.min(x + INFAI_ACT_COPY_STEP * i, 32767)
-			local action = string.format('CreateCreature("%s",[%d.%d],%d)', req.cre, xi, y, req.facing)
-			local okq = pcall(EEex_Action_ExecuteResponseStringOnAIBaseInstantly, action, leader)
-			if not okq then
-				infai_act_emit(req.action_id, "REFUSED", nil, "ACTION_FAILED")
-				return
-			end
 		end
 	else
 		local targets = infai_act_find(area, req.name)
@@ -217,6 +312,29 @@ end
 function INFAI_ACT_Tick()
 	local st = INFAI_ACT_State
 	local now = Infinity_GetClockTicks()
+	-- ADR-0145: a area carregada mudou? Cumpre o plano de chegada dela, uma vez, quando o lider
+	-- ja esta nela (lab: na troca de area, o grupo ainda nao foi posto, e criar falha calado).
+	local here = infai_act_area()
+	local here_name = here ~= nil and infai_act_area_name(here) or nil
+	if here_name ~= st.arr_area then
+		st.arr_area = here_name
+		st.arr_wait = here_name ~= nil and { name = here_name, since = now } or nil
+	end
+	if st.arr_wait ~= nil and here_name == st.arr_wait.name
+			and now >= st.arr_wait.since + INFAI_ARR_SETTLE_MS and infai_act_leader_in(here) then
+		st.arr_wait = nil
+		infai_arr_enter(here, here_name, now)
+	end
+	local waiting = {}
+	for _, a in ipairs(st.arrivals) do
+		if now >= a.at and here ~= nil then
+			local found, seen = infai_act_find(here, a.name)
+			infai_act_emit(a.id, "DONE", #found, nil, a.before, seen, a.seen_before)
+		else
+			table.insert(waiting, a)
+		end
+	end
+	st.arrivals = waiting
 	if st.check ~= nil and now >= st.check.at then
 		local area = infai_act_area()
 		local count, seen, before = nil, nil, st.check.before
@@ -224,6 +342,10 @@ function INFAI_ACT_Tick()
 			local found
 			found, seen = infai_act_find(area, st.check.name)
 			count = #found
+			if st.check.op == "ESCAPE" and count > 0 and now < st.check.deadline then
+				st.check.at = now + INFAI_ACT_ESCAPE_STEP_MS   -- ainda andando ate a saida
+				return false
+			end
 			if st.check.op == "SET_HOSTILE" then        -- vivas (before) e hostis (observed)
 				before = #found
 				count = 0

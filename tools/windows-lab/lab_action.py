@@ -14,6 +14,8 @@ back to empty at the end. Use a disposable save (INFINITY-P3-DESCARTAVEL). Only 
   python tools/windows-lab/lab_action.py count --name INFAI_<id> --area AR0406     (ADR-0140, read only)
   python tools/windows-lab/lab_action.py hostile --name INFAI_<id> --area AR0406   (ADR-0142, Enemy())
   python tools/windows-lab/lab_action.py resume --quest <quest_id> --presence <presence_id>
+  python tools/windows-lab/lab_action.py call --name DRUNK1 --area AR0406 --strref N  (ADR-0144)
+  python tools/windows-lab/lab_action.py escape --name INFAI_<id> --area AR0416       (ADR-0144)
 
 ADR-0138: the presence director of the dialogue service (`--quest-presence`) uses the same request
 file through `SshTransport`. When the game does not confirm one of its requests, that presence is
@@ -33,12 +35,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import json  # noqa: E402
 
 from infinity_ai.actions.gateway import (  # noqa: E402
-    ACT_RESREF, ActionError, PLACEHOLDER_ACT, count_request, despawn_request, hostile_request,
-    load_templates,
+    ACT_RESREF, ESCAPE, ActionError, PLACEHOLDER_ACT, call_request, count_request,
+    despawn_request, escape_request, hostile_request, load_templates,
     owned_creatures,
     parse_receipts, record_requested, record_result, render_request, spawn_request,
 )
 from infinity_ai.bridge.manifest import build_fingerprint  # noqa: E402
+from infinity_ai.quests.narrative import load_quests  # noqa: E402
 from infinity_ai.quests.presence import record_resumed  # noqa: E402
 from infinity_ai.state.store import CampaignStore  # noqa: E402
 from lab_ssh import SshByteSource, grep_log, put_override_file, run_ps, ssh_from_env  # noqa: E402
@@ -91,8 +94,9 @@ class SshTransport:
     def send(self, req):
         put_override_file(self.ssh, self.game_root, f'{ACT_RESREF}.lua',
                           render_request(req).encode('utf-8'))
-        try:
-            return wait_receipt(self.ssh, self.game_root, req.action_id, self.timeout)
+        try:                                  # ADR-0144: the walk to the exit takes up to 30 s
+            return wait_receipt(self.ssh, self.game_root, req.action_id,
+                                self.timeout + (30 if req.op == ESCAPE else 0))
         finally:
             put_override_file(self.ssh, self.game_root, f'{ACT_RESREF}.lua',
                               PLACEHOLDER_ACT.encode('utf-8'))
@@ -100,7 +104,8 @@ class SshTransport:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('op', choices=('spawn', 'despawn', 'count', 'hostile', 'owned', 'resume'))
+    ap.add_argument('op', choices=('spawn', 'despawn', 'count', 'hostile', 'escape', 'call',
+                                   'owned', 'resume'))
     ap.add_argument('--quest', help='resume: the quest id (ADR-0138)')
     ap.add_argument('--presence', help='resume: the presence id in that quest')
     ap.add_argument('--cre')
@@ -110,6 +115,9 @@ def main() -> int:
     ap.add_argument('--y', type=int, default=-1)
     ap.add_argument('--facing', type=int, default=0)
     ap.add_argument('--count', type=int, default=1, help='spawn: copies created together (ADR-0143)')
+    ap.add_argument('--strref', type=int, default=-1, help='call: the line of dialog.tlk (ADR-0144)')
+    ap.add_argument('--local-quests', type=Path, default=Path.home() / '.infinity-ai' / 'quests' /
+                    'local', help='call: local quests that may declare calls too')
     ap.add_argument('--game-root', default=r'C:\InfinityLab\BG2EE-P1')
     ap.add_argument('--campaign', default='lab-s1f')
     ap.add_argument('--db', type=Path,
@@ -146,6 +154,12 @@ def main() -> int:
             req = count_request(args.name or '', args.area or '')
         elif args.op == 'hostile':
             req = hostile_request(args.name or '', args.area or '', owned=set(owned))
+        elif args.op == 'escape':
+            req = escape_request(args.name or '', args.area or '', owned=set(owned))
+        elif args.op == 'call':                   # only a pair a curated quest declares
+            quests = {**load_quests(args.local_quests), **load_quests()}
+            declared = {(q.call.script_name, q.call.strref) for q in quests.values() if q.call}
+            req = call_request(args.name or '', args.area or '', args.strref, declared=declared)
         else:
             req = despawn_request(args.name or '', args.area or '', owned=set(owned))
     except ActionError as exc:
@@ -161,7 +175,8 @@ def main() -> int:
     print(f'pedido {req.action_id}: {req.op} {req.cre or req.name} em {req.area} '
           f'(ramo {branch}, t={game_time})')
     try:
-        receipt = wait_receipt(ssh, args.game_root, req.action_id, args.timeout)
+        receipt = wait_receipt(ssh, args.game_root, req.action_id,
+                               args.timeout + (30 if req.op == ESCAPE else 0))
     finally:
         put_override_file(ssh, args.game_root, f'{ACT_RESREF}.lua', PLACEHOLDER_ACT.encode('utf-8'))
     state = record_result(store, branch, req, receipt,

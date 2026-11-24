@@ -3,7 +3,7 @@
   "quest_id": "sarevok-diary",
   "language": "pt_BR",
   "title": "O diário perdido de Sarevok",
-  "note": "SPEC-011, segundo corte: quest da campanha (proposta v4 de 2026-11-18 e montagem de 2026-11-24, aprovadas pelo mantenedor). Conteúdo da campanha, não cânone do jogo. As criaturas (IA*) são locais, no override do laboratório; a quest só as cita. O esconderijo aponta para a área nova IA0001 (CR-2026-034), que ainda não existe: até ela ser instalada, a quest para no passo do esconderijo.",
+  "note": "SPEC-011, segundo corte: quest da campanha (proposta v4 de 2026-11-18 e montagem de 2026-11-24, aprovadas pelo mantenedor). Conteúdo da campanha, não cânone do jogo. As criaturas (IA*) são locais, no override do laboratório; a quest só as cita. O esconderijo aponta para a área nova IA0001 (CR-2026-034), que ainda não existe: até ela ser instalada, a quest para no passo do esconderijo. ADR-0146: o esconderijo IA0001 é uma cópia da caverna dos piratas AR0310, contada como uma caverna sob o Farol das Docas; o grupo desce ao pé do Farol (ponto lido no jogo com lab_action.py where: 3832, 3210).",
   "giver": {
     "npc_id": "npc:drunk1",
     "offer_cues": [
@@ -115,15 +115,15 @@
         "diário",
         "diario"
       ],
-      "fact": "O grupo acabou de te salvar dos carcereiros. Agradeça primeiro. Depois conte: Kalessia, emissária de Sembia, comanda a célula do Trono de Ferro e guarda o diário de Sarevok; o esconderijo é um galpão vazio no norte das Docas. Diga que vai embora de Athkatla agora.",
-      "journal": "Gregor contou que a célula de Kalessia se esconde num galpão das Docas, e foi embora."
+      "fact": "O grupo acabou de te salvar dos carcereiros. Agradeça primeiro. Depois conte: Kalessia, emissária de Sembia, comanda a célula do Trono de Ferro e guarda o diário de Sarevok; o esconderijo é uma caverna sob o Farol das Docas, com a entrada ao pé dele. Diga que vai embora de Athkatla agora.",
+      "journal": "Gregor contou que a célula de Kalessia se esconde numa caverna sob o Farol das Docas, e foi embora."
     },
     {
       "step_id": "esconderijo",
       "arrive": {
         "area": "IA0001"
       },
-      "journal": "No galpão das Docas, Kalessia e os guardas do Trono de Ferro esperam."
+      "journal": "Ao pé do Farol das Docas, o grupo desceu à caverna onde Kalessia e os guardas do Trono de Ferro esperam."
     },
     {
       "step_id": "intimidacao",
@@ -244,6 +244,34 @@
     "status": "CHECKED",
     "checked_by": "mantenedor",
     "checked_at": "2026-11-24",
-    "approval": "Proposta v4 aprovada em 2026-11-18 (D1 a D11) e montagem aprovada em 2026-11-24: Garoll oferece sozinho, com o chamado sobre a cabeça (ADR-0144, frase 102877); novo texto de Tamoko; Gregor sai pela porta (ADR-0144); textos como estão. Cativeiro na AR0409 (casa vazia das Favelas, sem NPC nem script), escolhida pelo mantenedor em 2026-11-24: a AR0416 da v4 fica dentro da AR0415, que se entra pelas Docas. Textos de Garoll (oferta, espera e diário) mais concretos, aprovados pelo mantenedor no teste de 2026-11-24. Aceite mais amplo e Garoll pergunta se o grupo aceita (mantenedor, teste de 2026-11-24). Garoll não vai junto: fica na Coroa (mantenedor, teste de 2026-11-24). Fato do passo gregor-conta reescrito como fala direta (mantenedor, teste de 2026-11-24). ADR-0145 D2: fato de gregor-conta com agradecimento e lugar concreto. Presenças do casarão e do galpão desde o aceite, e chegadas sem passos anteriores (mantenedor, teste de 2026-11-24, ADR-0145). Esconderijo na AR0318 (galpão vazio no norte das Docas): a AR0331 se entra pela AR0330, que tem minotauros do jogo (mantenedor, 2026-11-24, ADR-0145 D3). A AR0318 tem pontos de surgimento de contrabandistas (RDSMUG) e não criou a célula; o esconderijo passa para a área nova IA0001 (CR-2026-034, aprovada em 2026-11-24)."
-  }
+    "approval": "Proposta v4 aprovada em 2026-11-18 (D1 a D11) e montagem aprovada em 2026-11-24: Garoll oferece sozinho, com o chamado sobre a cabeça (ADR-0144, frase 102877); novo texto de Tamoko; Gregor sai pela porta (ADR-0144); textos como estão. Cativeiro na AR0409 (casa vazia das Favelas, sem NPC nem script), escolhida pelo mantenedor em 2026-11-24: a AR0416 da v4 fica dentro da AR0415, que se entra pelas Docas. Textos de Garoll (oferta, espera e diário) mais concretos, aprovados pelo mantenedor no teste de 2026-11-24. Aceite mais amplo e Garoll pergunta se o grupo aceita (mantenedor, teste de 2026-11-24). Garoll não vai junto: fica na Coroa (mantenedor, teste de 2026-11-24). Fato do passo gregor-conta reescrito como fala direta (mantenedor, teste de 2026-11-24). ADR-0145 D2: fato de gregor-conta com agradecimento e lugar concreto. Presenças do casarão e do galpão desde o aceite, e chegadas sem passos anteriores (mantenedor, teste de 2026-11-24, ADR-0145). Esconderijo na AR0318 (galpão vazio no norte das Docas): a AR0331 se entra pela AR0330, que tem minotauros do jogo (mantenedor, 2026-11-24, ADR-0145 D3). A AR0318 tem pontos de surgimento de contrabandistas (RDSMUG) e não criou a célula; o esconderijo passa para a área nova IA0001 (CR-2026-034, aprovada em 2026-11-24). A AR0310 é uma caverna, não um porão: o esconderijo é uma gruta sob as Docas, com entrada por um alçapão no cais sul (mantenedor, 2026-11-24). A caverna fica sob o Farol das Docas, com a entrada ao pé dele (mantenedor, 2026-11-24)."
+  },
+  "passages": [
+    {
+      "passage_id": "farol",
+      "area": "AR0300",
+      "x": 3832,
+      "y": 3210,
+      "to": "IA0001",
+      "to_x": 351,
+      "to_y": 753,
+      "facing": 10,
+      "after": [
+        "gregor-conta"
+      ]
+    },
+    {
+      "passage_id": "saida-da-caverna",
+      "area": "IA0001",
+      "x": 230,
+      "y": 850,
+      "to": "AR0300",
+      "to_x": 3832,
+      "to_y": 3210,
+      "facing": 0,
+      "after": [
+        "gregor-conta"
+      ]
+    }
+  ]
 }

@@ -46,6 +46,7 @@ SLOT_TYPES = {'HELMET': {7}, 'ARMOR': {2}, 'SHIELD': {12}, 'GLOVES': {6},
               'CLOAK': {32}, **{f'WEAPON{i}': WEAPON_TYPES for i in range(1, 5)}}
 NEUTRAL_EA = 128
 ENEMY_EA = 255                       # ADR-0142: born hostile
+SOUNDSET, SOUNDSET_SLOTS = 0xA4, 100  # CRE V1.0: the lines said on select, attack, death...
 # ADR-0142: the five script slots of a CRE V1.0, by name, and the meminfo spell types.
 SCRIPT_SLOTS = {'override': 0x248, 'class': 0x250, 'race': 0x258, 'general': 0x260,
                 'default': 0x268}
@@ -86,6 +87,7 @@ class Sheet:
     pinned: tuple[tuple[str, str, str], ...] = ()      # ADR-0141: (slot, name, resref) fixed locally
     scripts: tuple[tuple[str, str], ...] = ()          # ADR-0142: (slot, BCS name) of the build
     spells: tuple[tuple[str, int], ...] = ()           # ADR-0142: (SPL resref, memorized count)
+    silent: bool = False                               # no lines of the body's soundset (lab)
 
 
 @dataclass(frozen=True)
@@ -185,6 +187,9 @@ def parse_sheet(doc: object) -> Sheet:
                 or ref.upper() in {r for r, _ in spells}:
             raise ActionError('BAD_SHEET_SPELLS')
         spells.append((ref.upper(), count))
+    sounds = doc.get('sounds')
+    if sounds not in (None, 'silent'):
+        raise ActionError('BAD_SHEET_SOUNDS')
     natural_ac = _int(doc, 'natural_ac', -10, 10) if 'natural_ac' in doc else 10
     str_extra = _int(doc, 'str_extra', 0, 100) if 'str_extra' in doc else 0
     return Sheet(
@@ -196,7 +201,8 @@ def parse_sheet(doc: object) -> Sheet:
         _int(doc, 'gold', 0, 10**6), _int(doc, 'morale', 0, 20),
         tuple(_int(abilities, k, 1, 25) for k in ('str', 'dex', 'con', 'int', 'wis', 'cha')),
         tuple(_int(saves, k, 1, 20) for k in ('death', 'wands', 'poly', 'breath', 'spells')),
-        tuple(items), colors, natural_ac, str_extra, tuple(pinned), tuple(scripts), tuple(spells))
+        tuple(items), colors, natural_ac, str_extra, tuple(pinned), tuple(scripts), tuple(spells),
+        sounds == 'silent')
 
 
 def choose_item(slot: str, name: str, candidates: list[tuple[str, int]],
@@ -276,6 +282,8 @@ def build_creature(base: bytes, sheet: Sheet, *, script_name: str, name_strref: 
         head[0x271], head[0x272] = 1, sheet.race
     head[0x275], head[0x27B] = sheet.gender, sheet.alignment
     head[0x2CC:0x2D4] = bytes(8)                                     # no game dialogue
+    if sheet.silent:            # the body's lines are someone else's voice (lab, 2026-11-24)
+        head[SOUNDSET:SOUNDSET + 4 * SOUNDSET_SLOTS] = b'\xff' * (4 * SOUNDSET_SLOTS)
     worn_of = dict((s, r) for s, r in pairs if s != INVENTORY)
     order = [(SLOTS[s], worn_of[s]) for s in SLOTS if s in worn_of]
     order += list(zip(INVENTORY_SLOTS, [r for s, r in pairs if s == INVENTORY]))

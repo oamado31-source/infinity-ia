@@ -27,14 +27,15 @@ which only move the quest by its existing rules (D1). Events carry the cause, ne
 """
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, replace
 from typing import Protocol
 
 from ..actions.gateway import (
     CALL, CONFIRMED, COUNT, DONE, FAILED, REMOVALS, REQUESTED, SET_HOSTILE, SPAWN, ActionError,
     ActionReceipt, ActionRequest, call_request, count_request, creature_counts, despawn_request,
-    escape_request, hostile_request, owned_creatures, record_requested, record_result,
-    spawn_request,
+    PassageEntry, check_passage, escape_request, hostile_request, owned_creatures,
+    record_requested, record_result, spawn_request,
 )
 from ..state.store import CampaignStore
 from .clock import is_night
@@ -329,6 +330,25 @@ def record_arrival(store: CampaignStore, branch_id: str, decision: Decision, req
                          key=req.action_id, host_epoch=host_epoch)
     return state
 
+
+def open_passages(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQuest]
+                  ) -> tuple[PassageEntry, ...]:
+    """ADR-0146: the passages the quests have opened on this branch (accepted, not resolved, and
+    their steps done), each with a stable id for the module's answers."""
+    out: list[PassageEntry] = []
+    for quest in quests.values():
+        if not quest.passages:
+            continue
+        state = state_of(store, branch_id, quest.quest_id)
+        if not state.accepted or state.resolved:
+            continue
+        for p in quest.passages:
+            if set(p.after) <= state.steps_done:
+                pid = hashlib.sha1(f'{quest.quest_id}|{p.passage_id}'.encode()).hexdigest()[:10]
+                out.append(check_passage(PassageEntry(pid, p.area, p.x, p.y, p.to, p.to_x,
+                                                      p.to_y, p.facing)))
+    return tuple(out)
+
 def call_due(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQuest], *,
              area: str | None, game_time: int | None) -> NarrativeQuest | None:
     """ADR-0144: a quest whose giver should call for help now: not yet accepted, the party in
@@ -401,5 +421,5 @@ def dispatch(store: CampaignStore, branch_id: str, decision: Decision, *, transp
 
 
 __all__ = ['ENTER', 'LEAVE', 'VERIFY', 'DEFEAT_WATCH', 'DEFEAT', 'HOSTILE', 'SUSPENDED', 'RESUMED', 'Decision', 'PresenceStatus', 'Transport',
-           'arrival_plan', 'call_due', 'decide', 'record_arrival', 'dispatch', 'dispatch_call', 'record_resumed', 'record_suspended', 'request_for', 'status_of',
+           'arrival_plan', 'call_due', 'open_passages', 'decide', 'record_arrival', 'dispatch', 'dispatch_call', 'record_resumed', 'record_suspended', 'request_for', 'status_of',
            'wanted']

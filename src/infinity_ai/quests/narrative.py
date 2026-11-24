@@ -46,6 +46,7 @@ _AREA = re.compile(r'[A-Z0-9]{1,8}')
 _CRE = re.compile(r'IA[A-Z0-9]{1,6}')
 _OWN_NAME = re.compile(r'INFAI_[A-Z0-9_]{1,26}')
 _GAME_NAME = re.compile(r'[A-Z0-9_]{1,32}')
+_OUR_AREA = re.compile(r'IA\d{4}')                   # ADR-0146: an area of ours
 START_ACCEPTED, END_RESOLVED = 'ACCEPTED', 'RESOLVED'
 TALK, ARRIVE, DEFEATED = 'TALK', 'ARRIVE', 'DEFEATED'
 WHEN_ANY, WHEN_NIGHT = 'ANY', 'NIGHT'
@@ -87,6 +88,21 @@ class Presence:
 
 
 @dataclass(frozen=True)
+class Passage:
+    """ADR-0146: a way into or out of an area of ours, open once its steps are done: the party
+    leader standing still at (x, y) of `area` takes the party to (to_x, to_y) of `to`."""
+    passage_id: str
+    area: str
+    x: int
+    y: int
+    to: str
+    to_x: int
+    to_y: int
+    facing: int = 0
+    after: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class Call:
     """ADR-0144: the giver calls for help over its head, with a line of the game's dialog.tlk,
     in its area, on entering and every `every` ticks, until the quest is accepted."""
@@ -114,6 +130,7 @@ class NarrativeQuest:
     milestone: str
     presence: tuple[Presence, ...] = ()
     call: Call | None = None
+    passages: tuple[Passage, ...] = ()
 
 
 def _norm(text: str) -> str:
@@ -193,6 +210,33 @@ def _chained(steps: list[Step]) -> bool:
             return False
         seen.setdefault(s.npc_id, []).append(s.step_id)
     return True
+
+
+def _passages(raw: object, step_ids: set[str]) -> tuple[Passage, ...] | None:
+    """ADR-0146: the quest's passages, strictly; only into or out of an area of ours."""
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        return None
+    out: list[Passage] = []
+    keys = {'passage_id', 'area', 'x', 'y', 'to', 'to_x', 'to_y', 'facing', 'after'}
+    for item in raw:
+        if not isinstance(item, dict) or not set(item) <= keys:
+            return None
+        pid, area, to = item.get('passage_id'), item.get('area'), item.get('to')
+        numbers = [item.get(k) for k in ('x', 'y', 'to_x', 'to_y')] + [item.get('facing', 0)]
+        after = item.get('after', [])
+        if not (isinstance(pid, str) and _ID.fullmatch(pid) and isinstance(area, str)
+                and _AREA.fullmatch(area) and isinstance(to, str) and _AREA.fullmatch(to)
+                and area != to and (_OUR_AREA.fullmatch(area) or _OUR_AREA.fullmatch(to))
+                and all(isinstance(n, int) and not isinstance(n, bool) for n in numbers)
+                and all(0 <= n <= 32767 for n in numbers[:4]) and 0 <= numbers[4] <= 15
+                and isinstance(after, list) and all(a in step_ids for a in after)
+                and pid not in {p.passage_id for p in out}):
+            return None
+        out.append(Passage(pid, area, numbers[0], numbers[1], to, numbers[2], numbers[3],
+                           numbers[4], tuple(after)))
+    return tuple(out)
 
 
 def _call(raw: object) -> Call | None | bool:
@@ -283,7 +327,8 @@ def parse_quest(doc: object) -> NarrativeQuest | None:
         turn_cues, turn_fact, turn_journal = fields
     presence = _presence(doc.get('presence'), {s.step_id for s in steps})
     call = _call(doc.get('call'))
-    if presence is None or call is False:
+    passages = _passages(doc.get('passages'), {s.step_id for s in steps})
+    if presence is None or call is False or passages is None:
         return None
     fallen = [s.presence_id for s in steps if s.kind == DEFEATED]
     if any(f not in {p.presence_id for p in presence} for f in fallen) \
@@ -291,7 +336,7 @@ def parse_quest(doc: object) -> NarrativeQuest | None:
         return None
     return NarrativeQuest(qid, title, area, giver_id, offer_cues, offer_fact, accept_cues,
                           waiting, accept_journal, tuple(steps), turn_cues, turn_fact,
-                          turn_journal, doc['milestone'], presence, call or None)
+                          turn_journal, doc['milestone'], presence, call or None, passages)
 
 
 def load_quests(base: Path = DEFAULT_QUEST_DIR) -> dict[str, NarrativeQuest]:

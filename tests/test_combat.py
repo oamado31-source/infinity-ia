@@ -93,6 +93,22 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(ctx.exception.code, 'NO_SPELL_SLOT')
 
 
+class SoundsTests(unittest.TestCase):
+    def test_a_silent_sheet_has_no_lines_of_the_body(self):
+        body = bytearray(body_with_spell_levels())
+        struct.pack_into('<i', body, 0xA4 + 4 * 26, 61799)              # "Oh... e aí?"
+        loud = build_creature(bytes(body), parse_sheet(MAGE), script_name='INFAI_T',
+                              name_strref=1, animation=0x6210, items={}, spell_info=INFO)
+        self.assertEqual(struct.unpack_from('<i', loud, 0xA4 + 4 * 26)[0], 61799)
+        quiet = build_creature(bytes(body), parse_sheet(dict(MAGE, sounds='silent')),
+                               script_name='INFAI_T', name_strref=1, animation=0x6210, items={},
+                               spell_info=INFO)
+        self.assertEqual({struct.unpack_from('<i', quiet, 0xA4 + 4 * k)[0] for k in range(100)},
+                         {-1})
+        with self.assertRaises(ActionError) as ctx:
+            parse_sheet(dict(MAGE, sounds='loud'))
+        self.assertEqual(ctx.exception.code, 'BAD_SHEET_SOUNDS')
+
 DOC = json.loads((ROOT / 'knowledge' / 'quests' / 'bernard-brooch.pt_BR.json').read_text())
 CELL = {'presence_id': 'celula', 'cre': 'IATESTE', 'name': 'INFAI_TESTE', 'area': 'AR0406',
         'copies': 2, 'hostile_from': 'ask-yarin'}

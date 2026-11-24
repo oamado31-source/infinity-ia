@@ -52,8 +52,9 @@ class Game:
             return ActionReceipt(req.action_id, 'DONE', n, None, n)
         self.writes.append((req.op, req.name))
         before = self.here.get(req.name, 0)
-        self.here[req.name] = before + 1 if req.op == SPAWN else 0
-        return ActionReceipt(req.action_id, 'DONE', self.here[req.name], None, before)
+        self.here[req.name] = before + req.count if req.op == SPAWN else 0
+        return ActionReceipt(req.action_id, 'DONE', self.here[req.name], None, before,
+                             40 + self.here[req.name], 40 + before)   # the area's total
 
 
 class FormatTests(unittest.TestCase):
@@ -154,11 +155,11 @@ class CountTests(unittest.TestCase):
         self.assertEqual(self.rules(), [VERIFY])
         self.assertEqual(self.game.writes, [])
 
-    def test_copies_one_at_a_time_and_all_leave_together(self):
+    def test_copies_come_together_and_all_leave_together(self):
         self.use(GUARDS)
         self.say('Tem trabalho?')
         self.say('Aceito.')
-        self.assertEqual(self.rules(), [VERIFY, ENTER, ENTER])
+        self.assertEqual(self.rules(), [VERIFY, ENTER])                 # ADR-0143: one request
         self.assertEqual(self.game.here['INFAI_GUARDA'], 2)
         self.game.here['INFAI_GUARDA'] = 1                               # one lost, no defeat step
         self.enter_area()
@@ -171,7 +172,7 @@ class CountTests(unittest.TestCase):
         self.use(GUARDS, steps=[FELL])
         self.say('Tem trabalho?')
         self.say('Aceito.')
-        self.assertEqual(self.rules(), [VERIFY, ENTER, ENTER])
+        self.assertEqual(self.rules(), [VERIFY, ENTER])
         self.assertEqual(self.rules(), [])                              # watch not due yet
         self.game.here['INFAI_GUARDA'] = 1                               # one fell
         self.t += WATCH_EVERY
@@ -185,7 +186,7 @@ class CountTests(unittest.TestCase):
         self.enter_area()
         self.t += WATCH_EVERY
         self.assertEqual(self.rules(), [])                              # gone for good
-        self.assertEqual(self.game.writes, [(SPAWN, 'INFAI_GUARDA')] * 2)
+        self.assertEqual(self.game.writes, [(SPAWN, 'INFAI_GUARDA')])   # one request, two
 
     def test_the_quest_removing_them_is_not_a_defeat(self):
         self.use({**GUARDS, 'until': 'ask-yarin'}, steps=[FELL])

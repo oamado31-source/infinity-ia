@@ -11,11 +11,15 @@ Two operations only, both validated by code and confirmed by the host:
 The request goes to the game as `override/INFAIACT.lua`: one table of validated literals, never
 text to execute. The EEex module (`tools/eeex-probe/M_INFAIA.lua`) builds the engine action from a
 fixed template and answers in the log (`INFAI-ACT {json}`), counting our creatures with that name in
-the area before and after. One more (SPAWN) or none left (DESPAWN) is the host's confirmation; without it nothing counts as done, and nothing is resent
-blindly. In this gate only the maintainer dispatches, by a lab command (D2). ADR-0138: the code of a
+the area before and after. The copies asked (SPAWN) or none left (DESPAWN) is the host's
+confirmation; without it nothing counts as done, and nothing is resent blindly. In this gate only the maintainer dispatches, by a lab command (D2). ADR-0138: the code of a
 curated quest may dispatch too (the presence director), and the request then carries its cause.
-ADR-0142: SET_HOSTILE queues the game's own Enemy() on our creatures with a name; the module counts
+ADR-0142: SET_HOSTILE runs the game's own Enemy() on our creatures with a name; the module counts
 how many living ones there are (before) and how many are hostile after (observed).
+ADR-0143: a SPAWN creates `count` copies at the same instant (lab: copies asked one per cycle were
+lost once the first, born hostile, started a fight), and it holds only when both counts rise by
+exactly that number: ours with the name, and every creature of the area (`seen_before` -> `seen`).
+Our count alone once confirmed a creation that never happened (evidence S2d).
 """
 from __future__ import annotations
 
@@ -54,6 +58,7 @@ CRE_STATUS = 0x20                   # CRE V1.0: STATE.IDS flags
 DEATH_STATES = 0x00000FC0           # dead, stone, frozen, exploding... (lab: DPMALE is a corpse)
 _REASON = re.compile(r'[A-Z_]{1,32}')
 MAX_COORD = 32767
+MAX_COUNT = 8                       # ADR-0143: as many as a presence's copies
 
 
 class ActionError(ValueError):
@@ -74,6 +79,7 @@ class ActionRequest:
     x: int = -1               # -1: near the party leader
     y: int = -1
     facing: int = 0
+    count: int = 1            # ADR-0143, SPAWN only: copies created at the same instant
 
 
 def new_action_id() -> str:
@@ -96,7 +102,8 @@ def make_template(source: bytes, script_name: str) -> bytes:
 
 
 def spawn_request(cre: str, area: str, *, x: int = -1, y: int = -1, facing: int = 0,
-                  templates: dict[str, str], action_id: str | None = None) -> ActionRequest:
+                  templates: dict[str, str], action_id: str | None = None,
+                  count: int = 1) -> ActionRequest:
     """A valid SPAWN_CREATURE, or ActionError. `templates`: our creature files deployed in this
     build (resref -> the script name inside the file)."""
     cre, area = (cre or '').upper(), (area or '').upper()
@@ -118,7 +125,9 @@ def spawn_request(cre: str, area: str, *, x: int = -1, y: int = -1, facing: int 
         raise ActionError('BAD_POINT')
     if isinstance(facing, bool) or not isinstance(facing, int) or not 0 <= facing <= 15:
         raise ActionError('BAD_FACING')
-    return ActionRequest(action_id, SPAWN, area, templates[cre], cre, x, y, facing)
+    if isinstance(count, bool) or not isinstance(count, int) or not 1 <= count <= MAX_COUNT:
+        raise ActionError('BAD_COUNT')
+    return ActionRequest(action_id, SPAWN, area, templates[cre], cre, x, y, facing, count)
 
 
 def despawn_request(name: str, area: str, *, owned: set[str] | frozenset[str],
@@ -164,13 +173,15 @@ def render_request(req: ActionRequest) -> str:
     """Contents of `override/INFAIACT.lua`: escaped literals only (like INFAIRSP.lua)."""
     if req.op not in OPERATIONS or not _ID.fullmatch(req.action_id) \
             or not _NAME.fullmatch(req.name) or not _AREA.fullmatch(req.area) \
-            or (req.op == SPAWN and not _TEMPLATE.fullmatch(req.cre)):
+            or (req.op == SPAWN and not _TEMPLATE.fullmatch(req.cre)) \
+            or isinstance(req.count, bool) or not isinstance(req.count, int) \
+            or not 1 <= req.count <= MAX_COUNT or (req.op != SPAWN and req.count != 1):
         raise ActionError('BAD_REQUEST')
     return ('INFAI_ACT_Request = {'
             f'action_id = {lua_string(req.action_id)}, op = {lua_string(req.op)}, '
             f'area = {lua_string(req.area)}, name = {lua_string(req.name)}, '
             f'cre = {lua_string(req.cre)}, x = {int(req.x)}, y = {int(req.y)}, '
-            f'facing = {int(req.facing)}}}\n')
+            f'facing = {int(req.facing)}, count = {int(req.count)}}}\n')
 
 
 @dataclass(frozen=True)
@@ -180,6 +191,8 @@ class ActionReceipt:
     observed: int | None      # how many creatures with our name the area holds after the action
     reason: str | None = None
     before: int | None = None  # how many it held before (DONE)
+    seen: int | None = None   # ADR-0143: every creature of the area after (DONE)
+    seen_before: int | None = None   # and before the action
 
 
 def parse_receipt(line: str) -> ActionReceipt | None:
@@ -195,15 +208,20 @@ def parse_receipt(line: str) -> ActionReceipt | None:
         return None
     action_id, status = doc.get('action_id'), doc.get('status')
     observed, reason, before = doc.get('observed'), doc.get('reason'), doc.get('before')
+    seen, seen_before = doc.get('seen'), doc.get('seen_before')
     if not isinstance(action_id, str) or not _ID.fullmatch(action_id) or status not in STATUSES:
         return None
     for count in (observed, before):
         if count is not None and (isinstance(count, bool) or not isinstance(count, int)
                                   or not 0 <= count <= 99):
             return None
+    for total in (seen, seen_before):
+        if total is not None and (isinstance(total, bool) or not isinstance(total, int)
+                                  or not 0 <= total <= 9999):
+            return None
     if reason is not None and (not isinstance(reason, str) or not _REASON.fullmatch(reason)):
         return None
-    return ActionReceipt(action_id, status, observed, reason, before)
+    return ActionReceipt(action_id, status, observed, reason, before, seen, seen_before)
 
 
 def parse_receipts(text: str) -> list[ActionReceipt]:
@@ -211,7 +229,8 @@ def parse_receipts(text: str) -> list[ActionReceipt]:
 
 
 def confirmed(req: ActionRequest, receipt: ActionReceipt) -> bool:
-    """The host's word that the action happened: one more of ours (SPAWN), or none left.
+    """The host's word that the action happened: `count` more of ours (SPAWN), or none left.
+    ADR-0143: a SPAWN holds only if the whole area also grew by exactly `count`.
     ADR-0138: for DESPAWN, the module's NOT_FOUND (in the right area, it counted none) is also the
     host's word that none is left: the branch believed one present that the loaded save does not
     hold (a save of another timeline, with a later game time, inherits the record; lab 2026-11-22)."""
@@ -219,7 +238,9 @@ def confirmed(req: ActionRequest, receipt: ActionReceipt) -> bool:
         return False
     if req.op == SPAWN:
         return receipt.status == DONE and receipt.before is not None \
-            and receipt.observed == receipt.before + 1
+            and receipt.observed == receipt.before + req.count \
+            and receipt.seen is not None and receipt.seen_before is not None \
+            and receipt.seen == receipt.seen_before + req.count
     if req.op == COUNT:                       # the count itself is the host's word
         return receipt.status == DONE
     if req.op == SET_HOSTILE:                 # every living one of ours with the name is hostile
@@ -249,6 +270,8 @@ def record_requested(store: CampaignStore, branch_id: str, req: ActionRequest, *
         raise ActionError('NO_GAME_TIME')
     payload = _with_cause({'action_id': req.action_id, 'op': req.op, 'area': req.area,
                            'name': req.name, 'cre': req.cre, 'policy': POLICY}, cause)
+    if req.count != 1:
+        payload['count'] = req.count
     with store.transaction():
         store.append_event(branch_id=branch_id, host_epoch=host_epoch, event_type=REQUESTED,
                            category='CAMPAIGN_OBSERVATION', game_time=game_time, payload=payload,
@@ -270,6 +293,10 @@ def record_result(store: CampaignStore, branch_id: str, req: ActionRequest,
                'cre': req.cre, 'observed': receipt.observed, 'before': receipt.before,
                'reason': receipt.reason,
                'policy': POLICY}
+    if req.count != 1:
+        payload['count'] = req.count
+    if receipt.seen is not None:                 # ADR-0143: the area's total, for the record
+        payload['seen'], payload['seen_before'] = receipt.seen, receipt.seen_before
     _with_cause(payload, cause)
     with store.transaction():
         store.append_event(branch_id=branch_id, host_epoch=host_epoch, event_type=event_type,

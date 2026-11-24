@@ -19,7 +19,7 @@ from infinity_ai.actions.gateway import (  # noqa: E402
 )
 from infinity_ai.quests.narrative import advance, parse_quest  # noqa: E402
 from infinity_ai.quests.presence import (  # noqa: E402
-    COUNT_RULES, ENTER, HOSTILE, VERIFY, decide, dispatch,
+    COUNT_RULES, DEFEAT_WATCH, ENTER, HOSTILE, VERIFY, WATCH_EVERY, decide, dispatch,
 )
 from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
 from test_creatures import SHEET, base_cre  # noqa: E402
@@ -110,8 +110,9 @@ class Game:
             self.hostile = self.here
             return ActionReceipt(req.action_id, 'DONE', self.hostile, None, self.here)
         before = self.here
-        self.here = before + 1 if req.op == SPAWN else 0
-        return ActionReceipt(req.action_id, 'DONE', self.here, None, before)
+        self.here = before + req.count if req.op == SPAWN else 0
+        return ActionReceipt(req.action_id, 'DONE', self.here, None, before,
+                             40 + self.here, 40 + before)
 
 
 class HostileFromTests(unittest.TestCase):
@@ -149,15 +150,116 @@ class HostileFromTests(unittest.TestCase):
             dict(CELL, hostile_from='passo-inventado')])))
         self.say('npc:cre-bernard', 'Tem trabalho?')
         self.say('npc:cre-bernard', 'Aceito.')
-        self.assertEqual(self.rules(), [VERIFY, ENTER, ENTER])          # neutral for now
+        self.assertEqual(self.rules(), [VERIFY, ENTER])                 # both, neutral for now
         self.assertEqual(self.game.hostile, 0)
         self.say('npc:yarin', 'Quem furtou o broche de Bernard?')        # the step is done
         self.assertEqual(self.rules(), [HOSTILE])
         self.assertEqual(self.game.hostile, 2)
         self.assertEqual(self.rules(), [])                              # never twice
         self.assertNotIn(HOSTILE, COUNT_RULES)
-        self.assertEqual(self.game.writes, [SPAWN, SPAWN, SET_HOSTILE])
+        self.assertEqual(self.game.writes, [SPAWN, SET_HOSTILE])
 
+
+
+class Many:
+    """Several of our names at once, with the area's total (ADR-0143)."""
+
+    def __init__(self):
+        self.here, self.hostile, self.writes, self.other = {}, {}, [], 40
+
+    def send(self, req):
+        n = self.here.get(req.name, 0)
+        total = self.other + sum(self.here.values())
+        if req.op == COUNT:
+            return ActionReceipt(req.action_id, 'DONE', n, None, n, total)
+        self.writes.append((req.op, req.name, req.count))
+        if req.op == SET_HOSTILE:
+            self.hostile[req.name] = n
+            return ActionReceipt(req.action_id, 'DONE', n, None, n, total)
+        self.here[req.name] = n + req.count if req.op == SPAWN else 0
+        return ActionReceipt(req.action_id, 'DONE', self.here[req.name], None, n,
+                             self.other + sum(self.here.values()), total)
+
+
+LEADER = {'presence_id': 'lider', 'cre': 'IALIDER', 'name': 'INFAI_LIDER', 'area': 'AR0406',
+          'hostile_from': 'ask-yarin'}
+GUARDS = {'presence_id': 'guardas', 'cre': 'IAGUARDA', 'name': 'INFAI_GUARDA', 'area': 'AR0406',
+          'copies': 3, 'hostile_from': 'ask-yarin'}
+FALLS = [{'step_id': 'lider-caiu', 'defeated': {'presence': 'lider'}, 'journal': 'O líder caiu.'},
+         {'step_id': 'guardas-cairam', 'defeated': {'presence': 'guardas'},
+          'journal': 'Os guardas caíram.'}]
+
+
+class TogetherTests(unittest.TestCase):
+    """ADR-0143: the copies come in one request, and every presence a step turns goes hostile
+    before anyone's defeat is watched (lab S2d: the agents turned 25 s after Kalessia)."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.store = CampaignStore.open(Path(tmp.name) / 'c.sqlite3', 'lab')
+        self.addCleanup(self.store.close)
+        doc = copy.deepcopy(DOC)
+        doc['presence'] = [LEADER, GUARDS]
+        doc['steps'] = doc['steps'] + FALLS
+        quest = parse_quest(doc)
+        self.quests = {quest.quest_id: quest}
+        self.game, self.t = Many(), 100
+
+    def say(self, who, text):
+        self.t += 10
+        advance(self.store, ROOT_BRANCH, self.quests, speaker=who, text=text, area='AR0406',
+                game_time=self.t)
+
+    def rules(self, limit=3):
+        out = []
+        for _ in range(limit):
+            self.t += 1
+            decision, _ = decide(self.store, ROOT_BRANCH, self.quests, area='AR0406',
+                                 game_time=self.t)
+            if decision is None:
+                break
+            dispatch(self.store, ROOT_BRANCH, decision, transport=self.game,
+                     templates={'IALIDER': 'INFAI_LIDER', 'IAGUARDA': 'INFAI_GUARDA'},
+                     game_time=self.t)
+            out.append((decision.rule, decision.presence.presence_id))
+        return out
+
+    def test_copies_together_and_hostile_before_any_watch(self):
+        self.say('npc:cre-bernard', 'Tem trabalho?')
+        self.say('npc:cre-bernard', 'Aceito.')
+        self.rules(limit=8)
+        self.assertIn((SPAWN, 'INFAI_GUARDA', 3), self.game.writes)    # all three at once
+        self.assertEqual(self.game.here, {'INFAI_LIDER': 1, 'INFAI_GUARDA': 3})
+        self.say('npc:yarin', 'Quem furtou o broche de Bernard?')
+        self.t += WATCH_EVERY                                          # both watches are due
+        self.assertEqual(self.rules(), [(HOSTILE, 'lider'), (HOSTILE, 'guardas'),
+                                        (DEFEAT_WATCH, 'lider')])
+        self.assertEqual(self.game.hostile, {'INFAI_LIDER': 1, 'INFAI_GUARDA': 3})
+        self.assertEqual([w for w in self.game.writes if w[0] == SPAWN],
+                         [(SPAWN, 'INFAI_LIDER', 1), (SPAWN, 'INFAI_GUARDA', 3)])
+
+    def test_a_creation_the_area_does_not_show_is_not_believed(self):
+        """Lab S2d: ours seemed to rise, the area's total did not; the presence is held."""
+        game = self.game
+        real = game.send
+
+        def lying(req):
+            receipt = real(req)
+            if req.op == SPAWN:
+                return ActionReceipt(receipt.action_id, 'DONE', receipt.observed, None,
+                                     receipt.before, receipt.seen_before, receipt.seen_before)
+            return receipt
+        game.send = lying
+        self.say('npc:cre-bernard', 'Tem trabalho?')
+        self.say('npc:cre-bernard', 'Aceito.')
+        self.assertEqual(self.rules(limit=8), [(VERIFY, 'lider'), (ENTER, 'lider'),
+                                               (VERIFY, 'guardas'), (ENTER, 'guardas')])
+        decision, held = decide(self.store, ROOT_BRANCH, self.quests, area='AR0406',
+                                game_time=self.t)
+        self.assertIsNone(decision)                                     # never asked twice
+        self.assertEqual(sorted(h.split('/')[1] for h in held),
+                         ['guardas=SUSPENDED', 'lider=SUSPENDED'])
 
 if __name__ == '__main__':
     unittest.main()

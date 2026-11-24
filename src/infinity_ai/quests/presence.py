@@ -120,6 +120,7 @@ class Decision:
     presence: Presence
     rule: str                      # ENTER, LEAVE, VERIFY, DEFEAT_WATCH, DEFEAT or HOSTILE
     step_id: str | None = None     # DEFEAT: the step it does
+    count: int = 1                 # ENTER (ADR-0143): the missing copies, created together
 
     def cause(self) -> dict:
         return {'policy': POLICY, 'quest_id': self.quest_id,
@@ -133,10 +134,12 @@ def decide(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQues
     ("quest/presence=SUSPENDED|PENDING") for the log. ADR-0140 (D1): before acting on what the
     branch believes, the game is asked to count, once after each entry or load and whenever the
     branch's word is older than that; a presence awaiting its defeat is counted every few seconds,
-    and its fall to zero is the defeat (never recreated once its copies were all there)."""
+    and its fall to zero is the defeat (never recreated once its copies were all there).
+    ADR-0143: the missing copies are asked in one request; HOSTILE comes before the others."""
     if not area:
         return None, ()
     held: list[str] = []
+    found: list[Decision] = []
     for quest in quests.values():
         for presence in quest.presence:
             if presence.area != area:
@@ -162,24 +165,31 @@ def decide(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQues
                     state.accepted if presence.hostile_from == START_ACCEPTED
                     else presence.hostile_from in state.steps_done)
             if turn and status.filled:                  # ADR-0142: they fight from now on
-                return Decision(quest.quest_id, presence, HOSTILE), tuple(held)
+                found.append(Decision(quest.quest_id, presence, HOSTILE))
+                continue
             if awaiting:
                 if status.fresh and status.count == 0:
-                    return Decision(quest.quest_id, presence, DEFEAT, fall.step_id), tuple(held)
+                    found.append(Decision(quest.quest_id, presence, DEFEAT, fall.step_id))
+                    continue
                 due = not status.fresh or status.last_count_at is None or (
                     game_time is not None and game_time - status.last_count_at >= WATCH_EVERY)
                 if due:
-                    return Decision(quest.quest_id, presence, DEFEAT_WATCH), tuple(held)
+                    found.append(Decision(quest.quest_id, presence, DEFEAT_WATCH))
                 continue
             if want:
                 if not status.fresh:
-                    return Decision(quest.quest_id, presence, VERIFY), tuple(held)
+                    found.append(Decision(quest.quest_id, presence, VERIFY))
+                    continue
                 if status.count < presence.copies and not (fall is not None and status.filled):
-                    return Decision(quest.quest_id, presence, ENTER), tuple(held)
+                    found.append(Decision(quest.quest_id, presence, ENTER,
+                                          count=presence.copies - status.count))
                 continue
             if status.placed_by_quest and status.count > 0:   # never what the maintainer placed
-                return Decision(quest.quest_id, presence, LEAVE), tuple(held)
-    return None, tuple(held)
+                found.append(Decision(quest.quest_id, presence, LEAVE))
+    # ADR-0143 (D3): a presence turning hostile goes before any other's count, so every presence
+    # a step turns fights from the cycles right after it
+    first = next((d for d in found if d.rule == HOSTILE), found[0] if found else None)
+    return first, tuple(held)
 
 
 def record_suspended(store: CampaignStore, branch_id: str, decision: Decision, reason: str, *,
@@ -228,7 +238,8 @@ def request_for(decision: Decision, store: CampaignStore, branch_id: str, *,
     if decision.rule == HOSTILE:
         return hostile_request(p.name, p.area, owned=set(owned_creatures(store, branch_id)))
     if decision.rule == ENTER:
-        req = spawn_request(p.cre, p.area, x=p.x, y=p.y, facing=p.facing, templates=templates)
+        req = spawn_request(p.cre, p.area, x=p.x, y=p.y, facing=p.facing, templates=templates,
+                            count=decision.count)
         if req.name != p.name:                     # the file holds another name of ours
             raise ActionError('TEMPLATE_NAME_MISMATCH')
         return req

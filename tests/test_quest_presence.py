@@ -56,8 +56,9 @@ class FakeGame:
         if self.answer == 'WRONG_AREA':
             return ActionReceipt(req.action_id, 'REFUSED', None, 'WRONG_AREA')
         before = self.here
-        self.here = before + 1 if req.op == SPAWN else 0
-        return ActionReceipt(req.action_id, 'DONE', self.here, None, before)
+        self.here = before + req.count if req.op == SPAWN else 0
+        return ActionReceipt(req.action_id, 'DONE', self.here, None, before,
+                             40 + self.here, 40 + before)      # the area's total (ADR-0143)
 
 
 class FormatTests(unittest.TestCase):

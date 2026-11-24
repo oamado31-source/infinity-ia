@@ -79,7 +79,7 @@ class Presence:
     y: int = -1
     facing: int = 0
     when: str = WHEN_ANY      # ADR-0139: ANY, or NIGHT (only at night; gone at dawn, D2)
-    copies: int = 1           # ADR-0140: how many, created one at a time up to this count
+    copies: int = 1           # ADR-0140: how many; ADR-0143: the missing ones created together
     hostile_from: str | None = None   # ADR-0142: from this point (ACCEPTED or a step) they fight
 
 

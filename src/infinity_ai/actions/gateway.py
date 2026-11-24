@@ -27,6 +27,8 @@ the nearest exit and vanish there; it holds when none is left (the module waits 
 ADR-0145: the arrival plan (`INFAIARR.lua`) lists the creations a quest needs in an area the party
 is not in yet; the module makes the missing ones the moment that area loads and answers each one
 like a SPAWN, so who the quest puts somewhere is already there when the party walks in.
+ADR-0146: the passage plan (`INFAIDOR.lua`) holds the ways into and out of areas of ours that the
+quests have opened; the module takes the party through when its leader stands at the point.
 """
 from __future__ import annotations
 
@@ -44,12 +46,17 @@ ACT_PREFIX = 'INFAI-ACT '
 ACT_SCHEMA = 'infinity-ai.act.v1'
 SPAWN, DESPAWN, COUNT, SET_HOSTILE = 'SPAWN_CREATURE', 'DESPAWN', 'COUNT', 'SET_HOSTILE'
 CALL, ESCAPE = 'CALL', 'ESCAPE'                     # ADR-0144
-OPERATIONS = (SPAWN, DESPAWN, COUNT, SET_HOSTILE, CALL, ESCAPE)   # COUNT (ADR-0140): read only;
+WHERE = 'WHERE'                                     # ADR-0146: where the party leader stands
+OPERATIONS = (SPAWN, DESPAWN, COUNT, SET_HOSTILE, CALL, ESCAPE, WHERE)   # COUNT (ADR-0140): read only;
 #   SET_HOSTILE (ADR-0142): Enemy() on ours; CALL (ADR-0144): a line over a giver's head, display
 #   only; ESCAPE (ADR-0144): EscapeArea() on ours
 REMOVALS = (DESPAWN, ESCAPE)                        # none of ours left after them
 ARR_RESREF = 'INFAIARR'                             # ADR-0145: the arrival plan
 PLACEHOLDER_ARR = 'INFAI_ARR_Plan = {}\n'
+DOOR_RESREF = 'INFAIDOR'                            # ADR-0146: the passages a quest has opened
+PLACEHOLDER_DOOR = 'INFAI_DOOR_Plan = {}\n'
+_OUR_AREA = re.compile(r'IA\d{4}')
+PASSAGE_RADIUS = 60                                 # px around the point where the leader stands
 """Kept in override/ at all times (present at launch); an empty plan creates nothing."""
 OWN_PREFIX = 'INFAI_'
 POLICY = 'adr-0136-gate-p3-v1'
@@ -213,6 +220,54 @@ def escape_request(name: str, area: str, *, owned: set[str] | frozenset[str],
     return ActionRequest(req.action_id, ESCAPE, req.area, req.name)
 
 
+@dataclass(frozen=True)
+class PassageEntry:
+    """ADR-0146: a way into or out of an area of ours: the party leader standing still at
+    (x, y) of `area` takes the party to (to_x, to_y) of `to`, facing `facing`."""
+    passage_id: str           # 10 [a-z0-9]: answers in the log like an action
+    area: str
+    x: int
+    y: int
+    to: str
+    to_x: int
+    to_y: int
+    facing: int = 0
+
+
+def check_passage(e: PassageEntry) -> PassageEntry:
+    """Only into or out of an area of ours (`IA` and four digits), never between two areas of
+    the game; points inside the map, a facing of the engine."""
+    areas_ok = _AREA.fullmatch(e.area or '') and _AREA.fullmatch(e.to or '') and e.area != e.to \
+        and (_OUR_AREA.fullmatch(e.area) or _OUR_AREA.fullmatch(e.to))
+    numbers = (e.x, e.y, e.to_x, e.to_y, e.facing)
+    if not _ID.fullmatch(e.passage_id or '') or not areas_ok or not all(
+            isinstance(n, int) and not isinstance(n, bool) for n in numbers) \
+            or not all(0 <= n <= MAX_COORD for n in numbers[:4]) or not 0 <= e.facing <= 15:
+        raise ActionError('BAD_PASSAGE')
+    return e
+
+
+def render_passage_plan(entries: list[PassageEntry] | tuple[PassageEntry, ...]) -> str:
+    """`override/INFAIDOR.lua`: the passages the quests have opened, literals only."""
+    rows = []
+    for e in map(check_passage, entries):
+        rows.append('{' f'id = {lua_string(e.passage_id)}, area = {lua_string(e.area)}, '
+                    f'x = {e.x}, y = {e.y}, to = {lua_string(e.to)}, to_x = {e.to_x}, '
+                    f'to_y = {e.to_y}, facing = {e.facing}' '}')
+    return 'INFAI_DOOR_Plan = {' + ', '.join(rows) + '}\n'
+
+
+def where_request(area: str, *, action_id: str | None = None) -> ActionRequest:
+    """ADR-0146 (lab): where the party leader stands, read only; for writing a passage's point."""
+    area = (area or '').upper()
+    action_id = action_id or new_action_id()
+    if not _ID.fullmatch(action_id):
+        raise ActionError('BAD_ACTION_ID')
+    if not _AREA.fullmatch(area):
+        raise ActionError('BAD_AREA')
+    return ActionRequest(action_id, WHERE, area, 'INFAI_LEADER')
+
+
 def render_arrival_plan(entries: list[ActionRequest] | tuple[ActionRequest, ...]) -> str:
     """ADR-0145: `override/INFAIARR.lua`, the creations the module makes itself the moment the
     party enters an area. Each entry is a SPAWN the gateway already validated; its `count` is how
@@ -258,6 +313,8 @@ class ActionReceipt:
     before: int | None = None  # how many it held before (DONE)
     seen: int | None = None   # ADR-0143: every creature of the area after (DONE)
     seen_before: int | None = None   # and before the action
+    x: int | None = None      # ADR-0146 (WHERE): the party leader's point
+    y: int | None = None
 
 
 def parse_receipt(line: str) -> ActionReceipt | None:
@@ -274,11 +331,16 @@ def parse_receipt(line: str) -> ActionReceipt | None:
     action_id, status = doc.get('action_id'), doc.get('status')
     observed, reason, before = doc.get('observed'), doc.get('reason'), doc.get('before')
     seen, seen_before = doc.get('seen'), doc.get('seen_before')
+    px, py = doc.get('x'), doc.get('y')
     if not isinstance(action_id, str) or not _ID.fullmatch(action_id) or status not in STATUSES:
         return None
     for count in (observed, before):
         if count is not None and (isinstance(count, bool) or not isinstance(count, int)
                                   or not 0 <= count <= 99):
+            return None
+    for coord in (px, py):
+        if coord is not None and (isinstance(coord, bool) or not isinstance(coord, int)
+                                  or not 0 <= coord <= MAX_COORD):
             return None
     for total in (seen, seen_before):
         if total is not None and (isinstance(total, bool) or not isinstance(total, int)
@@ -286,7 +348,7 @@ def parse_receipt(line: str) -> ActionReceipt | None:
             return None
     if reason is not None and (not isinstance(reason, str) or not _REASON.fullmatch(reason)):
         return None
-    return ActionReceipt(action_id, status, observed, reason, before, seen, seen_before)
+    return ActionReceipt(action_id, status, observed, reason, before, seen, seen_before, px, py)
 
 
 def parse_receipts(text: str) -> list[ActionReceipt]:
@@ -306,7 +368,7 @@ def confirmed(req: ActionRequest, receipt: ActionReceipt) -> bool:
             and receipt.observed == receipt.before + req.count \
             and receipt.seen is not None and receipt.seen_before is not None \
             and receipt.seen == receipt.seen_before + req.count
-    if req.op == COUNT:                       # the count itself is the host's word
+    if req.op in (COUNT, WHERE):              # the count (or the point) is the host's word
         return receipt.status == DONE
     if req.op == CALL:                        # ADR-0144: the giver was there and saw the line
         return receipt.status == DONE and receipt.observed >= 1

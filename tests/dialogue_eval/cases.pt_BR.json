@@ -1924,7 +1924,7 @@
         ],
         "speech": "desertor assustado e grato: fala baixo e rápido, olhando para a porta, frases curtas e diretas",
         "quest_facts": [
-          "O grupo acabou de te salvar dos carcereiros. Agradeça primeiro. Depois conte: Kalessia, emissária de Sembia, comanda a célula do Trono de Ferro e guarda o diário de Sarevok; o esconderijo é um galpão vazio no norte das Docas. Diga que vai embora de Athkatla agora."
+          "O grupo acabou de te salvar dos carcereiros. Agradeça primeiro. Depois conte: Kalessia, emissária de Sembia, comanda a célula do Trono de Ferro e guarda o diário de Sarevok; o esconderijo é uma caverna sob o Farol das Docas, com a entrada ao pé dele. Diga que vai embora de Athkatla agora."
         ]
       },
       "question": "O que você sabe sobre o Diário de Sarevok?",
@@ -1935,7 +1935,8 @@
         "mentions_any": [
           "Docas",
           "Kalessia",
-          "galpão"
+          "Farol",
+          "caverna"
         ],
         "matches_none": [
           "(?i)n[ãa]o sei de nada",

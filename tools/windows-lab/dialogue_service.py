@@ -95,10 +95,11 @@ from infinity_ai.quests.narrative import (  # noqa: E402
     advance, arrive, load_quests, mark_journal_shown, pending_journal, with_journal,
 )
 from infinity_ai.quests.presence import (  # noqa: E402
-    arrival_plan, call_due, decide, dispatch, dispatch_call, record_arrival,
+    arrival_plan, call_due, decide, dispatch, dispatch_call, open_passages, record_arrival,
 )
 from infinity_ai.actions.gateway import (  # noqa: E402
-    ARR_RESREF, ActionRequest, parse_receipts, render_arrival_plan,
+    ARR_RESREF, DOOR_RESREF, ActionRequest, parse_receipts, render_arrival_plan,
+    render_passage_plan,
 )
 from infinity_ai.dialogue.disclosure import CLOSED_DISPOSITIONS  # noqa: E402
 from infinity_ai.personality.in_game import (  # noqa: E402
@@ -310,6 +311,7 @@ class PresenceDirector(threading.Thread):
         last_held: tuple[str, ...] = ()
         plan: dict[str, tuple] = {}          # ADR-0145: action_id -> (decision, request)
         written = None
+        doors_written = None
         entered: tuple[str | None, float] = (None, 0.0)
         while True:
             try:
@@ -358,6 +360,13 @@ class PresenceDirector(threading.Thread):
                                        r.action_id)
                         plan[aid] = (d, ActionRequest(aid, r.op, r.area, r.name, r.cre, r.x, r.y,
                                                       r.facing, r.count))
+                    doors = render_passage_plan(open_passages(store, view.branch_id,
+                                                              self.observer.quests))
+                    if doors != doors_written:       # ADR-0146: the passages the quests opened
+                        put_override_file(self.ssh, self.args.game_root, f'{DOOR_RESREF}.lua',
+                                          doors.encode('utf-8'))
+                        doors_written = doors
+                        print(f'{now_iso()} passagens abertas: {doors.count("id = ")}')
                     text = render_arrival_plan([r for _, r in plan.values()])
                     if text != written:
                         put_override_file(self.ssh, self.args.game_root, f'{ARR_RESREF}.lua',

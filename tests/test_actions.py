@@ -546,7 +546,11 @@ class StaticTests(unittest.TestCase):
         self.assertIsNone(FORBIDDEN.search(self.code), FORBIDDEN.search(self.code))
 
     def test_actions_come_from_fixed_templates(self):
-        self.assertEqual(re.findall(r"string\.format\('(\w+)\(", self.raw), ['CreateCreature'])
+        self.assertEqual(re.findall(r"string\.format\('(\w+)\(", self.raw),
+                         ['CreateCreature', 'LeaveAreaLUA'])
+        # ADR-0146: a passage only into or out of an area of ours, from one fixed template
+        self.assertEqual(self.raw.count('LeaveAreaLUA("%s","",[%d.%d],%d)'), 1)
+        self.assertIn('"^IA%d%d%d%d$"', self.raw)
         self.assertIn('CreateCreature("%s",[%d.%d],%d)', self.raw)     # ACTION.IDS: no name
         self.assertIn('"^IA[A-Z0-9]+$"', self.raw)                       # only our files
         # EEex does "bCheckForLineOfSight or 1": false would turn the check ON (lab, S1x)

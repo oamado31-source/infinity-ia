@@ -72,7 +72,8 @@ def build_fingerprint(manifest: dict[str, Any]) -> str:
 # ADR-0136 action request).
 TRANSIENT_OVERRIDE = frozenset({'override/infairsp.lua', 'override/infaiptt.lua',
                                 'override/infaiqst.lua', 'override/infaiact.lua',
-                                'override/infaiarr.lua'})   # ADR-0145: the arrival plan
+                                'override/infaiarr.lua',    # ADR-0145: the arrival plan
+                                'override/infaidor.lua'})   # ADR-0146: the passage plan
 
 
 def modpack_hash(manifest: dict[str, Any]) -> str:

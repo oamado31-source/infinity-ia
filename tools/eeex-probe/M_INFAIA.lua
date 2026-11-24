@@ -18,6 +18,9 @@
 --     mais proxima e somem; conta a cada segundo, ate 30 s, ate nao sobrar nenhuma;
 --   CHEGADA (ADR-0145): ao carregar uma area, cumpre o plano de chegada (INFAIARR.lua) dela: cria o
 --     que falta de cada nome nosso no mesmo instante e responde cada entrada como um SPAWN;
+--   PASSAGEM (ADR-0146): as passagens abertas pela quest (INFAIDOR.lua) para e de areas nossas;
+--     o lider parado no ponto por 1 s leva o grupo (LeaveAreaLUA, um membro por vez, na hora);
+--   WHERE (ADR-0146, laboratorio): so le onde o lider esta;
 --   COUNT (ADR-0140): so le. Conta na area as criaturas VIVAS com o nosso nome e responde na hora,
 --     sem executar nada. O seletor do jogo devolve tambem os corpos: o estado de morte (0x800,
 --     a mesma checagem da caixa) os tira da conta, de COUNT, de SPAWN e de DESPAWN.
@@ -44,6 +47,9 @@ INFAI_ACT_COPY_STEP = 40         -- ADR-0143: pixels entre uma copia e a seguint
 INFAI_ACT_ESCAPE_MS = 30000      -- ADR-0144: quanto a saida pela porta pode levar
 INFAI_ACT_ESCAPE_STEP_MS = 1000  -- ADR-0144: de quanto em quanto se conta durante a saida
 INFAI_ARR_SETTLE_MS = 300        -- ADR-0145: espera minima depois da troca de area
+INFAI_DOOR_RADIUS = 60           -- ADR-0146: px em volta do ponto da passagem
+INFAI_DOOR_STILL_MS = 1000       -- ADR-0146: quanto o lider fica no ponto antes de passar
+INFAI_DOOR_RELOAD_MS = 5000      -- ADR-0146: rele o plano de passagens com o grupo na area
 
 INFAI_ACT_State = INFAI_ACT_State or { done = {}, check = nil, next_poll = 0, arrivals = {},
 	arr_area = nil }
@@ -57,7 +63,7 @@ local function infai_json_string(s)
 	return '"' .. s .. '"'
 end
 
-local function infai_act_emit(id, status, observed, reason, before, seen, seen_before)
+local function infai_act_emit(id, status, observed, reason, before, seen, seen_before, px, py)
 	print("INFAI-ACT {" ..
 		'"schema":' .. infai_json_string(INFAI_ACT_SCHEMA) ..
 		',"action_id":' .. infai_json_string(id) ..
@@ -66,7 +72,8 @@ local function infai_act_emit(id, status, observed, reason, before, seen, seen_b
 		',"reason":' .. (reason and infai_json_string(reason) or "null") ..
 		',"before":' .. (type(before) == "number" and string.format("%d", before) or "null") ..
 		',"seen":' .. (type(seen) == "number" and string.format("%d", seen) or "null") ..
-		',"seen_before":' .. (type(seen_before) == "number" and string.format("%d", seen_before) or "null") .. '}')
+		',"seen_before":' .. (type(seen_before) == "number" and string.format("%d", seen_before) or "null") ..
+		(type(px) == "number" and string.format(',"x":%d,"y":%d', px, py) or "") .. '}')
 end
 
 -- So o arquivo de pedido do servico e descartado do cache (como INFAIRSP na caixa).
@@ -79,7 +86,7 @@ end
 
 local function infai_act_op_ok(op)
 	return op == "SPAWN_CREATURE" or op == "DESPAWN" or op == "COUNT" or op == "SET_HOSTILE"
-		or op == "CALL" or op == "ESCAPE"
+		or op == "CALL" or op == "ESCAPE" or op == "WHERE"
 end
 
 local function infai_act_valid(req)
@@ -194,6 +201,85 @@ local function infai_act_leader_in(area)
 	return ok and same == true
 end
 
+-- ADR-0146: as passagens que a quest abriu (INFAIDOR) nesta area: o lider parado no ponto, por
+-- um segundo, leva o grupo pela acao do proprio jogo de trocar de area. So de/para areas nossas
+-- (IA e quatro digitos), nunca com inimigo vivo na area, e so depois de o lider sair do ponto uma
+-- vez (para nao voltar ao chegar).
+local function infai_door_ok(e, name)
+	if type(e) ~= "table" or type(e.id) ~= "string" or not string.match(e.id, "^[a-z0-9]+$")
+			or #e.id ~= 10 or e.area ~= name or type(e.to) ~= "string"
+			or not string.match(e.to, "^[A-Z0-9]+$") or #e.to > 8 or e.to == e.area then
+		return false
+	end
+	if not string.match(e.area, "^IA%d%d%d%d$") and not string.match(e.to, "^IA%d%d%d%d$") then
+		return false
+	end
+	for _, v in ipairs({ e.x, e.y, e.to_x, e.to_y }) do
+		if type(v) ~= "number" or v ~= math.floor(v) or v < 0 or v > 32767 then return false end
+	end
+	return type(e.facing) == "number" and e.facing >= 0 and e.facing <= 15
+end
+
+local function infai_door_load(name)
+	local st = INFAI_ACT_State
+	st.doors = {}
+	INFAI_DOOR_Plan = nil
+	infai_act_drop_cached("INFAIDOR")
+	pcall(Infinity_DoFile, "INFAIDOR")
+	if type(INFAI_DOOR_Plan) ~= "table" then return end
+	for _, e in ipairs(INFAI_DOOR_Plan) do
+		if infai_door_ok(e, name) then
+			table.insert(st.doors, { e = e, armed = false, since = nil })
+		end
+	end
+end
+
+local function infai_door_enemy(area)
+	local ok, any = pcall(function()
+		local all = EEex_Area_GetAllOfTypeStringInRange(area, 0, 0, "[ANYONE]", INFAI_ACT_RANGE, 0, 0)
+		for _, sprite in ipairs(all) do
+			if infai_act_hostile(sprite) and not infai_act_dead(sprite) then return true end
+		end
+		return false
+	end)
+	return not ok or any
+end
+
+local function infai_door_tick(area, now)
+	local st = INFAI_ACT_State
+	if st.doors == nil or #st.doors == 0 then return end
+	local ok, lx, ly = pcall(function()
+		local leader = EEex_Sprite_GetInPortrait(0)
+		return leader.m_pos.x, leader.m_pos.y
+	end)
+	if not ok or type(lx) ~= "number" then return end
+	for _, d in ipairs(st.doors) do
+		local dx, dy = lx - d.e.x, ly - d.e.y
+		local inside = dx * dx + dy * dy <= INFAI_DOOR_RADIUS * INFAI_DOOR_RADIUS
+		if not inside then
+			d.armed, d.since = true, nil
+		elseif d.armed then
+			d.since = d.since or now
+			if now >= d.since + INFAI_DOOR_STILL_MS and not infai_door_enemy(area) then
+				d.armed, d.since = false, nil
+				local action = string.format('LeaveAreaLUA("%s","",[%d.%d],%d)', d.e.to, d.e.to_x,
+					d.e.to_y, d.e.facing)
+				local moved = 0
+				for i = 0, 5 do
+					local okm, member = pcall(EEex_Sprite_GetInPortrait, i)
+					if okm and member ~= nil then
+						if pcall(EEex_Action_ExecuteResponseStringOnAIBaseInstantly, action, member) then
+							moved = moved + 1
+						end
+					end
+				end
+				infai_act_emit(d.e.id, "DONE", moved, nil, 0)
+				return
+			end
+		end
+	end
+end
+
 -- ADR-0145: ao carregar uma area do plano de chegada (INFAIARR), conta e cria no mesmo instante o
 -- que falta de cada nome, antes de o grupo dar o primeiro passo; cada entrada responde como um
 -- SPAWN (antes, depois e o total da area), depois da mesma espera.
@@ -237,6 +323,19 @@ local function infai_act_run(req, now)
 	if req.op == "COUNT" then
 		local found, seen = infai_act_find(area, req.name)
 		infai_act_emit(req.action_id, "DONE", #found, nil, #found, seen)
+		return
+	end
+	if req.op == "WHERE" then
+		-- ADR-0146 (laboratorio): onde o lider esta, so leitura, para marcar o ponto de uma passagem
+		local ok, x, y = pcall(function()
+			local leader = EEex_Sprite_GetInPortrait(0)
+			return leader.m_pos.x, leader.m_pos.y
+		end)
+		if ok and type(x) == "number" then
+			infai_act_emit(req.action_id, "DONE", 1, nil, 1, nil, nil, x, y)
+		else
+			infai_act_emit(req.action_id, "REFUSED", nil, "NO_PARTY")
+		end
 		return
 	end
 	if req.op == "CALL" then
@@ -324,6 +423,19 @@ function INFAI_ACT_Tick()
 			and now >= st.arr_wait.since + INFAI_ARR_SETTLE_MS and infai_act_leader_in(here) then
 		st.arr_wait = nil
 		infai_arr_enter(here, here_name, now)
+		infai_door_load(here_name)
+	end
+	if st.arr_wait == nil and here ~= nil then
+		if now >= (st.door_next or 0) then          -- a passage opened while the party is here
+			st.door_next = now + INFAI_DOOR_RELOAD_MS
+			local keep = {}
+			for _, d in ipairs(st.doors or {}) do keep[d.e.id] = d end
+			infai_door_load(here_name)
+			for _, d in ipairs(st.doors) do         -- keep each passage's state across reloads
+				if keep[d.e.id] ~= nil then d.armed, d.since = keep[d.e.id].armed, keep[d.e.id].since end
+			end
+		end
+		infai_door_tick(here, now)
 	end
 	local waiting = {}
 	for _, a in ipairs(st.arrivals) do

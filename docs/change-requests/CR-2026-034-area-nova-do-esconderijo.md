@@ -39,6 +39,7 @@ O BG2 não tem nenhuma área do Trono de Ferro em Athkatla: no texto do jogo, o 
    - a área nova tem a saída de volta para o mesmo ponto;
    - a operação terá ADR própria na fase 2.
 4. **Fase 3, quest:** a chegada `esconderijo` e o plano de chegada já apontam para `IA0001`.
+5. **Resultado (ADR-0146, 2026-11-24):** a fase 1 escolheu a AR0310 achando que era um porão de navio; no jogo, é uma caverna, e nenhuma das três candidatas é porão. O esconderijo ficou como **uma caverna sob o Farol das Docas**, com a entrada ao pé dele.
 
 ## Enquanto isso (D2)
 

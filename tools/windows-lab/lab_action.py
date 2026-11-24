@@ -16,6 +16,7 @@ back to empty at the end. Use a disposable save (INFINITY-P3-DESCARTAVEL). Only 
   python tools/windows-lab/lab_action.py resume --quest <quest_id> --presence <presence_id>
   python tools/windows-lab/lab_action.py call --name DRUNK1 --area AR0406 --strref N  (ADR-0144)
   python tools/windows-lab/lab_action.py escape --name INFAI_<id> --area AR0416       (ADR-0144)
+  python tools/windows-lab/lab_action.py where --area AR0300     (ADR-0146: the leader's point)
 
 ADR-0138: the presence director of the dialogue service (`--quest-presence`) uses the same request
 file through `SshTransport`. When the game does not confirm one of its requests, that presence is
@@ -36,7 +37,7 @@ import json  # noqa: E402
 
 from infinity_ai.actions.gateway import (  # noqa: E402
     ACT_RESREF, ESCAPE, ActionError, PLACEHOLDER_ACT, call_request, count_request,
-    despawn_request, escape_request, hostile_request, load_templates,
+    despawn_request, escape_request, hostile_request, load_templates, where_request,
     owned_creatures,
     parse_receipts, record_requested, record_result, render_request, spawn_request,
 )
@@ -105,7 +106,7 @@ class SshTransport:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('op', choices=('spawn', 'despawn', 'count', 'hostile', 'escape', 'call',
-                                   'owned', 'resume'))
+                                   'where', 'owned', 'resume'))
     ap.add_argument('--quest', help='resume: the quest id (ADR-0138)')
     ap.add_argument('--presence', help='resume: the presence id in that quest')
     ap.add_argument('--cre')
@@ -154,6 +155,8 @@ def main() -> int:
             req = count_request(args.name or '', args.area or '')
         elif args.op == 'hostile':
             req = hostile_request(args.name or '', args.area or '', owned=set(owned))
+        elif args.op == 'where':                  # read only: the leader's point (ADR-0146)
+            req = where_request(args.area or '')
         elif args.op == 'escape':
             req = escape_request(args.name or '', args.area or '', owned=set(owned))
         elif args.op == 'call':                   # only a pair a curated quest declares
@@ -182,6 +185,8 @@ def main() -> int:
     state = record_result(store, branch, req, receipt,
                           game_time=current_game_time(ssh, args.game_root) or game_time)
     print(f'resposta do jogo: {receipt}' if receipt else 'sem resposta do jogo')
+    if receipt is not None and receipt.x is not None:
+        print(f'o lider esta em ({receipt.x}, {receipt.y}) de {req.area}')
     print(f'estado: {state}' + (f'  nome da criatura: {req.name}' if req.op == 'SPAWN_CREATURE'
                                 and state == 'HOST_CONFIRMED' else ''))
     return 0 if state == 'HOST_CONFIRMED' else 1

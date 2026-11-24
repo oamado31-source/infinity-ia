@@ -8,7 +8,7 @@ back to empty at the end. Use a disposable save (INFINITY-P3-DESCARTAVEL). Only 
 (build_templates.py, deployed with the game closed) can be created.
 
   export INFINITY_LAB_SSH='ssh -i ~/.ssh/<key> -o IdentitiesOnly=yes -o BatchMode=yes -l "<user>" <vm-ip>'
-  python tools/windows-lab/lab_action.py spawn --cre IA<...> --area AR0406 [--x N --y N --facing N]
+  python tools/windows-lab/lab_action.py spawn --cre IA<...> --area AR0406 [--x N --y N --facing N --count N]
   python tools/windows-lab/lab_action.py despawn --name INFAI_<id> --area AR0406
   python tools/windows-lab/lab_action.py owned
   python tools/windows-lab/lab_action.py count --name INFAI_<id> --area AR0406     (ADR-0140, read only)
@@ -109,6 +109,7 @@ def main() -> int:
     ap.add_argument('--x', type=int, default=-1)
     ap.add_argument('--y', type=int, default=-1)
     ap.add_argument('--facing', type=int, default=0)
+    ap.add_argument('--count', type=int, default=1, help='spawn: copies created together (ADR-0143)')
     ap.add_argument('--game-root', default=r'C:\InfinityLab\BG2EE-P1')
     ap.add_argument('--campaign', default='lab-s1f')
     ap.add_argument('--db', type=Path,
@@ -139,7 +140,7 @@ def main() -> int:
             fingerprint = build_fingerprint(json.loads(
                 args.pinned_manifest.read_text(encoding='utf-8-sig')))
             req = spawn_request(args.cre or '', args.area or '', x=args.x, y=args.y,
-                                facing=args.facing,
+                                facing=args.facing, count=args.count,
                                 templates=deployed_templates(ssh, args.game_root, fingerprint))
         elif args.op == 'count':
             req = count_request(args.name or '', args.area or '')

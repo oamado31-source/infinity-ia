@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """ADR-0136 (gate P3): the minimal gateway and the EEex action module (simulated engine)."""
+import dataclasses
 import json
 import re
 import sys
@@ -71,7 +72,7 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(render_request(req), (
             'INFAI_ACT_Request = {action_id = "abcdef0123", op = "SPAWN_CREATURE", '
             'area = "AR0406", name = "INFAI_P3TEST", cre = "IAP3TEST", x = 100, y = 200, '
-            'facing = 3}\n'))
+            'facing = 3, count = 1}\n'))
         bad = req.__class__('abcdef0123', SPAWN, 'AR0406', 'INFAI_P3TEST',
                             'X")DestroySelf(', 0, 0, 0)
         with self.assertRaises(ActionError):
@@ -112,6 +113,10 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(parse_receipt(line), ActionReceipt('abcdef0123', 'DONE', 1, None))
         with_before = line.replace('"reason": null', '"reason": null, "before": 0')
         self.assertEqual(parse_receipt(with_before).before, 0)
+        totals = line.replace('"reason": null', '"reason": null, "seen": 46, "seen_before": 45')
+        self.assertEqual((parse_receipt(totals).seen, parse_receipt(totals).seen_before), (46, 45))
+        self.assertIsNone(parse_receipt(line.replace('"reason": null',
+                                                     '"reason": null, "seen": -1')))
         for doc in ({'schema': 'x'}, {'schema': ACT_SCHEMA, 'action_id': 'abc', 'status': 'DONE'},
                     {'schema': ACT_SCHEMA, 'action_id': 'abcdef0123', 'status': 'MAYBE'},
                     {'schema': ACT_SCHEMA, 'action_id': 'abcdef0123', 'status': 'DONE',
@@ -137,9 +142,14 @@ class GatewayTests(unittest.TestCase):
                                            ActionReceipt('abcdef0123', 'DONE', 0, None, 0),
                                            game_time=10),
                              'UNCERTAIN')               # queued, but nobody there: not done
-            self.assertFalse(confirmed(spawn, ActionReceipt('abcdef0123', 'DONE', 1, None, 1)))
+            self.assertFalse(confirmed(spawn, ActionReceipt('abcdef0123', 'DONE', 1, None, 1,
+                                                            46, 45)))
+            # ADR-0143: ours rose, the area did not (lab S2d: nothing was created) - not done
+            self.assertFalse(confirmed(spawn, ActionReceipt('abcdef0123', 'DONE', 1, None, 0,
+                                                            46, 46)))
+            self.assertFalse(confirmed(spawn, ActionReceipt('abcdef0123', 'DONE', 1, None, 0)))
             self.assertEqual(record_result(store, ROOT_BRANCH, spawn,
-                                           ActionReceipt('abcdef0123', 'DONE', 1, None, 0),
+                                           ActionReceipt('abcdef0123', 'DONE', 1, None, 0, 46, 45),
                                            game_time=20),
                              'HOST_CONFIRMED')
             self.assertEqual(owned_creatures(store, ROOT_BRANCH), {'INFAI_P3TEST': 'AR0406'})
@@ -156,12 +166,31 @@ class GatewayTests(unittest.TestCase):
             timeless = spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES,
                                      action_id='2222222222')
             record_result(store, ROOT_BRANCH, timeless,
-                          ActionReceipt('2222222222', 'DONE', 1, None, 0), game_time=None)
+                          ActionReceipt('2222222222', 'DONE', 1, None, 0, 46, 45), game_time=None)
             self.assertEqual(owned_creatures(store, ROOT_BRANCH), {})   # off the timeline: ignored
             refused = spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES, action_id='1111111111')
             self.assertEqual(record_result(store, ROOT_BRANCH, refused,
                                            ActionReceipt('1111111111', 'REFUSED', None,
                                                          'WRONG_AREA'), game_time=40), 'DENIED')
+
+    def test_copies_are_asked_together_and_confirmed_by_both_counts(self):
+        """ADR-0143: one request for the copies; both counts must rise by exactly that many."""
+        req = spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES, action_id='abcdef0123',
+                            count=3)
+        self.assertEqual(req.count, 3)
+        self.assertIn('count = 3}', render_request(req))
+        self.assertTrue(confirmed(req, ActionReceipt('abcdef0123', 'DONE', 3, None, 0, 48, 45)))
+        for observed, before, seen, seen_before in ((2, 0, 47, 45), (3, 0, 47, 45),
+                                                    (3, 0, 49, 45), (4, 1, 47, 45)):
+            self.assertFalse(confirmed(req, ActionReceipt('abcdef0123', 'DONE', observed, None,
+                                                          before, seen, seen_before)))
+        for bad in (0, 9, True, '2'):
+            with self.assertRaises(ActionError) as ctx:
+                spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES, count=bad)
+            self.assertEqual(ctx.exception.code, 'BAD_COUNT')
+        count = count_request('INFAI_P3TEST', 'AR0406', action_id='0123456789')
+        with self.assertRaises(ActionError):
+            render_request(dataclasses.replace(count, count=2))    # copies only for SPAWN
 
     def test_request_file_does_not_change_the_modpack(self):
         def manifest(*files):
@@ -243,7 +272,7 @@ class ModuleTests(unittest.TestCase):
         self.assertEqual(self.queued(), ['CreateCreature("IAP3TEST",[160.230],0)'])
         self.tick(3500)
         self.assertEqual(self.acts(), [ActionReceipt('abcdef0123', 'ACCEPTED', None),
-                                       ActionReceipt('abcdef0123', 'DONE', 1, None, 0)])
+                                       ActionReceipt('abcdef0123', 'DONE', 1, None, 0, 2, 1)])
         self.tick(3500)                                    # same request still in the file
         self.assertEqual(len(self.queued()), 1)
         gone = despawn_request('INFAI_P3TEST', 'AR0406', owned={'INFAI_P3TEST'},
@@ -252,7 +281,24 @@ class ModuleTests(unittest.TestCase):
         self.tick()
         self.tick(3500)
         self.assertEqual(self.queued()[-1], 'DestroySelf()')
-        self.assertEqual(self.acts()[-1], ActionReceipt('0123456789', 'DONE', 0, None, 1))
+        self.assertEqual(self.acts()[-1], ActionReceipt('0123456789', 'DONE', 0, None, 1, 1, 2))
+
+    def test_copies_are_created_at_the_same_instant(self):
+        """ADR-0143: every copy in the same tick, one step to the side; both counts rise by three."""
+        self.serve(spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES,
+                                 action_id='abcdef0123', count=3))
+        self.tick()
+        self.assertEqual(self.queued(), ['CreateCreature("IAP3TEST",[160.230],0)',
+                                         'CreateCreature("IAP3TEST",[200.230],0)',
+                                         'CreateCreature("IAP3TEST",[240.230],0)'])
+        self.tick(3500)
+        self.assertEqual(self.acts()[-1], ActionReceipt('abcdef0123', 'DONE', 3, None, 0, 4, 1))
+        self.g.files['INFAIACT'] = render_request(spawn_request(
+            'IAP3TEST', 'AR0406', templates=TEMPLATES, action_id='1111111111')).replace(
+            'count = 1', 'count = 9')                                   # beyond the limit
+        self.tick(3500)
+        self.assertEqual(self.acts()[-1].reason, 'BAD_REQUEST')
+        self.assertEqual(len(self.queued()), 3)
 
     def test_count_reads_without_queueing(self):
         self.serve(spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES,
@@ -261,7 +307,7 @@ class ModuleTests(unittest.TestCase):
         self.tick(3500)
         self.serve(count_request('INFAI_P3TEST', 'AR0406', action_id='2222222222'))
         self.tick()
-        self.assertEqual(self.acts()[-1], ActionReceipt('2222222222', 'DONE', 1, None, 1))
+        self.assertEqual(self.acts()[-1], ActionReceipt('2222222222', 'DONE', 1, None, 1, 2))
         self.assertEqual(len(self.queued()), 1)                         # nothing queued
         for i in range(1, len(self.g.area.sprites) + 1):                 # it falls: a corpse
             sp = self.g.area.sprites[i]
@@ -269,10 +315,10 @@ class ModuleTests(unittest.TestCase):
                 sp.m_baseStats.m_generalState = 0x800 | 0x1
         self.serve(count_request('INFAI_P3TEST', 'AR0406', action_id='6666666666'))
         self.tick()
-        self.assertEqual(self.acts()[-1], ActionReceipt('6666666666', 'DONE', 0, None, 0))
+        self.assertEqual(self.acts()[-1], ActionReceipt('6666666666', 'DONE', 0, None, 0, 2))  # the corpse is seen
         self.serve(count_request('INFAI_NINGUEM', 'AR0406', action_id='4444444444'))
         self.tick()
-        self.assertEqual(self.acts()[-1], ActionReceipt('4444444444', 'DONE', 0, None, 0))
+        self.assertEqual(self.acts()[-1], ActionReceipt('4444444444', 'DONE', 0, None, 0, 2))
         self.serve(count_request('INFAI_P3TEST', 'AR0300', action_id='5555555555'))
         self.tick()
         self.assertEqual(self.acts()[-1].reason, 'WRONG_AREA')

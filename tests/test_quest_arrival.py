@@ -160,8 +160,9 @@ class NightPresenceTests(unittest.TestCase):
                     if req.op == COUNT:
                         return ActionReceipt(req.action_id, 'DONE', self.here, None, self.here)
                     before = self.here
-                    self.here = before + 1 if req.op == SPAWN else 0
-                    return ActionReceipt(req.action_id, 'DONE', self.here, None, before)
+                    self.here = before + req.count if req.op == SPAWN else 0
+                    return ActionReceipt(req.action_id, 'DONE', self.here, None, before,
+                                         40 + self.here, 40 + before)
             game = Game()
 
             def tick(t):

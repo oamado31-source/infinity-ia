@@ -2,9 +2,10 @@
 -- Infinity AI - portao P3 (ADR-0136): a primeira escrita no jogo, por um gateway minimo.
 --
 -- O servico grava em override\INFAIACT.lua so a tabela INFAI_ACT_Request, com literais ja
--- validados: {action_id, op, area, name, cre, x, y, facing}. Este modulo a rele a cada meio segundo
+-- validados: {action_id, op, area, name, cre, x, y, facing, count}. Este modulo a rele a cada meio segundo
 -- e, para um action_id novo:
---   SPAWN_CREATURE: o lider do grupo executa na hora a acao do proprio jogo
+--   SPAWN_CREATURE: o lider do grupo executa na hora a acao do proprio jogo, uma vez por copia
+--     (count, ADR-0143), todas no mesmo instante,
 --     CreateCreature("<CRE nosso>",[x.y],<direcao>), montada de um modelo fixo. No BG2:EE essa
 --     acao nao recebe nome de script (ACTION.IDS): o nome nosso (INFAI_*) vem dentro do arquivo da
 --     criatura, um dos nossos (IA*.CRE), instalado com o jogo fechado;
@@ -17,8 +18,9 @@
 -- Responde no console (espelhado no InfinityLoader.log):
 --   INFAI-ACT {"schema":"infinity-ai.act.v1","action_id":...,"status":"ACCEPTED|DONE|REFUSED",
 --              "observed":N,"reason":...}
--- DONE traz quantas criaturas com o nosso nome a area tinha antes (before) e tem depois (observed):
--- uma a mais, ou nenhuma, e a confirmacao do host. So arquivos IA* sao criados e so nomes INFAI_
+-- DONE traz quantas criaturas com o nosso nome a area tinha antes (before) e tem depois (observed),
+-- e quantas criaturas a area tinha ao todo antes (seen_before) e depois (seen): as copias pedidas
+-- nas duas contagens (ADR-0143), ou nenhuma, e a confirmacao do host. So arquivos IA* sao criados e so nomes INFAI_
 -- sao removidos; nada do jogo original e tocado. O modulo
 -- nunca atribui valores ao motor: so executa acoes do proprio jogo.
 -- As tres acoes estao no INSTANT.IDS e rodam na hora (EEex ...Instantly), sem passar pela fila de
@@ -31,6 +33,8 @@ INFAI_ACT_CHECK_MS = 3000        -- espera antes de contar o resultado
 INFAI_ACT_RANGE = 30000          -- a area inteira; o motor usa raio de 16 bits com sinal (65535 vira -1)
 INFAI_ACT_STATE_DEAD = 0x800     -- STATE.IDS: o seletor do jogo devolve tambem os corpos (lab, ADR-0140)
 INFAI_ACT_EVILCUTOFF = 200       -- EA.IDS: de 200 para cima e inimigo do grupo (ADR-0142)
+INFAI_ACT_MAX_COUNT = 8          -- ADR-0143: copias criadas juntas num pedido
+INFAI_ACT_COPY_STEP = 40         -- ADR-0143: pixels entre uma copia e a seguinte
 
 INFAI_ACT_State = INFAI_ACT_State or { done = {}, check = nil, next_poll = 0 }
 
@@ -43,7 +47,7 @@ local function infai_json_string(s)
 	return '"' .. s .. '"'
 end
 
-local function infai_act_emit(id, status, observed, reason, before, seen)
+local function infai_act_emit(id, status, observed, reason, before, seen, seen_before)
 	print("INFAI-ACT {" ..
 		'"schema":' .. infai_json_string(INFAI_ACT_SCHEMA) ..
 		',"action_id":' .. infai_json_string(id) ..
@@ -51,7 +55,8 @@ local function infai_act_emit(id, status, observed, reason, before, seen)
 		',"observed":' .. (type(observed) == "number" and string.format("%d", observed) or "null") ..
 		',"reason":' .. (reason and infai_json_string(reason) or "null") ..
 		',"before":' .. (type(before) == "number" and string.format("%d", before) or "null") ..
-		',"seen":' .. (type(seen) == "number" and string.format("%d", seen) or "null") .. '}')
+		',"seen":' .. (type(seen) == "number" and string.format("%d", seen) or "null") ..
+		',"seen_before":' .. (type(seen_before) == "number" and string.format("%d", seen_before) or "null") .. '}')
 end
 
 -- So o arquivo de pedido do servico e descartado do cache (como INFAIRSP na caixa).
@@ -86,6 +91,11 @@ local function infai_act_valid(req)
 			if type(v) ~= "number" or v ~= math.floor(v) or v < -1 or v > 32767 then return false end
 		end
 		if type(req.facing) ~= "number" or req.facing < 0 or req.facing > 15 then return false end
+		-- ADR-0143: as copias nascem juntas, de 1 a 8 (o limite de copies de uma presenca)
+		local n = req.count
+		if type(n) ~= "number" or n ~= math.floor(n) or n < 1 or n > INFAI_ACT_MAX_COUNT then return false end
+	elseif req.count ~= nil and req.count ~= 1 then
+		return false
 	end
 	return true
 end
@@ -161,7 +171,8 @@ local function infai_act_run(req, now)
 			at = now + INFAI_ACT_CHECK_MS, op = "SET_HOSTILE" }
 		return
 	end
-	local before = #infai_act_find(area, req.name)
+	local found_before, seen_before = infai_act_find(area, req.name)
+	local before = #found_before
 	if req.op == "SPAWN_CREATURE" then
 		local okl, leader = pcall(EEex_Sprite_GetInPortrait, 0)
 		if not okl or leader == nil then
@@ -176,11 +187,16 @@ local function infai_act_run(req, now)
 				return
 			end
 		end
-		local action = string.format('CreateCreature("%s",[%d.%d],%d)', req.cre, x, y, req.facing)
-		local okq = pcall(EEex_Action_ExecuteResponseStringOnAIBaseInstantly, action, leader)
-		if not okq then
-			infai_act_emit(req.action_id, "REFUSED", nil, "QUEUE_FAILED")
-			return
+		-- ADR-0143: todas as copias no mesmo instante, antes que uma luta comece; cada uma um passo
+		-- ao lado da anterior, no mesmo modelo fixo de acao.
+		for i = 0, req.count - 1 do
+			local xi = math.min(x + INFAI_ACT_COPY_STEP * i, 32767)
+			local action = string.format('CreateCreature("%s",[%d.%d],%d)', req.cre, xi, y, req.facing)
+			local okq = pcall(EEex_Action_ExecuteResponseStringOnAIBaseInstantly, action, leader)
+			if not okq then
+				infai_act_emit(req.action_id, "REFUSED", nil, "ACTION_FAILED")
+				return
+			end
 		end
 	else
 		local targets = infai_act_find(area, req.name)
@@ -193,7 +209,8 @@ local function infai_act_run(req, now)
 		end
 	end
 	infai_act_emit(req.action_id, "ACCEPTED", nil, nil)
-	st.check = { id = req.action_id, name = req.name, before = before, at = now + INFAI_ACT_CHECK_MS }
+	st.check = { id = req.action_id, name = req.name, before = before, seen_before = seen_before,
+		at = now + INFAI_ACT_CHECK_MS }
 end
 
 -- Chamado a cada frame pelo menu oculto INFAI_ACT_Menu (INFAIAM.menu). Retorna false.
@@ -215,7 +232,7 @@ function INFAI_ACT_Tick()
 				end
 			end
 		end
-		infai_act_emit(st.check.id, "DONE", count, nil, before, seen)
+		infai_act_emit(st.check.id, "DONE", count, nil, before, seen, st.check.seen_before)
 		st.check = nil
 	end
 	if now < st.next_poll or st.check ~= nil then return false end

@@ -45,9 +45,11 @@ _NPC = re.compile(r'npc:[a-z0-9_#*-]{1,40}')
 _AREA = re.compile(r'[A-Z0-9]{1,8}')
 _CRE = re.compile(r'IA[A-Z0-9]{1,6}')
 _OWN_NAME = re.compile(r'INFAI_[A-Z0-9_]{1,26}')
+_GAME_NAME = re.compile(r'[A-Z0-9_]{1,32}')
 START_ACCEPTED, END_RESOLVED = 'ACCEPTED', 'RESOLVED'
 TALK, ARRIVE, DEFEATED = 'TALK', 'ARRIVE', 'DEFEATED'
 WHEN_ANY, WHEN_NIGHT = 'ANY', 'NIGHT'
+LEAVE_DESPAWN, LEAVE_ESCAPE = 'DESPAWN', 'ESCAPE'     # ADR-0144: how a presence goes
 JOURNAL_SHOWN = 'NarrativeQuestJournalShown'
 
 
@@ -81,6 +83,17 @@ class Presence:
     when: str = WHEN_ANY      # ADR-0139: ANY, or NIGHT (only at night; gone at dawn, D2)
     copies: int = 1           # ADR-0140: how many; ADR-0143: the missing ones created together
     hostile_from: str | None = None   # ADR-0142: from this point (ACCEPTED or a step) they fight
+    leave: str = LEAVE_DESPAWN        # ADR-0144: how it goes when its window closes (or ESCAPE)
+
+
+@dataclass(frozen=True)
+class Call:
+    """ADR-0144: the giver calls for help over its head, with a line of the game's dialog.tlk,
+    in its area, on entering and every `every` ticks, until the quest is accepted."""
+    script_name: str          # the giver's script name in the game
+    area: str                 # where the giver stands
+    strref: int
+    every: int
 
 
 @dataclass(frozen=True)
@@ -100,6 +113,7 @@ class NarrativeQuest:
     turn_in_journal: str
     milestone: str
     presence: tuple[Presence, ...] = ()
+    call: Call | None = None
 
 
 def _norm(text: str) -> str:
@@ -146,6 +160,7 @@ def _presence(raw: object, step_ids: set[str]) -> tuple[Presence, ...] | None:
         when = item.get('when', WHEN_ANY)
         copies = item.get('copies', 1)
         hostile_from = item.get('hostile_from')
+        leave = item.get('leave', LEAVE_DESPAWN)
         numbers = (x, y, facing, copies)
         if not (isinstance(pid, str) and _ID.fullmatch(pid) and isinstance(cre, str)
                 and _CRE.fullmatch(cre) and isinstance(name, str) and _OWN_NAME.fullmatch(name)
@@ -154,13 +169,46 @@ def _presence(raw: object, step_ids: set[str]) -> tuple[Presence, ...] | None:
                 and all(isinstance(n, int) and not isinstance(n, bool) for n in numbers)
                 and -1 <= x <= 32767 and -1 <= y <= 32767 and (x < 0) == (y < 0)
                 and 0 <= facing <= 15 and when in (WHEN_ANY, WHEN_NIGHT) and 1 <= copies <= 8
-                and (hostile_from is None or hostile_from in points[0])):
+                and (hostile_from is None or hostile_from in points[0])
+                and leave in (LEAVE_DESPAWN, LEAVE_ESCAPE)):
             return None
         if pid in {o.presence_id for o in out} or name in {o.name for o in out}:
             return None
         out.append(Presence(pid, cre, name, area, start, end, x, y, facing, when, copies,
-                            hostile_from))
+                            hostile_from, leave))
     return tuple(out)
+
+
+def _chained(steps: list[Step]) -> bool:
+    """ADR-0144: one person may have several conversation steps when each later one comes after
+    the earlier (through `after`, directly or not), so only one of theirs is ever open."""
+    before: dict[str, set[str]] = {}
+    for s in steps:
+        before[s.step_id] = set(s.after).union(*(before[a] for a in s.after))
+    seen: dict[str, list[str]] = {}
+    for s in steps:
+        if s.kind != TALK:
+            continue
+        if any(prev not in before[s.step_id] for prev in seen.get(s.npc_id, [])):
+            return False
+        seen.setdefault(s.npc_id, []).append(s.step_id)
+    return True
+
+
+def _call(raw: object) -> Call | None | bool:
+    """ADR-0144: the giver's call, strictly; None when absent, False when invalid."""
+    if raw is None:
+        return None
+    if not isinstance(raw, dict) or set(raw) != {'script_name', 'area', 'strref', 'every'}:
+        return False
+    name, area, strref, every = raw['script_name'], raw['area'], raw['strref'], raw['every']
+    if not isinstance(area, str) or not _AREA.fullmatch(area) \
+            or not isinstance(name, str) or not _GAME_NAME.fullmatch(name.upper()) \
+            or name.upper().startswith('INFAI_') \
+            or isinstance(strref, bool) or not isinstance(strref, int) or not 0 <= strref <= 999999 \
+            or isinstance(every, bool) or not isinstance(every, int) or not 300 <= every <= 108000:
+        return False
+    return Call(name.upper(), area, strref, every)
 
 
 def _step(s: object, earlier: set[str]) -> Step | None:
@@ -229,12 +277,13 @@ def parse_quest(doc: object) -> NarrativeQuest | None:
               _text(turn_in.get('fact'), MAX_FACT), _text(turn_in.get('journal'), MAX_JOURNAL))
     talkers = [s.npc_id for s in steps if s.kind == TALK]
     if None in fields or not isinstance(fields[1], str) or not _NPC.fullmatch(fields[1]) \
-            or fields[1] in talkers or len(talkers) != len(set(talkers)):
+            or fields[1] in talkers or not _chained(steps):
         return None
     title, giver_id, offer_cues, offer_fact, accept_cues, waiting, accept_journal, \
         turn_cues, turn_fact, turn_journal = fields
     presence = _presence(doc.get('presence'), {s.step_id for s in steps})
-    if presence is None:
+    call = _call(doc.get('call'))
+    if presence is None or call is False:
         return None
     fallen = [s.presence_id for s in steps if s.kind == DEFEATED]
     if any(f not in {p.presence_id for p in presence} for f in fallen) \
@@ -242,7 +291,7 @@ def parse_quest(doc: object) -> NarrativeQuest | None:
         return None
     return NarrativeQuest(qid, title, area, giver_id, offer_cues, offer_fact, accept_cues,
                           waiting, accept_journal, tuple(steps), turn_cues, turn_fact,
-                          turn_journal, doc['milestone'], presence)
+                          turn_journal, doc['milestone'], presence, call or None)
 
 
 def load_quests(base: Path = DEFAULT_QUEST_DIR) -> dict[str, NarrativeQuest]:
@@ -289,6 +338,7 @@ class QuestTurn:
     changes: tuple[str, ...] = ()      # "quest_id:EVENT" recorded now, for the log
     milestones: tuple[str, ...] = ()   # milestones recorded now
     states: tuple[str, ...] = ()       # "quest_id=LABEL" of the quests this person is part of
+    fresh: tuple[str, ...] = ()        # CR-2026-033: the facts a change made this turn (agora)
 
 
 def _record(store, branch_id, event_type, quest, *, game_time, host_epoch, evidence,
@@ -313,13 +363,14 @@ def advance(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQue
     ADR-0125). Then no quest moves and no fact is given: an offer recorded but never said would
     leave the quest ahead of the conversation (lab, 2026-11-18)."""
     facts: list[str] = []
+    fresh: list[str] = []
     journal: list[str] = []
     changes: list[str] = []
     milestones: list[str] = []
     states: list[str] = []
     for quest in quests.values():
-        step_of = {s.npc_id: s for s in quest.steps if s.kind == TALK}
-        if speaker != quest.giver and speaker not in step_of:
+        mine = [s for s in quest.steps if s.kind == TALK and s.npc_id == speaker]
+        if speaker != quest.giver and not mine:
             continue
         if quest.area is not None and area != quest.area:
             continue
@@ -340,11 +391,13 @@ def advance(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQue
                 if says(text, quest.offer_cues):
                     mark(OFFERED)
                     facts.append(quest.offer_fact)
+                    fresh.append(quest.offer_fact)
             elif not st.accepted:
                 facts.append(quest.offer_fact)
                 if says(text, quest.accept_cues):
                     mark(ACCEPTED)
                     facts.append(quest.waiting_fact)
+                    fresh.append(quest.waiting_fact)
                     journal.append(quest.accept_journal)
             elif st.steps_done >= {s.step_id for s in quest.steps} \
                     and says(text, quest.turn_in_cues):
@@ -354,21 +407,26 @@ def advance(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQue
                                          host_epoch=host_epoch, evidence=evidence)
                 milestones.append(quest.milestone)
                 facts.append(quest.turn_in_fact)
+                fresh.append(quest.turn_in_fact)
                 journal.append(quest.turn_in_journal)
             else:
                 facts.append(quest.waiting_fact)
         else:
-            step = step_of[speaker]
-            if step.step_id in st.steps_done:
-                facts.append(step.fact)
-            elif st.accepted and not st.resolved and set(step.after) <= st.steps_done \
-                    and (step.area is None or area == step.area) and says(text, step.cues):
+            # ADR-0144: the person's open step, if the player says it; else what they last told
+            step = next((s for s in mine if s.step_id not in st.steps_done and st.accepted
+                         and not st.resolved and set(s.after) <= st.steps_done
+                         and (s.area is None or area == s.area)), None)
+            told = [s for s in mine if s.step_id in st.steps_done]
+            if step is not None and says(text, step.cues):
                 mark(STEP_DONE, step.step_id)
                 facts.append(step.fact)
+                fresh.append(step.fact)
                 journal.append(step.journal)
+            elif told:
+                facts.append(told[-1].fact)
         states.append(f'{quest.quest_id}={state_of(store, branch_id, quest.quest_id).label()}')
     return QuestTurn(tuple(facts), tuple(journal), tuple(changes), tuple(milestones),
-                     tuple(states))
+                     tuple(states), tuple(fresh))
 
 
 def arrive(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQuest], *,

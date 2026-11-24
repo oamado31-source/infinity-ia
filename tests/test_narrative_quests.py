@@ -30,7 +30,7 @@ BERNARD, YARIN = 'npc:cre-bernard', 'npc:yarin'
 class FormatTests(unittest.TestCase):
     def test_the_curated_quest_loads(self):
         quests = load_quests()
-        self.assertEqual(sorted(quests), ['bernard-brooch'])
+        self.assertEqual(sorted(quests), ['bernard-brooch', 'sarevok-diary'])
         quest = quests['bernard-brooch']
         self.assertEqual((quest.giver, [s.npc_id for s in quest.steps], quest.milestone),
                          (BERNARD, [YARIN], 'quest:bernard-brooch:RESOLVED'))

@@ -93,6 +93,7 @@ class DialogueContext:
     disclosure: tuple[Decision, ...] = ()  # ADR-0131: per-item decision with reason (no text)
     absence: str | None = None   # ADR-0131: NOT_KNOWN/NOT_DEFINED/WITHHELD, answered by code
     offer: Offer | None = None   # ADR-0132: what the person sells (from the game's stores)
+    speech: str | None = None    # CR-2026-033: the curated way of talking (form only)
 
 
 @dataclass(frozen=True)
@@ -258,7 +259,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
                            common_words: frozenset[str] = frozenset(),
                            offer: Offer | None = None,
                            trust_own_only: bool = False,
-                           quest_facts: tuple[str, ...] = ()) -> ContextResult:
+                           quest_facts: tuple[str, ...] = (),
+                           quest_now: tuple[str, ...] = ()) -> ContextResult:
     """A person the player addresses in the game (ADR-0116, SPEC-006): no party memories.
 
     Anyone alive in the current area may talk; only what the person acquired (ADR-0114/0116,
@@ -297,7 +299,11 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
     for text in sold:
         vocabulary |= set(_NAME.findall(text))
     # SPEC-011: what a narrative quest lets the person say this turn, decided by code.
-    facts += tuple(Fact(f'F{len(facts) + i}', f'quest:{npc_id}:{i}', text, at_game_time or 0)
+    # CR-2026-033: what a change of the quest made this turn (`quest_now`) is marked (agora); what
+    # the person keeps saying (waiting, a step already told, a quest done) is an ordinary fact.
+    facts += tuple(Fact(f'F{len(facts) + i}',
+                        f'{"quest" if text in quest_now else "quest-told"}:{npc_id}:{i}', text,
+                        at_game_time or 0)
                    for i, text in enumerate(quest_facts, 1))
     for text in quest_facts:
         vocabulary |= set(_NAME.findall(text))
@@ -397,7 +403,7 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         identity.occupation if identity else None, tier.style, tuple(restricted), standing,
         any(a.endswith(':STAFF') for a in identity.affiliations) if identity else False,
         identity.home_names if identity else (), disposition, morale, tuple(decisions), absence,
-        offer))
+        offer, identity.speech if identity else None))
 
 
 def _with_recall(facts: tuple[Fact, ...], lines: tuple[tuple[str, str], ...],

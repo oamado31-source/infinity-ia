@@ -71,7 +71,8 @@ def build_fingerprint(manifest: dict[str, Any]) -> str:
 # Files the lab services write while they run (reply, voice state, ADR-0134 allowlist,
 # ADR-0136 action request).
 TRANSIENT_OVERRIDE = frozenset({'override/infairsp.lua', 'override/infaiptt.lua',
-                                'override/infaiqst.lua', 'override/infaiact.lua'})
+                                'override/infaiqst.lua', 'override/infaiact.lua',
+                                'override/infaiarr.lua'})   # ADR-0145: the arrival plan
 
 
 def modpack_hash(manifest: dict[str, Any]) -> str:

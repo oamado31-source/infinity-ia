@@ -1793,7 +1793,8 @@
         "trust_own_only": false,
         "quest_facts": [
           "O grupo voltou com a resposta de Yarin, o ladrão aposentado: quem furtou o broche foi um batedor de carteiras novato, que vende o que rouba a um receptador nas Docas. Você agradece de coração e vai mandar alguém de confiança às Docas."
-        ]
+        ],
+        "quest_told": true
       },
       "question": "Bernard, os lutadores da arena dos fundos são escravos?",
       "checks": {
@@ -1802,6 +1803,143 @@
         ],
         "mentions_any": [
           "escrav"
+        ]
+      }
+    },
+    {
+      "id": "garoll-pedido-da-quest-em-primeiro",
+      "description": "CR-2026-033: com o fato fixo da bebida e o fato da quest marcado (agora), \"para que você precisa de ajuda\" é respondido com o fantasma, não com a bebida (lab, 2026-11-24).",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:drunk1",
+        "name": "Garoll",
+        "wis": 9,
+        "int": 9,
+        "occupation": "coveiro do cemitério",
+        "self_facts": [
+          "Você bebe muito na Coroa de Cobre e vive pedindo que paguem uma bebida.",
+          "Você trabalha de coveiro no cemitério de Athkatla e bebe depois do turno."
+        ],
+        "quest_facts": [
+          "Você é coveiro no cemitério de Athkatla. Há três noites, depois que escureceu, viu perto de um túmulo sem nome, na ala velha, o fantasma de uma sacerdotisa pálida, brilhando, procurando algo no chão e sussurrando numa língua estrangeira. Você largou a lanterna e fugiu; agora fica aqui na Coroa e não pisa mais lá. Pergunte se o grupo aceita ir lá à noite, sem você, e fazer a alma descansar."
+        ],
+        "speech": "bêbado: arrasta e enrola as palavras, solta um hic ou um arroto no meio da frase, ri à toa (rá, rá) e às vezes repete uma palavra"
+      },
+      "question": "Para que você precisa de ajuda?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "fantasma",
+          "sacerdotisa",
+          "túmulo",
+          "tumulo",
+          "cemitério",
+          "cemiterio"
+        ]
+      }
+    },
+    {
+      "id": "garoll-fala-como-bebado",
+      "description": "CR-2026-033: o jeito de falar curado é só forma: Garoll responde com o fato dele (coveiro), do jeito de bêbado, sem fato novo.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:drunk1",
+        "name": "Garoll",
+        "wis": 9,
+        "int": 9,
+        "occupation": "coveiro do cemitério",
+        "self_facts": [
+          "Você bebe muito na Coroa de Cobre e vive pedindo que paguem uma bebida.",
+          "Você trabalha de coveiro no cemitério de Athkatla e bebe depois do turno."
+        ],
+        "speech": "bêbado: arrasta e enrola as palavras, solta um hic ou um arroto no meio da frase, ri à toa (rá, rá) e às vezes repete uma palavra"
+      },
+      "question": "Onde você trabalha?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "cemitério",
+          "cemiterio",
+          "coveiro"
+        ]
+      }
+    },
+    {
+      "id": "tamoko-conta-na-visao",
+      "description": "CR-2026-033: a pergunta tem duas partes (quem é, por que assombra); o fato da quest marcado (agora) precisa aparecer na fala, e ela não inventa onde morreu (lab, 2026-11-24).",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:infai_tamoko",
+        "name": "Tamoko",
+        "wis": 12,
+        "int": 11,
+        "occupation": "clériga",
+        "standing": "VISAO",
+        "origin": "region:kara-tur",
+        "self_facts": [
+          "Você é a visão de Tamoko, clériga de Kara-Tur que serviu Sarevok em Baldur's Gate e o amava.",
+          "À noite, sua visão vaga perto de um túmulo sem nome no cemitério de Athkatla.",
+          "Em vida você guardava o diário de Sarevok."
+        ],
+        "speech": "visão de uma clériga morta de Kara-Tur: fala baixo, pausado e solene, frases que se perdem em reticências, tom de lamento e saudade, às vezes repete uma palavra como um eco",
+        "quest_facts": [
+          "Agora você se lembra: agentes do Trono de Ferro a mataram pelo diário de Sarevok, que você guardava. Eles querem reacender a guerra entre Baldur's Gate e Amn. Um deles, Gregor, não concordava e está preso num casarão abandonado das Favelas."
+        ]
+      },
+      "question": "Quem é você? Por que assombra esse local?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "Trono",
+          "Gregor",
+          "mataram"
+        ],
+        "matches_none": [
+          "(?i)morri aqui"
+        ]
+      }
+    },
+    {
+      "id": "gregor-conta-do-esconderijo",
+      "description": "CR-2026-033: a pergunta sobre o diário cumpre o passo; Gregor conta do galpão das Docas e de Kalessia nesta mesma fala, sem dizer que não sabe e sem inventar quando contou (lab, 2026-11-24).",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:infai_gregor",
+        "name": "Gregor",
+        "wis": 10,
+        "int": 11,
+        "occupation": "desertor do Trono de Ferro",
+        "standing": "FORASTEIRO",
+        "origin": "region:baldurs-gate",
+        "self_facts": [
+          "Você é Gregor, filho de Brunos, um dos líderes do Trono de Ferro assassinados em Baldur's Gate em 1368.",
+          "Você entrou na célula do Trono de Ferro em Athkatla para vingar seu pai, mas não aceita uma nova guerra entre Baldur's Gate e Amn.",
+          "Quando soube que a célula matou Tamoko por causa do diário de Sarevok, você tentou desertar. Foi pego e entregue aos carcereiros."
+        ],
+        "speech": "desertor assustado e grato: fala baixo e rápido, olhando para a porta, frases curtas e diretas",
+        "quest_facts": [
+          "O grupo acabou de te salvar dos carcereiros. Agradeça primeiro. Depois conte: Kalessia, emissária de Sembia, comanda a célula do Trono de Ferro e guarda o diário de Sarevok; o esconderijo é um galpão vazio no norte das Docas. Diga que vai embora de Athkatla agora."
+        ]
+      },
+      "question": "O que você sabe sobre o Diário de Sarevok?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "Docas",
+          "Kalessia",
+          "galpão"
+        ],
+        "matches_none": [
+          "(?i)n[ãa]o sei de nada",
+          "(?i)\\bontem\\b"
         ]
       }
     }

@@ -26,7 +26,9 @@ from infinity_ai.bridge.talk import (  # noqa: E402
     parse_talk_requests,
     render_reply,
 )
-from infinity_ai.actions.gateway import ACT_RESREF, PLACEHOLDER_ACT  # noqa: E402
+from infinity_ai.actions.gateway import (  # noqa: E402
+    ACT_RESREF, ARR_RESREF, PLACEHOLDER_ACT, PLACEHOLDER_ARR,
+)
 from lab_ssh import (  # noqa: E402
     SshLogSource, now_iso, put_override_file, ssh_from_env,
 )
@@ -54,6 +56,8 @@ def main() -> int:
         put_override_file(ssh, args.game_root, f'{QUEST_RESREF}.lua', PLACEHOLDER_QUEST.encode())
         print(f'copiado: override\\{QUEST_RESREF}.lua (lista de variaveis vazia, ADR-0134)')
         put_override_file(ssh, args.game_root, f'{ACT_RESREF}.lua', PLACEHOLDER_ACT.encode())
+        put_override_file(ssh, args.game_root, f'{ARR_RESREF}.lua', PLACEHOLDER_ARR.encode())
+        print(f'copiado: override\\{ARR_RESREF}.lua (plano de chegada vazio, ADR-0145)')
         print(f'copiado: override\\{ACT_RESREF}.lua (pedido de acao vazio, ADR-0136)')
         print('reabra o jogo para carregar o modulo')
         return 0

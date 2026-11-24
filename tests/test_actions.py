@@ -13,8 +13,10 @@ sys.path.insert(0, str(ROOT / 'src'))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from infinity_ai.actions.gateway import (  # noqa: E402
-    ACT_SCHEMA, DESPAWN, PLACEHOLDER_ACT, SPAWN, TEMPLATES_SCHEMA, ActionError, ActionReceipt,
-    SET_HOSTILE, confirmed, count_request, despawn_request, hostile_request, load_templates, make_template, owned_creatures,
+    ACT_SCHEMA, CALL, DESPAWN, ESCAPE, PLACEHOLDER_ACT, SPAWN, TEMPLATES_SCHEMA, ActionError,
+    ActionReceipt,
+    SET_HOSTILE, call_request, confirmed, count_request, despawn_request, escape_request,
+    hostile_request, load_templates, make_template, owned_creatures, render_arrival_plan,
     parse_receipt,
     record_requested, record_result, render_request, spawn_request, templates_path,
 )
@@ -34,6 +36,9 @@ ALLOWED = frozenset({
     'EEex_Resource_Fetch', 'Infinity_DoFile', 'Infinity_GetClockTicks', 'EEex_Area_GetVisible',
     'EEex_Sprite_GetInPortrait', 'EEex_Area_GetAllOfTypeStringInRange',
     'EEex_Action_ExecuteResponseStringOnAIBaseInstantly',  # the game's own INSTANT.IDS actions only
+    'EEex_Action_QueueResponseStringOnAIBase',             # EscapeArea() only, it walks (ADR-0144)
+    'EEex_Sprite_DisplayTextRef',                          # a line over a head, CALL (ADR-0144)
+    'EEex_UDEqual',                                        # is the leader in the area (ADR-0145)
     'EEex_Menu_AddMainFileLoadedListener', 'EEex_Menu_LoadFile', 'Infinity_PushMenu',
     'EEex_GameState_AddInitializedListener', 'EEex_Menu_AddAfterMainFileReloadedListener',
 })
@@ -72,7 +77,7 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(render_request(req), (
             'INFAI_ACT_Request = {action_id = "abcdef0123", op = "SPAWN_CREATURE", '
             'area = "AR0406", name = "INFAI_P3TEST", cre = "IAP3TEST", x = 100, y = 200, '
-            'facing = 3, count = 1}\n'))
+            'facing = 3, count = 1, strref = -1}\n'))
         bad = req.__class__('abcdef0123', SPAWN, 'AR0406', 'INFAI_P3TEST',
                             'X")DestroySelf(', 0, 0, 0)
         with self.assertRaises(ActionError):
@@ -178,7 +183,7 @@ class GatewayTests(unittest.TestCase):
         req = spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES, action_id='abcdef0123',
                             count=3)
         self.assertEqual(req.count, 3)
-        self.assertIn('count = 3}', render_request(req))
+        self.assertIn('count = 3, strref = -1}', render_request(req))
         self.assertTrue(confirmed(req, ActionReceipt('abcdef0123', 'DONE', 3, None, 0, 48, 45)))
         for observed, before, seen, seen_before in ((2, 0, 47, 45), (3, 0, 47, 45),
                                                     (3, 0, 49, 45), (4, 1, 47, 45)):
@@ -191,6 +196,47 @@ class GatewayTests(unittest.TestCase):
         count = count_request('INFAI_P3TEST', 'AR0406', action_id='0123456789')
         with self.assertRaises(ActionError):
             render_request(dataclasses.replace(count, count=2))    # copies only for SPAWN
+
+    def test_call_and_escape_requests_are_strict(self):
+        """ADR-0144: CALL only for a pair a curated quest declares, never one of ours; ESCAPE
+        only for ours that the branch owns; the confirmations."""
+        declared = {('DRUNK1', 102877)}
+        req = call_request('drunk1', 'ar0406', 102877, declared=declared, action_id='abcdef0123')
+        self.assertEqual((req.op, req.name, req.area, req.strref), (CALL, 'DRUNK1', 'AR0406',
+                                                                   102877))
+        self.assertIn('strref = 102877}', render_request(req))
+        for args, code in ((('DRUNK1', 'AR0406', 4167), 'CALL_NOT_DECLARED'),
+                           (('BERNARD', 'AR0406', 102877), 'CALL_NOT_DECLARED'),
+                           (('INFAI_TESTE', 'AR0406', 102877), 'BAD_NAME'),
+                           (('DRUNK 1', 'AR0406', 102877), 'BAD_NAME'),
+                           (('DRUNK1', 'AR0406', -1), 'BAD_STRREF'),
+                           (('DRUNK1', 'AR0406', True), 'BAD_STRREF')):
+            with self.assertRaises(ActionError) as ctx:
+                call_request(*args, declared=declared)
+            self.assertEqual(ctx.exception.code, code, args)
+        self.assertTrue(confirmed(req, ActionReceipt('abcdef0123', 'DONE', 1, None, 1)))
+        self.assertFalse(confirmed(req, ActionReceipt('abcdef0123', 'REFUSED', 0, 'NOT_FOUND')))
+        out = escape_request('INFAI_GREGOR', 'AR0416', owned={'INFAI_GREGOR'},
+                             action_id='0123456789')
+        self.assertEqual(out.op, ESCAPE)
+        for name, code in (('Bernard', 'NOT_OURS'), ('INFAI_OUTRO', 'NOT_OWNED')):
+            with self.assertRaises(ActionError) as ctx:
+                escape_request(name, 'AR0416', owned={'INFAI_GREGOR'})
+            self.assertEqual(ctx.exception.code, code)
+        self.assertTrue(confirmed(out, ActionReceipt('0123456789', 'DONE', 0, None, 1, 40, 41)))
+        self.assertFalse(confirmed(out, ActionReceipt('0123456789', 'DONE', 1, None, 1, 41, 41)))
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CampaignStore.open(Path(tmp) / 'c.sqlite3', 'lab')
+            self.addCleanup(store.close)
+            spawn = spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES,
+                                  action_id='2222222222')
+            record_result(store, ROOT_BRANCH, spawn,
+                          ActionReceipt('2222222222', 'DONE', 1, None, 0, 41, 40), game_time=10)
+            gone = escape_request('INFAI_P3TEST', 'AR0406', owned={'INFAI_P3TEST'},
+                                  action_id='3333333333')
+            record_result(store, ROOT_BRANCH, gone,
+                          ActionReceipt('3333333333', 'DONE', 0, None, 1, 40, 41), game_time=20)
+            self.assertEqual(owned_creatures(store, ROOT_BRANCH), {})     # it walked out
 
     def test_request_file_does_not_change_the_modpack(self):
         def manifest(*files):
@@ -225,6 +271,7 @@ end
 area = { m_resref = { get = function() return "AR0406" end }, sprites = { sprite("Bernard", 5, 5) } }
 leader = sprite("Player1", 100, 200)
 EEex_Area_GetVisible = function() return area end
+EEex_UDEqual = function(a, b) return a == b end
 EEex_Sprite_GetInPortrait = function(i) if i == 0 then return leader end end
 EEex_Area_GetAllOfTypeStringInRange = function(a) return a.sprites end
 EEex_Action_ExecuteResponseStringOnAIBaseInstantly = function(s, target)
@@ -235,6 +282,22 @@ EEex_Action_ExecuteResponseStringOnAIBaseInstantly = function(s, target)
   if s == "DestroySelf()" then
     for i, sp in ipairs(area.sprites) do if sp == target then table.remove(area.sprites, i) end end
   end
+end
+shown = {}
+EEex_Sprite_DisplayTextRef = function(target, strref, opts)       -- ADR-0144: CALL
+  table.insert(shown, target.m_scriptName.get() .. ":" .. strref .. ":" .. tostring(opts.overHead)
+               .. ":" .. tostring(opts.playSound))
+end
+walking = {}
+EEex_Action_QueueResponseStringOnAIBase = function(s, target)    -- ADR-0144: EscapeArea()
+  table.insert(queued, s)
+  if s == "EscapeArea()" then table.insert(walking, target) end
+end
+function reach_exit()                                         -- the walkers vanish at the exit
+  for _, w in ipairs(walking) do
+    for i, sp in ipairs(area.sprites) do if sp == w then table.remove(area.sprites, i) end end
+  end
+  walking = {}
 end
 """
 
@@ -299,6 +362,104 @@ class ModuleTests(unittest.TestCase):
         self.tick(3500)
         self.assertEqual(self.acts()[-1].reason, 'BAD_REQUEST')
         self.assertEqual(len(self.queued()), 3)
+
+    def test_call_shows_a_line_over_a_givers_head_only(self):
+        """ADR-0144: display only; the giver of the game, by script name, with the strref."""
+        self.serve(call_request('BERNARD', 'AR0406', 102877, declared={('BERNARD', 102877)},
+                                action_id='abcdef0123'))
+        self.tick()
+        self.assertEqual(self.acts()[-1], ActionReceipt('abcdef0123', 'DONE', 1, None, 1))
+        self.assertEqual([self.g.shown[i] for i in range(1, len(self.g.shown) + 1)],
+                         ['Bernard:102877:true:nil'])
+        self.assertEqual(self.queued(), [])                             # nothing else done
+        self.serve(call_request('GAROLL', 'AR0406', 102877, declared={('GAROLL', 102877)},
+                                action_id='0123456789'))
+        self.tick(3500)
+        self.assertEqual(self.acts()[-1].reason, 'NOT_FOUND')
+        self.g.files['INFAIACT'] = render_request(call_request(
+            'BERNARD', 'AR0406', 1, declared={('BERNARD', 1)}, action_id='1111111111')).replace(
+            'name = "BERNARD"', 'name = "INFAI_P3TEST"')                # never one of ours
+        self.tick(3500)
+        self.assertEqual(self.acts()[-1].reason, 'BAD_REQUEST')
+
+    def test_escape_walks_to_the_exit_and_holds_when_none_is_left(self):
+        """ADR-0144: EscapeArea() queued on ours; counted each second up to 30 s."""
+        self.serve(spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES,
+                                 action_id='abcdef0123', count=2))
+        self.tick()
+        self.tick(3500)
+        self.serve(escape_request('INFAI_P3TEST', 'AR0406', owned={'INFAI_P3TEST'},
+                                  action_id='0123456789'))
+        self.tick()
+        self.assertEqual(self.queued()[-2:], ['EscapeArea()', 'EscapeArea()'])
+        self.tick(1100)
+        self.tick(1100)                                                 # still walking
+        self.assertEqual(self.acts()[-1].status, 'ACCEPTED')
+        self.lua.execute('reach_exit()')
+        self.tick(1100)
+        self.assertEqual(self.acts()[-1], ActionReceipt('0123456789', 'DONE', 0, None, 2, 1, 3))
+        self.assertTrue(confirmed(escape_request('INFAI_P3TEST', 'AR0406',
+                                                 owned={'INFAI_P3TEST'},
+                                                 action_id='0123456789'), self.acts()[-1]))
+
+    def test_an_escape_that_never_arrives_answers_at_the_deadline(self):
+        self.serve(spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES,
+                                 action_id='abcdef0123'))
+        self.tick()
+        self.tick(3500)
+        self.serve(escape_request('INFAI_P3TEST', 'AR0406', owned={'INFAI_P3TEST'},
+                                  action_id='0123456789'))
+        self.tick()
+        for _ in range(31):
+            self.tick(1000)
+        receipt = self.acts()[-1]
+        self.assertEqual((receipt.status, receipt.observed), ('DONE', 1))   # stuck: not done
+        self.assertFalse(confirmed(escape_request('INFAI_P3TEST', 'AR0406',
+                                                  owned={'INFAI_P3TEST'},
+                                                  action_id='0123456789'), receipt))
+
+    def test_an_arrival_plan_is_made_the_moment_its_area_loads(self):
+        """ADR-0145: the module creates what is missing on loading the planned area, once, and
+        answers each entry like a SPAWN; other areas, names not ours and used entries: nothing."""
+        plan = render_arrival_plan([
+            spawn_request('IAP3TEST', 'AR0409', templates=TEMPLATES, action_id='abcdef0123',
+                          count=2),
+            spawn_request('IATESTE', 'AR0331', templates=TEMPLATES, action_id='0123456789')])
+        self.g.files['INFAIARR'] = plan
+        self.tick()                                                    # still in AR0406
+        self.assertEqual(self.queued(), [])
+        self.lua.execute("""
+          local function body(name)
+            return { m_scriptName = { get = function() return name end }, m_pos = { x = 0, y = 0 },
+                     m_baseStats = { m_generalState = 0 }, m_typeAI = { m_EnemyAlly = 128 } }
+          end
+          area = { m_resref = { get = function() return "AR0409" end },
+                   sprites = { body("Rato"), body("INFAI_P3TEST") } }""")
+        self.lua.execute('leader.m_pArea = nil')                       # the party not put yet
+        self.tick()                                                    # AR0409 loads
+        self.tick(1000)
+        self.assertEqual(self.queued(), [])                            # waits for the leader
+        self.lua.execute('leader.m_pArea = area')
+        self.tick()
+        self.assertEqual(self.queued(), ['CreateCreature("IAP3TEST",[160.230],0)'])  # one missing
+        self.tick(3500)
+        self.assertEqual(self.acts()[-1], ActionReceipt('abcdef0123', 'DONE', 2, None, 1, 3, 2))
+        self.lua.execute('area = { m_resref = { get = function() return "AR0400" end }, '
+                         'sprites = {} }')
+        self.tick()
+        self.lua.execute('area = { m_resref = { get = function() return "AR0409" end }, '
+                         'sprites = {} }; leader.m_pArea = area')
+        self.tick(3500)
+        self.tick(3500)                                                # entered again: used
+        self.assertEqual(len(self.queued()), 1)
+        bad = plan.replace('name = "INFAI_TESTE"', 'name = "Bernard"').replace(
+            'abcdef0123', '2222222222')
+        self.g.files['INFAIARR'] = bad.replace('AR0331', 'AR0400')
+        self.lua.execute('area = { m_resref = { get = function() return "AR0400" end }, '
+                         'sprites = {} }; leader.m_pArea = area')
+        self.tick(3500)
+        self.tick(3500)
+        self.assertEqual(len(self.queued()), 1)                         # never a name not ours
 
     def test_count_reads_without_queueing(self):
         self.serve(spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES,
@@ -395,8 +556,15 @@ class StaticTests(unittest.TestCase):
         self.assertLessEqual(int(re.search(r'INFAI_ACT_RANGE = (\d+)', self.raw).group(1)), 32767)
         self.assertEqual(self.raw.count('"DestroySelf()"'), 1)
         self.assertEqual(self.raw.count('"Enemy()"'), 1)                   # ADR-0142
-        # INSTANT.IDS actions run at once: a queue on the leader is lost in a fight (lab, ADR-0142)
-        self.assertNotIn('QueueResponseString', self.code)
+        # INSTANT.IDS actions run at once: a queue on the leader is lost in a fight (lab, ADR-0142);
+        # only EscapeArea(), which walks, is queued, on our own creature (ADR-0144)
+        self.assertEqual(self.raw.count('QueueResponseString'), 1)
+        self.assertIn('EEex_Action_QueueResponseStringOnAIBase, "EscapeArea()", sprite', self.raw)
+        self.assertEqual(self.raw.count('"EscapeArea()"'), 1)
+        # CALL only shows a line of dialog.tlk over a head (ADR-0144): one call, no other option
+        self.assertEqual(self.raw.count('EEex_Sprite_DisplayTextRef'), 1)
+        self.assertIn('EEex_Sprite_DisplayTextRef, sprite, req.strref, { overHead = true })',
+                      self.raw)
         self.assertNotRegex(self.code, r'SetGlobal|ActionOverride|StartCutScene|GiveItem|Kill\(|Ally\(')
 
     def test_never_assigns_to_engine_state(self):
@@ -404,6 +572,8 @@ class StaticTests(unittest.TestCase):
             for lhs in re.findall(r'([\w.\[\]:]+)\s*=(?!=)', src_line):
                 if src_line.strip().startswith(('if ', 'elseif ', 'for ')):
                     continue
+                if lhs == 'overHead' and '{ overHead = true }' in src_line:
+                    continue              # a key of the options table of CALL, not engine state
                 with self.subTest(line=src_line.strip()):
                     self.assertNotRegex(lhs, r'\.m_|:|EngineGlobals')
                     root = lhs.split('.')[0].split('[')[0]

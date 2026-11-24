@@ -20,6 +20,13 @@ ADR-0143: a SPAWN creates `count` copies at the same instant (lab: copies asked 
 lost once the first, born hostile, started a fight), and it holds only when both counts rise by
 exactly that number: ours with the name, and every creature of the area (`seen_before` -> `seen`).
 Our count alone once confirmed a creation that never happened (evidence S2d).
+ADR-0144: CALL shows, over the head of a creature of the game, a line the game's `dialog.tlk`
+already has (only the pair a curated quest declares for its giver; display only, nothing in the
+game or the save changes). ESCAPE queues the game's own EscapeArea() on our creatures: they walk to
+the nearest exit and vanish there; it holds when none is left (the module waits up to 30 s).
+ADR-0145: the arrival plan (`INFAIARR.lua`) lists the creations a quest needs in an area the party
+is not in yet; the module makes the missing ones the moment that area loads and answers each one
+like a SPAWN, so who the quest puts somewhere is already there when the party walks in.
 """
 from __future__ import annotations
 
@@ -36,8 +43,14 @@ ACT_RESREF = 'INFAIACT'
 ACT_PREFIX = 'INFAI-ACT '
 ACT_SCHEMA = 'infinity-ai.act.v1'
 SPAWN, DESPAWN, COUNT, SET_HOSTILE = 'SPAWN_CREATURE', 'DESPAWN', 'COUNT', 'SET_HOSTILE'
-OPERATIONS = (SPAWN, DESPAWN, COUNT, SET_HOSTILE)   # COUNT (ADR-0140): read only; SET_HOSTILE
-#                                                     (ADR-0142): Enemy() on our creatures
+CALL, ESCAPE = 'CALL', 'ESCAPE'                     # ADR-0144
+OPERATIONS = (SPAWN, DESPAWN, COUNT, SET_HOSTILE, CALL, ESCAPE)   # COUNT (ADR-0140): read only;
+#   SET_HOSTILE (ADR-0142): Enemy() on ours; CALL (ADR-0144): a line over a giver's head, display
+#   only; ESCAPE (ADR-0144): EscapeArea() on ours
+REMOVALS = (DESPAWN, ESCAPE)                        # none of ours left after them
+ARR_RESREF = 'INFAIARR'                             # ADR-0145: the arrival plan
+PLACEHOLDER_ARR = 'INFAI_ARR_Plan = {}\n'
+"""Kept in override/ at all times (present at launch); an empty plan creates nothing."""
 OWN_PREFIX = 'INFAI_'
 POLICY = 'adr-0136-gate-p3-v1'
 REQUESTED, CONFIRMED, FAILED = 'GameActionRequested', 'GameActionConfirmed', 'GameActionFailed'
@@ -50,6 +63,8 @@ _ID = re.compile(r'[a-z0-9]{10}')
 _CRE = re.compile(r'[A-Z0-9_#-]{1,8}')
 _AREA = re.compile(r'[A-Z0-9]{1,8}')
 _NAME = re.compile(r'INFAI_[A-Z0-9_]{1,26}')
+_GAME_NAME = re.compile(r'[A-Z0-9_]{1,32}')         # ADR-0144: a script name of the game
+MAX_STRREF = 999999
 _TEMPLATE = re.compile(r'IA[A-Z0-9]{1,6}')
 TEMPLATES_SCHEMA = 'infinity-ai.creature-templates.v1'
 DEFAULT_TEMPLATE_DIR = Path.home() / '.infinity-ai' / 'templates'
@@ -80,6 +95,7 @@ class ActionRequest:
     y: int = -1
     facing: int = 0
     count: int = 1            # ADR-0143, SPAWN only: copies created at the same instant
+    strref: int = -1          # ADR-0144, CALL only: the line of dialog.tlk shown over the head
 
 
 def new_action_id() -> str:
@@ -169,10 +185,58 @@ def hostile_request(name: str, area: str, *, owned: set[str] | frozenset[str],
     return ActionRequest(req.action_id, SET_HOSTILE, req.area, req.name)
 
 
+def call_request(script_name: str, area: str, strref: int, *,
+                 declared: set[tuple[str, int]] | frozenset[tuple[str, int]],
+                 action_id: str | None = None) -> ActionRequest:
+    """ADR-0144: a CALL over the head of a giver of a curated quest, with the line that quest
+    declares; never one of ours, never a pair the quests do not declare."""
+    area = (area or '').upper()
+    action_id = action_id or new_action_id()
+    if not _ID.fullmatch(action_id):
+        raise ActionError('BAD_ACTION_ID')
+    name = (script_name or '').upper() if isinstance(script_name, str) else ''
+    if not _GAME_NAME.fullmatch(name) or name.startswith(OWN_PREFIX):
+        raise ActionError('BAD_NAME')
+    if isinstance(strref, bool) or not isinstance(strref, int) or not 0 <= strref <= MAX_STRREF:
+        raise ActionError('BAD_STRREF')
+    if (name, strref) not in {(n.upper(), r) for n, r in declared}:
+        raise ActionError('CALL_NOT_DECLARED')
+    if not _AREA.fullmatch(area):
+        raise ActionError('BAD_AREA')
+    return ActionRequest(action_id, CALL, area, name, strref=strref)
+
+
+def escape_request(name: str, area: str, *, owned: set[str] | frozenset[str],
+                   action_id: str | None = None) -> ActionRequest:
+    """ADR-0144: our creatures with this name walk to the nearest exit and vanish there."""
+    req = despawn_request(name, area, owned=owned, action_id=action_id)
+    return ActionRequest(req.action_id, ESCAPE, req.area, req.name)
+
+
+def render_arrival_plan(entries: list[ActionRequest] | tuple[ActionRequest, ...]) -> str:
+    """ADR-0145: `override/INFAIARR.lua`, the creations the module makes itself the moment the
+    party enters an area. Each entry is a SPAWN the gateway already validated; its `count` is how
+    many of that name must be there (the module creates only what is missing)."""
+    rows = []
+    for req in entries:
+        render_request(req)                       # the same checks as any request
+        if req.op != SPAWN:
+            raise ActionError('BAD_REQUEST')
+        rows.append('{' f'action_id = {lua_string(req.action_id)}, '
+                    f'area = {lua_string(req.area)}, name = {lua_string(req.name)}, '
+                    f'cre = {lua_string(req.cre)}, x = {int(req.x)}, y = {int(req.y)}, '
+                    f'facing = {int(req.facing)}, count = {int(req.count)}' '}')
+    return 'INFAI_ARR_Plan = {' + ', '.join(rows) + '}\n'
+
+
 def render_request(req: ActionRequest) -> str:
     """Contents of `override/INFAIACT.lua`: escaped literals only (like INFAIRSP.lua)."""
+    name_ok = (_GAME_NAME.fullmatch(req.name) and not req.name.startswith(OWN_PREFIX)
+               and isinstance(req.strref, int) and not isinstance(req.strref, bool)
+               and 0 <= req.strref <= MAX_STRREF) if req.op == CALL \
+        else (_NAME.fullmatch(req.name) and req.strref == -1)
     if req.op not in OPERATIONS or not _ID.fullmatch(req.action_id) \
-            or not _NAME.fullmatch(req.name) or not _AREA.fullmatch(req.area) \
+            or not name_ok or not _AREA.fullmatch(req.area) \
             or (req.op == SPAWN and not _TEMPLATE.fullmatch(req.cre)) \
             or isinstance(req.count, bool) or not isinstance(req.count, int) \
             or not 1 <= req.count <= MAX_COUNT or (req.op != SPAWN and req.count != 1):
@@ -181,7 +245,8 @@ def render_request(req: ActionRequest) -> str:
             f'action_id = {lua_string(req.action_id)}, op = {lua_string(req.op)}, '
             f'area = {lua_string(req.area)}, name = {lua_string(req.name)}, '
             f'cre = {lua_string(req.cre)}, x = {int(req.x)}, y = {int(req.y)}, '
-            f'facing = {int(req.facing)}, count = {int(req.count)}}}\n')
+            f'facing = {int(req.facing)}, count = {int(req.count)}, '
+            f'strref = {int(req.strref)}}}\n')
 
 
 @dataclass(frozen=True)
@@ -243,6 +308,11 @@ def confirmed(req: ActionRequest, receipt: ActionReceipt) -> bool:
             and receipt.seen == receipt.seen_before + req.count
     if req.op == COUNT:                       # the count itself is the host's word
         return receipt.status == DONE
+    if req.op == CALL:                        # ADR-0144: the giver was there and saw the line
+        return receipt.status == DONE and receipt.observed >= 1
+    if req.op == ESCAPE:                      # ADR-0144: they walked out; none of ours is left
+        return receipt.status == DONE and receipt.observed == 0 \
+            and receipt.before is not None and receipt.before >= 1
     if req.op == SET_HOSTILE:                 # every living one of ours with the name is hostile
         return receipt.status == DONE and receipt.before is not None and receipt.before >= 1 \
             and receipt.observed == receipt.before
@@ -307,14 +377,14 @@ def record_result(store: CampaignStore, branch_id: str, req: ActionRequest,
 
 def creature_counts(store: CampaignStore, branch_id: str) -> dict[str, tuple[str, int]]:
     """ADR-0140: per name of ours, the area and how many the game last said are there (after a
-    SPAWN, a DESPAWN or a COUNT). An action without the game time cannot be placed on the
+    SPAWN, a DESPAWN or ESCAPE, or a COUNT). An action without the game time cannot be placed on the
     timeline, so it does not count (lab, S1x)."""
     out: dict[str, tuple[str, int]] = {}
     for event in store.visible_events(branch_id, CONFIRMED):
         if event.game_time is None:
             continue
         p = event.payload
-        if p.get('op') == DESPAWN:
+        if p.get('op') in REMOVALS:
             out[p['name']] = (p['area'], 0)
         elif p.get('op') in (SPAWN, COUNT) and isinstance(p.get('observed'), int):
             out[p['name']] = (p['area'], p['observed'])

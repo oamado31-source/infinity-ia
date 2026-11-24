@@ -12,6 +12,9 @@ ADR-0142: a presence with `hostile_from` is made hostile (SET_HOSTILE) once that
 reached and all its copies are there; never twice after the same creation.
 ADR-0140: the director asks the game to count (read only) before trusting the branch, keeps
 several copies, and sees a presence's defeat when its count falls to zero.
+ADR-0144: a presence with `leave: ESCAPE` walks to the nearest exit and vanishes there (the game's
+EscapeArea()) instead of vanishing on the spot; a quest's giver may call for help over its head
+(CALL, display only) in its area, on entering and every few minutes, until the quest is accepted.
 ADR-0139: a NIGHT presence is wanted only at night; at dawn it is no longer wanted, and the quest
 removes what it placed when the party is in the area (D2).
 
@@ -24,19 +27,20 @@ which only move the quest by its existing rules (D1). Events carry the cause, ne
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Protocol
 
 from ..actions.gateway import (
-    CONFIRMED, COUNT, DESPAWN, FAILED, REQUESTED, SET_HOSTILE, SPAWN, ActionError,
-    ActionReceipt, ActionRequest, count_request, creature_counts, despawn_request,
-    hostile_request, owned_creatures, record_requested, record_result, spawn_request,
+    CALL, CONFIRMED, COUNT, DONE, FAILED, REMOVALS, REQUESTED, SET_HOSTILE, SPAWN, ActionError,
+    ActionReceipt, ActionRequest, call_request, count_request, creature_counts, despawn_request,
+    escape_request, hostile_request, owned_creatures, record_requested, record_result,
+    spawn_request,
 )
 from ..state.store import CampaignStore
 from .clock import is_night
 from .narrative import (
-    DEFEATED, END_RESOLVED, START_ACCEPTED, WHEN_NIGHT, NarrativeQuest, Presence, QuestState,
-    mark_step, state_of,
+    ARRIVE, DEFEATED, END_RESOLVED, LEAVE_ESCAPE, START_ACCEPTED, WHEN_NIGHT, NarrativeQuest, Presence,
+    QuestState, mark_step, state_of,
 )
 
 POLICY = 'adr-0138-quest-presence-v1'
@@ -94,7 +98,7 @@ def status_of(store: CampaignStore, branch_id: str, quest_id: str,
                   for e in events)
     told = [e for e in events if e.event_type == CONFIRMED and e.game_time is not None
             and e.payload.get('name') == presence.name]
-    last_out = max((e.seq for e in told if e.payload.get('op') == DESPAWN), default=-1)
+    last_out = max((e.seq for e in told if e.payload.get('op') in REMOVALS), default=-1)
     placed = any(e.payload.get('op') == SPAWN and _cause_of(e.payload) == key
                  and e.seq > last_out for e in told)
     first_spawn = min((e.seq for e in told if e.payload.get('op') == SPAWN
@@ -243,7 +247,126 @@ def request_for(decision: Decision, store: CampaignStore, branch_id: str, *,
         if req.name != p.name:                     # the file holds another name of ours
             raise ActionError('TEMPLATE_NAME_MISMATCH')
         return req
-    return despawn_request(p.name, p.area, owned=set(owned_creatures(store, branch_id)))
+    owned = set(owned_creatures(store, branch_id))
+    if p.leave == LEAVE_ESCAPE:                    # ADR-0144: out by the nearest exit
+        return escape_request(p.name, p.area, owned=owned)
+    return despawn_request(p.name, p.area, owned=owned)
+
+
+
+def arrival_plan(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQuest], *,
+                 area: str | None, game_time: int | None, templates: dict[str, str]
+                 ) -> tuple[tuple[Decision, ActionRequest], ...]:
+    """ADR-0145: the creations the quests need in areas the party is not in now, for the module
+    to make the moment one of them loads. Each request's `count` is how many must be there; a
+    presence already filled, held, awaiting its defeat or meant for another time is left out."""
+    out: list[tuple[Decision, ActionRequest]] = []
+    for quest in quests.values():
+        for p in quest.presence:
+            if p.area == area:
+                continue
+            state = state_of(store, branch_id, quest.quest_id)
+            # entering p.area will do that area's arrival steps (ADR-0139): count them as done,
+            # so a presence that starts on arriving is planned before the party walks in
+            arriving = {s.step_id for s in quest.steps if s.kind == ARRIVE and s.area == p.area
+                        and set(s.after) <= state.steps_done
+                        and (not s.night or is_night(game_time))}
+            if state.accepted and not state.resolved:
+                state = replace(state, steps_done=state.steps_done | arriving)
+            fall = next((s for s in quest.steps if s.kind == DEFEATED
+                         and s.presence_id == p.presence_id), None)
+            if not wanted(state, p, game_time) or (fall is not None
+                                                   and fall.step_id in state.steps_done):
+                continue
+            status = status_of(store, branch_id, quest.quest_id, p)
+            if status.blocked or status.filled or status.count >= p.copies:
+                continue
+            try:
+                req = spawn_request(p.cre, p.area, x=p.x, y=p.y, facing=p.facing,
+                                    templates=templates, count=p.copies)
+            except ActionError:
+                continue
+            if req.name == p.name:
+                out.append((Decision(quest.quest_id, p, ENTER, count=p.copies), req))
+    return tuple(out)
+
+
+def record_arrival(store: CampaignStore, branch_id: str, decision: Decision, req: ActionRequest,
+                   receipt: ActionReceipt | None, *, game_time: int, host_epoch: int = 0,
+                   arrival_made: int | None = None) -> str:
+    """ADR-0145: what the module did on entering, recorded as the director would have: a SPAWN of
+    the copies it created, or a COUNT when the save already held them all. Anything else (no
+    answer, a refusal, a count that does not add up) holds the presence, as any ENTER would."""
+    cause = decision.cause()
+    if receipt is not None and receipt.status == DONE and receipt.before is not None \
+            and receipt.observed is not None:
+        made = receipt.observed - receipt.before
+        # every presence of one arrival is made in the same instant, so the area's total rises by
+        # all of them together (lab, 2026-11-24: Gregor +1 and the jailers +2, the area +3); the
+        # total holds when it rose by exactly what the whole arrival made
+        if arrival_made is not None and receipt.seen is not None \
+                and receipt.seen_before is not None \
+                and receipt.seen - receipt.seen_before == arrival_made and made >= 0:
+            cause = dict(cause, arrival_made=str(arrival_made))
+            receipt = ActionReceipt(receipt.action_id, receipt.status, receipt.observed,
+                                    receipt.reason, receipt.before, receipt.seen,
+                                    receipt.seen - made)
+        if made == 0 and receipt.observed >= decision.presence.copies:
+            done = count_request(req.name, req.area, action_id=req.action_id)
+        elif made >= 1:
+            done = ActionRequest(req.action_id, SPAWN, req.area, req.name, req.cre, req.x, req.y,
+                                 req.facing, made)
+        else:
+            done = req
+    else:
+        done = req
+    record_requested(store, branch_id, done, game_time=game_time, host_epoch=host_epoch,
+                     cause=cause)
+    state = record_result(store, branch_id, done, receipt, game_time=game_time,
+                          host_epoch=host_epoch, cause=cause)
+    if state != 'HOST_CONFIRMED':
+        record_suspended(store, branch_id, decision, state, game_time=game_time,
+                         key=req.action_id, host_epoch=host_epoch)
+    return state
+
+def call_due(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQuest], *,
+             area: str | None, game_time: int | None) -> NarrativeQuest | None:
+    """ADR-0144: a quest whose giver should call for help now: not yet accepted, the party in
+    the giver's area, and no call since the last entry or load or for `every` ticks."""
+    if not area or game_time is None:
+        return None
+    entries = [e.seq for t in ENTRY_EVENTS for e in store.visible_events(branch_id, t)]
+    last_entry = max(entries, default=-1)
+    for quest in quests.values():
+        call = quest.call
+        if call is None or call.area != area:
+            continue
+        st = state_of(store, branch_id, quest.quest_id)
+        if st.accepted or st.resolved:
+            continue
+        calls = [e for e in store.visible_events(branch_id, REQUESTED)
+                 if e.payload.get('op') == CALL and isinstance(e.payload.get('cause'), dict)
+                 and e.payload['cause'].get('quest_id') == quest.quest_id]
+        last = calls[-1] if calls else None
+        if last is None or last.seq < last_entry or last.game_time is None \
+                or game_time - last.game_time >= call.every:
+            return quest
+    return None
+
+
+def dispatch_call(store: CampaignStore, branch_id: str, quest: NarrativeQuest, *,
+                  transport: Transport, game_time: int, host_epoch: int = 0) -> str:
+    """Ask the game for the giver's call once. Nothing is held whatever the answer: the call
+    only tries again at its next turn (display only, ADR-0144)."""
+    call = quest.call
+    req = call_request(call.script_name, call.area, call.strref,
+                       declared={(call.script_name, call.strref)})
+    cause = {'policy': POLICY, 'quest_id': quest.quest_id, 'rule': CALL}
+    record_requested(store, branch_id, req, game_time=game_time, host_epoch=host_epoch,
+                     cause=cause)
+    receipt = transport.send(req)
+    return record_result(store, branch_id, req, receipt, game_time=game_time,
+                         host_epoch=host_epoch, cause=cause)
 
 
 def dispatch(store: CampaignStore, branch_id: str, decision: Decision, *, transport: Transport,
@@ -278,5 +401,5 @@ def dispatch(store: CampaignStore, branch_id: str, decision: Decision, *, transp
 
 
 __all__ = ['ENTER', 'LEAVE', 'VERIFY', 'DEFEAT_WATCH', 'DEFEAT', 'HOSTILE', 'SUSPENDED', 'RESUMED', 'Decision', 'PresenceStatus', 'Transport',
-           'decide', 'dispatch', 'record_resumed', 'record_suspended', 'request_for', 'status_of',
+           'arrival_plan', 'call_due', 'decide', 'record_arrival', 'dispatch', 'dispatch_call', 'record_resumed', 'record_suspended', 'request_for', 'status_of',
            'wanted']

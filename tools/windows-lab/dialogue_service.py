@@ -59,7 +59,9 @@ from infinity_ai.dialogue.engine import (  # noqa: E402
     DialogueEngine, DialogueRequest, DialogueStatus, ResidentRequest,
 )
 from infinity_ai.dialogue.conversation import ConversationMemory  # noqa: E402
-from infinity_ai.dialogue.llm import OllamaProvider  # noqa: E402
+from infinity_ai.dialogue.layers import LayerPolicy  # noqa: E402
+from infinity_ai.dialogue.llm import (CLAUDE_MODEL, AnthropicProvider,  # noqa: E402
+                                      BudgetedProvider, MonthlyBudget, OllamaProvider)
 from infinity_ai.dialogue.recall import (  # noqa: E402
     NO_RECALL, npc_key, recall, recall_lines, record_turn,
 )
@@ -473,6 +475,7 @@ class Talker(threading.Thread):
         self.args, self.ssh, self.observer, self.catalog = args, ssh, observer, catalog
         self.writer = writer
         self.provider = OllamaProvider(args.model, base_url=args.ollama_url)
+        self.layers = layer_policy(args)        # ADR-0147: code, the local model or Claude
         self.seen: set[str] | None = None
         self._last_text: str | None = None      # the log copy already parsed (polled at 10 Hz)
         self._lock = threading.Lock()
@@ -553,6 +556,7 @@ class Talker(threading.Thread):
         known_by_identity, known_by_relationship, known_now = [], [], ()
         flags: list[str] = []
         wisdom = intelligence = None
+        model_used = '-'
         tier, known_texts, standing = '-', {}, '-'
         trust = None
         reaction = check = None
@@ -592,11 +596,13 @@ class Talker(threading.Thread):
                                         home_region=where[0] if where else None,
                                         named=named_in(pack, pack.entries, req.text,
                                                        local_aliases(pack, req.area))))
-            result = DialogueEngine(store, self.provider, self.catalog).respond(
+            result = DialogueEngine(store, self.provider, self.catalog,
+                                    layers=self.layers).respond(
                 DialogueRequest(speaker, req.text), branch_id=view.branch_id,
                 at_game_time=view.game_time, wisdom=wisdom, intelligence=intelligence,
                 history=history, recall_lines=lines, order=order)
             status, reason, flags = result.status.value, result.reason, list(result.flags)
+            model_used = result.model
             speech = result.speech or self.catalog.persona(speaker).fallback
             used = tuple(e.split(':', 1)[1] for e in result.used_event_ids
                          if e.startswith('canon:'))
@@ -656,6 +662,9 @@ class Talker(threading.Thread):
             # Wisdom and Intelligence (game data) set how deeply the person knows (ADR-0117).
             wisdom = getattr(resident, 'wisdom', 0) or None
             intelligence = getattr(resident, 'intelligence', 0) or None
+            if curation is not None:     # ADR-0147 D2: the curation may correct the game's scores
+                wisdom = curation.wisdom or wisdom
+                intelligence = curation.intelligence or intelligence
             tier_obj = knowledge_tier(wisdom, intelligence)
             tier = tier_obj.name
             known_texts = {e: layered_text(pack.get(e).summary, pack.get(e).layers,
@@ -711,7 +720,8 @@ class Talker(threading.Thread):
             held_now = set(known_now)
             unheld = tuple(entry.title for entry_id, entry in sorted(pack.entries.items())
                            if entry_id not in held_now)
-            result = DialogueEngine(store, self.provider, self.catalog).respond_resident(
+            result = DialogueEngine(store, self.provider, self.catalog,
+                                    layers=self.layers).respond_resident(
                 ResidentRequest(speaker, req.speaker_name, req.text, req.area, req.speaker_dead),
                 residence_areas=areas, branch_id=view.branch_id, at_game_time=view.game_time,
                 profile=profile, identity=identity, also_known=also_known, wisdom=wisdom,
@@ -729,6 +739,7 @@ class Talker(threading.Thread):
                                                          local_aliases(pack, req.area)))))
             status, reason = result.status.value, result.reason
             flags = list(result.flags)
+            model_used = result.model
             speech = result.speech or ('...' if req.speaker_dead else RESIDENT_FALLBACK)
             # ADR-0139/0140: arrival and defeat steps have no conversation; their line goes on the
             # next reply.
@@ -796,6 +807,7 @@ class Talker(threading.Thread):
               f'habitante={bool(areas)} estatuto={standing} perfil={scope} '
               f'identidade={ident_source} '
               f'wis={wisdom or "-"} int={intelligence or "-"} camada={tier} '
+              f'fala_por={model_used} '
               f'chr_ativo={chr_active} chr_base={chr_base} '
               f'morale_engine_atual={morale} morale_break_ativo={morale_break} '
               f'morale_break_base={morale_break_base} selected_leader={leader_label} '
@@ -806,6 +818,17 @@ class Talker(threading.Thread):
         for k in granted:
             print(f'{now_iso()} conhecimento comum adquirido: npc={k.npc_id} entrada={k.entry_id} '
                   f'base={k.basis.value} regiao={k.region_id} t={k.game_time}')
+
+
+def layer_policy(args) -> LayerPolicy:
+    """ADR-0147: layers always; Claude only with --claude (the key in the host's environment),
+    under the monthly cap."""
+    if not args.claude:
+        return LayerPolicy()
+    budget = MonthlyBudget(args.claude_ledger, args.claude_cap)
+    print(f'{now_iso()} Claude ligado: {args.claude_model}, teto US$ {args.claude_cap:.2f}/mes, '
+          f'gasto no mes US$ {budget.spent():.4f}')
+    return LayerPolicy(claude=BudgetedProvider(AnthropicProvider(args.claude_model), budget))
 
 
 def make_handler(token: str, observer: Observer, catalog: Catalog, args, talker=None):
@@ -953,6 +976,15 @@ def main() -> int:
                          'action gateway (lab, off by default)')
     ap.add_argument('--local-quests', type=Path, default=None,
                     help='lab only: a folder of test quests kept out of the repository')
+    ap.add_argument('--claude', action='store_true',
+                    help='ADR-0147: Claude as the last layer of the lines (opt-in; the key comes '
+                         'from ANTHROPIC_API_KEY in the host environment)')
+    ap.add_argument('--claude-model', default=CLAUDE_MODEL)
+    ap.add_argument('--claude-cap', type=float, default=5.0,
+                    help='monthly spending cap in US$ (D5); over it the local model answers')
+    ap.add_argument('--claude-ledger', type=Path,
+                    default=Path.home() / '.infinity-ai' / 'claude-usage.json',
+                    help='local ledger of what Claude cost per month (money only, no text)')
     ap.add_argument('--watch-probes', action='store_true',
                     help='print the allowlisted variable values per question (curation, D4)')
     args = ap.parse_args()

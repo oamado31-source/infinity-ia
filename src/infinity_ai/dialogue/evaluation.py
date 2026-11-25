@@ -78,6 +78,7 @@ class RunResult:
     flags: tuple[str, ...]
     failures: tuple[str, ...]
     seconds: float = 0.0              # whole answer, retries included
+    model: str = ''                   # ADR-0147: who wrote it (a model, or 'code')
 
 
 @dataclass(frozen=True)
@@ -213,20 +214,20 @@ def _build_areas(pack: CanonPack) -> frozenset[str]:
 
 
 def ask(case: Case, pack: CanonPack, provider: LlmProvider,
-        catalog: Catalog | None = None) -> DialogueResponse:
+        catalog: Catalog | None = None, layers=None) -> DialogueResponse:
     """One answer to the case, from a fresh temporary campaign."""
     catalog = catalog or Catalog.load()
     with tempfile.TemporaryDirectory() as tmp:
         store = CampaignStore.open(Path(tmp) / 'eval.sqlite3', 'eval')
         try:
             if case.speaker['kind'] == 'companion':
-                return _ask_companion(case, pack, provider, catalog, store)
-            return _ask_resident(case, pack, provider, catalog, store)
+                return _ask_companion(case, pack, provider, catalog, store, layers)
+            return _ask_resident(case, pack, provider, catalog, store, layers)
         finally:
             store.close()
 
 
-def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
+def _ask_resident(case, pack, provider, catalog, store, layers=None) -> DialogueResponse:
     s = case.speaker
     npc_id, name, area = s['npc_id'], s.get('name', s['npc_id']), s.get('area', 'AR0406')
     home = s.get('home', 'region:athkatla')
@@ -253,7 +254,7 @@ def _ask_resident(case, pack, provider, catalog, store) -> DialogueResponse:
     also_known = tuple((e, pack.get(e).title, pack.get(e).summary, pack.get(e).layers,
                         pack.get(e).access_scope, pack.get(e).subject_id, pack.get(e).secrecy)
                        for e in known)
-    return DialogueEngine(store, provider, catalog).respond_resident(
+    return DialogueEngine(store, provider, catalog, layers=layers).respond_resident(
         ResidentRequest(npc_id, name, case.question, area, False), residence_areas=(area,),
         branch_id=ROOT_BRANCH, at_game_time=GAME_TIME, identity=identity,
         also_known=also_known, wisdom=s.get('wis'), intelligence=s.get('int'),
@@ -282,7 +283,7 @@ def _envelope(field_name: str, value: str) -> ObservationEnvelope:
         visibility=Visibility.PARTY, evidence=Evidence.SYNTHETIC)
 
 
-def _ask_companion(case, pack, provider, catalog, store) -> DialogueResponse:
+def _ask_companion(case, pack, provider, catalog, store, layers=None) -> DialogueResponse:
     s = case.speaker
     npc_id = s['npc_id']
     members = json.dumps(sorted({npc_id.split(':', 1)[1]} | set(s.get('party') or ())))
@@ -299,21 +300,23 @@ def _ask_companion(case, pack, provider, catalog, store) -> DialogueResponse:
             entry_id=entry_id, pack_year_dr=pack.year_dr, pack_revision=pack.revision,
             pin_event_id=pin.event_id, trigger_event_id=pin.event_id, title=entry.title,
             summary=entry.summary, layers=entry.layers)
-    return DialogueEngine(store, provider, catalog).respond(
+    return DialogueEngine(store, provider, catalog, layers=layers).respond(
         DialogueRequest(npc_id, case.question), branch_id=ROOT_BRANCH, at_game_time=GAME_TIME,
         wisdom=s.get('wis'), intelligence=s.get('int'), history=case.history)
 
 
 def run_case(case: Case, pack: CanonPack, provider: LlmProvider, runs: int = 3,
-             catalog: Catalog | None = None) -> CaseResult:
+             catalog: Catalog | None = None, layers=None) -> CaseResult:
+    """`layers` (ADR-0147): None asks `provider` for every line, as the battery always did."""
     results = []
     for _ in range(runs):
         start = time.monotonic()
-        response = ask(case, pack, provider, catalog)
+        response = ask(case, pack, provider, catalog, layers)
         seconds = time.monotonic() - start
         failures = check_answer(case, pack, response)
         results.append(RunResult(not failures, response.status.value, response.speech,
-                                 tuple(response.flags), failures, round(seconds, 2)))
+                                 tuple(response.flags), failures, round(seconds, 2),
+                                 response.model))
     return CaseResult(case, tuple(results), required_passes(runs))
 
 

@@ -22,8 +22,10 @@ from .context import (
 )
 from .absence import absence_line
 from .disclosure import NEUTRO
+from .layers import (CLAUDE, CODE, LOCAL, LayerPolicy, choose_layer, code_line, may_refine,
+                     mood, simple_intent, simple_line)
 from .llm import LlmError, LlmProvider
-from ..personality.identity import em
+from ..personality.identity import em, knowledge_tier
 from .offers import offer_line
 from .validate import retry_hint, validate_reply
 
@@ -214,12 +216,14 @@ def system_prompt(context: DialogueContext, ongoing: bool = False) -> str:
 
 class DialogueEngine:
     def __init__(self, store: CampaignStore, provider: LlmProvider, catalog: Catalog, *,
-                 clock: Callable[[], float] = time.monotonic) -> None:
+                 clock: Callable[[], float] = time.monotonic,
+                 layers: LayerPolicy | None = None) -> None:
         self._store = store
         self._memory = MemoryStore(store)
         self._provider = provider
         self._catalog = catalog
         self._clock = clock
+        self._layers = layers     # ADR-0147: None keeps every open line with `provider`
 
     def respond(self, request: DialogueRequest, *, branch_id: str,
                 at_game_time: int | None, wisdom: int | None = None,
@@ -232,7 +236,8 @@ class DialogueEngine:
         return self._converse(npc_id, request.player_text, lambda: build_context(
             self._memory, self._store, self._catalog, npc_id=npc_id, branch_id=branch_id,
             at_game_time=at_game_time, wisdom=wisdom, intelligence=intelligence,
-            recall_lines=recall_lines, order=order), history=history)
+            recall_lines=recall_lines, order=order), history=history,
+            mind=(wisdom, intelligence), companion=True)
 
     def respond_resident(self, request: ResidentRequest, *, residence_areas: tuple[str, ...],
                          branch_id: str, at_game_time: int | None,
@@ -267,11 +272,43 @@ class DialogueEngine:
             unheld_titles=unheld_titles, aliases=aliases, order=order,
             common_words=common_words, offer=offer, trust_own_only=trust_own_only,
             quest_facts=quest_facts, quest_now=quest_now),
-            display_name=request.display_name, history=history)
+            display_name=request.display_name, history=history,
+            mind=(wisdom, intelligence), disposition=disposition, trust=trust)
+
+    def _attempts(self, provider: LlmProvider, messages: list, base: int,
+                  context: DialogueContext, text: str, now_ids: set[str],
+                  flags: list[str]):
+        """(valid verdict, kept first valid verdict, model unavailable) of up to MAX_ATTEMPTS."""
+        kept = None
+        for attempt in range(MAX_ATTEMPTS):
+            try:
+                raw = provider.generate(messages)
+            except LlmError:
+                flags.append('MODEL_UNAVAILABLE')
+                return None, kept, True
+            verdict = validate_reply(raw, context, text)
+            # CR-2026-033: a valid reply that leaves out the quest's fact (agora) is asked once
+            # more; if the second try is no better, the first valid reply stands.
+            if verdict.ok and now_ids and not now_ids & set(verdict.used_facts) \
+                    and attempt + 1 < MAX_ATTEMPTS:
+                kept = verdict
+                flags.append(f'attempt{attempt + 1}:QUEST_FACT_MISSING')
+                messages = messages[:base] + [{'role': 'system', 'content': QUEST_FACT_HINT}]
+                continue
+            if verdict.ok and kept is not None and not now_ids & set(verdict.used_facts):
+                verdict = kept                     # no better than the first: the first stands
+            if verdict.ok:
+                return verdict, None, False
+            flags.extend(f'attempt{attempt + 1}:{r}' for r in verdict.reasons)
+            messages = messages[:base] + [{'role': 'system', 'content': retry_hint(verdict.reasons)}]
+        return None, kept, False
 
     def _converse(self, npc_id: str, player_text: object, build: Callable[[], ContextResult], *,
                   display_name: str = '',
-                  history: tuple[tuple[str, str], ...] = ()) -> DialogueResponse:
+                  history: tuple[tuple[str, str], ...] = (),
+                  mind: tuple[int | None, int | None] = (None, None),
+                  disposition: str | None = None, trust: str | None = None,
+                  companion: bool = False) -> DialogueResponse:
         started = self._clock()
         text = player_text if isinstance(player_text, str) else ''
         text = text.strip()
@@ -282,8 +319,8 @@ class DialogueEngine:
             if context is not None:
                 kw.setdefault('withheld', tuple(f'{d.entry_id}:{d.reason}'
                                                 for d in context.disclosure if not d.allowed))
+            kw.setdefault('model', self._provider.model)
             return DialogueResponse(status, npc_id, speech, reason, name,
-                                    model=self._provider.model,
                                     latency_ms=int((self._clock() - started) * 1000), **kw)
 
         if not npc_id.startswith('npc:') or not text or len(text) > MAX_PLAYER_TEXT:
@@ -313,38 +350,58 @@ class DialogueEngine:
                     *earlier, {'role': 'user', 'content': current}]
         base = len(messages)
         flags: list[str] = []
-        # CR-2026-033: a valid reply that leaves out the quest's fact (agora) is asked once more;
-        # if the second try is no better, the first valid reply stands (never the fallback).
         now_ids = {f.fact_id for f in context.facts if f.event_id.startswith('quest:')}
-        kept = None
-        for attempt in range(MAX_ATTEMPTS):
-            try:
-                raw = self._provider.generate(messages)
-            except LlmError:
-                flags.append('MODEL_UNAVAILABLE')
-                return done(DialogueStatus.FALLBACK, context.persona.fallback,
-                            'MODEL_UNAVAILABLE', context, flags=tuple(flags))
-            verdict = validate_reply(raw, context, text)
-            if verdict.ok and now_ids and not now_ids & set(verdict.used_facts) \
-                    and attempt + 1 < MAX_ATTEMPTS:
-                kept = verdict
-                flags.append(f'attempt{attempt + 1}:QUEST_FACT_MISSING')
-                messages = messages[:base] + [{'role': 'system', 'content': QUEST_FACT_HINT}]
-                continue
-            if verdict.ok and kept is not None and not now_ids & set(verdict.used_facts):
-                verdict = kept                     # no better than the first: the first stands
-            if verdict.ok:
-                return done(DialogueStatus.OK, verdict.speech, 'OK', context,
-                            used_event_ids=tuple(fact_events[f] for f in verdict.used_facts),
-                            flags=tuple(flags), unknown=verdict.unknown)
-            flags.extend(f'attempt{attempt + 1}:{r}' for r in verdict.reasons)
-            messages = messages[:base] + [{
-                'role': 'system',
-                'content': retry_hint(verdict.reasons)}]
-        if kept is not None:
-            return done(DialogueStatus.OK, kept.speech, 'OK', context,
-                        used_event_ids=tuple(fact_events[f] for f in kept.used_facts),
-                        flags=tuple(flags), unknown=kept.unknown)
+        provider, mood_now = self._provider, None
+        if self._layers is not None:          # ADR-0147: code, the local model or Claude
+            mood_now = mood(disposition, trust, companion)
+            wisdom, intelligence = mind
+            key = npc_id + '|' + text
+            plain = not now_ids and context.morale is None and not context.speech
+            kind = simple_intent(text) if plain else None
+            line = simple_line(kind, name=context.persona.display_name,
+                               occupation=context.occupation, place=context.resident_of,
+                               disposition=mood_now,
+                               level=knowledge_tier(wisdom, intelligence).level,
+                               key=key) if kind else None
+            if line:
+                return done(DialogueStatus.OK, line, f'CODE:{kind}', context, model='code',
+                            flags=('LAYER:CODE',))
+            layer = choose_layer(wisdom, intelligence, disposition=mood_now)
+            if layer == CODE and not now_ids and context.morale is None:
+                line, unknown = code_line(text, tuple(f.text for f in context.knowledge),
+                                          disposition=mood_now, key=key)
+                return done(DialogueStatus.OK, line, 'CODE:TIER', context, model='code',
+                            flags=('LAYER:CODE',), unknown=unknown)
+            if layer == CLAUDE and self._layers.claude is not None:
+                provider = self._layers.claude
+            else:
+                layer = LOCAL
+            flags.append(f'LAYER:{layer}')
+        verdict, kept, unavailable = self._attempts(provider, messages, base, context, text,
+                                                    now_ids, flags)
+        if unavailable and provider is not self._provider:
+            # Claude down, slow, refused or over the monthly cap: the local model answers.
+            flags.append('LAYER:LOCAL')
+            provider = self._provider
+            verdict, kept, unavailable = self._attempts(provider, messages, base, context, text,
+                                                        now_ids, flags)
+        elif verdict is None and kept is None and not unavailable \
+                and self._layers is not None and self._layers.claude is not None \
+                and may_refine(mood_now):
+            # D3: what the local model could not get right goes up to Claude once.
+            flags.append('REFINE:CLAUDE')
+            again = self._attempts(self._layers.claude, messages, base, context, text, now_ids,
+                                   flags)
+            if not again[2] and (again[0] or again[1]):
+                provider, (verdict, kept, unavailable) = self._layers.claude, again
+        if unavailable:
+            return done(DialogueStatus.FALLBACK, context.persona.fallback,
+                        'MODEL_UNAVAILABLE', context, flags=tuple(flags), model=provider.model)
+        chosen = verdict or kept
+        if chosen is not None:
+            return done(DialogueStatus.OK, chosen.speech, 'OK', context,
+                        used_event_ids=tuple(fact_events[f] for f in chosen.used_facts),
+                        flags=tuple(flags), unknown=chosen.unknown, model=provider.model)
         # ADR-0132: a seller that kept denying what it sells answers with its own goods instead.
         sold = offer_line(context.offer, text) if any(
             f.endswith('SELF_CLAIM:OFFER') for f in flags) else None

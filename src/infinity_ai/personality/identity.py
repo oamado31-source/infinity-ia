@@ -235,6 +235,9 @@ class Curation:
     # ADR-0134: quest milestone (semantic id) -> the trust it gives the person in the group.
     milestones: tuple[tuple[str, str], ...] = ()
     speech: str | None = None            # CR-2026-033: how it talks (form only, never a fact)
+    # ADR-0147 D2: corrected ability scores (the game's are often the extras' default 9).
+    wisdom: int | None = None
+    intelligence: int | None = None
 
 
 def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[str, Curation]:
@@ -270,13 +273,19 @@ def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[s
         if speech is not None and (not isinstance(speech, str)
                                    or not 0 < len(speech.strip()) <= MAX_SPEECH):
             continue
+        mind = doc.get('mind')
+        if mind is not None and (not isinstance(mind, dict) or set(mind) - {'wis', 'int'} or any(
+                isinstance(v, bool) or not isinstance(v, int) or not 3 <= v <= 25
+                for v in mind.values())):
+            continue
+        mind = mind or {}
         years = doc.get('years_here')
         out[doc['npc_id']] = Curation(
             doc['npc_id'], doc.get('occupation'), doc.get('origin_region'),
             years if isinstance(years, int) and years > 0 else None,
             tuple(doc.get('places_visited') or ()), facts,
             tuple(sorted(set(raw_affiliations))), standing, morale, milestones,
-            speech.strip() if speech else None)
+            speech.strip() if speech else None, mind.get('wis'), mind.get('int'))
     return out
 
 

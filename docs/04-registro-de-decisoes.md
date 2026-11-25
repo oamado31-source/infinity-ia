@@ -22,6 +22,7 @@
 | DEC-025 | Progressão dos arcos paralelos | **Opção C:** calendário/condições e janelas opcionais; avanço mesmo sem o grupo; marcos críticos protegidos e divergências após confirmação | **Aprovada** | Escolha expressa pelo idealizador, 2026-11-06 |
 | DEC-026 | Intervenção nos arcos clássicos | **Opção C:** N1 diálogo; N2 apoio; N3 mudanças causais com persistência e aprovação de marcos críticos | **Aprovada** | Escolha expressa pelo idealizador, 2026-11-06 |
 | DEC-030 | Reputação multidimensional e contextual | **Opção B:** observadores NPC/facção/região, alvos individuais/coletivos, conhecimento legitimado; reputação BG2:EE preservada | **Aprovada** | Escolha expressa pelo idealizador, 2026-11-06 |
+| DEC-006 | Modelos, hardware e consentimento de nuvem | **Parte de nuvem (2026-11-24):** Claude pela API como última camada das falas, opcional por campanha e ligado pelo anfitrião, com teto de gasto; camadas por INT e SAB (ADR-0147). Hardware e modelos locais seguem abertos | **Parcial** | "Aprovar como proposta", mantenedor, 2026-11-24 |
 
 ## Rastreabilidade
 

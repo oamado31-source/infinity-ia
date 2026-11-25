@@ -1,15 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
-"""SPEC-004 / ADR-0106: local LLM provider (Ollama) and a fake for tests.
+"""SPEC-004 / ADR-0106: local LLM provider (Ollama), the Claude provider (ADR-0147) and a fake.
 
 The model only drafts the NPC's line as JSON; it never decides facts, ACL or game state, and its
-output is validated before anyone sees it. There is no remote provider in this stage.
+output is validated before anyone sees it. The Claude provider is opt-in (ADR-0147, DEC-006): it
+is only built when the host asks for it, and its key comes from the host's environment.
 """
 from __future__ import annotations
 
 import json
+import threading
+import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import Any, Protocol
 
 REPLY_SCHEMA: dict[str, Any] = {
@@ -62,6 +66,129 @@ class OllamaProvider:
         if not isinstance(content, str) or not content.strip():
             raise LlmError('empty model reply')
         return content
+
+
+CLAUDE_MODEL = 'claude-haiku-5-5'
+# The API's structured output needs every object closed.
+CLAUDE_REPLY_SCHEMA: dict[str, Any] = {**REPLY_SCHEMA, 'additionalProperties': False}
+# US$ per million tokens (input, output); cache reads cost 0.1x and cache writes 1.25x the input.
+CLAUDE_PRICES = {'claude-haiku-5-5': (0.10, 0.50)}
+USAGE_FIELDS = ('input_tokens', 'output_tokens', 'cache_read_input_tokens',
+                'cache_creation_input_tokens')
+
+
+def claude_cost(model: str, usage: dict[str, int]) -> float | None:
+    """Estimated US$ of the given usage, or None for a model without a known price."""
+    price = CLAUDE_PRICES.get(model)
+    if price is None:
+        return None
+    inp, out = price
+    return (usage.get('input_tokens', 0) * inp + usage.get('output_tokens', 0) * out
+            + usage.get('cache_read_input_tokens', 0) * inp * 0.1
+            + usage.get('cache_creation_input_tokens', 0) * inp * 1.25) / 1_000_000
+
+
+class AnthropicProvider:
+    """ADR-0147: the NPC's line drafted by Claude, with the same contract as Ollama.
+
+    The first system message (rules, persona, allowed facts) becomes the API's system prompt,
+    marked for the prompt cache; later system messages (retry hints) stay in place, which the
+    model accepts mid-conversation. Thinking is off and effort low, so the line comes fast; the
+    reply is the same JSON, enforced by the API's structured output and validated as always.
+    The key is never passed here: the SDK reads it from the host's environment."""
+
+    def __init__(self, model: str = CLAUDE_MODEL, *, timeout_s: float = 30.0,
+                 max_tokens: int = 400, client: Any = None) -> None:
+        self.model, self._max_tokens = model, max_tokens
+        if client is None:
+            import anthropic                      # optional dependency: only when asked for
+            client = anthropic.Anthropic(timeout=timeout_s, max_retries=1)
+        self._client = client
+        self.last_usage: dict[str, int] = {}
+        self.usage_total: dict[str, int] = dict.fromkeys(USAGE_FIELDS, 0)
+        self.requests = 0
+
+    def generate(self, messages: Sequence[dict[str, str]]) -> str:
+        messages = list(messages)
+        system = []
+        if messages and messages[0]['role'] == 'system':
+            system = [{'type': 'text', 'text': messages.pop(0)['content'],
+                       'cache_control': {'type': 'ephemeral'}}]
+        try:
+            response = self._client.messages.create(
+                model=self.model, max_tokens=self._max_tokens, system=system,
+                messages=[{'role': m['role'], 'content': m['content']} for m in messages],
+                thinking={'type': 'disabled'},
+                output_config={'effort': 'low',
+                               'format': {'type': 'json_schema',
+                                          'schema': CLAUDE_REPLY_SCHEMA}})
+        except Exception as exc:    # no key, no network, timeout, API error: model unavailable
+            raise LlmError(f'claude request failed: {type(exc).__name__}: {exc}') from exc
+        self.requests += 1
+        usage = getattr(response, 'usage', None)
+        self.last_usage = {f: int(getattr(usage, f, 0) or 0) for f in USAGE_FIELDS}
+        for f in USAGE_FIELDS:
+            self.usage_total[f] += self.last_usage[f]
+        if response.stop_reason == 'refusal':
+            raise LlmError('claude refused')
+        content = ''.join(b.text for b in response.content if getattr(b, 'type', '') == 'text')
+        if not content.strip():
+            raise LlmError('empty model reply')
+        return content
+
+
+class MonthlyBudget:
+    """ADR-0147 D5: the host's monthly spending cap, counted locally from the API's usage.
+
+    The ledger is a small JSON file outside the repository ({"2026-11": 0.0123, ...}); it only
+    holds money, never text."""
+
+    def __init__(self, path: Path, cap_usd: float, *,
+                 month: Callable[[], str] = lambda: time.strftime('%Y-%m')) -> None:
+        self._path, self.cap, self._month = Path(path), cap_usd, month
+        self._lock = threading.Lock()
+
+    def _read(self) -> dict[str, float]:
+        try:
+            doc = json.loads(self._path.read_text(encoding='utf-8'))
+            return {k: float(v) for k, v in doc.items()} if isinstance(doc, dict) else {}
+        except (OSError, ValueError):
+            return {}
+
+    def spent(self) -> float:
+        return self._read().get(self._month(), 0.0)
+
+    def allowed(self) -> bool:
+        return self.spent() < self.cap
+
+    def add(self, usd: float) -> None:
+        with self._lock:
+            doc = self._read()
+            doc[self._month()] = round(doc.get(self._month(), 0.0) + usd, 6)
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self._path.with_suffix('.tmp')
+            tmp.write_text(json.dumps(doc, indent=1), encoding='utf-8')
+            tmp.replace(self._path)
+
+
+class BudgetedProvider:
+    """Claude under the monthly cap: over it, the call is refused as "model unavailable", so the
+    line goes to the local model (ADR-0147); every answered call adds its cost."""
+
+    def __init__(self, inner: AnthropicProvider, budget: MonthlyBudget) -> None:
+        self._inner, self._budget = inner, budget
+        self.model = inner.model
+
+    def generate(self, messages: Sequence[dict[str, str]]) -> str:
+        if not self._budget.allowed():
+            raise LlmError('claude monthly budget reached')
+        try:
+            return self._inner.generate(messages)
+        finally:
+            cost = claude_cost(self.model, self._inner.last_usage)
+            if cost:
+                self._budget.add(cost)
+            self._inner.last_usage = {}
 
 
 class FakeProvider:

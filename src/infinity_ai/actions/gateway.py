@@ -29,6 +29,10 @@ is not in yet; the module makes the missing ones the moment that area loads and 
 like a SPAWN, so who the quest puts somewhere is already there when the party walks in.
 ADR-0146: the passage plan (`INFAIDOR.lua`) holds the ways into and out of areas of ours that the
 quests have opened; the module takes the party through when its leader stands at the point.
+ADR-0148: a SPAWN may carry a point to walk to (`to_x`, `to_y`): the module queues the game's own
+MoveToPoint() on the creatures just made. CALL may show over one of ours when the quest declares it.
+REWARD pays a resolved quest once: the leader runs the game's own GiveGoldForce() and
+AddexperienceParty(); it holds when the module reads the party's gold rise by exactly that much.
 """
 from __future__ import annotations
 
@@ -47,7 +51,10 @@ ACT_SCHEMA = 'infinity-ai.act.v1'
 SPAWN, DESPAWN, COUNT, SET_HOSTILE = 'SPAWN_CREATURE', 'DESPAWN', 'COUNT', 'SET_HOSTILE'
 CALL, ESCAPE = 'CALL', 'ESCAPE'                     # ADR-0144
 WHERE = 'WHERE'                                     # ADR-0146: where the party leader stands
-OPERATIONS = (SPAWN, DESPAWN, COUNT, SET_HOSTILE, CALL, ESCAPE, WHERE)   # COUNT (ADR-0140): read only;
+REWARD = 'REWARD'                                   # ADR-0148: a resolved quest pays, once
+PARTY_NAME = 'INFAI_PARTY'                          # REWARD: no creature of ours is named
+MAX_GOLD, MAX_XP = 10000, 50000
+OPERATIONS = (SPAWN, DESPAWN, COUNT, SET_HOSTILE, CALL, ESCAPE, WHERE, REWARD)   # COUNT (ADR-0140): read only;
 #   SET_HOSTILE (ADR-0142): Enemy() on ours; CALL (ADR-0144): a line over a giver's head, display
 #   only; ESCAPE (ADR-0144): EscapeArea() on ours
 REMOVALS = (DESPAWN, ESCAPE)                        # none of ours left after them
@@ -103,6 +110,10 @@ class ActionRequest:
     facing: int = 0
     count: int = 1            # ADR-0143, SPAWN only: copies created at the same instant
     strref: int = -1          # ADR-0144, CALL only: the line of dialog.tlk shown over the head
+    to_x: int = -1            # ADR-0148, SPAWN only: where the creatures walk once made
+    to_y: int = -1
+    gold: int = 0             # ADR-0148, REWARD only
+    xp: int = 0
 
 
 def new_action_id() -> str:
@@ -126,7 +137,7 @@ def make_template(source: bytes, script_name: str) -> bytes:
 
 def spawn_request(cre: str, area: str, *, x: int = -1, y: int = -1, facing: int = 0,
                   templates: dict[str, str], action_id: str | None = None,
-                  count: int = 1) -> ActionRequest:
+                  count: int = 1, to_x: int = -1, to_y: int = -1) -> ActionRequest:
     """A valid SPAWN_CREATURE, or ActionError. `templates`: our creature files deployed in this
     build (resref -> the script name inside the file)."""
     cre, area = (cre or '').upper(), (area or '').upper()
@@ -150,7 +161,34 @@ def spawn_request(cre: str, area: str, *, x: int = -1, y: int = -1, facing: int 
         raise ActionError('BAD_FACING')
     if isinstance(count, bool) or not isinstance(count, int) or not 1 <= count <= MAX_COUNT:
         raise ActionError('BAD_COUNT')
-    return ActionRequest(action_id, SPAWN, area, templates[cre], cre, x, y, facing, count)
+    _check_walk(x, to_x, to_y)
+    return ActionRequest(action_id, SPAWN, area, templates[cre], cre, x, y, facing, count,
+                         to_x=to_x, to_y=to_y)
+
+
+def _check_walk(x: int, to_x: int, to_y: int) -> None:
+    """ADR-0148: a point to walk to, both or none, only from a point of birth (never 'near the
+    leader', where the walk would start anywhere)."""
+    for value in (to_x, to_y):
+        if isinstance(value, bool) or not isinstance(value, int) or not -1 <= value <= MAX_COORD:
+            raise ActionError('BAD_POINT')
+    if (to_x < 0) != (to_y < 0) or (to_x >= 0 and x < 0):
+        raise ActionError('BAD_POINT')
+
+
+def reward_request(area: str, *, gold: int, xp: int,
+                   action_id: str | None = None) -> ActionRequest:
+    """ADR-0148: the reward of a resolved quest, with the values the curated quest declares."""
+    area = (area or '').upper()
+    action_id = action_id or new_action_id()
+    if not _ID.fullmatch(action_id):
+        raise ActionError('BAD_ACTION_ID')
+    if not _AREA.fullmatch(area):
+        raise ActionError('BAD_AREA')
+    if not all(isinstance(n, int) and not isinstance(n, bool) for n in (gold, xp)) \
+            or not 0 <= gold <= MAX_GOLD or not 0 <= xp <= MAX_XP or gold + xp == 0:
+        raise ActionError('BAD_REWARD')
+    return ActionRequest(action_id, REWARD, area, PARTY_NAME, gold=gold, xp=xp)
 
 
 def despawn_request(name: str, area: str, *, owned: set[str] | frozenset[str],
@@ -196,13 +234,13 @@ def call_request(script_name: str, area: str, strref: int, *,
                  declared: set[tuple[str, int]] | frozenset[tuple[str, int]],
                  action_id: str | None = None) -> ActionRequest:
     """ADR-0144: a CALL over the head of a giver of a curated quest, with the line that quest
-    declares; never one of ours, never a pair the quests do not declare."""
+    declares; never a pair the quests do not declare. ADR-0148: one of ours only when declared."""
     area = (area or '').upper()
     action_id = action_id or new_action_id()
     if not _ID.fullmatch(action_id):
         raise ActionError('BAD_ACTION_ID')
     name = (script_name or '').upper() if isinstance(script_name, str) else ''
-    if not _GAME_NAME.fullmatch(name) or name.startswith(OWN_PREFIX):
+    if not _GAME_NAME.fullmatch(name):
         raise ActionError('BAD_NAME')
     if isinstance(strref, bool) or not isinstance(strref, int) or not 0 <= strref <= MAX_STRREF:
         raise ActionError('BAD_STRREF')
@@ -280,16 +318,30 @@ def render_arrival_plan(entries: list[ActionRequest] | tuple[ActionRequest, ...]
         rows.append('{' f'action_id = {lua_string(req.action_id)}, '
                     f'area = {lua_string(req.area)}, name = {lua_string(req.name)}, '
                     f'cre = {lua_string(req.cre)}, x = {int(req.x)}, y = {int(req.y)}, '
-                    f'facing = {int(req.facing)}, count = {int(req.count)}' '}')
+                    f'facing = {int(req.facing)}, count = {int(req.count)}, '
+                    f'to_x = {int(req.to_x)}, to_y = {int(req.to_y)}' '}')
     return 'INFAI_ARR_Plan = {' + ', '.join(rows) + '}\n'
 
 
 def render_request(req: ActionRequest) -> str:
     """Contents of `override/INFAIACT.lua`: escaped literals only (like INFAIRSP.lua)."""
-    name_ok = (_GAME_NAME.fullmatch(req.name) and not req.name.startswith(OWN_PREFIX)
+    name_ok = (_GAME_NAME.fullmatch(req.name)
                and isinstance(req.strref, int) and not isinstance(req.strref, bool)
                and 0 <= req.strref <= MAX_STRREF) if req.op == CALL \
         else (_NAME.fullmatch(req.name) and req.strref == -1)
+    numbers = (req.to_x, req.to_y, req.gold, req.xp)
+    if not all(isinstance(n, int) and not isinstance(n, bool) for n in numbers):
+        raise ActionError('BAD_REQUEST')
+    if req.op == SPAWN:
+        _check_walk(req.x, req.to_x, req.to_y)
+    elif (req.to_x, req.to_y) != (-1, -1):
+        raise ActionError('BAD_REQUEST')
+    if req.op == REWARD:
+        if req.name != PARTY_NAME or not 0 <= req.gold <= MAX_GOLD or not 0 <= req.xp <= MAX_XP \
+                or req.gold + req.xp == 0:
+            raise ActionError('BAD_REQUEST')
+    elif (req.gold, req.xp) != (0, 0):
+        raise ActionError('BAD_REQUEST')
     if req.op not in OPERATIONS or not _ID.fullmatch(req.action_id) \
             or not name_ok or not _AREA.fullmatch(req.area) \
             or (req.op == SPAWN and not _TEMPLATE.fullmatch(req.cre)) \
@@ -301,7 +353,8 @@ def render_request(req: ActionRequest) -> str:
             f'area = {lua_string(req.area)}, name = {lua_string(req.name)}, '
             f'cre = {lua_string(req.cre)}, x = {int(req.x)}, y = {int(req.y)}, '
             f'facing = {int(req.facing)}, count = {int(req.count)}, '
-            f'strref = {int(req.strref)}}}\n')
+            f'strref = {int(req.strref)}, to_x = {int(req.to_x)}, to_y = {int(req.to_y)}, '
+            f'gold = {int(req.gold)}, xp = {int(req.xp)}}}\n')
 
 
 @dataclass(frozen=True)
@@ -370,6 +423,8 @@ def confirmed(req: ActionRequest, receipt: ActionReceipt) -> bool:
             and receipt.seen == receipt.seen_before + req.count
     if req.op in (COUNT, WHERE):              # the count (or the point) is the host's word
         return receipt.status == DONE
+    if req.op == REWARD:                      # ADR-0148: the gold rose by exactly that (observed 1)
+        return receipt.status == DONE and receipt.observed == 1
     if req.op == CALL:                        # ADR-0144: the giver was there and saw the line
         return receipt.status == DONE and receipt.observed >= 1
     if req.op == ESCAPE:                      # ADR-0144: they walked out; none of ours is left
@@ -404,6 +459,8 @@ def record_requested(store: CampaignStore, branch_id: str, req: ActionRequest, *
                            'name': req.name, 'cre': req.cre, 'policy': POLICY}, cause)
     if req.count != 1:
         payload['count'] = req.count
+    if req.op == REWARD:
+        payload['gold'], payload['xp'] = req.gold, req.xp
     with store.transaction():
         store.append_event(branch_id=branch_id, host_epoch=host_epoch, event_type=REQUESTED,
                            category='CAMPAIGN_OBSERVATION', game_time=game_time, payload=payload,

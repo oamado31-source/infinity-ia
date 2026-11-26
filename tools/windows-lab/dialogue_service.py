@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import atexit
+import dataclasses
 import hmac
 import json
 import math
@@ -60,6 +61,8 @@ from infinity_ai.dialogue.engine import (  # noqa: E402
 )
 from infinity_ai.dialogue.conversation import ConversationMemory  # noqa: E402
 from infinity_ai.dialogue.layers import LayerPolicy  # noqa: E402
+from infinity_ai.quests.authoring import rejected_quests  # noqa: E402
+from infinity_ai.quests.narrative import DEFAULT_QUEST_DIR  # noqa: E402
 from infinity_ai.dialogue.llm import (CLAUDE_MODEL, AnthropicProvider,  # noqa: E402
                                       BudgetedProvider, MonthlyBudget, OllamaProvider)
 from infinity_ai.dialogue.recall import (  # noqa: E402
@@ -97,10 +100,11 @@ from infinity_ai.quests.narrative import (  # noqa: E402
     advance, arrive, load_quests, mark_journal_shown, pending_journal, with_journal,
 )
 from infinity_ai.quests.presence import (  # noqa: E402
-    arrival_plan, call_due, decide, dispatch, dispatch_call, open_passages, record_arrival,
+    arrival_plan, call_due, decide, dispatch, dispatch_call, dispatch_reward, open_passages,
+    record_arrival, reward_due,
 )
 from infinity_ai.actions.gateway import (  # noqa: E402
-    ARR_RESREF, DOOR_RESREF, ActionRequest, parse_receipts, render_arrival_plan,
+    ARR_RESREF, DOOR_RESREF, parse_receipts, render_arrival_plan,
     render_passage_plan,
 )
 from infinity_ai.dialogue.disclosure import CLOSED_DISPOSITIONS  # noqa: E402
@@ -204,7 +208,11 @@ class Observer(threading.Thread):
         self.live_build = live_build
         self.quest_catalog = load_catalog(args.quest_catalog)
         self.quests = load_quests()          # SPEC-011: curated narrative quests
+        for name, reasons in rejected_quests(DEFAULT_QUEST_DIR).items():   # SPEC-013: say why
+            print(f'quest recusada: {name}: ' + '; '.join(reasons))
         if getattr(args, "local_quests", None):   # lab only: test quests kept out of the repository
+            for name, reasons in rejected_quests(args.local_quests).items():
+                print(f'quest local recusada: {name}: ' + '; '.join(reasons))
             self.quests.update({q: v for q, v in load_quests(args.local_quests).items()
                                 if q not in self.quests})
         self._knowledge_status = None
@@ -360,8 +368,7 @@ class PresenceDirector(threading.Thread):
                     for d, r in wanted_now:
                         aid = keep.get((d.quest_id, d.presence.presence_id, r.area, r.count),
                                        r.action_id)
-                        plan[aid] = (d, ActionRequest(aid, r.op, r.area, r.name, r.cre, r.x, r.y,
-                                                      r.facing, r.count))
+                        plan[aid] = (d, dataclasses.replace(r, action_id=aid))
                     doors = render_passage_plan(open_passages(store, view.branch_id,
                                                               self.observer.quests))
                     if doors != doors_written:       # ADR-0146: the passages the quests opened
@@ -390,6 +397,16 @@ class PresenceDirector(threading.Thread):
                         state = dispatch(store, view.branch_id, decision, transport=transport,
                                          templates=templates, game_time=view.game_time)
                         print(f'{now_iso()} presenca {decision.quest_id}/{p.presence_id}: {state}')
+                    elif (paying := reward_due(store, view.branch_id,
+                                               self.observer.quests)) is not None:
+                        # ADR-0148: a resolved quest pays once; unconfirmed, it stays held
+                        state = dispatch_reward(store, view.branch_id, paying,
+                                                transport=transport, area=view.area,
+                                                game_time=view.game_time)
+                        print(f'{now_iso()} recompensa {paying.quest_id}: '
+                              f'{paying.reward_gold} de ouro, {paying.reward_xp} de XP: {state}'
+                              + ('' if state == 'HOST_CONFIRMED' else
+                                 ' (retida: confira o ouro no jogo; nunca e reenviada)'))
                     else:                        # ADR-0144: a giver calling for help, if due
                         quest = call_due(store, view.branch_id, self.observer.quests,
                                          area=view.area, game_time=view.game_time)

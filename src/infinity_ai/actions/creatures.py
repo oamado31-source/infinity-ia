@@ -273,6 +273,8 @@ def build_creature(base: bytes, sheet: Sheet, *, script_name: str, name_strref: 
     st, dex, con, it, wis, cha = sheet.abilities
     head[0x238:0x23F] = bytes((st, sheet.str_extra, it, wis, dex, con, cha))
     head[0x23F] = sheet.morale
+    if sheet.morale <= head[0x240]:     # the body's morale break: below it, panic at birth
+        raise ActionError('MORALE_BELOW_BREAK')     # (lab 2026-11-26: Doran, morale 6, break 7)
     struct.pack_into('<I', head, 0x244, 0)                           # no kit
     head[0x248:0x270] = bytes(40)                                    # no AI scripts...
     for slot, name in sheet.scripts:                                 # ...but the game's own (ADR-0142)

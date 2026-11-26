@@ -38,6 +38,7 @@ from ..personality.morale import HOLD, TRIGGERS, YIELD
 from ..personality.reaction import DISPOSITIONS
 from ..personality.identity import (
     STANDINGS, build_identity, knowledge_tier, layered_text, place_in_district, popular_only,
+    valid_character,
 )
 from ..state.recorder import ObservationRecorder
 from ..state.store import ROOT_BRANCH, CampaignStore
@@ -149,6 +150,8 @@ def _check_case(case: Case, pack: CanonPack) -> None:
     if s.get('speech') is not None and (not isinstance(s['speech'], str)
                                         or not 0 < len(s['speech']) <= 200):
         raise CaseError(f'{where}: speech must be a short way of talking (CR-2026-033)')
+    if s.get('persona') is not None and not valid_character(s['persona']):
+        raise CaseError(f'{where}: persona must be short and name nobody (CR-2026-035)')
     if s.get('offer') is not None and not isinstance(s['offer'], dict):
         raise CaseError(f'{where}: offer must be an object like a local store offer (ADR-0132)')
     if s.get('disposition') is not None and s['disposition'] not in DISPOSITIONS:
@@ -235,7 +238,8 @@ def _ask_resident(case, pack, provider, catalog, store, layers=None) -> Dialogue
         occupation=s.get('occupation'), origin_region=s.get('origin'), years_here=None,
         places_visited=(), self_facts=tuple(s.get('self_facts') or ()),
         affiliations=tuple(s.get('affiliations') or ()), standing=s.get('standing'),
-        speech=s.get('speech'))                                                    # CR-2026-033
+        speech=s.get('speech'), character=s.get('persona'),     # CR-2026-033, CR-2026-035
+        wisdom=None, intelligence=None)
     resident = SimpleNamespace(gender=s.get('gender', 1), race=s.get('race', 1), klass=0,
                                display_name=name)
     place = place_in_district(catalog.area(area), local_aliases(pack, area).get('bairro'))

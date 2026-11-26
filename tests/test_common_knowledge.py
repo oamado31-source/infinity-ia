@@ -43,7 +43,7 @@ LOTE_A_AMN = {'event:magic-ban-of-king-dhanar', 'event:end-of-amnian-monarchy',
               'event:cyric-takes-banite-temples', 'event:coast-plague', 'event:dragonspear-war',
               'event:maztica-and-new-amn', 'event:council-schism', 'event:baldurs-gate-crisis',
               'topic:amnian-currency', 'topic:amnian-status-and-speech', 'topic:thorass-in-amn'}
-LOTE_A_CITY = {'place:waukeens-promenade', 'place:temple-district', 'place:bridge-district',
+LOTE_A_CITY = {'org:shadow-thieves', 'place:waukeens-promenade', 'place:temple-district', 'place:bridge-district',
                'place:government-district', 'place:graveyard-district', 'place:athkatla-gates',
                'place:docks', 'place:slums',
                'org:order-of-the-radiant-heart'}            # lote F: Athkatla's knightly order
@@ -165,7 +165,7 @@ class ResidenceTests(Story):
         report = self.acquire(100 + DAY, residents=lives())
         self.assertEqual(self.known(BERNARD), CITY)
         self.assertTrue(all(k.basis is KnowledgeBasis.RESIDENCE for k in report.granted))
-        self.assertNotIn('org:shadow-thieves', self.known(BERNARD))        # CANON_REFERENCE
+        self.assertNotIn('event:tethyrian-exiles-return', self.known(BERNARD))  # CANON_REFERENCE
         self.assertNotIn('region:tethyr', self.known(BERNARD))
         self.assertEqual(self.known(), set())                              # companions: nothing
 
@@ -388,10 +388,11 @@ class InquiryTests(Story):
         self.assertEqual(entries_named(PACK, held, said), ['region:amn'])
         self.assertEqual(entries_named(PACK, held, 'O Conselho dos Seis manda.'),
                          ['org:council-of-six'])
-        self.assertEqual(entries_named(PACK, ['org:shadow-thieves'], 'Ladrões das Sombras'), [])
+        self.assertEqual(entries_named(PACK, ['event:tethyrian-exiles-return'],
+                                       'Exilados de Tethyr'), [])
 
     def test_speaker_must_know_the_entry(self):
-        report = self.share(used=('org:shadow-thieves', 'region:tethyr'))
+        report = self.share(used=('event:tethyrian-exiles-return', 'region:tethyr'))
         self.assertEqual(report.status, 'NOTHING_SHARED')
         self.assertEqual({r.reason for r in report.refusals}, {'SPEAKER_DOES_NOT_KNOW'})
         self.assertEqual(self.known(), set())

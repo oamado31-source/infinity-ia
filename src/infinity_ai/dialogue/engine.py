@@ -206,7 +206,11 @@ def system_prompt(context: DialogueContext, ongoing: bool = False) -> str:
         # CR-2026-033: the curated way of talking, form only, shown in every line
         + (f'Seu jeito de falar: {context.speech}. Mostre esse jeito na própria escrita da '
            'frase, sem asteriscos, parênteses nem rubricas; ele é só forma: não acrescenta fato '
-           'nenhum e não deixa de fora o fato marcado (agora).\n' if context.speech else '') +
+           'nenhum e não deixa de fora o fato marcado (agora).\n' if context.speech else '')
+        # CR-2026-035: the curated persona, who the person is; the reaction above still rules
+        + (f'Seu jeito de ser: {context.character} Deixe isso aparecer no tom e nas escolhas da '
+           'resposta; é só jeito: não é fato para contar, não muda o que você sabe e vale menos '
+           'que a sua reação ao jogador nesta conversa.\n' if context.character else '') +
         f'FATOS:\n{facts}\n'
         f'CONHECIMENTO GERAL:\n{general}\n'
         f'CONHECIMENTO RESTRITO:\n{restricted}\n'
@@ -335,7 +339,7 @@ class DialogueEngine:
         if context.absence is not None:     # ADR-0131: answered by code, the model is not asked
             return done(DialogueStatus.OK,
                         absence_line(context.absence, context.disposition, npc_id + '|' + text),
-                        f'ABSENCE:{context.absence}', context, unknown=True)
+                        f'ABSENCE:{context.absence}', context, unknown=True, model='code')
         fact_events = {f.fact_id: f.event_id for f in context.facts + context.knowledge + context.restricted_knowledge}
 
         # ADR-0123: earlier turns of this conversation as chat turns; the player's words stay in

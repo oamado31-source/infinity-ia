@@ -1943,6 +1943,34 @@
           "(?i)\\bontem\\b"
         ]
       }
+    },
+    {
+      "id": "salvanas-ladroes-das-sombras",
+      "description": "CR-2026-035 (jogo, 2026-11-24): os Ladrões das Sombras são conhecidos em Athkatla; Salvanas, com a persona curada, conta o núcleo popular sem dizer que não conhece.",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:eval-frequentador",
+        "name": "Salvanas",
+        "wis": 7,
+        "int": 9,
+        "affiliations": [
+          "place:copper-coronet:REGULAR"
+        ],
+        "self_facts": [
+          "Você é frequentador assíduo da Coroa de Cobre e conhece bem o funcionamento da casa."
+        ],
+        "persona": "Vaidoso e galanteador, gosta de ser o centro das atenções. Quer companhia e admiração. Com estranhos, flerta e fala bem de si mesmo."
+      },
+      "question": "O que você sabe sobre os Ladrões das Sombras?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "unknown": false,
+        "uses": [
+          "org:shadow-thieves"
+        ]
+      }
     }
   ]
 }

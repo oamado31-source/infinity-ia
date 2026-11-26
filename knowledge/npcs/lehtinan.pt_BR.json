@@ -35,5 +35,10 @@
       "milestone": "quest:coronet-slaves:RESOLVED",
       "trust": "DESCONFIADO"
     }
-  ]
+  ],
+  "persona": "Ganancioso e frio, sempre sorridente com quem tem dinheiro. Pensa no lucro da casa e da arena antes de tudo. Com estranhos, mede primeiro se valem alguma moeda.",
+  "mind": {
+    "int": 13,
+    "wis": 12
+  }
 }

@@ -28,5 +28,10 @@
   },
   "affiliations": [
     "place:copper-coronet:REGULAR"
-  ]
+  ],
+  "persona": "Velho ladrão orgulhoso do passado, adora contar como era bom no ofício. Quer alguém que ouça as histórias dele. Com estranhos, é esperto e brincalhão.",
+  "mind": {
+    "int": 12,
+    "wis": 12
+  }
 }

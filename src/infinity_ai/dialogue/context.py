@@ -94,6 +94,7 @@ class DialogueContext:
     absence: str | None = None   # ADR-0131: NOT_KNOWN/NOT_DEFINED/WITHHELD, answered by code
     offer: Offer | None = None   # ADR-0132: what the person sells (from the game's stores)
     speech: str | None = None    # CR-2026-033: the curated way of talking (form only)
+    character: str | None = None  # CR-2026-035: the curated persona (who it is, never a fact)
 
 
 @dataclass(frozen=True)
@@ -403,7 +404,8 @@ def build_resident_context(memory: MemoryStore, store: CampaignStore, catalog: C
         identity.occupation if identity else None, tier.style, tuple(restricted), standing,
         any(a.endswith(':STAFF') for a in identity.affiliations) if identity else False,
         identity.home_names if identity else (), disposition, morale, tuple(decisions), absence,
-        offer, identity.speech if identity else None))
+        offer, identity.speech if identity else None,
+        identity.character if identity else None))
 
 
 def _with_recall(facts: tuple[Fact, ...], lines: tuple[tuple[str, str], ...],

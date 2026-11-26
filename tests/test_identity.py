@@ -256,7 +256,7 @@ class HomelandAndHomeTests(unittest.TestCase):
                                       'org:cowled-wizards', 'place:copper-coronet',
                                       'rel:lehtinan-owns-copper-coronet'} | LOTE_A_AMN | LOTE_A_CITY
                          | LOTE_B_TETHYR)
-        self.assertNotIn('org:shadow-thieves', known)                      # not common
+        self.assertNotIn('event:tethyrian-exiles-return', known)          # not common
         countryside = identity_entries(PACK, homeland=None, home='region:amn',
                                        campaign_year=1369, build_areas=BUILD)
         self.assertEqual(set(countryside), {'region:faerun', 'region:amn', 'org:cowled-wizards'}

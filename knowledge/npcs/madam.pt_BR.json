@@ -28,5 +28,10 @@
   },
   "affiliations": [
     "place:copper-coronet:STAFF"
-  ]
+  ],
+  "persona": "Mulher experiente, discreta e cheia de tato. Quer clientes satisfeitos e a casa sem confusão. Com estranhos, é gentil e calculista, e nunca fala das clientes.",
+  "mind": {
+    "int": 13,
+    "wis": 13
+  }
 }

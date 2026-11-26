@@ -37,5 +37,10 @@
       "milestone": "quest:bernard-brooch:RESOLVED",
       "trust": "INTIMO"
     }
-  ]
+  ],
+  "persona": "Taverneiro ocupado e prático, sem paciência para conversa fiada. Quer o balcão em ordem e a conta paga. Com estranhos, é direto: pergunta logo o que vão beber.",
+  "mind": {
+    "int": 10,
+    "wis": 11
+  }
 }

@@ -1,17 +1,17 @@
 {
   "schema": "infinity-ai.canon-entry.v1",
   "partition_year_dr": 1369,
-  "access_scope": "CANON_REFERENCE",
+  "access_scope": "COMMON_REGIONAL",
   "curation": {
     "curated_by": "claude-code",
-    "curated_at": "2026-11-09",
+    "curated_at": "2026-11-25",
     "checked_by": "mantenedor",
-    "checked_at": "2026-11-09"
+    "checked_at": "2026-11-25"
   },
   "id": "org:shadow-thieves",
   "kind": "ORGANIZATION",
-  "title": "Ladrões das Sombras",
-  "summary": "Guilda de ladrões, espiões e assassinos sediada em Athkatla, com operações ao longo da Costa da Espada. Nasceu como a guilda de ladrões de Águas Profundas (Waterdeep), de onde foi expulsa, e mantém com os mercadores de Amn um acordo cujo teor ninguém conhece.",
+  "title": "Ladrões das Sombras (Shadow Thieves)",
+  "summary": "Os Ladrões das Sombras (Shadow Thieves), guilda de ladrões, espiões e assassinos, dominam o crime em Athkatla e agem pela Costa da Espada. Nasceram em Águas Profundas (Waterdeep), de onde foram expulsos, e têm com os mercadores de Amn um acordo de teor desconhecido.",
   "valid_from_dr": 1369,
   "valid_to_dr": 1370,
   "date_precision": "RANGE",
@@ -27,5 +27,10 @@
       "locator": "Livro Três, p. 17"
     }
   ],
-  "verification_status": "SOURCE_CHECKED"
+  "verification_status": "SOURCE_CHECKED",
+  "knowledge_layers": {
+    "POPULAR": "Os Ladrões das Sombras (Shadow Thieves), guilda de ladrões, espiões e assassinos, dominam o crime em Athkatla.",
+    "INFORMED": "Os Ladrões das Sombras agem pela Costa da Espada e nasceram em Águas Profundas (Waterdeep), de onde foram expulsos.",
+    "STUDIED": "Os Ladrões das Sombras têm com os mercadores de Amn um acordo de teor desconhecido."
+  }
 }

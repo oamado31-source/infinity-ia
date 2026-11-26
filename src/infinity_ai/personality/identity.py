@@ -29,6 +29,9 @@ ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CURATION_DIR = ROOT / 'knowledge' / 'npcs'
 MAX_FACT = 200
 MAX_SPEECH = 200                         # CR-2026-033
+MAX_CHARACTER = 240                      # CR-2026-035
+# CR-2026-035: a persona names nobody: a capital letter only opens a sentence.
+_INNER_CAPITAL = re.compile(r"(?<![.!?]\s)(?<!^)\b[A-ZÀ-Ý]")
 AFFILIATION_PATTERN = re.compile(r'^place:[a-z0-9-]{1,64}:[A-Z][A-Z0-9_]{0,31}$')
 
 GAME_DATA, CURATED, GENERATED = 'GAME_DATA', 'CURATED', 'GENERATED'
@@ -238,6 +241,7 @@ class Curation:
     # ADR-0147 D2: corrected ability scores (the game's are often the extras' default 9).
     wisdom: int | None = None
     intelligence: int | None = None
+    character: str | None = None         # CR-2026-035: who it is (temper, wants), never a fact
 
 
 def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[str, Curation]:
@@ -273,6 +277,9 @@ def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[s
         if speech is not None and (not isinstance(speech, str)
                                    or not 0 < len(speech.strip()) <= MAX_SPEECH):
             continue
+        character = doc.get('persona')
+        if character is not None and not valid_character(character):
+            continue
         mind = doc.get('mind')
         if mind is not None and (not isinstance(mind, dict) or set(mind) - {'wis', 'int'} or any(
                 isinstance(v, bool) or not isinstance(v, int) or not 3 <= v <= 25
@@ -285,8 +292,16 @@ def load_curations(pack: CanonPack, base: Path = DEFAULT_CURATION_DIR) -> dict[s
             years if isinstance(years, int) and years > 0 else None,
             tuple(doc.get('places_visited') or ()), facts,
             tuple(sorted(set(raw_affiliations))), standing, morale, milestones,
-            speech.strip() if speech else None, mind.get('wis'), mind.get('int'))
+            speech.strip() if speech else None, mind.get('wis'), mind.get('int'),
+            character.strip() if character else None)
     return out
+
+
+def valid_character(text: object) -> bool:
+    """CR-2026-035: a short persona that names nobody (no capital inside a sentence)."""
+    if not isinstance(text, str) or not 0 < len(text.strip()) <= MAX_CHARACTER:
+        return False
+    return not _INNER_CAPITAL.search(text.strip())
 
 
 MILESTONE_TRUST = ('DESCONFIADO', 'CONFIANTE', 'INTIMO')
@@ -388,6 +403,7 @@ class NpcIdentity:
     home_names: tuple[str, ...] = ()     # CR-2026-004: where it lives and the regions above it
     visited_regions: tuple[str, ...] = ()  # CR-2026-012: regions it passed through (popular core)
     speech: str | None = None            # CR-2026-033: curated way of talking (form only)
+    character: str | None = None         # CR-2026-035: curated persona (who it is, never a fact)
 
     @property
     def source(self) -> str:
@@ -491,7 +507,8 @@ def build_identity(*, npc_id: str, name: str, pack: CanonPack, place: str | None
                        tuple(title(r) for r in _chain(pack, home_region) if title(r))
                        if standing == HABITANTE else (),
                        tuple(r for r in visited if title(r)),
-                       getattr(curation, 'speech', None) if curation else None)
+                       getattr(curation, 'speech', None) if curation else None,
+                       getattr(curation, 'character', None) if curation else None)
 
 
 IdentityFactory = Callable[[str], dict]

@@ -32,5 +32,10 @@
       "milestone": "quest:coronet-slaves:RESOLVED",
       "trust": "INTIMO"
     }
-  ]
+  ],
+  "persona": "Orgulhoso e digno, carrega uma raiva contida contra a escravidão. Quer libertar os outros escravos. Com estranhos, mede antes se são aliados ou mais um cliente da arena.",
+  "mind": {
+    "int": 11,
+    "wis": 13
+  }
 }

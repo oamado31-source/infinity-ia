@@ -17,6 +17,9 @@ EscapeArea()) instead of vanishing on the spot; a quest's giver may call for hel
 (CALL, display only) in its area, on entering and every few minutes, until the quest is accepted.
 ADR-0139: a NIGHT presence is wanted only at night; at dawn it is no longer wanted, and the quest
 removes what it placed when the party is in the area (D2).
+ADR-0148: a presence `from: START` is wanted before the offer (a giver who is a person of ours); a
+presence with `walk_to` walks there once created; a resolved quest with a reward pays it once
+(REWARD), and an unconfirmed payment is held, never sent again.
 
 Never twice blindly (doc. 26): one action at a time; a request the game did not confirm (DENIED or
 UNCERTAIN) suspends that presence on the branch until the maintainer resumes it, after looking at
@@ -32,16 +35,16 @@ from dataclasses import dataclass, replace
 from typing import Protocol
 
 from ..actions.gateway import (
-    CALL, CONFIRMED, COUNT, DONE, FAILED, REMOVALS, REQUESTED, SET_HOSTILE, SPAWN, ActionError,
-    ActionReceipt, ActionRequest, call_request, count_request, creature_counts, despawn_request,
-    PassageEntry, check_passage, escape_request, hostile_request, owned_creatures,
-    record_requested, record_result, spawn_request,
+    CALL, CONFIRMED, COUNT, DONE, FAILED, REMOVALS, REQUESTED, REWARD, SET_HOSTILE, SPAWN,
+    ActionError, ActionReceipt, ActionRequest, call_request, count_request, creature_counts,
+    despawn_request, PassageEntry, check_passage, escape_request, hostile_request,
+    owned_creatures, record_requested, record_result, reward_request, spawn_request,
 )
 from ..state.store import CampaignStore
 from .clock import is_night
 from .narrative import (
-    ARRIVE, DEFEATED, END_RESOLVED, LEAVE_ESCAPE, START_ACCEPTED, WHEN_NIGHT, NarrativeQuest, Presence,
-    QuestState, mark_step, state_of,
+    ARRIVE, DEFEATED, END_RESOLVED, LEAVE_ESCAPE, START_ACCEPTED, START_BEGIN, WHEN_NIGHT,
+    NarrativeQuest, Presence, QuestState, mark_step, state_of,
 )
 
 POLICY = 'adr-0138-quest-presence-v1'
@@ -58,7 +61,8 @@ def wanted(state: QuestState, presence: Presence, game_time: int | None = None) 
     """Between its two points of the quest; a NIGHT presence only at night (ADR-0139)."""
     if presence.when == WHEN_NIGHT and not is_night(game_time):
         return False
-    started = state.accepted if presence.start == START_ACCEPTED \
+    started = True if presence.start == START_BEGIN \
+        else state.accepted if presence.start == START_ACCEPTED \
         else presence.start in state.steps_done
     ended = state.resolved if presence.end == END_RESOLVED else presence.end in state.steps_done
     return started and not ended
@@ -244,7 +248,7 @@ def request_for(decision: Decision, store: CampaignStore, branch_id: str, *,
         return hostile_request(p.name, p.area, owned=set(owned_creatures(store, branch_id)))
     if decision.rule == ENTER:
         req = spawn_request(p.cre, p.area, x=p.x, y=p.y, facing=p.facing, templates=templates,
-                            count=decision.count)
+                            count=decision.count, to_x=p.walk_x, to_y=p.walk_y)
         if req.name != p.name:                     # the file holds another name of ours
             raise ActionError('TEMPLATE_NAME_MISMATCH')
         return req
@@ -284,7 +288,8 @@ def arrival_plan(store: CampaignStore, branch_id: str, quests: dict[str, Narrati
                 continue
             try:
                 req = spawn_request(p.cre, p.area, x=p.x, y=p.y, facing=p.facing,
-                                    templates=templates, count=p.copies)
+                                    templates=templates, count=p.copies, to_x=p.walk_x,
+                                    to_y=p.walk_y)
             except ActionError:
                 continue
             if req.name == p.name:
@@ -315,8 +320,7 @@ def record_arrival(store: CampaignStore, branch_id: str, decision: Decision, req
         if made == 0 and receipt.observed >= decision.presence.copies:
             done = count_request(req.name, req.area, action_id=req.action_id)
         elif made >= 1:
-            done = ActionRequest(req.action_id, SPAWN, req.area, req.name, req.cre, req.x, req.y,
-                                 req.facing, made)
+            done = replace(req, count=made)
         else:
             done = req
     else:
@@ -420,6 +424,44 @@ def dispatch(store: CampaignStore, branch_id: str, decision: Decision, *, transp
     return state
 
 
+def _reward_events(store: CampaignStore, branch_id: str, quest_id: str, event_type: str) -> list:
+    return [e for e in store.visible_events(branch_id, event_type)
+            if e.payload.get('op') == REWARD and isinstance(e.payload.get('cause'), dict)
+            and e.payload['cause'].get('quest_id') == quest_id]
+
+
+def reward_status(store: CampaignStore, branch_id: str, quest_id: str) -> str | None:
+    """ADR-0148: PAID (the game confirmed), HELD (asked, not confirmed: the maintainer looks at
+    the game) or None (never asked on this branch)."""
+    if _reward_events(store, branch_id, quest_id, CONFIRMED):
+        return 'PAID'
+    return 'HELD' if _reward_events(store, branch_id, quest_id, REQUESTED) else None
+
+
+def reward_due(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQuest]
+               ) -> NarrativeQuest | None:
+    """ADR-0148: a resolved quest with a reward never asked on this branch (never twice: an
+    unconfirmed payment stays held)."""
+    for quest in quests.values():
+        if (quest.reward_gold or quest.reward_xp) \
+                and state_of(store, branch_id, quest.quest_id).resolved \
+                and reward_status(store, branch_id, quest.quest_id) is None:
+            return quest
+    return None
+
+
+def dispatch_reward(store: CampaignStore, branch_id: str, quest: NarrativeQuest, *,
+                    transport: Transport, area: str, game_time: int, host_epoch: int = 0) -> str:
+    """Ask the game to pay once, recording the request first; returns the gateway state."""
+    req = reward_request(area, gold=quest.reward_gold, xp=quest.reward_xp)
+    cause = {'policy': POLICY, 'quest_id': quest.quest_id, 'rule': REWARD}
+    record_requested(store, branch_id, req, game_time=game_time, host_epoch=host_epoch,
+                     cause=cause)
+    receipt = transport.send(req)
+    return record_result(store, branch_id, req, receipt, game_time=game_time,
+                         host_epoch=host_epoch, cause=cause)
+
+
 __all__ = ['ENTER', 'LEAVE', 'VERIFY', 'DEFEAT_WATCH', 'DEFEAT', 'HOSTILE', 'SUSPENDED', 'RESUMED', 'Decision', 'PresenceStatus', 'Transport',
            'arrival_plan', 'call_due', 'open_passages', 'decide', 'record_arrival', 'dispatch', 'dispatch_call', 'record_resumed', 'record_suspended', 'request_for', 'status_of',
-           'wanted']
+           'wanted', 'reward_due', 'reward_status', 'dispatch_reward']

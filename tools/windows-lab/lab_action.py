@@ -116,6 +116,8 @@ def main() -> int:
     ap.add_argument('--y', type=int, default=-1)
     ap.add_argument('--facing', type=int, default=0)
     ap.add_argument('--count', type=int, default=1, help='spawn: copies created together (ADR-0143)')
+    ap.add_argument('--to-x', type=int, default=-1, help='spawn: walk here once made (ADR-0148)')
+    ap.add_argument('--to-y', type=int, default=-1)
     ap.add_argument('--strref', type=int, default=-1, help='call: the line of dialog.tlk (ADR-0144)')
     ap.add_argument('--local-quests', type=Path, default=Path.home() / '.infinity-ai' / 'quests' /
                     'local', help='call: local quests that may declare calls too')
@@ -149,7 +151,7 @@ def main() -> int:
             fingerprint = build_fingerprint(json.loads(
                 args.pinned_manifest.read_text(encoding='utf-8-sig')))
             req = spawn_request(args.cre or '', args.area or '', x=args.x, y=args.y,
-                                facing=args.facing, count=args.count,
+                                facing=args.facing, count=args.count, to_x=args.to_x, to_y=args.to_y,
                                 templates=deployed_templates(ssh, args.game_root, fingerprint))
         elif args.op == 'count':
             req = count_request(args.name or '', args.area or '')

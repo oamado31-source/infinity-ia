@@ -165,6 +165,20 @@ class BuildTests(unittest.TestCase):
         with self.assertRaises(ActionError):
             build_creature(base_cre(), parse_sheet(SHEET), script_name='Tamoko', name_strref=1,
                            animation=0x6010, items={})
+        # a morale at or under the body's break makes the creature flee as it is born
+        timid = bytearray(base_cre())
+        timid[0x240] = 7
+        for morale, code in ((6, 'MORALE_BELOW_BREAK'), (7, 'MORALE_BELOW_BREAK'), (8, None)):
+            sheet = parse_sheet(dict(SHEET, morale=morale))
+            if code is None:
+                d = build_creature(bytes(timid), sheet, script_name='INFAI_TESTE', name_strref=1,
+                                   animation=0x6010, items={})
+                self.assertEqual((d[0x23F], d[0x240]), (8, 7))
+                continue
+            with self.assertRaises(ActionError) as ctx:
+                build_creature(bytes(timid), sheet, script_name='INFAI_TESTE', name_strref=1,
+                               animation=0x6010, items={})
+            self.assertEqual(ctx.exception.code, code)
         with self.assertRaises(ActionError):
             build_creature(base_cre(), parse_sheet(SHEET), script_name='INFAI_TESTE',
                            name_strref=1, animation=0x6010, items={'BOLSO': 'X'})

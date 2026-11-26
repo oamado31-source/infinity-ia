@@ -20,6 +20,9 @@ A narrative quest happens only in conversations: nothing is written to the game.
 - ADR-0139: a step may be done by arriving somewhere (`arrive`, optionally only at night), steps may
   require others first (`after`), and a talk step may name its own area. Arrival steps are recorded
   by the service's observer, with their journal line on the box's next reply.
+- ADR-0148: a presence may be there from the start (`from: START`, before the offer: a giver who is
+  a person of ours), may walk to a point once created (`walk_to`), the giver's call may come from
+  that presence, and the turn-in may pay (`turn_in.reward`: gold and experience, once).
 """
 from __future__ import annotations
 
@@ -48,6 +51,8 @@ _OWN_NAME = re.compile(r'INFAI_[A-Z0-9_]{1,26}')
 _GAME_NAME = re.compile(r'[A-Z0-9_]{1,32}')
 _OUR_AREA = re.compile(r'IA\d{4}')                   # ADR-0146: an area of ours
 START_ACCEPTED, END_RESOLVED = 'ACCEPTED', 'RESOLVED'
+START_BEGIN = 'START'                 # ADR-0148: from the campaign's start
+MAX_GOLD, MAX_XP = 10000, 50000       # ADR-0148: the turn-in's reward, at most
 TALK, ARRIVE, DEFEATED = 'TALK', 'ARRIVE', 'DEFEATED'
 WHEN_ANY, WHEN_NIGHT = 'ANY', 'NIGHT'
 LEAVE_DESPAWN, LEAVE_ESCAPE = 'DESPAWN', 'ESCAPE'     # ADR-0144: how a presence goes
@@ -85,6 +90,8 @@ class Presence:
     copies: int = 1           # ADR-0140: how many; ADR-0143: the missing ones created together
     hostile_from: str | None = None   # ADR-0142: from this point (ACCEPTED or a step) they fight
     leave: str = LEAVE_DESPAWN        # ADR-0144: how it goes when its window closes (or ESCAPE)
+    walk_x: int = -1                  # ADR-0148: once created at (x, y), it walks here and stays
+    walk_y: int = -1
 
 
 @dataclass(frozen=True)
@@ -131,6 +138,8 @@ class NarrativeQuest:
     presence: tuple[Presence, ...] = ()
     call: Call | None = None
     passages: tuple[Passage, ...] = ()
+    reward_gold: int = 0               # ADR-0148: paid once, on resolution
+    reward_xp: int = 0
 
 
 def _norm(text: str) -> str:
@@ -165,7 +174,7 @@ def _presence(raw: object, step_ids: set[str]) -> tuple[Presence, ...] | None:
         return ()
     if not isinstance(raw, list):
         return None
-    points = {START_ACCEPTED} | step_ids, {END_RESOLVED} | step_ids
+    points = {START_ACCEPTED, START_BEGIN} | step_ids, {END_RESOLVED} | step_ids
     out: list[Presence] = []
     for item in raw:
         if not isinstance(item, dict):
@@ -178,6 +187,7 @@ def _presence(raw: object, step_ids: set[str]) -> tuple[Presence, ...] | None:
         copies = item.get('copies', 1)
         hostile_from = item.get('hostile_from')
         leave = item.get('leave', LEAVE_DESPAWN)
+        walk = _walk(item.get('walk_to'))
         numbers = (x, y, facing, copies)
         if not (isinstance(pid, str) and _ID.fullmatch(pid) and isinstance(cre, str)
                 and _CRE.fullmatch(cre) and isinstance(name, str) and _OWN_NAME.fullmatch(name)
@@ -186,14 +196,42 @@ def _presence(raw: object, step_ids: set[str]) -> tuple[Presence, ...] | None:
                 and all(isinstance(n, int) and not isinstance(n, bool) for n in numbers)
                 and -1 <= x <= 32767 and -1 <= y <= 32767 and (x < 0) == (y < 0)
                 and 0 <= facing <= 15 and when in (WHEN_ANY, WHEN_NIGHT) and 1 <= copies <= 8
-                and (hostile_from is None or hostile_from in points[0])
-                and leave in (LEAVE_DESPAWN, LEAVE_ESCAPE)):
+                and (hostile_from is None or (hostile_from in points[0]
+                                              and hostile_from != START_BEGIN))
+                and leave in (LEAVE_DESPAWN, LEAVE_ESCAPE)
+                and walk is not None and (walk == (-1, -1) or x >= 0)):
             return None
         if pid in {o.presence_id for o in out} or name in {o.name for o in out}:
             return None
         out.append(Presence(pid, cre, name, area, start, end, x, y, facing, when, copies,
-                            hostile_from, leave))
+                            hostile_from, leave, walk[0], walk[1]))
     return tuple(out)
+
+
+def _walk(raw: object) -> tuple[int, int] | None:
+    """ADR-0148: `walk_to` {x, y}, strictly; (-1, -1) when absent, None when invalid."""
+    if raw is None:
+        return (-1, -1)
+    if not isinstance(raw, dict) or set(raw) != {'x', 'y'}:
+        return None
+    x, y = raw['x'], raw['y']
+    if not all(isinstance(n, int) and not isinstance(n, bool) and 0 <= n <= 32767
+               for n in (x, y)):
+        return None
+    return (x, y)
+
+
+def _reward(raw: object) -> tuple[int, int] | None:
+    """ADR-0148: `turn_in.reward` {gold, xp}, strictly; (0, 0) when absent, None when invalid."""
+    if raw is None:
+        return (0, 0)
+    if not isinstance(raw, dict) or not raw or not set(raw) <= {'gold', 'xp'}:
+        return None
+    gold, xp = raw.get('gold', 0), raw.get('xp', 0)
+    if not all(isinstance(n, int) and not isinstance(n, bool) for n in (gold, xp)) \
+            or not 0 <= gold <= MAX_GOLD or not 0 <= xp <= MAX_XP or gold + xp == 0:
+        return None
+    return (gold, xp)
 
 
 def _chained(steps: list[Step]) -> bool:
@@ -239,8 +277,9 @@ def _passages(raw: object, step_ids: set[str]) -> tuple[Passage, ...] | None:
     return tuple(out)
 
 
-def _call(raw: object) -> Call | None | bool:
-    """ADR-0144: the giver's call, strictly; None when absent, False when invalid."""
+def _call(raw: object, own: set[str] = frozenset()) -> Call | None | bool:
+    """ADR-0144: the giver's call, strictly; None when absent, False when invalid. ADR-0148: from
+    one of ours only when it is a presence of the same quest (`own`)."""
     if raw is None:
         return None
     if not isinstance(raw, dict) or set(raw) != {'script_name', 'area', 'strref', 'every'}:
@@ -248,7 +287,7 @@ def _call(raw: object) -> Call | None | bool:
     name, area, strref, every = raw['script_name'], raw['area'], raw['strref'], raw['every']
     if not isinstance(area, str) or not _AREA.fullmatch(area) \
             or not isinstance(name, str) or not _GAME_NAME.fullmatch(name.upper()) \
-            or name.upper().startswith('INFAI_') \
+            or (name.upper().startswith('INFAI_') and name.upper() not in own) \
             or isinstance(strref, bool) or not isinstance(strref, int) or not 0 <= strref <= 999999 \
             or isinstance(every, bool) or not isinstance(every, int) or not 300 <= every <= 108000:
         return False
@@ -326,9 +365,10 @@ def parse_quest(doc: object) -> NarrativeQuest | None:
     title, giver_id, offer_cues, offer_fact, accept_cues, waiting, accept_journal, \
         turn_cues, turn_fact, turn_journal = fields
     presence = _presence(doc.get('presence'), {s.step_id for s in steps})
-    call = _call(doc.get('call'))
+    call = _call(doc.get('call'), {p.name for p in presence or ()})
     passages = _passages(doc.get('passages'), {s.step_id for s in steps})
-    if presence is None or call is False or passages is None:
+    reward = _reward(turn_in.get('reward'))
+    if presence is None or call is False or passages is None or reward is None:
         return None
     fallen = [s.presence_id for s in steps if s.kind == DEFEATED]
     if any(f not in {p.presence_id for p in presence} for f in fallen) \
@@ -336,7 +376,8 @@ def parse_quest(doc: object) -> NarrativeQuest | None:
         return None
     return NarrativeQuest(qid, title, area, giver_id, offer_cues, offer_fact, accept_cues,
                           waiting, accept_journal, tuple(steps), turn_cues, turn_fact,
-                          turn_journal, doc['milestone'], presence, call or None, passages)
+                          turn_journal, doc['milestone'], presence, call or None, passages,
+                          reward[0], reward[1])
 
 
 def load_quests(base: Path = DEFAULT_QUEST_DIR) -> dict[str, NarrativeQuest]:

@@ -50,7 +50,7 @@ class PersonaTests(unittest.TestCase):
     def test_shipped_curations_all_keep_their_persona(self):
         curations = load_curations(PACK)
         with_persona = {n for n, c in curations.items() if c.character}
-        self.assertEqual(len(with_persona), 27)
+        self.assertEqual(len(with_persona), 28)          # + Doran Vell (ADR-0148)
         for doc in sorted((ROOT / 'knowledge' / 'npcs').glob('*.json')):
             data = json.loads(doc.read_text(encoding='utf-8'))
             if 'persona' in data:

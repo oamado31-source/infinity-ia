@@ -41,6 +41,7 @@ ALLOWED = frozenset({
     'EEex_UDEqual',                                        # is the leader in the area (ADR-0145)
     'EEex_Menu_AddMainFileLoadedListener', 'EEex_Menu_LoadFile', 'Infinity_PushMenu',
     'EEex_GameState_AddInitializedListener', 'EEex_Menu_AddAfterMainFileReloadedListener',
+    'EEex_EngineGlobal_CBaldurChitin', 'EEex_Sprite_GetActiveStats',  # read the gold and XP (ADR-0148)
 })
 
 
@@ -77,7 +78,7 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(render_request(req), (
             'INFAI_ACT_Request = {action_id = "abcdef0123", op = "SPAWN_CREATURE", '
             'area = "AR0406", name = "INFAI_P3TEST", cre = "IAP3TEST", x = 100, y = 200, '
-            'facing = 3, count = 1, strref = -1}\n'))
+            'facing = 3, count = 1, strref = -1, to_x = -1, to_y = -1, gold = 0, xp = 0}\n'))
         bad = req.__class__('abcdef0123', SPAWN, 'AR0406', 'INFAI_P3TEST',
                             'X")DestroySelf(', 0, 0, 0)
         with self.assertRaises(ActionError):
@@ -183,7 +184,7 @@ class GatewayTests(unittest.TestCase):
         req = spawn_request('IAP3TEST', 'AR0406', templates=TEMPLATES, action_id='abcdef0123',
                             count=3)
         self.assertEqual(req.count, 3)
-        self.assertIn('count = 3, strref = -1}', render_request(req))
+        self.assertIn('count = 3, strref = -1,', render_request(req))
         self.assertTrue(confirmed(req, ActionReceipt('abcdef0123', 'DONE', 3, None, 0, 48, 45)))
         for observed, before, seen, seen_before in ((2, 0, 47, 45), (3, 0, 47, 45),
                                                     (3, 0, 49, 45), (4, 1, 47, 45)):
@@ -198,16 +199,19 @@ class GatewayTests(unittest.TestCase):
             render_request(dataclasses.replace(count, count=2))    # copies only for SPAWN
 
     def test_call_and_escape_requests_are_strict(self):
-        """ADR-0144: CALL only for a pair a curated quest declares, never one of ours; ESCAPE
-        only for ours that the branch owns; the confirmations."""
+        """ADR-0144: CALL only for a pair a curated quest declares (ADR-0148: one of ours too,
+        when declared); ESCAPE only for ours that the branch owns; the confirmations."""
         declared = {('DRUNK1', 102877)}
         req = call_request('drunk1', 'ar0406', 102877, declared=declared, action_id='abcdef0123')
         self.assertEqual((req.op, req.name, req.area, req.strref), (CALL, 'DRUNK1', 'AR0406',
                                                                    102877))
-        self.assertIn('strref = 102877}', render_request(req))
+        self.assertIn('strref = 102877,', render_request(req))
+        own = call_request('INFAI_DORAN', 'AR0406', 102877,
+                           declared={('INFAI_DORAN', 102877)}, action_id='abcdef0123')
+        self.assertIn('name = "INFAI_DORAN"', render_request(own))
         for args, code in ((('DRUNK1', 'AR0406', 4167), 'CALL_NOT_DECLARED'),
                            (('BERNARD', 'AR0406', 102877), 'CALL_NOT_DECLARED'),
-                           (('INFAI_TESTE', 'AR0406', 102877), 'BAD_NAME'),
+                           (('INFAI_TESTE', 'AR0406', 102877), 'CALL_NOT_DECLARED'),
                            (('DRUNK 1', 'AR0406', 102877), 'BAD_NAME'),
                            (('DRUNK1', 'AR0406', -1), 'BAD_STRREF'),
                            (('DRUNK1', 'AR0406', True), 'BAD_STRREF')):
@@ -378,7 +382,12 @@ class ModuleTests(unittest.TestCase):
         self.assertEqual(self.acts()[-1].reason, 'NOT_FOUND')
         self.g.files['INFAIACT'] = render_request(call_request(
             'BERNARD', 'AR0406', 1, declared={('BERNARD', 1)}, action_id='1111111111')).replace(
-            'name = "BERNARD"', 'name = "INFAI_P3TEST"')                # never one of ours
+            'name = "BERNARD"', 'name = "INFAI_P3TEST"')     # ADR-0148: one of ours, if there
+        self.tick(3500)
+        self.assertEqual(self.acts()[-1].reason, 'NOT_FOUND')
+        self.g.files['INFAIACT'] = render_request(call_request(
+            'BERNARD', 'AR0406', 1, declared={('BERNARD', 1)}, action_id='2222222222')).replace(
+            'name = "BERNARD"', 'name = "bernard x"')                   # never a bad name
         self.tick(3500)
         self.assertEqual(self.acts()[-1].reason, 'BAD_REQUEST')
 
@@ -547,7 +556,12 @@ class StaticTests(unittest.TestCase):
 
     def test_actions_come_from_fixed_templates(self):
         self.assertEqual(re.findall(r"string\.format\('(\w+)\(", self.raw),
-                         ['CreateCreature', 'LeaveAreaLUA'])
+                         ['CreateCreature', 'MoveToPoint', 'LeaveAreaLUA', 'GiveGoldForce',
+                          'AddexperienceParty'])
+        # ADR-0148: the walk and the reward, each from one fixed template, numbers only
+        self.assertEqual(self.raw.count("'MoveToPoint([%d.%d])'"), 1)
+        self.assertEqual(self.raw.count("'GiveGoldForce(%d)'"), 1)
+        self.assertEqual(self.raw.count("'AddexperienceParty(%d)'"), 1)
         # ADR-0146: a passage only into or out of an area of ours, from one fixed template
         self.assertEqual(self.raw.count('LeaveAreaLUA("%s","",[%d.%d],%d)'), 1)
         self.assertIn('"^IA%d%d%d%d$"', self.raw)
@@ -561,8 +575,10 @@ class StaticTests(unittest.TestCase):
         self.assertEqual(self.raw.count('"DestroySelf()"'), 1)
         self.assertEqual(self.raw.count('"Enemy()"'), 1)                   # ADR-0142
         # INSTANT.IDS actions run at once: a queue on the leader is lost in a fight (lab, ADR-0142);
-        # only EscapeArea(), which walks, is queued, on our own creature (ADR-0144)
-        self.assertEqual(self.raw.count('QueueResponseString'), 1)
+        # only EscapeArea() (ADR-0144) and MoveToPoint() (ADR-0148), which walk, are queued, on
+        # our own creatures
+        self.assertEqual(self.raw.count('QueueResponseString'), 2)
+        self.assertIn('EEex_Action_QueueResponseStringOnAIBase, action, sprite', self.raw)
         self.assertIn('EEex_Action_QueueResponseStringOnAIBase, "EscapeArea()", sprite', self.raw)
         self.assertEqual(self.raw.count('"EscapeArea()"'), 1)
         # CALL only shows a line of dialog.tlk over a head (ADR-0144): one call, no other option

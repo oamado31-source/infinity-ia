@@ -1,0 +1,28 @@
+{
+  "schema": "infinity-ai.encyclopedia.character.v1",
+  "canonical_id": "character:doran-vell",
+  "category": "CHARACTER",
+  "display_name": "Doran Vell",
+  "summary": "Pessoa criada pelo projeto: feitor de uma grande casa mercantil de Athkatla, que procura ajuda na Coroa de Cobre para um assunto que a família não quer levar às autoridades.",
+  "source_records": [
+    {
+      "game": "BG2",
+      "expansion": "EE",
+      "verification_status": "CURATED"
+    }
+  ],
+  "verification_status": "CURATED",
+  "entity_type": "QUEST_CHARACTER",
+  "refs": {
+    "curation": "knowledge/npcs/doran.pt_BR.json"
+  },
+  "source_refs": [
+    "maintainer"
+  ],
+  "curation": {
+    "status": "CHECKED",
+    "checked_by": "mantenedor",
+    "checked_at": "2026-11-26",
+    "note": "Proposta da quest dos reféns aprovada em 2026-11-26."
+  }
+}

@@ -21,6 +21,13 @@
 --   PASSAGEM (ADR-0146): as passagens abertas pela quest (INFAIDOR.lua) para e de areas nossas;
 --     o lider parado no ponto por 1 s leva o grupo (LeaveAreaLUA, um membro por vez, na hora);
 --   WHERE (ADR-0146, laboratorio): so le onde o lider esta;
+--   ANDAR (ADR-0148): um SPAWN (ou uma chegada) com to_x/to_y enfileira MoveToPoint() (acao do
+--     proprio jogo, modelo fixo) nas nossas recem-criadas com o nome: nascem na porta e andam ate o
+--     ponto, e ficam la;
+--   CALL (ADR-0148): tambem sobre uma criatura nossa, quando a quest a declara;
+--   REWARD (ADR-0148): o lider executa na hora GiveGoldForce() e AddexperienceParty() (modelo fixo,
+--     valores da quest curada); depois de 1 s le o ouro do grupo: observed 1 se subiu exatamente o
+--     valor (sem ouro, se o XP do lider subiu), senao UNVERIFIED (o servico nunca reenvia);
 --   COUNT (ADR-0140): so le. Conta na area as criaturas VIVAS com o nosso nome e responde na hora,
 --     sem executar nada. O seletor do jogo devolve tambem os corpos: o estado de morte (0x800,
 --     a mesma checagem da caixa) os tira da conta, de COUNT, de SPAWN e de DESPAWN.
@@ -50,6 +57,9 @@ INFAI_ARR_SETTLE_MS = 300        -- ADR-0145: espera minima depois da troca de a
 INFAI_DOOR_RADIUS = 60           -- ADR-0146: px em volta do ponto da passagem
 INFAI_DOOR_STILL_MS = 1000       -- ADR-0146: quanto o lider fica no ponto antes de passar
 INFAI_DOOR_RELOAD_MS = 5000      -- ADR-0146: rele o plano de passagens com o grupo na area
+INFAI_ACT_REWARD_MS = 1000       -- ADR-0148: espera antes de conferir o ouro
+INFAI_ACT_MAX_GOLD = 10000       -- ADR-0148: os limites da recompensa de uma quest
+INFAI_ACT_MAX_XP = 50000
 
 INFAI_ACT_State = INFAI_ACT_State or { done = {}, check = nil, next_poll = 0, arrivals = {},
 	arr_area = nil }
@@ -86,7 +96,11 @@ end
 
 local function infai_act_op_ok(op)
 	return op == "SPAWN_CREATURE" or op == "DESPAWN" or op == "COUNT" or op == "SET_HOSTILE"
-		or op == "CALL" or op == "ESCAPE" or op == "WHERE"
+		or op == "CALL" or op == "ESCAPE" or op == "WHERE" or op == "REWARD"
+end
+
+local function infai_act_int(v, lo, hi)
+	return type(v) == "number" and v == math.floor(v) and v >= lo and v <= hi
 end
 
 local function infai_act_valid(req)
@@ -98,9 +112,9 @@ local function infai_act_valid(req)
 	end
 	if type(req.name) ~= "string" or #req.name > 32 then return false end
 	if req.op == "CALL" then
-		-- ADR-0144: o nome de script de quem oferece a quest (do jogo, nunca nosso) e uma frase do
-		-- dialog.tlk; so exibicao.
-		if not string.match(req.name, "^[A-Z0-9_]+$") or string.match(req.name, "^INFAI_") then
+		-- ADR-0144: o nome de script de quem oferece a quest e uma frase do dialog.tlk; so
+		-- exibicao. ADR-0148: pode ser uma criatura nossa, quando a quest a declara.
+		if not string.match(req.name, "^[A-Z0-9_]+$") then
 			return false
 		end
 		local r = req.strref
@@ -110,6 +124,27 @@ local function infai_act_valid(req)
 	-- O nome e sempre nosso: INFAI_ e letras, numeros ou sublinhado, ate 32 caracteres.
 	if not string.match(req.name, "^INFAI_[A-Z0-9_]+$") then
 		return false
+	end
+	if req.op == "REWARD" then
+		-- ADR-0148: so ouro e XP dentro dos limites, ao menos um; nenhuma criatura e nomeada.
+		if req.name ~= "INFAI_PARTY" or not infai_act_int(req.gold, 0, INFAI_ACT_MAX_GOLD)
+				or not infai_act_int(req.xp, 0, INFAI_ACT_MAX_XP) or req.gold + req.xp == 0 then
+			return false
+		end
+		return req.count == nil or req.count == 1
+	elseif (req.gold ~= nil and req.gold ~= 0) or (req.xp ~= nil and req.xp ~= 0) then
+		return false
+	end
+	local tx, ty = req.to_x, req.to_y
+	if tx ~= nil or ty ~= nil then
+		-- ADR-0148: o ponto ate onde andar, os dois ou nenhum, so num SPAWN com ponto de nascer
+		if not infai_act_int(tx, -1, 32767) or not infai_act_int(ty, -1, 32767)
+				or (tx < 0) ~= (ty < 0) then
+			return false
+		end
+		if tx >= 0 and (req.op ~= "SPAWN_CREATURE" or type(req.x) ~= "number" or req.x < 0) then
+			return false
+		end
 	end
 	if req.op == "SPAWN_CREATURE" then
 		-- So os nossos arquivos de criatura (IA*), que trazem o nome nosso dentro.
@@ -191,6 +226,51 @@ local function infai_act_create(cre, x, y, facing, n)
 	end
 	return nil
 end
+
+-- ADR-0148: as nossas com o nome andam ate o ponto (MoveToPoint, modelo fixo, na fila delas).
+local function infai_act_walk(area, name, tx, ty)
+	if type(tx) ~= "number" or tx < 0 then return end
+	local action = string.format('MoveToPoint([%d.%d])', tx, ty)
+	for _, sprite in ipairs(infai_act_find(area, name)) do
+		pcall(EEex_Action_QueueResponseStringOnAIBase, action, sprite)
+	end
+end
+
+-- ADR-0148: o ouro do grupo e o XP do lider, so leitura; nil sem leitura. Varios caminhos, o
+-- primeiro que der um numero vale (laboratorio 2026-11-26: m_nPartyGold nao leu; a interface do
+-- proprio jogo usa game:GetPartyGold()). Um Primitive<> do EEex traz o numero em m_value.
+local function infai_act_num(get)
+	local ok, v = pcall(get)
+	if not ok then return nil end
+	if type(v) == "number" then return v end
+	if v ~= nil then
+		local okv, inner = pcall(function() return v.m_value end)
+		if okv and type(inner) == "number" then return inner end
+	end
+	return nil
+end
+
+local INFAI_ACT_GOLD_READS = {
+	function() return game:GetPartyGold() end,
+	function() return EEex_EngineGlobal_CBaldurChitin.m_pObjectGame.m_nPartyGold end,
+	function() return EngineGlobals.g_pBaldurChitin.m_pObjectGame.m_nPartyGold end,
+}
+
+local INFAI_ACT_XP_READS = {
+	function() return EEex_Sprite_GetActiveStats(EEex_Sprite_GetInPortrait(0)).m_nXP end,
+	function() return EEex_Sprite_GetInPortrait(0).m_baseStats.m_xp end,
+}
+
+local function infai_act_first(reads)
+	for i = 1, #reads do
+		local v = infai_act_num(reads[i])
+		if v ~= nil then return v, i end
+	end
+	return nil, nil
+end
+
+local function infai_act_gold() return infai_act_first(INFAI_ACT_GOLD_READS) end
+local function infai_act_xp() return infai_act_first(INFAI_ACT_XP_READS) end
 
 -- O lider do grupo ja esta nesta area (o motor o poe depois de trocar a area visivel).
 local function infai_act_leader_in(area)
@@ -293,7 +373,7 @@ local function infai_arr_enter(area, name, now)
 	for _, e in ipairs(plan) do
 		local req = type(e) == "table" and { action_id = e.action_id, op = "SPAWN_CREATURE",
 			area = e.area, name = e.name, cre = e.cre, x = e.x, y = e.y, facing = e.facing,
-			count = e.count } or nil
+			count = e.count, to_x = e.to_x, to_y = e.to_y } or nil
 		if req ~= nil and req.area == name and type(req.action_id) == "string"
 				and not st.done[req.action_id] and infai_act_valid(req) then
 			st.done[req.action_id] = true
@@ -302,6 +382,7 @@ local function infai_arr_enter(area, name, now)
 			local refused = nil
 			if missing > 0 then
 				refused = infai_act_create(req.cre, req.x, req.y, req.facing, missing)
+				if refused == nil then infai_act_walk(area, req.name, req.to_x, req.to_y) end
 			end
 			if refused ~= nil then
 				infai_act_emit(req.action_id, "REFUSED", nil, refused)
@@ -336,6 +417,31 @@ local function infai_act_run(req, now)
 		else
 			infai_act_emit(req.action_id, "REFUSED", nil, "NO_PARTY")
 		end
+		return
+	end
+	if req.op == "REWARD" then
+		-- ADR-0148: paga na hora, pelo lider, com as acoes do proprio jogo; confere o ouro depois.
+		local okl, leader = pcall(EEex_Sprite_GetInPortrait, 0)
+		if not okl or leader == nil then
+			infai_act_emit(req.action_id, "REFUSED", nil, "NO_PARTY")
+			return
+		end
+		local gold_before, gold_how = infai_act_gold()
+		local xp_before, xp_how = infai_act_xp()
+		-- laboratorio: qual caminho leu o ouro e o XP (nenhum dado do jogador, so numeros)
+		print(string.format("INFAI-DIAG reward gold=%s via=%s xp=%s via=%s", tostring(gold_before),
+			tostring(gold_how), tostring(xp_before), tostring(xp_how)))
+		if req.gold > 0 then
+			pcall(EEex_Action_ExecuteResponseStringOnAIBaseInstantly,
+				string.format('GiveGoldForce(%d)', req.gold), leader)
+		end
+		if req.xp > 0 then
+			pcall(EEex_Action_ExecuteResponseStringOnAIBaseInstantly,
+				string.format('AddexperienceParty(%d)', req.xp), leader)
+		end
+		infai_act_emit(req.action_id, "ACCEPTED", nil, nil)
+		st.check = { id = req.action_id, op = "REWARD", gold = req.gold, xp = req.xp,
+			gold_before = gold_before, xp_before = xp_before, at = now + INFAI_ACT_REWARD_MS }
 		return
 	end
 	if req.op == "CALL" then
@@ -392,6 +498,7 @@ local function infai_act_run(req, now)
 			infai_act_emit(req.action_id, "REFUSED", nil, refused)
 			return
 		end
+		infai_act_walk(area, req.name, req.to_x, req.to_y)
 	else
 		local targets = infai_act_find(area, req.name)
 		if #targets == 0 then
@@ -447,6 +554,24 @@ function INFAI_ACT_Tick()
 		end
 	end
 	st.arrivals = waiting
+	if st.check ~= nil and now >= st.check.at and st.check.op == "REWARD" then
+		local c = st.check
+		local gold_after = infai_act_gold()
+		local xp_after = infai_act_xp()
+		print(string.format("INFAI-DIAG reward-after gold=%s xp=%s", tostring(gold_after), tostring(xp_after)))
+		local paid
+		if c.gold > 0 then
+			paid = c.gold_before ~= nil and gold_after ~= nil and gold_after - c.gold_before == c.gold
+		else
+			paid = c.xp_before ~= nil and xp_after ~= nil and xp_after > c.xp_before
+		end
+		if paid then
+			infai_act_emit(c.id, "DONE", 1, nil)
+		else
+			infai_act_emit(c.id, "DONE", nil, "UNVERIFIED")
+		end
+		st.check = nil
+	end
 	if st.check ~= nil and now >= st.check.at then
 		local area = infai_act_area()
 		local count, seen, before = nil, nil, st.check.before

@@ -1,14 +1,18 @@
 # SPEC-014 — Criação, reconstrução e engenharia de áreas
 
-**Status:** APROVADA COMO PROPOSTA (mantenedor, 2026-11-27: "Aprovar como proposta", D1 a D5 na opção recomendada). Cada fase de código ou instalação ainda pede a sua ADR ou CR (ADR-0111).
+**Status:** APROVADA COMO PROPOSTA (mantenedor, 2026-11-27: "Aprovar como proposta", D1 a D5 na opção recomendada). Corrigida antes do merge, a pedido do mantenedor: o navio da quest é um **mapa novo**, criado por nós, e não o navio de Balduran do BG1 (D4). Cada fase de código ou instalação ainda pede a sua ADR ou CR (ADR-0111).
 **Rastreabilidade:** SPEC-010 (inventário geográfico: o catálogo das fontes); SPEC-013 (autoria de quests: quem consome as áreas); ADR-0146 (área nossa e passagens); ADR-0136 (gateway); CR-2026-030 (dados do jogo fora do repositório); CR-2026-032 (recursos de outros jogos só no laboratório); CR-2026-034 (o esconderijo, primeira área nossa).
-**Origem:** a ideia do mantenedor ("Map Creation, Reconstruction & Area Engineering"), em 2026-11-27, e a análise do navio de Balduran do mesmo dia. A ideia numerava os módulos como 011.x, mas a SPEC-011 já existe.
+**Origem:** a ideia do mantenedor ("Map Creation, Reconstruction & Area Engineering"), em 2026-11-27. A ideia numerava os módulos como 011.x, mas a SPEC-011 já existe.
 
 ## Objetivo
 
 Criar áreas além das que existem nos jogos e expansões é um dos objetivos principais do Infinity AI. A SPEC-010 cataloga o que existe e com que direitos, e deixa a criação de áreas para "especificação posterior" (§9). Esta é essa especificação:
 - **a SPEC-010 é o catálogo;**
-- **a SPEC-014 é a oficina:** como fazer uma área nossa a partir das fontes, verificá-la e entregá-la a uma quest, e depois como um agente faz isso seguindo estas regras.
+- **a SPEC-014 é a oficina:** como criar um mapa novo, verificá-lo e entregá-lo a uma quest, e depois como um agente faz isso seguindo estas regras.
+
+**O agente cria mapas novos** (mantenedor, 2026-11-27):
+- ele monta uma cena 3D (planta, modelos e texturas de licença aberta), renderiza na câmera do jogo e gera a área;
+- importar ou copiar mapas de outros jogos e módulos **não** é o caminho do agente. A reconstrução (014.2) fica como capacidade secundária, para um caso pontual aprovado pelo mantenedor.
 
 **Invariantes:**
 - nenhum byte de jogo ou de mod vai ao repositório (CR-2026-030, REQ-CANON-004). No repositório só há código, testes e **receitas**;
@@ -22,9 +26,9 @@ Criar áreas além das que existem nos jogos e expansões é um dos objetivos pr
 | Degrau | O que é | Situação |
 |---|---|---|
 | 1 | Copiar uma sala do mesmo jogo | feito: `IA0001`, a caverna sob o Farol (ADR-0146) |
-| 2 | Trazer uma sala de outro jogo do mesmo motor | primeiro caso: o navio de Balduran (BG:EE) |
-| 3 | Compor uma área nova costurando tiles de salas existentes | depois do 2 |
-| 4 | Desenho novo, renderizado de uma cena 3D | primeiro caso: o porão do navio |
+| 2 | Trazer uma sala de outro jogo do mesmo motor | capacidade prevista (014.2), sem caso marcado |
+| 3 | Compor uma área nova costurando tiles de salas existentes | alternativa |
+| 4 | **Desenho novo, renderizado de uma cena 3D** | **o objetivo desta SPEC**; primeiro caso: o navio da quest dos reféns |
 
 **Medido no laboratório (2026-11-27), em três salas do BG2:EE** (AR0310, AR0515 e AR1607):
 - o `TIS` é da versão 2: cada tile de 64×64 aponta para uma página de textura `PVRZ` (DXT);
@@ -32,15 +36,15 @@ Criar áreas além das que existem nos jogos e expansões é um dos objetivos pr
 - no BIF, o `TIS` fica na tabela de tilesets, separada da de arquivos. O leitor de recursos de hoje (`_Resources`) ainda não a lê;
 - o `MOS` é da versão 1 (paleta), e os `BMP` de busca, luz e altura têm 1/16 × 1/12 da área;
 - os três `WED` declaram 5 camadas;
-- o BG2 já tem `AR1400` a `AR1404`: áreas do BG1 precisam de nome novo.
+- os nomes de área do jogo (`AR####`) se repetem entre os jogos (o BG2 já tem `AR1400` a `AR1404`): toda área nossa usa nome próprio (`IA####`).
 
 ## 2. Os módulos
 
 | Módulo | Responsabilidade | O que já existe |
 |---|---|---|
-| **014.1 Fontes** | de onde vem cada pedaço: salas do jogo, de outro jogo do mesmo motor, de mods, modelos 3D e texturas. Cada fonte com direitos, versão e `sha256`. Lê o catálogo da SPEC-010 e acrescenta as fontes de modelos 3D | catálogo da SPEC-010 (proposta) |
-| **014.2 Reconstrução** | trazer áreas que existem em outro jogo do mesmo motor (BG:EE, conversões de IWD e NWN) com nomes nossos e referências limpas | cópia de sala do BG2 (`build_area.py`) |
-| **014.3 Criação** | áreas novas: (a) **composição** com tiles de salas existentes; (b) **render 3D** no Blender a partir de uma cena montada pelo agente | nada |
+| **014.1 Fontes** | a biblioteca do agente: **modelos 3D e texturas de licença aberta** (CC0, CC BY), cada um com autor, URL, licença e `sha256`. As salas do jogo servem de referência de escala, câmera e estilo, não de matéria-prima. O catálogo da SPEC-010 só entra para a reconstrução | catálogo da SPEC-010 (proposta) |
+| **014.2 Reconstrução** (secundária) | trazer uma área que existe em outro jogo do mesmo motor, com nomes nossos e referências limpas, só num caso pontual aprovado; não é o caminho do agente | cópia de sala do BG2 (`build_area.py`) |
+| **014.3 Criação** (o centro da SPEC) | mapas novos: (b) **render 3D** no Blender a partir de uma cena montada pelo agente; (a) composição com tiles de salas existentes, como alternativa | nada |
 | **014.4 Engenharia** | os formatos: `ARE`, `WED` (camadas, paredes, portas), `TIS` v2 e páginas `PVRZ`, `MOS`, `SR`/`HT`/`LM`, dia e noite, portas, luz e onde se anda | `make_area` (o `ARE` sem nada do jogo agindo) |
 | **014.5 Validação e integração** | verificadores automáticos, instalação no override do laboratório, pin, evidência no jogo com capturas, entrega dos nomes e pontos para a quest (SPEC-013) | gateway, `TRAVEL`, pin e passagens |
 
@@ -48,14 +52,17 @@ Criar áreas além das que existem nos jogos e expansões é um dos objetivos pr
 
 A peça central é a **receita**.
 - **O que é:** um JSON no repositório, sem nenhum byte de jogo, que diz como produzir a área:
-  - as fontes, com build (impressão digital) e `sha256` de cada arquivo de origem;
-  - os nomes nossos;
-  - o que é renomeado, limpo ou trocado no `ARE`;
-  - para o degrau 3, os pedaços e as posições;
-  - para o degrau 4, a cena (modelos com autor, URL e licença, e as posições);
-  - as passagens e os pontos que a quest vai usar.
-- **Quem faz o quê:** o agente escreve a receita, e a ferramenta a aplica na cópia do jogo de quem joga.
-- **Por quê:** é o princípio da conversão EET, e é o que permite um dia distribuir áreas sem distribuir o jogo.
+  - os nomes nossos e o tipo (interior, exterior, subterrâneo);
+  - a cena: a planta, os modelos e texturas (com autor, URL, licença e `sha256`), as posições, a luz e a câmera;
+  - os pavimentos e as ligações entre eles;
+  - o que é parede, porta e onde se anda, quando não sai sozinho do render;
+  - as passagens e os pontos que a quest vai usar;
+  - só na reconstrução ou na composição: as fontes do jogo, com build (impressão digital) e `sha256`, e o que é renomeado ou limpo.
+- **Quem faz o quê:** o agente escreve a receita; a ferramenta renderiza no Blender e gera os arquivos da área.
+- **Por quê:**
+  - um mapa renderizado de modelos de licença aberta é **arte nossa**, que não depende do jogo de ninguém;
+  - a receita reproduz o mapa inteiro, e os arquivos gerados (grandes) ficam fora do repositório;
+  - um dia, receita e créditos dos modelos podem ser distribuídos.
 
 ## 3. Requisitos
 
@@ -109,35 +116,45 @@ O pipeline do agente é **nosso**, escrito a partir da documentação pública d
 
 ## 5. O navio da quest dos reféns
 
+O navio, a *Estrela de Waukeen*, é o **primeiro mapa novo** do Infinity AI: um mapa que não existe em jogo nenhum, feito por nós. Não usa o navio de Balduran nem outro mapa do BG1, que o mantenedor não tem instalado.
+
 | Caminho | Módulos | Resultado |
 |---|---|---|
-| **A. navio de Balduran do BG:EE** (primeiro) | 014.2 + 014.4 | área de outro jogo, só no laboratório. Pede o BG:EE instalado na VM (ação do mantenedor) |
-| **B. porão renderizado no Blender** (segundo) | 014.3b + 014.4 | a primeira área que não existe em jogo nenhum, distribuível como receita mais modelos CC0 |
-| C. conveses compostos com tiles do BG2 | 014.3a + 014.4 | fica como alternativa |
+| **B. conveses renderizados no Blender** (o caminho) | 014.3b + 014.4 | mapa novo, distribuível como receita mais modelos CC0 |
+| C. conveses compostos com tiles do BG2 | 014.3a + 014.4 | alternativa, se o render travar |
 
-**Ainda a olhar (014.1):** IWD2_EET e Region of Terror atrás de interiores de navio. NWNForBG e IWD1_EET não tinham porão de navio identificado (CR-2026-034), e o Dark Tidings é "todos os direitos reservados".
+**A ordem dentro do navio:**
+1. **um pavimento primeiro, o porão**, que é a geometria mais simples (piso de tábuas, casco, carga, a cela dos reféns), como teste do pipeline inteiro;
+2. depois o convés do meio e o convés superior, reaproveitando a câmera, o casco e os modelos do porão;
+3. a quest dos reféns (fase 3 da SPEC-013) usa os três pavimentos.
 
 ## 6. Fases
 
 1. Esta SPEC, registrada como proposta, e as ferramentas no catálogo da SPEC-010.
 2. **014.4 básico** (ADR):
-   - ler `TIS` v2 da tabela de tilesets e as páginas `PVRZ`, e gravá-los com nome nosso;
-   - `WED` com 5 camadas;
+   - gravar `TIS` v2 e páginas `PVRZ` com nome nosso, e lê-los (da tabela de tilesets do BIF) para conferir e para as salas do BG2 de referência;
+   - `WED` com 5 camadas, paredes e portas;
+   - `SR`, `HT` e `LM` a partir de uma grade;
    - verificador de referências e de onde se anda;
    - formato da receita;
-   - testes contra as salas do BG2.
-3. **Navio, caminho A** (CR que amplia a CR-2026-032), com o BG:EE instalado. A fase 3 da SPEC-013 (a quest dos reféns montada pelo agente) segue com ele.
-4. **Porão, caminho B** (ADR):
+   - testes que leem e regravam as salas do BG2 sem perda.
+3. **O porão do navio** (ADR):
    - medir a câmera e a escala do jogo;
-   - script do Blender sem tela, com modelos CC0;
-   - paredes e mapa de busca derivados do render;
+   - script do Blender sem tela, no Mac, com modelos CC0;
+   - desenho, paredes e mapa de busca derivados do render;
    - evidência no jogo.
-5. **Agente de áreas:** skill de autoria de áreas, como a de quests. Escolhe a fonte, escreve a receita, roda os verificadores e entrega nomes e pontos para a quest.
+4. **Os outros dois conveses**, e a quest dos reféns montada pelo agente (fase 3 da SPEC-013).
+5. **Agente de áreas:** skill de autoria de áreas, como a de quests. A partir do que a quest pede (tipo, tamanho, pavimentos, pontos), ele:
+   - monta a cena com a biblioteca de modelos;
+   - escreve a receita;
+   - renderiza;
+   - roda os verificadores;
+   - entrega os nomes e os pontos para a quest.
 
 ## 7. Decisões tomadas (2026-11-27)
 
 - **D1:** SPEC própria, separada da SPEC-010.
 - **D2:** MapSmithEE, Near Infinity e DLTCEP entram no catálogo da SPEC-010 como `MODDING_TOOL`.
 - **D3:** MapSmithEE só como referência e ferramenta do mantenedor; o pipeline do agente é nosso, Apache 2.0.
-- **D4:** o navio pelo caminho A, depois o porão pelo caminho B.
+- **D4 (corrigida antes do merge):** o navio é um mapa novo renderizado no Blender (caminho B), começando pelo porão. Nada do BG1.
 - **D5:** o Blender roda no Mac; só os arquivos prontos vão para a VM.

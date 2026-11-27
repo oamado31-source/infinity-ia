@@ -1,0 +1,142 @@
+# SPDX-License-Identifier: Apache-2.0
+"""ADR-0150: a rendered area: the scene, what the area takes from it, the PNG Blender writes."""
+import json
+import struct
+import sys
+import unittest
+import zlib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'src'))
+
+from infinity_ai.areas import AreaError  # noqa: E402
+from infinity_ai.areas.build import build_area_files, terrain_codes  # noqa: E402
+from infinity_ai.areas.camera import Box, Camera, occluder  # noqa: E402
+from infinity_ai.areas.check import check_area  # noqa: E402
+from infinity_ai.areas.maps import CELL_H, CELL_W, IMPASSABLE  # noqa: E402
+from infinity_ai.areas.png import read_png, write_png  # noqa: E402
+from infinity_ai.areas.recipe import parse_recipe  # noqa: E402
+from infinity_ai.areas.scene import parse_scene, scene_regions, scene_walls  # noqa: E402
+
+AREAS = ROOT / 'knowledge' / 'areas'
+RECIPE = AREAS / 'ia0004-porao.json'
+SCENE = AREAS / 'scenes' / 'ia0004-porao.json'
+
+
+def scene_doc():
+    return json.loads(SCENE.read_text(encoding='utf-8'))
+
+
+class SceneTests(unittest.TestCase):
+    def test_the_hold_scene_reads_and_its_marker_lands_on_the_picture(self):
+        sc = parse_scene(scene_doc())
+        self.assertEqual((sc.area, sc.width, sc.height), ('IA0004', 960, 768))
+        self.assertEqual(sc.markers[0].point_id, 'pe-da-escada')
+        self.assertEqual((sc.markers[0].x, sc.markers[0].y), (737, 241))
+
+    def test_the_floor_comes_first_and_parts_block_after_it(self):
+        regions = scene_regions(parse_scene(scene_doc()))
+        self.assertEqual(regions[0].terrain, 'wood')
+        self.assertTrue(all(r.terrain != 'wood' for r in regions[1:]))
+
+    def test_parts_that_hide_become_walls_with_their_foot_as_baseline(self):
+        walls = scene_walls(parse_scene(scene_doc()))
+        self.assertGreater(len(walls), 10)
+        for _id, shape in walls:
+            (ax, ay), (bx, by) = shape.polygon[:2]
+            self.assertLess(ax, bx)
+
+    def test_unknown_parts_and_markerless_scenes_are_refused(self):
+        d = scene_doc()
+        d['parts'].append({'kind': 'dragon', 'x': 1, 'y': 1})
+        with self.assertRaises(AreaError):
+            parse_scene(d)
+        d = scene_doc()
+        d['markers'] = []
+        with self.assertRaises(AreaError) as cm:
+            parse_scene(d)
+        self.assertEqual(cm.exception.code, 'NO_ENTRANCE')
+
+    def test_a_stacked_part_hides_from_the_ground_up(self):
+        cam = Camera(45, 40, 45, 400, 600)
+        low = occluder(cam, Box(0, 0, 1, 1, 1))
+        stacked = occluder(cam, Box(0, 0, 1, 1, 0.8, z=1.0))
+        self.assertEqual(low[:2], stacked[:2])                  # the same foot
+        self.assertLess(min(v for _u, v in stacked), min(v for _u, v in low))
+
+
+class RenderedRecipeTests(unittest.TestCase):
+    def recipe(self):
+        return parse_recipe(json.loads(RECIPE.read_text(encoding='utf-8')), RECIPE.parent)
+
+    def test_the_schema_accepts_both_recipes(self):
+        try:
+            import jsonschema
+        except ImportError:
+            self.skipTest('jsonschema not installed')
+        schema = json.loads((AREAS / 'area-recipe.v1.schema.json').read_text(encoding='utf-8'))
+        for name in ('ia0004-porao.json', 'ia0090-sala-de-teste.json'):
+            jsonschema.validate(json.loads((AREAS / name).read_text(encoding='utf-8')), schema)
+
+    def test_the_hold_needs_its_picture_then_passes_the_checker(self):
+        r = self.recipe()
+        with self.assertRaises(AreaError) as cm:
+            build_area_files(r)
+        self.assertEqual(cm.exception.code, 'NO_PICTURE')
+        files = build_area_files(r, bytes(r.width_px * r.height_px * 3))
+        report = check_area(r, files, {'AR0300'})
+        self.assertEqual((report.errors, report.warnings), ([], []))
+
+    def test_the_entrance_at_the_ladder_is_walkable_and_the_mast_is_not(self):
+        r = self.recipe()
+        mw, _mh, codes = terrain_codes(r)
+        e = r.entrances[0]
+        self.assertNotIn(codes[(e.y // CELL_H) * mw + e.x // CELL_W], IMPASSABLE)
+        sc = parse_scene(scene_doc())
+        u, v = sc.camera.project(12, 4)                       # the mast's centre
+        self.assertIn(codes[(int(v) // CELL_H) * mw + int(u) // CELL_W], IMPASSABLE)
+
+    def test_scene_and_recipe_must_agree(self):
+        d = json.loads(RECIPE.read_text(encoding='utf-8'))
+        d['size'] = {'width': 16, 'height': 12}
+        with self.assertRaises(AreaError) as cm:
+            parse_recipe(d, RECIPE.parent)
+        self.assertEqual(cm.exception.code, 'SCENE')
+        d = json.loads(RECIPE.read_text(encoding='utf-8'))
+        d['entrances'] = [{'name': 'Escada', 'marker': 'nenhum'}]
+        with self.assertRaises(AreaError):
+            parse_recipe(d, RECIPE.parent)
+
+
+class PngTests(unittest.TestCase):
+    def test_round_trip(self):
+        rgb = bytes(range(256)) * 3 * 4
+        self.assertEqual(read_png(write_png(rgb, 32, 32)), (32, 32, rgb))
+
+    def test_filtered_rgba_as_blender_may_write(self):
+        w, h = 3, 2
+        rows = [[(10, 20, 30, 255), (11, 22, 33, 255), (12, 24, 36, 255)],
+                [(10, 20, 30, 255), (10, 20, 30, 255), (10, 20, 30, 255)]]
+        raw = b''
+        prev = [0] * (w * 4)
+        for f, row in zip((1, 2), rows):                # Sub, then Up
+            flat = [c for px in row for c in px]
+            if f == 1:
+                enc = [(flat[i] - (flat[i - 4] if i >= 4 else 0)) & 255 for i in range(len(flat))]
+            else:
+                enc = [(flat[i] - prev[i]) & 255 for i in range(len(flat))]
+            raw += bytes([f] + enc)
+            prev = flat
+
+        def chunk(k, d):
+            return struct.pack('>I', len(d)) + k + d + struct.pack('>I', zlib.crc32(k + d))
+
+        png = (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 6, 0, 0, 0))
+               + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b''))
+        _w, _h, rgb = read_png(png)
+        self.assertEqual(rgb, bytes(c for row in rows for px in row for c in px[:3]))
+
+
+if __name__ == '__main__':
+    unittest.main()

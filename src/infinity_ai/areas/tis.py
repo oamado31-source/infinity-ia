@@ -62,33 +62,50 @@ def read_pvrz(data: bytes) -> tuple[int, int, bytes]:
     return width, height, decode(body, width, height)
 
 
+MARGIN = 4                     # pixels of the block's edge repeated past it (one DXT block)
+
+
 def build_tis(name: str, rgb: bytes, w_tiles: int, h_tiles: int
               ) -> tuple[bytes, dict[str, bytes]]:
-    """(TIS file, {page name: PVRZ}) for a picture of w_tiles x h_tiles tiles, row by row."""
-    if len(rgb) != w_tiles * TILE * h_tiles * TILE * 3:
+    """(TIS file, {page name: PVRZ}) for a picture of w_tiles x h_tiles tiles, row by row.
+
+    Each page holds a block of up to 16x16 tiles exactly as they sit in the picture, so the
+    neighbour of a tile in the page is its neighbour in the picture; past the block's right and
+    bottom edges the edge pixels are repeated. When the engine scales the picture it blends a
+    tile's border with the page's next pixels: tiles laid in a row of 16 regardless of the
+    picture showed lines at every tile seam (lab, 2026-11-27). The game's pages hold blocks too
+    (AR0310, AR0515)."""
+    width = w_tiles * TILE
+    if len(rgb) != width * h_tiles * TILE * 3:
         raise AreaError('BAD_PICTURE', f'{len(rgb)} bytes for {w_tiles}x{h_tiles} tiles')
-    stride = w_tiles * TILE * 3
-    count = w_tiles * h_tiles
-    entries = bytearray()
+    entries: list[tuple[int, int, int] | None] = [None] * (w_tiles * h_tiles)
     pages: dict[str, bytes] = {}
-    for first in range(0, count, PAGE_TILES * PAGE_TILES):
-        tiles = range(first, min(count, first + PAGE_TILES * PAGE_TILES))
-        n = len(tiles)
-        pw = _pow2(min(n, PAGE_TILES) * TILE)
-        ph = _pow2(((n + PAGE_TILES - 1) // PAGE_TILES) * TILE)
-        page = bytearray(pw * ph * 3)
-        index = first // (PAGE_TILES * PAGE_TILES)
-        for k, t in enumerate(tiles):
-            px, py = (k % PAGE_TILES) * TILE, (k // PAGE_TILES) * TILE
-            sx, sy = (t % w_tiles) * TILE, (t // w_tiles) * TILE
-            for row in range(TILE):
-                src = (sy + row) * stride + sx * 3
-                dst = ((py + row) * pw + px) * 3
-                page[dst:dst + TILE * 3] = rgb[src:src + TILE * 3]
-            entries += struct.pack('<III', index, px, py)
-        pages[page_name(name, index)] = write_pvrz(bytes(page), pw, ph)
-    header = b'TIS V1  ' + struct.pack('<IIII', count, 12, TIS_HEADER, TILE)
-    return header + bytes(entries), pages
+    index = 0
+    for by in range(0, h_tiles, PAGE_TILES):
+        for bx in range(0, w_tiles, PAGE_TILES):
+            bw, bh = min(PAGE_TILES, w_tiles - bx), min(PAGE_TILES, h_tiles - by)
+            used_w, used_h = bw * TILE, bh * TILE
+            pw = _pow2(used_w + (MARGIN if used_w % 1024 else 0))
+            ph = _pow2(used_h + (MARGIN if used_h % 1024 else 0))
+            pw, ph = min(pw, 1024), min(ph, 1024)
+            page = bytearray(pw * ph * 3)
+            for row in range(used_h):
+                src = ((by * TILE + row) * width + bx * TILE) * 3
+                line = rgb[src:src + used_w * 3]
+                extra = min(MARGIN, pw - used_w)
+                line += line[-3:] * extra                     # repeat the right edge
+                dst = row * pw * 3
+                page[dst:dst + len(line)] = line
+            last = page[(used_h - 1) * pw * 3:used_h * pw * 3]
+            for row in range(used_h, min(ph, used_h + MARGIN)):  # repeat the bottom edge
+                page[row * pw * 3:(row + 1) * pw * 3] = last
+            for ty in range(bh):
+                for tx in range(bw):
+                    entries[(by + ty) * w_tiles + bx + tx] = (index, tx * TILE, ty * TILE)
+            pages[page_name(name, index)] = write_pvrz(bytes(page), pw, ph)
+            index += 1
+    header = b'TIS V1  ' + struct.pack('<IIII', len(entries), 12, TIS_HEADER, TILE)
+    return header + b''.join(struct.pack('<III', *e) for e in entries), pages
 
 
 def read_tis(data: bytes) -> list[tuple[int, int, int]]:

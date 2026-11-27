@@ -1,0 +1,330 @@
+{
+ "schema": "infinity-ai.area-scene.v1",
+ "area": "IA0004",
+ "title": "Porão da Estrela de Waukeen",
+ "width": 960,
+ "height": 768,
+ "samples": 128,
+ "ambient": 0.03,
+ "camera": {
+  "elevation": 45,
+  "px_per_m": 40,
+  "turn": 45,
+  "u0": 282,
+  "v0": 723
+ },
+ "parts": [
+  {
+   "kind": "plank-floor",
+   "x": 0,
+   "y": 0,
+   "w": 22,
+   "d": 8
+  },
+  {
+   "kind": "hull-wall",
+   "id": "costado",
+   "axis": "x",
+   "x": 0,
+   "y": 8.07,
+   "length": 22,
+   "h": 2.8,
+   "rib": 1.2
+  },
+  {
+   "kind": "hull-wall",
+   "id": "antepara",
+   "axis": "y",
+   "x": 22.07,
+   "y": 0,
+   "length": 8.14,
+   "h": 2.8,
+   "rib": 1.2
+  },
+  {
+   "kind": "hull-wall",
+   "id": "borda-frente",
+   "axis": "x",
+   "x": 0,
+   "y": -0.07,
+   "length": 22,
+   "h": 0.35,
+   "rib": 100
+  },
+  {
+   "kind": "hull-wall",
+   "id": "borda-esq",
+   "axis": "y",
+   "x": -0.07,
+   "y": 0,
+   "length": 8,
+   "h": 0.35,
+   "rib": 100
+  },
+  {
+   "kind": "mast",
+   "id": "mastro",
+   "x": 12,
+   "y": 4,
+   "h": 3.4,
+   "r": 0.32
+  },
+  {
+   "kind": "post",
+   "id": "esteio-1",
+   "x": 7,
+   "y": 4,
+   "h": 2.8
+  },
+  {
+   "kind": "post",
+   "id": "esteio-2",
+   "x": 17,
+   "y": 4,
+   "h": 2.8
+  },
+  {
+   "kind": "ladder",
+   "id": "escada",
+   "x": 20.9,
+   "y": 4,
+   "h": 2.8,
+   "lean": 0.7
+  },
+  {
+   "kind": "cage",
+   "id": "cela",
+   "x0": 0.6,
+   "y0": 4.6,
+   "x1": 4.6,
+   "y1": 8.0,
+   "sides": "xy"
+  },
+  {
+   "kind": "lantern",
+   "x": 7.0,
+   "y": 7.95,
+   "z": 2.25,
+   "wall": "y+"
+  },
+  {
+   "kind": "lantern",
+   "x": 15.6,
+   "y": 7.95,
+   "z": 2.25,
+   "wall": "y+"
+  },
+  {
+   "kind": "lantern",
+   "x": 2.6,
+   "y": 7.95,
+   "z": 2.25,
+   "wall": "y+"
+  },
+  {
+   "kind": "crate",
+   "x": 8.2,
+   "y": 7.2
+  },
+  {
+   "kind": "crate",
+   "x": 9.3,
+   "y": 7.25,
+   "turn": 8
+  },
+  {
+   "kind": "bale",
+   "x": 8.6,
+   "y": 7.2,
+   "z": 1.0,
+   "turn": -6
+  },
+  {
+   "kind": "crate",
+   "x": 13.8,
+   "y": 7.2
+  },
+  {
+   "kind": "bale",
+   "x": 14.9,
+   "y": 7.1,
+   "turn": 4
+  },
+  {
+   "kind": "crate",
+   "x": 21.2,
+   "y": 1.0,
+   "s": 1.1
+  },
+  {
+   "kind": "crate",
+   "x": 21.2,
+   "y": 2.2,
+   "s": 0.9,
+   "turn": 12
+  },
+  {
+   "kind": "bale",
+   "x": 21.1,
+   "y": 1.6,
+   "z": 1.1,
+   "turn": -10
+  },
+  {
+   "kind": "barrel",
+   "x": 17.6,
+   "y": 7.3
+  },
+  {
+   "kind": "barrel",
+   "x": 18.3,
+   "y": 7.4
+  },
+  {
+   "kind": "barrel",
+   "x": 18.0,
+   "y": 6.75
+  },
+  {
+   "kind": "barrel",
+   "x": 11.0,
+   "y": 1.2
+  },
+  {
+   "kind": "barrel",
+   "x": 11.75,
+   "y": 1.05,
+   "lying": true,
+   "turn": 20
+  },
+  {
+   "kind": "barrel",
+   "x": 15.5,
+   "y": 1.1,
+   "r": 0.27,
+   "h": 0.8
+  },
+  {
+   "kind": "net-rack",
+   "id": "redes",
+   "x": 6.4,
+   "y": 7.45,
+   "length": 1.7,
+   "h": 1.9
+  },
+  {
+   "kind": "crate",
+   "x": 3.3,
+   "y": 1.5,
+   "s": 0.9,
+   "turn": 15
+  },
+  {
+   "kind": "barrel",
+   "x": 4.3,
+   "y": 1.2
+  },
+  {
+   "kind": "net-rack",
+   "id": "redes-2",
+   "x": 11.4,
+   "y": 7.45,
+   "length": 1.7,
+   "h": 1.9
+  },
+  {
+   "kind": "net-rack",
+   "id": "redes-3",
+   "x": 21.55,
+   "y": 6.4,
+   "length": 1.7,
+   "h": 1.9,
+   "turn": 90
+  }
+ ],
+ "lights": [
+  {
+   "kind": "point",
+   "at": [
+    7.0,
+    7.62,
+    2.03
+   ],
+   "energy": 260,
+   "rgb": [
+    1.0,
+    0.66,
+    0.36
+   ],
+   "radius": 0.2
+  },
+  {
+   "kind": "point",
+   "at": [
+    15.6,
+    7.62,
+    2.03
+   ],
+   "energy": 260,
+   "rgb": [
+    1.0,
+    0.66,
+    0.36
+   ],
+   "radius": 0.2
+  },
+  {
+   "kind": "point",
+   "at": [
+    2.6,
+    7.62,
+    2.03
+   ],
+   "energy": 140,
+   "rgb": [
+    1.0,
+    0.62,
+    0.32
+   ],
+   "radius": 0.2
+  },
+  {
+   "kind": "point",
+   "at": [
+    21.3,
+    4.0,
+    2.7
+   ],
+   "energy": 90,
+   "rgb": [
+    0.75,
+    0.85,
+    1.0
+   ],
+   "radius": 0.6
+  },
+  {
+   "kind": "point",
+   "at": [
+    11.0,
+    3.0,
+    2.6
+   ],
+   "energy": 120,
+   "rgb": [
+    1.0,
+    0.75,
+    0.5
+   ],
+   "radius": 1.0
+  }
+ ],
+ "markers": [
+  {
+   "id": "pe-da-escada",
+   "x": 20.1,
+   "y": 4.0,
+   "facing": 2
+  }
+ ]
+}

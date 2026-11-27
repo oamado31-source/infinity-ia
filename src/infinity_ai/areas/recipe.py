@@ -4,12 +4,16 @@
 A recipe says how to produce an area of ours without any game byte: its name and kind, its size
 in tiles, the floor, the regions (what is drawn and what can be walked), the walls, the entrances,
 the points the quests use, the light and who made it. The picture is `procedural` (drawn by code)
-in this version; `render` (Blender) is reserved for phase 3 of SPEC-014.
+or `render` (ADR-0150): a scene of ours rendered by Blender, from which the area also takes its
+regions, walls and points (`scene.py`); the recipe names which markers are entrances and passage
+points, and may add regions and walls of its own.
 """
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 from . import AreaError
 from .maps import TERRAIN
@@ -86,6 +90,7 @@ class Recipe:
     passages: tuple[Point, ...]
     light: tuple[int, int, int]
     provenance: dict
+    scene_path: Path | None = None        # ADR-0150: the scene of a rendered picture
 
     @property
     def width_px(self) -> int:
@@ -134,7 +139,8 @@ def _points(raw: object, where: str, key: str, w: int, h: int) -> tuple[Point, .
     return tuple(out)
 
 
-def parse_recipe(doc: object) -> Recipe:
+def parse_recipe(doc: object, base_dir: Path | str | None = None) -> Recipe:
+    """`base_dir` is where the recipe file is (a rendered picture's scene path is relative to it)."""
     if not isinstance(doc, dict) or doc.get('schema') != SCHEMA:
         raise AreaError('RECIPE', f'schema precisa ser {SCHEMA}')
     if not set(doc) <= _KEYS:
@@ -153,14 +159,31 @@ def parse_recipe(doc: object) -> Recipe:
         raise AreaError('AREA_SIZE', 'size = {width, height} em tiles')
     tw, th = size['width'], size['height']
     w, h = tw * TILE, th * TILE
-    floor = doc.get('floor')
-    if not (isinstance(floor, dict) and set(floor) == {'terrain', 'draw'}
-            and floor['terrain'] in TERRAIN and floor['draw'] in DRAWS):
-        raise AreaError('RECIPE', f'floor = {{terrain: {sorted(TERRAIN)}, draw: {DRAWS}}}')
     picture = doc.get('picture')
-    if not (isinstance(picture, dict) and picture.get('kind') == 'procedural'
-            and set(picture) <= {'kind', 'seed'} and _int(picture.get('seed', 0), 0, 2 ** 31)):
-        raise AreaError('RECIPE', 'picture = {kind: procedural, seed} (render na fase 3)')
+    rendered = isinstance(picture, dict) and picture.get('kind') == 'render'
+    floor = doc.get('floor')
+    if not (isinstance(floor, dict) and floor.get('terrain') in TERRAIN
+            and (set(floor) == {'terrain', 'draw'} and floor['draw'] in DRAWS
+                 or rendered and set(floor) == {'terrain'})):
+        raise AreaError('RECIPE', f'floor = {{terrain: {sorted(TERRAIN)}, draw: {DRAWS}}} '
+                                  '(draw não vale para render)')
+    scene = None
+    if rendered:
+        if not (set(picture) == {'kind', 'scene'} and isinstance(picture['scene'], str)
+                and base_dir is not None):
+            raise AreaError('RECIPE', 'picture = {kind: render, scene: caminho da cena}')
+        from .scene import parse_scene, scene_regions, scene_walls
+        scene_path = (Path(base_dir) / picture['scene']).resolve()
+        try:
+            scene = parse_scene(json.loads(scene_path.read_text(encoding='utf-8')))
+        except (OSError, ValueError) as exc:
+            raise AreaError('SCENE', f'{picture["scene"]}: {exc}') from None
+        if scene.area != area or (scene.width, scene.height) != (size['width'] * TILE,
+                                                                 size['height'] * TILE):
+            raise AreaError('SCENE', 'a cena precisa ter a mesma área e o mesmo tamanho')
+    elif not (isinstance(picture, dict) and picture.get('kind') == 'procedural'
+              and set(picture) <= {'kind', 'seed'} and _int(picture.get('seed', 0), 0, 2 ** 31)):
+        raise AreaError('RECIPE', 'picture = {kind: procedural, seed} ou {kind: render, scene}')
     regions = []
     for i, r in enumerate(doc.get('regions', [])):
         where = f'regions[{i}]'
@@ -177,10 +200,16 @@ def parse_recipe(doc: object) -> Recipe:
                 and isinstance(r.get('id'), str) and _ID.fullmatch(r['id'])):
             raise AreaError('RECIPE', f'{where}: id e rect ou polygon')
         walls.append((r['id'], _shape(r, where, w, h)))
-    entrances = _points(doc.get('entrances'), 'entrances', 'name', w, h)
+    if scene is not None:
+        regions = list(scene_regions(scene)) + regions
+        walls = list(scene_walls(scene)) + walls
+        entrances = _marked(doc.get('entrances'), 'entrances', 'name', scene)
+        passages = _marked(doc.get('passages', []), 'passages', 'id', scene)
+    else:
+        entrances = _points(doc.get('entrances'), 'entrances', 'name', w, h)
+        passages = _points(doc.get('passages', []), 'passages', 'id', w, h)
     if not entrances:
         raise AreaError('NO_ENTRANCE', 'a área precisa de uma entrada')
-    passages = _points(doc.get('passages', []), 'passages', 'id', w, h)
     light = doc.get('light')
     if not (isinstance(light, dict) and set(light) == {'rgb'} and isinstance(light['rgb'], list)
             and len(light['rgb']) == 3 and all(_int(v, 0, 255) for v in light['rgb'])):
@@ -188,6 +217,22 @@ def parse_recipe(doc: object) -> Recipe:
     prov = doc.get('provenance')
     if not (isinstance(prov, dict) and isinstance(prov.get('author'), str) and prov['author']):
         raise AreaError('RECIPE', 'provenance.author')
-    return Recipe(area, title, version, kind, tw, th, floor['terrain'], floor['draw'],
-                  picture.get('seed', 0), tuple(regions), tuple(walls), entrances, passages,
-                  tuple(light['rgb']), dict(prov))
+    return Recipe(area, title, version, kind, tw, th, floor['terrain'],
+                  floor.get('draw', 'planks'), picture.get('seed', 0), tuple(regions),
+                  tuple(walls), entrances, passages, tuple(light['rgb']), dict(prov),
+                  (Path(base_dir) / picture['scene']).resolve() if scene is not None else None)
+
+
+def _marked(raw: object, where: str, key: str, scene) -> tuple[Point, ...]:
+    """Entrances or passage points named after the scene's markers: {key, marker}."""
+    if not isinstance(raw, list):
+        raise AreaError('RECIPE', f'{where}: precisa ser uma lista')
+    marks = {m.point_id: m for m in scene.markers}
+    out = []
+    for i, p in enumerate(raw):
+        if not (isinstance(p, dict) and set(p) == {key, 'marker'} and isinstance(p[key], str)
+                and p['marker'] in marks):
+            raise AreaError('RECIPE', f'{where}[{i}]: {{{key}, marker}} com um marcador da cena')
+        m = marks[p['marker']]
+        out.append(Point(p[key], m.x, m.y, m.facing))
+    return tuple(out)

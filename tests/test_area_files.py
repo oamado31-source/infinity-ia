@@ -64,23 +64,41 @@ class TisTests(unittest.TestCase):
         self.assertEqual(page_name('IA0090', 0), 'I009000')
         self.assertEqual(page_name('AR0310', 1), 'A031001')
 
-    def test_a_small_area_fits_one_power_of_two_page(self):
+    def test_a_small_area_fits_one_page_as_a_block_of_the_picture(self):
         rgb = gradient(12 * 64, 9 * 64)
         tis, pages = build_tis('IA0090', rgb, 12, 9)
         self.assertEqual(list(pages), ['I009000'])
         w, h, page = read_pvrz(pages['I009000'])
-        self.assertEqual((w, h), (1024, 512))
+        self.assertEqual((w, h), (1024, 1024))
         entries = read_tis(tis)
         self.assertEqual(len(entries), 108)
-        self.assertEqual(entries[13], (0, 64 * 13, 0))
-        self.assertEqual(entries[16], (0, 0, 64))
+        self.assertEqual(entries[13], (0, 64, 64))           # row 1, column 1: as in the picture
+        self.assertEqual(entries[16], (0, 256, 64))
         back = render_tis(entries, {0: (w, h, page)}, 12, 9)
         self.assertGreater(psnr(rgb, back), 30)
 
-    def test_a_larger_area_takes_more_pages(self):
+    def test_the_neighbour_below_in_the_page_is_the_neighbour_below_in_the_picture(self):
+        rgb = gradient(15 * 64, 3 * 64)
+        _tis, pages = build_tis('IA0004', rgb, 15, 3)
+        w, _h, page = read_pvrz(pages['I000400'])
+        # the pixel right under tile (0, 3)'s last row is the first row of tile (1, 3)
+        x, y = 3 * 64 + 10, 64
+        src = (y * 15 * 64 + x) * 3
+        self.assertLess(max(abs(a - b) for a, b in zip(page[(y * w + x) * 3:(y * w + x) * 3 + 3],
+                                                         rgb[src:src + 3])), 12)
+        # past the block, the edge is repeated (no black seam when the engine blends)
+        edge = (5 * w + 15 * 64 - 1) * 3
+        past = (5 * w + 15 * 64 + 2) * 3
+        self.assertLess(max(abs(a - b) for a, b in zip(page[edge:edge + 3], page[past:past + 3])),
+                        12)                                  # the same colour, within DXT1
+
+    def test_a_larger_area_takes_one_page_per_block(self):
         tis, pages = build_tis('IA0091', bytes(17 * 64 * 17 * 64 * 3), 17, 17)
-        self.assertEqual(sorted(pages), ['I009100', 'I009101'])
-        self.assertEqual(read_tis(tis)[256], (1, 0, 0))
+        self.assertEqual(sorted(pages), ['I009100', 'I009101', 'I009102', 'I009103'])
+        entries = read_tis(tis)
+        self.assertEqual(entries[16], (1, 0, 0))             # row 0, column 16: the second block
+        self.assertEqual(entries[16 * 17], (2, 0, 0))        # row 16, column 0: the third
+        self.assertEqual(entries[17 * 17 - 1], (3, 0, 0))
 
 
 class WedTests(unittest.TestCase):

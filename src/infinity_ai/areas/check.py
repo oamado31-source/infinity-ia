@@ -89,11 +89,9 @@ def check_area(recipe: Recipe, files: dict[str, bytes],
                                        for x, y in wall.points):
             r.error('WALL_OUTSIDE', f'parede com {len(wall.points)} pontos ou fora da área')
     for k, wall in enumerate(wed.walls):
-        if len(wall.points) >= 3:
-            ay, by = wall.points[0][1], wall.points[1][1]
-            if min(ay, by) < wall.bbox()[3] - 1:
-                r.warn('WALL_BASELINE', f'parede {k}: os dois primeiros pontos (a linha de base) '
-                                        'não estão no pé da parede; quem estiver atrás não some')
+        if len(wall.points) >= 3 and not _baseline_at_foot(wall.points):
+            r.warn('WALL_BASELINE', f'parede {k}: os dois primeiros pontos (a linha de base) '
+                                    'não estão no pé da parede; quem estiver atrás não some')
     if not wed.walls:
         r.warn('NO_WALLS', 'a área não tem paredes: ninguém some atrás de nada')
     if recipe.width > MAX_TILES or recipe.height > MAX_TILES:
@@ -101,6 +99,18 @@ def check_area(recipe: Recipe, files: dict[str, bytes],
     if len(codes) == mw * mh:
         _walkable(r, recipe, codes, mw, mh)
     return r
+
+
+def _baseline_at_foot(points) -> bool:
+    """The baseline (the first two points) is the foot when no other point of the wall lies
+    below it on the picture (a turned part's front corner is left out of the outline)."""
+    (ax, ay), (bx, by) = points[0], points[1]
+    if ax == bx:
+        return False
+    for px, py in points[2:]:
+        if py > ay + (by - ay) * (px - ax) / (bx - ax) + 2:
+            return False
+    return True
 
 
 def _walkable(r: AreaReport, recipe: Recipe, codes: list[int], mw: int, mh: int) -> None:

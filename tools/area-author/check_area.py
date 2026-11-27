@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / 'src'))
 from infinity_ai.areas import AreaError  # noqa: E402
 from infinity_ai.areas.build import build_area_files  # noqa: E402
 from infinity_ai.areas.check import check_area  # noqa: E402
-from infinity_ai.areas.png import write_png  # noqa: E402
+from infinity_ai.areas.png import read_png, write_png  # noqa: E402
 from infinity_ai.areas.preview import render_area  # noqa: E402
 from infinity_ai.areas.recipe import parse_recipe  # noqa: E402
 
@@ -48,8 +48,13 @@ def main() -> int:
     bad = False
     for path in args.recipes:
         try:
-            recipe = parse_recipe(json.loads(path.read_text(encoding='utf-8')))
-            files = build_area_files(recipe)
+            recipe = parse_recipe(json.loads(path.read_text(encoding='utf-8')), path.parent)
+            picture = None
+            if recipe.scene_path is not None:         # ADR-0150: the rendered picture, if made
+                png = LOCAL / 'areas' / recipe.area / 'picture.png'
+                picture = (read_png(png.read_bytes())[2] if png.exists()
+                           else bytes(recipe.width_px * recipe.height_px * 3))
+            files = build_area_files(recipe, picture)
         except (OSError, ValueError, AreaError) as exc:
             code = getattr(exc, 'code', 'RECIPE')
             print(f'{path}: ERRO {code}: {getattr(exc, "detail", exc)}')

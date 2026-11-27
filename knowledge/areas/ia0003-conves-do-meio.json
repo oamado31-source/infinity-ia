@@ -1,0 +1,50 @@
+{
+  "schema": "infinity-ai.area-recipe.v1",
+  "version": 1,
+  "kind": "interior",
+  "floor": {
+    "terrain": "obstacle"
+  },
+  "area": "IA0003",
+  "title": "Convés do meio da Estrela de Waukeen",
+  "size": {
+    "width": 15,
+    "height": 12
+  },
+  "picture": {
+    "kind": "render",
+    "scene": "scenes/ia0003-conves-do-meio.json"
+  },
+  "entrances": [
+    {
+      "name": "Escada",
+      "marker": "pe-da-escada"
+    },
+    {
+      "name": "Alcapao",
+      "marker": "alcapao"
+    }
+  ],
+  "passages": [
+    {
+      "id": "escada",
+      "marker": "pe-da-escada"
+    },
+    {
+      "id": "alcapao",
+      "marker": "alcapao"
+    }
+  ],
+  "light": {
+    "rgb": [
+      120,
+      96,
+      70
+    ]
+  },
+  "provenance": {
+    "author": "claude-code",
+    "date": "2026-11-27",
+    "decision": "ADR-0151: o convés do meio (alojamento da tripulação), aprovado na prévia 4."
+  }
+}

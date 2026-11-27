@@ -383,6 +383,10 @@
           "minLength": 1
         }
       }
+    },
+    "explored": {
+      "type": "boolean",
+      "description": "ADR-0151: entregar a área já explorada (sem névoa preta), como o mar em volta do navio."
     }
   }
 }

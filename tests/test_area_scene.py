@@ -140,3 +140,88 @@ class PngTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+SHIP = ('ia0002-conves-superior.json', 'ia0003-conves-do-meio.json', 'ia0004-porao.json',
+        'ia0005-camarotes.json')
+
+
+class ShipTests(unittest.TestCase):
+    """ADR-0151: the whole ship: four decks, a raised deck, a boat and the climb aboard."""
+
+    def recipe(self, name):
+        path = AREAS / name
+        return parse_recipe(json.loads(path.read_text(encoding='utf-8')), path.parent)
+
+    def cell(self, recipe, scene, x, y, z=0.0):
+        mw, _mh, codes = terrain_codes(recipe)
+        u, v = scene.camera.project(x, y, z)
+        return codes[(int(v) // CELL_H) * mw + int(u) // CELL_W]
+
+    def test_every_deck_passes_the_checker(self):
+        for name in SHIP:
+            r = self.recipe(name)
+            files = build_area_files(r, bytes(r.width_px * r.height_px * 3))
+            report = check_area(r, files, {'AR0300'})
+            self.assertEqual((report.errors, report.warnings), ([], []), name)
+
+    def test_the_raised_deck_is_walked_on_top_and_blocks_in_front(self):
+        r = self.recipe('ia0002-conves-superior.json')
+        sc = parse_scene(json.loads((AREAS / 'scenes' / 'ia0002-conves-superior.json')
+                                    .read_text(encoding='utf-8')))
+        self.assertNotIn(self.cell(r, sc, 22.0, 6.0, 1.8), IMPASSABLE)     # on the quarterdeck
+        self.assertIn(self.cell(r, sc, 18.0, 6.0, 0.9), IMPASSABLE)        # its front face
+        self.assertNotIn(self.cell(r, sc, 17.0, 6.0), IMPASSABLE)          # the deck before it
+        self.assertNotIn(self.cell(r, sc, 17.1, 1.1, 0.9), IMPASSABLE)     # half way up the stairs
+
+    def test_the_party_arrives_in_the_boat_and_climbs_aboard(self):
+        r = self.recipe('ia0002-conves-superior.json')
+        sc = parse_scene(json.loads((AREAS / 'scenes' / 'ia0002-conves-superior.json')
+                                    .read_text(encoding='utf-8')))
+        self.assertEqual(r.entrances[0].point_id, 'Barco')
+        self.assertNotIn(self.cell(r, sc, 13.2, -1.25, -2.15), IMPASSABLE)  # in the boat
+        self.assertIn(self.cell(r, sc, 16.0, -1.0, -2.4), IMPASSABLE)       # the sea
+        self.assertNotIn(self.cell(r, sc, 12.0, 0.2, -0.6), IMPASSABLE)     # up the rope ladder
+        self.assertIn(self.cell(r, sc, 8.0, 0.2, 0.0), IMPASSABLE)          # the rail elsewhere
+        # the way up is the ladder and the boarding nets beside it; past them the hull is not
+        # climbed (lab, 2026-11-27: the party was seen climbing the bare hull)
+        self.assertNotIn(self.cell(r, sc, 11.0, 0.0, -1.0), IMPASSABLE)    # on a net
+        self.assertIn(self.cell(r, sc, 9.6, 0.15, -1.0), IMPASSABLE)
+        self.assertIn(self.cell(r, sc, 14.6, 0.15, -1.0), IMPASSABLE)
+
+    def test_a_part_on_the_raised_deck_stands_at_its_height(self):
+        sc = parse_scene(json.loads((AREAS / 'scenes' / 'ia0002-conves-superior.json')
+                                    .read_text(encoding='utf-8')))
+        wheel = next(p for p in sc.parts if p.part_id == 'leme')
+        self.assertEqual(wheel.boxes[0].floor, 1.8)
+        leme = next(m for m in sc.markers if m.point_id == 'leme')
+        self.assertEqual((leme.x, leme.y), tuple(round(c) for c in sc.camera.project(20.8, 4.0, 1.8)))
+
+
+class OpenSeaTests(unittest.TestCase):
+    """ADR-0151, after the first test in game: the upper deck is bigger than the screen, handed
+    over explored, and nothing on the open deck blocks the sight."""
+
+    def test_the_explored_bitmask_size_matches_the_game(self):
+        from infinity_ai.areas.are import explored_size
+        # measured in a save: AR0300, AR0406, AR0069, AR0311, IA0090
+        for w, h, size in ((5120, 3840, 2436), (3904, 2304, 1123), (1600, 1344, 275),
+                           (832, 640, 71), (768, 576, 60)):
+            self.assertEqual(explored_size(w, h), size)
+
+    def test_the_upper_deck_is_handed_over_explored(self):
+        path = AREAS / 'ia0002-conves-superior.json'
+        r = parse_recipe(json.loads(path.read_text(encoding='utf-8')), path.parent)
+        self.assertTrue(r.explored)
+        are = build_area_files(r, bytes(r.width_px * r.height_px * 3))['IA0002.ARE']
+        size, off = struct.unpack_from('<II', are, 0x9C)
+        self.assertEqual(size, 618)                   # (2560/32 + 1) x (1920/32 + 1) = 4941 bits
+        self.assertEqual(set(are[off:off + size]), {0xFF})
+
+    def test_nothing_on_the_open_deck_blocks_the_sight(self):
+        sc = parse_scene(json.loads((AREAS / 'scenes' / 'ia0002-conves-superior.json')
+                                    .read_text(encoding='utf-8')))
+        terrains = {p.terrain for p in sc.parts} | {t for p in sc.parts for _o, t, _p in p.areas}
+        self.assertNotIn('obstacle', terrains)
+        self.assertNotIn('wall', terrains)
+        self.assertIn('open-obstacle', terrains)

@@ -26,7 +26,7 @@ KINDS = ('interior', 'underground', 'exterior')
 DRAWS = ('planks', 'stone-floor', 'wall-face', 'wall-top', 'pillar')
 MAX_TILES = 128
 _KEYS = {'schema', 'area', 'title', 'version', 'kind', 'size', 'floor', 'picture', 'regions',
-         'walls', 'entrances', 'passages', 'light', 'provenance'}
+         'walls', 'entrances', 'passages', 'light', 'provenance', 'explored'}
 
 
 @dataclass(frozen=True)
@@ -91,6 +91,7 @@ class Recipe:
     light: tuple[int, int, int]
     provenance: dict
     scene_path: Path | None = None        # ADR-0150: the scene of a rendered picture
+    explored: bool = False                # ADR-0151: handed over already explored (no black fog)
 
     @property
     def width_px(self) -> int:
@@ -214,13 +215,16 @@ def parse_recipe(doc: object, base_dir: Path | str | None = None) -> Recipe:
     if not (isinstance(light, dict) and set(light) == {'rgb'} and isinstance(light['rgb'], list)
             and len(light['rgb']) == 3 and all(_int(v, 0, 255) for v in light['rgb'])):
         raise AreaError('RECIPE', 'light = {rgb: [r, g, b]}')
+    if not isinstance(doc.get('explored', False), bool):
+        raise AreaError('RECIPE', 'explored: true ou false')
     prov = doc.get('provenance')
     if not (isinstance(prov, dict) and isinstance(prov.get('author'), str) and prov['author']):
         raise AreaError('RECIPE', 'provenance.author')
     return Recipe(area, title, version, kind, tw, th, floor['terrain'],
                   floor.get('draw', 'planks'), picture.get('seed', 0), tuple(regions),
                   tuple(walls), entrances, passages, tuple(light['rgb']), dict(prov),
-                  (Path(base_dir) / picture['scene']).resolve() if scene is not None else None)
+                  (Path(base_dir) / picture['scene']).resolve() if scene is not None else None,
+                  doc.get('explored', False))
 
 
 def _marked(raw: object, where: str, key: str, scene) -> tuple[Point, ...]:

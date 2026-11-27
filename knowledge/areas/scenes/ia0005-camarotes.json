@@ -1,0 +1,414 @@
+{
+ "schema": "infinity-ai.area-scene.v1",
+ "area": "IA0005",
+ "title": "Camarotes dos mercadores",
+ "width": 640,
+ "height": 576,
+ "samples": 128,
+ "ambient": 0.03,
+ "camera": {
+  "elevation": 45,
+  "px_per_m": 40,
+  "turn": 45,
+  "u0": 291,
+  "v0": 507
+ },
+ "parts": [
+  {
+   "kind": "plank-floor",
+   "x": 0,
+   "y": 0,
+   "w": 10,
+   "d": 8
+  },
+  {
+   "kind": "hull-wall",
+   "id": "costado",
+   "axis": "x",
+   "x": 0,
+   "y": 8.07,
+   "length": 10,
+   "h": 2.8,
+   "rib": 1.2
+  },
+  {
+   "kind": "hull-wall",
+   "id": "popa",
+   "axis": "y",
+   "x": 10.07,
+   "y": 0,
+   "length": 8.14,
+   "h": 2.8,
+   "rib": 1.2
+  },
+  {
+   "kind": "hull-wall",
+   "id": "borda-frente",
+   "axis": "x",
+   "x": 0,
+   "y": -0.07,
+   "length": 10,
+   "h": 0.35,
+   "rib": 100
+  },
+  {
+   "kind": "hull-wall",
+   "id": "borda-esq",
+   "axis": "y",
+   "x": -0.07,
+   "y": 0,
+   "length": 8,
+   "h": 0.35,
+   "rib": 100
+  },
+  {
+   "kind": "window",
+   "x": 9.98,
+   "y": 1.6,
+   "wall": "x+"
+  },
+  {
+   "kind": "window",
+   "x": 9.98,
+   "y": 4.0,
+   "wall": "x+"
+  },
+  {
+   "kind": "window",
+   "x": 9.98,
+   "y": 6.4,
+   "wall": "x+"
+  },
+  {
+   "kind": "partition",
+   "id": "div-camarotes",
+   "axis": "x",
+   "x": 0,
+   "y": 4.6,
+   "length": 6.6,
+   "gaps": [
+    [
+     1.1,
+     2.0
+    ],
+    [
+     4.3,
+     5.2
+    ]
+   ]
+  },
+  {
+   "kind": "partition",
+   "id": "div-entre",
+   "axis": "y",
+   "x": 3.2,
+   "y": 4.6,
+   "length": 3.4
+  },
+  {
+   "kind": "partition",
+   "id": "div-grande",
+   "axis": "y",
+   "x": 6.6,
+   "y": 0,
+   "length": 8,
+   "gaps": [
+    [
+     2.6,
+     3.6
+    ]
+   ]
+  },
+  {
+   "kind": "rug",
+   "x": 3.3,
+   "y": 2.3,
+   "w": 5.6,
+   "d": 1.3
+  },
+  {
+   "kind": "bed",
+   "id": "cama-a",
+   "x": 1.4,
+   "y": 7.35
+  },
+  {
+   "kind": "rug",
+   "x": 1.6,
+   "y": 6.2,
+   "w": 2.2,
+   "d": 1.3
+  },
+  {
+   "kind": "chest",
+   "x": 2.85,
+   "y": 7.35,
+   "turn": 90
+  },
+  {
+   "kind": "table",
+   "x": 0.7,
+   "y": 5.3,
+   "w": 0.6,
+   "d": 0.6
+  },
+  {
+   "kind": "chair",
+   "x": 1.25,
+   "y": 5.3,
+   "turn": 180
+  },
+  {
+   "kind": "bed",
+   "id": "cama-b",
+   "x": 4.6,
+   "y": 7.35,
+   "rgb": [
+    0.34,
+    0.06,
+    0.05
+   ]
+  },
+  {
+   "kind": "rug",
+   "x": 4.8,
+   "y": 6.2,
+   "w": 2.2,
+   "d": 1.3
+  },
+  {
+   "kind": "chest",
+   "x": 6.05,
+   "y": 7.35,
+   "turn": 90
+  },
+  {
+   "kind": "table",
+   "x": 5.95,
+   "y": 5.25,
+   "w": 0.6,
+   "d": 0.6
+  },
+  {
+   "kind": "chair",
+   "x": 5.4,
+   "y": 5.25
+  },
+  {
+   "kind": "bed",
+   "id": "cama-grande",
+   "x": 8.4,
+   "y": 7.3,
+   "length": 2.1,
+   "w": 1.4,
+   "rgb": [
+    0.3,
+    0.18,
+    0.06
+   ]
+  },
+  {
+   "kind": "rug",
+   "x": 8.3,
+   "y": 3.9,
+   "w": 2.8,
+   "d": 2.6
+  },
+  {
+   "kind": "table",
+   "id": "mesa-cartas",
+   "x": 8.3,
+   "y": 3.9,
+   "w": 1.6,
+   "d": 1.0
+  },
+  {
+   "kind": "chair",
+   "x": 7.25,
+   "y": 3.9
+  },
+  {
+   "kind": "chair",
+   "x": 9.35,
+   "y": 3.9,
+   "turn": 180
+  },
+  {
+   "kind": "wardrobe",
+   "x": 9.65,
+   "y": 0.9,
+   "turn": 90,
+   "w": 1.1
+  },
+  {
+   "kind": "chest",
+   "x": 7.2,
+   "y": 7.3,
+   "turn": 90
+  },
+  {
+   "kind": "barrel",
+   "x": 5.9,
+   "y": 0.7,
+   "r": 0.27,
+   "h": 0.8
+  },
+  {
+   "kind": "crate",
+   "x": 5.1,
+   "y": 0.8,
+   "s": 0.7
+  },
+  {
+   "kind": "lantern",
+   "x": 1.6,
+   "y": 7.95,
+   "z": 2.2,
+   "wall": "y+"
+  },
+  {
+   "kind": "lantern",
+   "x": 4.8,
+   "y": 7.95,
+   "z": 2.2,
+   "wall": "y+"
+  },
+  {
+   "kind": "lantern",
+   "x": 8.4,
+   "y": 7.95,
+   "z": 2.25,
+   "wall": "y+"
+  }
+ ],
+ "lights": [
+  {
+   "kind": "point",
+   "at": [
+    1.6,
+    7.62,
+    2.0
+   ],
+   "energy": 160,
+   "rgb": [
+    1.0,
+    0.66,
+    0.36
+   ],
+   "radius": 0.2
+  },
+  {
+   "kind": "point",
+   "at": [
+    4.8,
+    7.62,
+    2.0
+   ],
+   "energy": 160,
+   "rgb": [
+    1.0,
+    0.66,
+    0.36
+   ],
+   "radius": 0.2
+  },
+  {
+   "kind": "point",
+   "at": [
+    8.4,
+    7.62,
+    2.0
+   ],
+   "energy": 160,
+   "rgb": [
+    1.0,
+    0.66,
+    0.36
+   ],
+   "radius": 0.2
+  },
+  {
+   "kind": "point",
+   "at": [
+    8.3,
+    3.9,
+    2.2
+   ],
+   "energy": 70,
+   "rgb": [
+    1.0,
+    0.72,
+    0.45
+   ],
+   "radius": 0.6
+  },
+  {
+   "kind": "point",
+   "at": [
+    9.5,
+    1.6,
+    1.6
+   ],
+   "energy": 25,
+   "rgb": [
+    0.6,
+    0.75,
+    1.0
+   ],
+   "radius": 0.5
+  },
+  {
+   "kind": "point",
+   "at": [
+    9.5,
+    4.0,
+    1.6
+   ],
+   "energy": 25,
+   "rgb": [
+    0.6,
+    0.75,
+    1.0
+   ],
+   "radius": 0.5
+  },
+  {
+   "kind": "point",
+   "at": [
+    9.5,
+    6.4,
+    1.6
+   ],
+   "energy": 25,
+   "rgb": [
+    0.6,
+    0.75,
+    1.0
+   ],
+   "radius": 0.5
+  },
+  {
+   "kind": "point",
+   "at": [
+    3.0,
+    2.3,
+    2.3
+   ],
+   "energy": 60,
+   "rgb": [
+    1.0,
+    0.7,
+    0.45
+   ],
+   "radius": 0.8
+  }
+ ],
+ "markers": [
+  {
+   "id": "porta",
+   "x": 0.7,
+   "y": 2.3,
+   "facing": 10
+  }
+ ]
+}

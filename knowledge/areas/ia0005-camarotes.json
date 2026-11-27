@@ -1,0 +1,42 @@
+{
+  "schema": "infinity-ai.area-recipe.v1",
+  "version": 1,
+  "kind": "interior",
+  "floor": {
+    "terrain": "obstacle"
+  },
+  "area": "IA0005",
+  "title": "Camarotes dos mercadores",
+  "size": {
+    "width": 10,
+    "height": 9
+  },
+  "picture": {
+    "kind": "render",
+    "scene": "scenes/ia0005-camarotes.json"
+  },
+  "entrances": [
+    {
+      "name": "Porta",
+      "marker": "porta"
+    }
+  ],
+  "passages": [
+    {
+      "id": "porta",
+      "marker": "porta"
+    }
+  ],
+  "light": {
+    "rgb": [
+      124,
+      100,
+      76
+    ]
+  },
+  "provenance": {
+    "author": "claude-code",
+    "date": "2026-11-27",
+    "decision": "ADR-0151: os camarotes dos mercadores, no estilo da AR0515, aprovados na prévia 5."
+  }
+}

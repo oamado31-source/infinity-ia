@@ -28,7 +28,16 @@ class Entrance:
     facing: int = 0
 
 
-def build_are(name: str, kind: str, entrances: list[Entrance]) -> bytes:
+def explored_size(width_px: int, height_px: int) -> int:
+    """Bytes of the explored bitmask: one bit per 32x32 pixels on a (w/32 + 1) x (h/32 + 1)
+    grid (measured in a save, 2026-11-27: AR0300, AR0406, AR0069, AR0311, IA0090...)."""
+    return -(-((width_px // 32 + 1) * (height_px // 32 + 1)) // 8)
+
+
+def build_are(name: str, kind: str, entrances: list[Entrance], *,
+              explored: tuple[int, int] | None = None) -> bytes:
+    """`explored`: (width, height) in pixels to hand the area over already explored (the whole
+    picture shown from the first visit, as the sea around the ship, ADR-0151)."""
     name = name.upper()
     if not AREA_NAME.fullmatch(name):
         raise AreaError('AREA_NAME', name)
@@ -38,6 +47,9 @@ def build_are(name: str, kind: str, entrances: list[Entrance]) -> bytes:
         raise AreaError('NO_ENTRANCE', name)
     o_entr = HEADER
     o_after = o_entr + ENTRANCE * len(entrances)
+    n_explored = explored_size(*explored) if explored else 0
+    o_explored = o_after
+    o_after = o_explored + n_explored
     o_songs = o_after
     o_rest = o_songs + SONGS
     end = o_rest + REST
@@ -49,7 +61,7 @@ def build_are(name: str, kind: str, entrances: list[Entrance]) -> bytes:
     struct.pack_into('<IIII', h, 0x64, 0, o_entr, len(entrances), o_after)
     struct.pack_into('<HHIIHHII', h, 0x74, 0, 0, o_after, o_after, 0, 0, o_after, o_after)
     struct.pack_into('<I', h, 0x8C, 0)                                     # variables
-    struct.pack_into('<II', h, 0x9C, 0, o_songs)                           # explored bitmask
+    struct.pack_into('<II', h, 0x9C, n_explored, o_explored if n_explored else o_songs)
     struct.pack_into('<IIIIII', h, 0xA4, 0, o_after, 0, o_after, 0, o_after)
     struct.pack_into('<IIIIII', h, 0xBC, o_songs, o_rest, end, 0, end, 0)
     body = bytearray()
@@ -62,7 +74,7 @@ def build_are(name: str, kind: str, entrances: list[Entrance]) -> bytes:
     struct.pack_into('<5I5I', songs, 0, 0, 0, 0, 0, 0, *([0xFFFFFFFF] * 5))
     struct.pack_into('<I', songs, 0x38, 100)
     struct.pack_into('<I', songs, 0x4C, 100)
-    return bytes(h) + bytes(body) + bytes(songs) + bytes(REST)
+    return bytes(h) + bytes(body) + b'\xff' * n_explored + bytes(songs) + bytes(REST)
 
 
 def read_are_summary(data: bytes) -> dict:

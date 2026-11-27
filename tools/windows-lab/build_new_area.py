@@ -5,6 +5,8 @@
   python tools/windows-lab/build_new_area.py --recipe knowledge/areas/ia0090-sala-de-teste.json
   python tools/windows-lab/build_new_area.py --recipe ... --apply      # game closed
 
+A rendered recipe (ADR-0150) needs its picture first: tools/area-author/render_area.py RECIPE.
+
 Builds every file from the recipe (no game byte), writes them with a manifest to
 ~/.infinity-ai/areas/<AREA>/, and checks them against every resource name of the lab build (read
 from the KEY over SSH), so no name of ours collides. With --apply, and the game closed, copies
@@ -25,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from infinity_ai.areas import AreaError  # noqa: E402
 from infinity_ai.areas.build import build_area_files, manifest  # noqa: E402
 from infinity_ai.areas.check import check_area  # noqa: E402
+from infinity_ai.areas.png import read_png  # noqa: E402
 from infinity_ai.areas.recipe import parse_recipe  # noqa: E402
 from infinity_ai.gamedata.inventory import _read_whole  # noqa: E402
 from lab_ssh import SshByteSource, put_override_file, run_ps, ssh_from_env  # noqa: E402
@@ -48,9 +51,18 @@ def main() -> int:
     ap.add_argument('--apply', action='store_true', help='copy to the override (game closed)')
     args = ap.parse_args()
     raw = args.recipe.read_bytes()
+    sources: dict[str, bytes] = {}
     try:
-        recipe = parse_recipe(json.loads(raw))
-        files = build_area_files(recipe)
+        recipe = parse_recipe(json.loads(raw), args.recipe.parent)
+        picture = None
+        if recipe.scene_path is not None:             # ADR-0150: the picture Blender rendered
+            png = args.out / recipe.area / 'picture.png'
+            if not png.exists():
+                print(f'renderize antes: python tools/area-author/render_area.py {args.recipe}')
+                return 2
+            sources = {'scene': recipe.scene_path.read_bytes(), 'picture.png': png.read_bytes()}
+            _w, _h, picture = read_png(sources['picture.png'])
+        files = build_area_files(recipe, picture)
     except (ValueError, AreaError) as exc:
         print(f'recusado: {getattr(exc, "code", "RECIPE")}: {getattr(exc, "detail", exc)}')
         return 2
@@ -68,7 +80,7 @@ def main() -> int:
     for name, data in sorted(files.items()):
         (out / name).write_bytes(data)
         print(f'{name} ({len(data)} bytes)')
-    (out / 'manifest.json').write_bytes(manifest(raw, recipe, files))
+    (out / 'manifest.json').write_bytes(manifest(raw, recipe, files, sources))
     print(f'gerado em {out}')
     if not args.apply:
         print('(nada gravado na VM; use --apply com o jogo fechado)')

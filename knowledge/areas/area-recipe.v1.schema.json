@@ -2,75 +2,387 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "infinity-ai.area-recipe.v1",
   "title": "Receita de área do Infinity AI (ADR-0149, SPEC-014)",
-  "description": "Como produzir uma área nossa sem nenhum byte de jogo. O leitor estrito é src/infinity_ai/areas/recipe.py; este esquema documenta o formato.",
+  "description": "Como produzir uma área nossa sem nenhum byte de jogo. O leitor estrito é src/infinity_ai/areas/recipe.py; este esquema documenta o formato. picture procedural (ADR-0149) ou render, com a cena em knowledge/areas/scenes (ADR-0150).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "area", "title", "version", "kind", "size", "floor", "picture", "entrances", "light", "provenance"],
+  "required": [
+    "schema",
+    "area",
+    "title",
+    "version",
+    "kind",
+    "size",
+    "floor",
+    "picture",
+    "entrances",
+    "light",
+    "provenance"
+  ],
   "$defs": {
-    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"},
-    "coord": {"type": "integer", "minimum": 0, "maximum": 32767},
-    "rect": {"type": "array", "items": {"$ref": "#/$defs/coord"}, "minItems": 4, "maxItems": 4},
-    "polygon": {"type": "array", "minItems": 3, "items": {"type": "array", "items": {"$ref": "#/$defs/coord"}, "minItems": 2, "maxItems": 2}},
-    "terrain": {"enum": ["obstacle", "sand", "wood", "stone", "grass", "water", "wall", "snow"]},
-    "draw": {"enum": ["planks", "stone-floor", "wall-face", "wall-top", "pillar"]},
-    "facing": {"type": "integer", "minimum": 0, "maximum": 15}
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+    },
+    "coord": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 32767
+    },
+    "rect": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/coord"
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "polygon": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/coord"
+        },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "terrain": {
+      "enum": [
+        "obstacle",
+        "sand",
+        "wood",
+        "stone",
+        "grass",
+        "water",
+        "open-obstacle",
+        "wall",
+        "snow"
+      ]
+    },
+    "draw": {
+      "enum": [
+        "planks",
+        "stone-floor",
+        "wall-face",
+        "wall-top",
+        "pillar"
+      ]
+    },
+    "facing": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 15
+    }
   },
   "properties": {
-    "schema": {"const": "infinity-ai.area-recipe.v1"},
-    "area": {"type": "string", "pattern": "^IA[0-9]{4}$"},
-    "title": {"type": "string", "minLength": 1, "maxLength": 80},
-    "version": {"type": "integer", "minimum": 1},
-    "kind": {"enum": ["interior", "underground", "exterior"]},
+    "schema": {
+      "const": "infinity-ai.area-recipe.v1"
+    },
+    "area": {
+      "type": "string",
+      "pattern": "^IA[0-9]{4}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "kind": {
+      "enum": [
+        "interior",
+        "underground",
+        "exterior"
+      ]
+    },
     "size": {
-      "type": "object", "additionalProperties": false, "required": ["width", "height"],
-      "properties": {"width": {"type": "integer", "minimum": 1, "maximum": 255}, "height": {"type": "integer", "minimum": 1, "maximum": 255}}
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 255
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 255
+        }
+      }
     },
     "floor": {
-      "type": "object", "additionalProperties": false, "required": ["terrain", "draw"],
-      "properties": {"terrain": {"$ref": "#/$defs/terrain"}, "draw": {"$ref": "#/$defs/draw"}}
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "terrain"
+      ],
+      "properties": {
+        "terrain": {
+          "$ref": "#/$defs/terrain"
+        },
+        "draw": {
+          "$ref": "#/$defs/draw"
+        }
+      }
     },
     "picture": {
-      "type": "object", "additionalProperties": false, "required": ["kind"],
-      "properties": {"kind": {"const": "procedural"}, "seed": {"type": "integer", "minimum": 0}}
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "procedural"
+            },
+            "seed": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "scene"
+          ],
+          "properties": {
+            "kind": {
+              "const": "render"
+            },
+            "scene": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
     },
     "regions": {
       "type": "array",
       "items": {
-        "type": "object", "additionalProperties": false, "required": ["id"],
-        "properties": {"id": {"$ref": "#/$defs/id"}, "rect": {"$ref": "#/$defs/rect"}, "polygon": {"$ref": "#/$defs/polygon"}, "terrain": {"$ref": "#/$defs/terrain"}, "draw": {"$ref": "#/$defs/draw"}},
-        "oneOf": [{"required": ["rect"]}, {"required": ["polygon"]}],
-        "anyOf": [{"required": ["terrain"]}, {"required": ["draw"]}]
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "rect": {
+            "$ref": "#/$defs/rect"
+          },
+          "polygon": {
+            "$ref": "#/$defs/polygon"
+          },
+          "terrain": {
+            "$ref": "#/$defs/terrain"
+          },
+          "draw": {
+            "$ref": "#/$defs/draw"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "rect"
+            ]
+          },
+          {
+            "required": [
+              "polygon"
+            ]
+          }
+        ],
+        "anyOf": [
+          {
+            "required": [
+              "terrain"
+            ]
+          },
+          {
+            "required": [
+              "draw"
+            ]
+          }
+        ]
       }
     },
     "walls": {
       "type": "array",
       "items": {
-        "type": "object", "additionalProperties": false, "required": ["id"],
-        "properties": {"id": {"$ref": "#/$defs/id"}, "rect": {"$ref": "#/$defs/rect"}, "polygon": {"$ref": "#/$defs/polygon"}},
-        "oneOf": [{"required": ["rect"]}, {"required": ["polygon"]}]
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "rect": {
+            "$ref": "#/$defs/rect"
+          },
+          "polygon": {
+            "$ref": "#/$defs/polygon"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "rect"
+            ]
+          },
+          {
+            "required": [
+              "polygon"
+            ]
+          }
+        ]
       }
     },
     "entrances": {
-      "type": "array", "minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "items": {
-        "type": "object", "additionalProperties": false, "required": ["name", "x", "y"],
-        "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 31}, "x": {"$ref": "#/$defs/coord"}, "y": {"$ref": "#/$defs/coord"}, "facing": {"$ref": "#/$defs/facing"}}
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "x",
+              "y"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 31
+              },
+              "x": {
+                "$ref": "#/$defs/coord"
+              },
+              "y": {
+                "$ref": "#/$defs/coord"
+              },
+              "facing": {
+                "$ref": "#/$defs/facing"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "marker"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 31
+              },
+              "marker": {
+                "$ref": "#/$defs/id"
+              }
+            }
+          }
+        ]
       }
     },
     "passages": {
       "type": "array",
       "items": {
-        "type": "object", "additionalProperties": false, "required": ["id", "x", "y"],
-        "properties": {"id": {"$ref": "#/$defs/id"}, "x": {"$ref": "#/$defs/coord"}, "y": {"$ref": "#/$defs/coord"}, "facing": {"$ref": "#/$defs/facing"}}
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "x",
+              "y"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "x": {
+                "$ref": "#/$defs/coord"
+              },
+              "y": {
+                "$ref": "#/$defs/coord"
+              },
+              "facing": {
+                "$ref": "#/$defs/facing"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "marker"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "marker": {
+                "$ref": "#/$defs/id"
+              }
+            }
+          }
+        ]
       }
     },
     "light": {
-      "type": "object", "additionalProperties": false, "required": ["rgb"],
-      "properties": {"rgb": {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 255}, "minItems": 3, "maxItems": 3}}
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rgb"
+      ],
+      "properties": {
+        "rgb": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      }
     },
     "provenance": {
-      "type": "object", "required": ["author"],
-      "properties": {"author": {"type": "string", "minLength": 1}}
+      "type": "object",
+      "required": [
+        "author"
+      ],
+      "properties": {
+        "author": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     }
   }
 }

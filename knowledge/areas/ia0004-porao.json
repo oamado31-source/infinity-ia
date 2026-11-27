@@ -1,0 +1,22 @@
+{
+  "schema": "infinity-ai.area-recipe.v1",
+  "area": "IA0004",
+  "title": "Porão da Estrela de Waukeen",
+  "version": 1,
+  "kind": "interior",
+  "size": {"width": 15, "height": 12},
+  "floor": {"terrain": "obstacle"},
+  "picture": {"kind": "render", "scene": "scenes/ia0004-porao.json"},
+  "entrances": [
+    {"name": "Escada", "marker": "pe-da-escada"}
+  ],
+  "passages": [
+    {"id": "escada", "marker": "pe-da-escada"}
+  ],
+  "light": {"rgb": [120, 96, 70]},
+  "provenance": {
+    "author": "claude-code",
+    "date": "2026-11-27",
+    "decision": "ADR-0150: o porão da quest dos reféns, renderizado no Blender com peças e materiais do nosso script; desenho aprovado pelo mantenedor (prévia v10)."
+  }
+}

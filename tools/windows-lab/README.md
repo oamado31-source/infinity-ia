@@ -164,3 +164,11 @@ O diálogo é só escrito, sem voz sintetizada (ADR-0129). O microfone continua 
 3. **Instalar,** com o jogo fechado: acrescente `--apply`. Depois, refixe o manifesto (seções 2 e 3) e reinicie o serviço.
 4. **Ver uma sala do jogo antes de propor:** `python tools/windows-lab/area_preview.py AR0310 --map`. Com `--roundtrip`, a sala é regravada pelos nossos escritores e comparada com a do jogo.
 5. As prévias e os arquivos gerados nunca vão para o repositório.
+
+## Anexo — ADR-0150: uma área renderizada no Blender
+
+1. **Blender no Mac:** Blender 4.5 LTS em `~/Applications/Blender.app` (ou `BLENDER=<caminho>`). Ele roda sem tela, e nada dele vai para a VM.
+2. **Renderizar a cena da receita:** `python tools/area-author/render_area.py knowledge/areas/ia0004-porao.json`. O desenho vai para `~/.infinity-ai/areas/IA0004/picture.png`.
+3. **Verificar:** `python tools/area-author/check_area.py knowledge/areas/ia0004-porao.json --png`. A prévia mostra em vermelho o que não se anda e em amarelo as paredes.
+4. **Gerar e instalar:** `build_new_area.py --recipe … [--apply]`, como no anexo da ADR-0149. O manifesto guarda também o `sha256` da cena e do desenho.
+5. **Câmera do jogo:** ortográfica, a 45° acima do horizonte, com as salas giradas 45° e 40 px por metro (ADR-0150).

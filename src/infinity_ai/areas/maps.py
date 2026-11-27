@@ -15,7 +15,9 @@ from . import AreaError
 CELL_W, CELL_H = 16, 12
 # terrain codes of the search map (IESDP); the impassable ones block movement
 TERRAIN = {'obstacle': 0, 'sand': 1, 'wood': 2, 'stone': 4, 'grass': 5, 'water': 6,
-           'wall': 10, 'snow': 12}
+           'open-obstacle': 8, 'wall': 10, 'snow': 12}
+# 'obstacle' (0) blocks movement and sight; 'open-obstacle' (8) blocks movement only (bars,
+# nets, barrels: you see past them)
 IMPASSABLE = frozenset({0, 6, 8, 10, 13})
 FLAT = 8
 # the 16 standard colours (the engine reads the index, not the colour)

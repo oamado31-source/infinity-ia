@@ -126,6 +126,9 @@ def _split_sql(sql: str) -> list[str]:
     return statements
 
 
+BUSY_TIMEOUT_S = 30.0
+
+
 class CampaignStore:
     def __init__(self, conn: sqlite3.Connection, campaign_id: str,
                  clock: Callable[[], str]) -> None:
@@ -136,9 +139,15 @@ class CampaignStore:
              clock: Callable[[], str] = _utc_now) -> CampaignStore:
         if not isinstance(campaign_id, str) or not campaign_id:
             raise ValueError('campaign_id required')
-        conn = sqlite3.connect(str(path), isolation_level=None)
+        # CR-2026-036: several parts of the service (dialogue, presences, the game log) each hold
+        # a connection; in WAL mode reading never blocks writing, and a writer waits up to 30 s
+        # for another instead of giving up after Python's default 5 s ("database is locked")
+        conn = sqlite3.connect(str(path), isolation_level=None, timeout=BUSY_TIMEOUT_S)
         try:
             conn.execute('PRAGMA foreign_keys = ON')
+            conn.execute(f'PRAGMA busy_timeout = {int(BUSY_TIMEOUT_S * 1000)}')
+            if str(path) != ':memory:':
+                conn.execute('PRAGMA journal_mode = WAL')
             _migrate(conn, clock)
         except BaseException:
             conn.close()

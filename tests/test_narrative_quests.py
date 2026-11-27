@@ -133,6 +133,54 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(with_journal('Obrigado.', ()), 'Obrigado.')
 
 
+class OfferInFocusTests(unittest.TestCase):
+    """CR-2026-036: two offers from the same person; a plain "yes" accepts only the one in focus
+    (lab, 2026-11-27: "sim" accepted an old brooch offer together with the new quest)."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.store = CampaignStore.open(Path(tmp.name) / 'c.sqlite3', 'lab')
+        self.addCleanup(self.store.close)
+        ship = copy.deepcopy(DOC)
+        ship.update(quest_id='teste-navio', milestone='quest:teste-navio:RESOLVED')
+        ship['giver'].update(offer_cues=['navio'], offer_fact='Você fala do navio no cais.',
+                             accept_cues=['sim', 'vamos', 'aceito'],
+                             waiting_fact='Você espera o grupo voltar do navio.')
+        self.quests = load_quests()
+        self.quests['teste-navio'] = parse_quest(ship)
+        self.time = 0
+
+    def say(self, text):
+        self.time += 10
+        return advance(self.store, ROOT_BRANCH, self.quests, speaker=BERNARD, text=text,
+                       area='AR0406', game_time=self.time)
+
+    def accepted(self):
+        return {q for q in self.quests if state_of(self.store, ROOT_BRANCH, q).accepted}
+
+    def test_a_plain_yes_accepts_only_the_last_offer(self):
+        self.say('Você tem algum trabalho para nós?')            # the brooch, first
+        new = self.say('E aquele navio no cais?')                  # the ship, now
+        self.assertEqual(new.facts, ('Você fala do navio no cais.',))
+        self.say('Sim, vamos.')
+        self.assertEqual(self.accepted(), {'teste-navio'})
+
+    def test_naming_the_old_offer_brings_it_back(self):
+        self.say('Você tem algum trabalho para nós?')
+        self.say('E aquele navio no cais?')
+        turn = self.say('E aquele trabalho do broche? Aceito.')
+        self.assertEqual(self.accepted(), {'bernard-brooch'})
+        self.assertIn('bernard-brooch:NarrativeQuestAccepted', turn.changes)
+
+    def test_only_the_offer_in_focus_is_told(self):
+        self.say('Você tem algum trabalho para nós?')
+        self.say('E aquele navio no cais?')
+        turn = self.say('Boa noite.')
+        self.assertEqual(turn.facts, ('Você fala do navio no cais.',))
+        self.assertIn('bernard-brooch=OFERECIDA', turn.states)
+
+
 class TrustTests(unittest.TestCase):
     def test_the_quest_makes_bernard_intimate_and_he_may_tell_the_house_secret(self):
         pack = load_partition(1369)

@@ -440,6 +440,33 @@ def _record(store, branch_id, event_type, quest, *, game_time, host_epoch, evide
                            evidence=evidence, idempotency_key=key)
 
 
+def offer_in_focus(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQuest], *,
+                   speaker: str, text: str, area: str | None) -> str | None:
+    """CR-2026-036: of the quests this person offered and nobody accepted yet, the one in
+    focus: the one the player names now (its offer words), else the last one offered. None
+    when there is no such offer, or when the player is asking for a new one right now (that
+    new offer takes the turn). Only the quest in focus can be accepted, and only its offer is
+    told: a plain "yes" no longer accepts an old offer too (lab, 2026-11-27)."""
+    pending: list[tuple[int, NarrativeQuest]] = []
+    for quest in quests.values():
+        if quest.giver != speaker or (quest.area is not None and area != quest.area):
+            continue
+        st = state_of(store, branch_id, quest.quest_id)
+        if not st.offered:
+            if says(text, quest.offer_cues):
+                return None
+            continue
+        if st.accepted or st.resolved:
+            continue
+        offered = [e.seq for e in store.visible_events(branch_id, OFFERED)
+                   if e.payload.get('quest_id') == quest.quest_id]
+        pending.append((max(offered, default=0), quest))
+    if not pending:
+        return None
+    named = [(seq, q) for seq, q in pending if says(text, q.offer_cues)]
+    return max(named or pending, key=lambda t: t[0])[1].quest_id
+
+
 def advance(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQuest], *,
             speaker: str, text: str, area: str | None, game_time: int | None,
             host_epoch: int = 0, evidence: str = 'LAB_OBSERVED',
@@ -454,6 +481,8 @@ def advance(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQue
     changes: list[str] = []
     milestones: list[str] = []
     states: list[str] = []
+    focus = None if closed else offer_in_focus(store, branch_id, quests, speaker=speaker,
+                                                text=text, area=area)
     for quest in quests.values():
         mine = [s for s in quest.steps if s.kind == TALK and s.npc_id == speaker]
         if speaker != quest.giver and not mine:
@@ -479,6 +508,9 @@ def advance(store: CampaignStore, branch_id: str, quests: dict[str, NarrativeQue
                     facts.append(quest.offer_fact)
                     fresh.append(quest.offer_fact)
             elif not st.accepted:
+                if quest.quest_id != focus:       # CR-2026-036: another offer has the turn
+                    states.append(f'{quest.quest_id}={st.label()}')
+                    continue
                 facts.append(quest.offer_fact)
                 if says(text, quest.accept_cues):
                     mark(ACCEPTED)

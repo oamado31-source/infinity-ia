@@ -168,3 +168,45 @@ class MigrationFilesTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ConcurrencyTests(unittest.TestCase):
+    """CR-2026-036: the service's parts each hold a connection; they wait for one another."""
+
+    def test_the_store_opens_in_wal_and_waits_for_a_writer(self):
+        import sqlite3
+        import tempfile
+        import threading
+        import time as _time
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'c.sqlite3'
+            a = CampaignStore.open(path, 'lab')
+            b = CampaignStore.open(path, 'lab')
+            try:
+                mode = a.connection.execute('PRAGMA journal_mode').fetchone()[0]
+                self.assertEqual(mode.lower(), 'wal')
+                # a long read does not block a write
+                cur = a.connection.execute('SELECT * FROM branches')
+                cur.fetchone()
+                b.fork_branch(parent_branch_id=ROOT_BRANCH, fork_game_time=1, fork_epoch=0)
+                cur.fetchall()
+                # a writer holding the lock for a while: the other waits instead of failing
+                done = []
+
+                def hold():
+                    with a.transaction():
+                        _time.sleep(1.0)
+
+                t = threading.Thread(target=hold)
+                t.start()
+                _time.sleep(0.2)
+                try:
+                    b.fork_branch(parent_branch_id=ROOT_BRANCH, fork_game_time=2, fork_epoch=0)
+                    done.append(True)
+                except sqlite3.OperationalError:
+                    done.append(False)
+                t.join()
+                self.assertEqual(done, [True])
+            finally:
+                a.close()
+                b.close()

@@ -27,6 +27,7 @@ import math
 import os
 import re
 import secrets
+import sqlite3
 import sys
 import threading
 import time
@@ -166,6 +167,14 @@ class TeeLogSource:
         return getattr(self._inner, 'launch', '') or ''
 
 
+def _why(exc: BaseException) -> str:
+    """The error for the log: a database error with its message ("database is locked",
+    CR-2026-036); anything else by name only, so no player text ever reaches the log."""
+    if isinstance(exc, sqlite3.Error):
+        return f'{type(exc).__name__}: {str(exc)[:120]}'
+    return type(exc).__name__
+
+
 class LogTail(threading.Thread):
     """Reads the game log every `interval` seconds; a failed read is logged once until it recovers."""
 
@@ -183,7 +192,7 @@ class LogTail(threading.Thread):
                 failing = False
             except Exception as exc:  # keep reading; the views just get older meanwhile
                 if not failing:
-                    print(f'{now_iso()} leitura do log falhou: {type(exc).__name__}')
+                    print(f'{now_iso()} leitura do log falhou: {_why(exc)}')
                 failing = True
                 time.sleep(1.0)
             time.sleep(self.interval)
@@ -267,7 +276,7 @@ class Observer(threading.Thread):
                 with self.lock:
                     self.view = view
             except Exception as exc:  # keep observing; a failed poll just marks the view stale
-                print(f'{now_iso()} observacao falhou: {type(exc).__name__}')
+                print(f'{now_iso()} observacao falhou: {_why(exc)}')
                 with self.lock:
                     self.view = replace(self.view, observed=False)
             time.sleep(self.args.interval)
@@ -417,7 +426,7 @@ class PresenceDirector(threading.Thread):
                                   f'{quest.call.script_name} em {quest.call.area} '
                                   f'(frase {quest.call.strref}): {state}')
             except Exception as exc:  # keep directing; a failed round leaves its events as they are
-                print(f'{now_iso()} presenca falhou: {type(exc).__name__}')
+                print(f'{now_iso()} presenca falhou: {_why(exc)}')
             time.sleep(max(self.args.interval, 2.0))
 
 
@@ -479,7 +488,7 @@ class VoiceListener(threading.Thread):
                 for update in self.session.tick():
                     self._show(update)
             except Exception as exc:  # keep listening; a failed press is just logged
-                print(f'{now_iso()} voz falhou: {type(exc).__name__}')
+                print(f'{now_iso()} voz falhou: {_why(exc)}')
             time.sleep(0.1)
 
 
@@ -534,7 +543,7 @@ class Talker(threading.Thread):
                             if req.speaker_party:
                                 self._remember_companion(req.req_id)
             except Exception as exc:  # keep answering; one failed request is just logged
-                print(f'{now_iso()} caixa de dialogo falhou: {type(exc).__name__}')
+                print(f'{now_iso()} caixa de dialogo falhou: {_why(exc)}')
             time.sleep(0.1)
 
     def _answered_path(self) -> Path:
@@ -1056,7 +1065,7 @@ def main() -> int:
                 [{'role': 'user', 'content': 'ok'}])
             print(f'{now_iso()} modelo de dialogo carregado')
         except Exception as exc:  # the first question will just be slower
-            print(f'{now_iso()} aquecimento do modelo falhou: {type(exc).__name__}')
+            print(f'{now_iso()} aquecimento do modelo falhou: {_why(exc)}')
     threading.Thread(target=warm_up, daemon=True).start()
     if args.voice:
         if not args.stt_model.expanduser().is_file():

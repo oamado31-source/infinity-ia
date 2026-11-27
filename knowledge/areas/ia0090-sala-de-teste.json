@@ -1,0 +1,33 @@
+{
+  "schema": "infinity-ai.area-recipe.v1",
+  "area": "IA0090",
+  "title": "Sala de teste",
+  "version": 1,
+  "kind": "interior",
+  "size": {"width": 12, "height": 9},
+  "floor": {"terrain": "wood", "draw": "planks"},
+  "picture": {"kind": "procedural", "seed": 90},
+  "regions": [
+    {"id": "parede-norte", "rect": [0, 0, 768, 128], "terrain": "obstacle", "draw": "wall-face"},
+    {"id": "borda-oeste", "rect": [0, 0, 32, 576], "terrain": "obstacle", "draw": "wall-top"},
+    {"id": "borda-leste", "rect": [736, 0, 32, 576], "terrain": "obstacle", "draw": "wall-top"},
+    {"id": "borda-sul", "rect": [0, 544, 768, 32], "terrain": "obstacle", "draw": "wall-top"},
+    {"id": "pilar", "rect": [352, 192, 64, 184], "draw": "pillar"},
+    {"id": "pe-do-pilar", "rect": [352, 328, 64, 48], "terrain": "obstacle"}
+  ],
+  "walls": [
+    {"id": "pilar", "rect": [352, 192, 64, 184]}
+  ],
+  "entrances": [
+    {"name": "Entrada", "x": 384, "y": 500, "facing": 8}
+  ],
+  "passages": [
+    {"id": "entrada", "x": 384, "y": 500, "facing": 8}
+  ],
+  "light": {"rgb": [132, 132, 112]},
+  "provenance": {
+    "author": "claude-code",
+    "date": "2026-11-27",
+    "decision": "ADR-0149 (sala de teste, desenhada só por código)"
+  }
+}

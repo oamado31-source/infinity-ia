@@ -45,6 +45,7 @@ class KeyResource:
     type: int
     bif_index: int
     file_index: int
+    tileset_index: int = 0      # TIS live in the BIF's tileset table (locator bits 14-19)
 
 
 @dataclass(frozen=True)
@@ -78,7 +79,8 @@ def parse_key(data: bytes) -> KeyFile:
     resources = []
     for i in range(n_res):
         raw, type_, locator = struct.unpack_from('<8sHI', data, off_res + 14 * i)
-        resources.append(KeyResource(_resref(raw), type_, locator >> 20, locator & 0x3FFF))
+        resources.append(KeyResource(_resref(raw), type_, locator >> 20, locator & 0x3FFF,
+                                     (locator >> 14) & 0x3F))
     return KeyFile(tuple(bifs), tuple(resources))
 
 
@@ -86,6 +88,8 @@ def parse_key(data: bytes) -> KeyFile:
 
 BIFF_HEADER_SIZE = 20
 BIFF_FILE_ENTRY_SIZE = 16
+BIFF_TILESET_ENTRY_SIZE = 20
+TIS_TYPE = 0x3EB
 
 
 @dataclass(frozen=True)
@@ -121,6 +125,26 @@ def parse_biff_files(data: bytes, count: int) -> dict[int, BiffFile]:
                                                                      BIFF_FILE_ENTRY_SIZE * i)
         files[locator & 0x3FFF] = BiffFile(locator & 0x3FFF, offset, size, type_)
     return files
+
+
+@dataclass(frozen=True)
+class BiffTileset:
+    tileset_index: int
+    offset: int
+    tile_count: int
+    tile_size: int
+
+
+def parse_biff_tilesets(data: bytes, count: int) -> dict[int, BiffTileset]:
+    """The BIF's tileset table (right after the file table): where each TIS's tiles are. A TIS
+    in a BIF has no header; `tile_size` is 12 for the EE's PVRZ-based TIS (V2)."""
+    _need(data, 0, BIFF_TILESET_ENTRY_SIZE * count, 'BIFF tileset table')
+    out = {}
+    for i in range(count):
+        locator, offset, n, size, _type = struct.unpack_from('<IIIIH', data,
+                                                              BIFF_TILESET_ENTRY_SIZE * i)
+        out[(locator >> 14) & 0x3F] = BiffTileset((locator >> 14) & 0x3F, offset, n, size)
+    return out
 
 
 # ---- TLK V1 ----------------------------------------------------------------------------------

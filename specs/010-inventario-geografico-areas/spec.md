@@ -158,7 +158,7 @@ Os valores `UNKNOWN`/`null` devem ser preservados em vez de preenchidos por conj
 
 ## 9. Integração arquitetural e governança
 
-A SPEC-010 é uma **fonte de metadados**, não o próprio banco de conhecimento dos NPCs. Ela alimentará catálogo de lugares, worldmap e conexões geográficas; SPECs de conhecimento/memória consultarão apenas localidades validadas conforme seu escopo e época. O mapa visual, a verdade canônica e a crença individual de um NPC são entidades diferentes. Respeitar ADR-0012 e governança de alterações da ADR-0111, com CR, `plan.md`, `tasks.md`, testes e PR quando a implementação for aprovada. A criação automática de novas áreas será objeto de especificação/decisão posterior, não desta SPEC.
+A SPEC-010 é uma **fonte de metadados**, não o próprio banco de conhecimento dos NPCs. Ela alimentará catálogo de lugares, worldmap e conexões geográficas; SPECs de conhecimento/memória consultarão apenas localidades validadas conforme seu escopo e época. O mapa visual, a verdade canônica e a crença individual de um NPC são entidades diferentes. Respeitar ADR-0012 e governança de alterações da ADR-0111, com CR, `plan.md`, `tasks.md`, testes e PR quando a implementação for aprovada. A criação automática de novas áreas será objeto de especificação/decisão posterior, não desta SPEC: é a SPEC-014 (proposta aprovada em 2026-11-27), que usa este inventário como catálogo de fontes.
 
 ## 10. Inventário inicial de fontes e cobertura
 
@@ -241,6 +241,16 @@ O material abaixo é **baseline de auditoria** e não equivale a aprovação de 
 | [EEex](https://github.com/BGforgeNet/EEex) | `ENGINE_EXTENSION` | Registrar como dependência/ferramenta de engine quando aplicável | Não é conteúdo geográfico |
 | IETME | `MODDING_TOOL` | Registrar na lista de ferramentas de edição e avaliar apenas se necessário | Não é conteúdo geográfico |
 | [Sword Coast Stratagems](https://github.com/Gibberlings3/SwordCoastStratagems) | `RULES_OR_AI_MOD` | Registrar como referência de regras/IA e compatibilidade de mods | Não contar como novas áreas sem evidência de recursos geográficos |
+
+### D.1.1 Ferramentas de criação de áreas (acrescentadas em 2026-11-27, SPEC-014)
+
+Classe `MODDING_TOOL`: não são conteúdo geográfico e não somam cobertura. O uso de cada uma está na SPEC-014, §4.
+
+| Ferramenta | Versão e licença (consulta de 2026-11-27) | Função |
+|---|---|---|
+| [MapSmithEE](https://github.com/sad0/MapSmithEE) | 0.2.6, prévia; CC BY-NC-SA 4.0 (o README estende a licença ao que é feito com ele) | monta uma área (`ARE`, `TIS`/`PVRZ`, `WED`, mapas de busca, altura e luz) a partir de uma cena 3D renderizada no Blender; só referência e ferramenta do mantenedor |
+| [Near Infinity](https://github.com/Argent77/NearInfinity) | ativo; LGPL-2.1 | navegador e editor de recursos do motor |
+| DLTCEP | versão não conferida | editor antigo de recursos do motor (projeto GemRB) |
 
 ### D.2 Procedimento para novos guias e coleções
 

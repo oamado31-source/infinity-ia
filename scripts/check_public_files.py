@@ -6,7 +6,9 @@ ignored folders do not cause false alarms. Falls back to walking the tree outsid
 from pathlib import Path
 import subprocess
 import sys
-banned={'.sav','.dmp','.key','.bif','.biff','.tlk','.cre','.are','.wed','.mos','.bam','.sqlite','.sqlite3','.db','.pem','.p12'}
+banned={'.sav','.dmp','.key','.bif','.biff','.tlk','.cre','.are','.wed','.mos','.bam',
+        '.tis','.pvrz','.pvr',  # ADR-0149: area pictures and pages
+       '.sqlite','.sqlite3','.db','.pem','.p12'}
 
 
 def candidate_files():

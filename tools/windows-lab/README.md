@@ -156,3 +156,11 @@ O diálogo é só escrito, sem voz sintetizada (ADR-0129). O microfone continua 
    - a transcrição usa `whisper-server` com o modelo carregado (~0,5 s por frase curta), com `whisper-cli` como reserva;
    - o modelo de diálogo lê primeiro as regras fixas, reaproveitadas de uma pergunta para a outra, e fica carregado entre as conversas (`keep_alive`).
 
+
+## Anexo — ADR-0149: uma área nova a partir da receita
+
+1. **Verificar a receita** (sem VM): `python tools/area-author/check_area.py knowledge/areas/ia0090-sala-de-teste.json --png`. A prévia, com o que não se anda em vermelho e as paredes em amarelo, vai para `~/.infinity-ai/previews/`.
+2. **Gerar e conferir contra a build:** `python tools/windows-lab/build_new_area.py --recipe knowledge/areas/ia0090-sala-de-teste.json`. Os arquivos e o `manifest.json` vão para `~/.infinity-ai/areas/IA0090/`.
+3. **Instalar,** com o jogo fechado: acrescente `--apply`. Depois, refixe o manifesto (seções 2 e 3) e reinicie o serviço.
+4. **Ver uma sala do jogo antes de propor:** `python tools/windows-lab/area_preview.py AR0310 --map`. Com `--roundtrip`, a sala é regravada pelos nossos escritores e comparada com a do jogo.
+5. As prévias e os arquivos gerados nunca vão para o repositório.

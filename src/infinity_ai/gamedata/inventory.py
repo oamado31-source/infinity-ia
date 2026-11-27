@@ -9,14 +9,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import struct
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
 from .formats import (
     AREA_TYPE, BIFF_FILE_ENTRY_SIZE, BIFF_HEADER_SIZE, CRE_IDENTITY_SIZE, CRE_TYPE, DLG_TYPE,
-    ITM_TYPE, STO_TYPE, TLK_ENTRY_SIZE, TLK_HEADER_SIZE, WMP_TYPE, decode_tlk_string,
-    parse_are_actors, parse_biff_files, parse_biff_header, parse_cre_dialog, parse_cre_identity,
+    BIFF_TILESET_ENTRY_SIZE, ITM_TYPE, STO_TYPE, TIS_TYPE, TLK_ENTRY_SIZE, TLK_HEADER_SIZE, WMP_TYPE, decode_tlk_string,
+    parse_are_actors, parse_biff_files, parse_biff_header, parse_biff_tilesets, parse_cre_dialog, parse_cre_identity,
     parse_dlg_store_refs, parse_itm_summary, parse_key, parse_sto, parse_tlk_entry,
     parse_tlk_header, parse_wmp, tlk_entry_offset,
 )
@@ -82,6 +83,7 @@ class _Resources:
         self.source = source
         self.key = parse_key(_read_whole(source, 'chitin.key'))
         self._bif_tables: dict[int, dict] = {}
+        self._tileset_tables: dict[int, dict] = {}
 
     def _bif_table(self, bif_index: int) -> dict:
         if bif_index not in self._bif_tables:
@@ -92,11 +94,41 @@ class _Resources:
             self._bif_tables[bif_index] = parse_biff_files(table, header.file_count)
         return self._bif_tables[bif_index]
 
+    def _tileset_table(self, bif_index: int) -> dict:
+        if bif_index not in self._tileset_tables:
+            bif = self.key.bifs[bif_index]
+            header = parse_biff_header(self.source.read(bif.path, 0, BIFF_HEADER_SIZE))
+            table = self.source.read(bif.path,
+                                     header.files_offset + BIFF_FILE_ENTRY_SIZE * header.file_count,
+                                     BIFF_TILESET_ENTRY_SIZE * header.tileset_count)
+            self._tileset_tables[bif_index] = parse_biff_tilesets(table, header.tileset_count)
+        return self._tileset_tables[bif_index]
+
+    def tis(self, resref: str) -> bytes | None:
+        """ADR-0149: a TIS as a file (with its 24-byte header): from the override as it is, or
+        from the BIF's tileset table, where it is stored without a header."""
+        override = f'override/{resref}.tis'
+        if self.source.size(override) is not None:
+            return _read_whole(self.source, override)
+        entry = self.key.find(resref, TIS_TYPE)
+        if entry is None or entry.bif_index >= len(self.key.bifs):
+            return None
+        ts = self._tileset_table(entry.bif_index).get(entry.tileset_index)
+        if ts is None or ts.tile_count * ts.tile_size > _MAX_FILE:
+            return None
+        body = self.source.read(self.key.bifs[entry.bif_index].path, ts.offset,
+                                ts.tile_count * ts.tile_size)
+        header = b'TIS V1  ' + struct.pack('<IIII', ts.tile_count, ts.tile_size, 0x18, 64)
+        return header + body
+
     def locate(self, resref: str, type_: int, ext: str,
                override: set[str]) -> tuple[str, int, int | None] | None:
-        """(path, offset, size) without reading; size None for override files (caller sizes)."""
+        """(path, offset, size) without reading; size None for override files (caller sizes).
+        A TIS is never in the file table (ADR-0149: use `tis`)."""
         if resref.upper() in override:
             return f'override/{resref}.{ext}', 0, None
+        if type_ == TIS_TYPE:
+            return None
         entry = self.key.find(resref, type_)
         if entry is None or entry.bif_index >= len(self.key.bifs):
             return None
@@ -109,6 +141,8 @@ class _Resources:
         override = f'override/{resref}.{ext}'
         if self.source.size(override) is not None:
             return _read_whole(self.source, override)
+        if type_ == TIS_TYPE:
+            return self.tis(resref)
         entry = self.key.find(resref, type_)
         if entry is None or entry.bif_index >= len(self.key.bifs):
             return None

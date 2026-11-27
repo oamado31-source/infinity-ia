@@ -59,6 +59,7 @@ class Box:
     h: float
     turn: float = 0.0
     z: float = 0.0
+    floor: float = 0.0        # the height of the floor it stands on (a raised deck)
 
     def foot(self) -> list[Point2]:
         """The four ground corners, in the room's frame."""
@@ -93,8 +94,13 @@ def _hull(points: list[Point2]) -> list[Point2]:
 
 
 def footprint(cam: Camera, box: Box) -> list[tuple[int, int]]:
-    """The part's foot on the picture (a polygon), for the search map."""
-    return [tuple(round(c) for c in cam.project(x, y)) for x, y in box.foot()]
+    """The part's foot on the picture (a polygon), for the search map, at its floor's height."""
+    return [tuple(round(c) for c in cam.project(x, y, box.floor)) for x, y in box.foot()]
+
+
+def project_points(cam: Camera, points) -> list[tuple[int, int]]:
+    """Room points (x, y, z) on the picture."""
+    return [tuple(round(c) for c in cam.project(x, y, z)) for x, y, z in points]
 
 
 def occluder(cam: Camera, box: Box) -> list[tuple[int, int]]:
@@ -102,7 +108,7 @@ def occluder(cam: Camera, box: Box) -> list[tuple[int, int]]:
     the left and the right corners of its foot on the ground; then the outline over the top, back
     to the left. A creature above that line is behind the part (ADR-0149). A part that stands on
     another (z > 0) is drawn from the ground up, so the stack hides as one."""
-    feet = [cam.project(x, y) for x, y in box.foot()]
+    feet = [cam.project(x, y, box.floor) for x, y in box.foot()]
     tops = [cam.project(x, y, box.z + box.h) for x, y in box.foot()]
     left = min(feet, key=lambda p: (p[0], -p[1]))
     right = max(feet, key=lambda p: (p[0], p[1]))

@@ -1,0 +1,403 @@
+{
+ "schema": "infinity-ai.area-scene.v1",
+ "area": "IA0002",
+ "title": "Convés superior da Estrela de Waukeen",
+ "width": 2560,
+ "height": 1920,
+ "samples": 128,
+ "ambient": 0.25,
+ "ambient_rgb": [
+  0.02,
+  0.03,
+  0.06
+ ],
+ "camera": {
+  "elevation": 45,
+  "px_per_m": 40,
+  "turn": 45,
+  "u0": 1054,
+  "v0": 1320
+ },
+ "parts": [
+  {
+   "kind": "water",
+   "z": -2.4
+  },
+  {
+   "kind": "ship-deck",
+   "id": "conves",
+   "outline": [
+    [
+     0,
+     4
+    ],
+    [
+     3,
+     1.2
+    ],
+    [
+     7,
+     0.2
+    ],
+    [
+     24,
+     0.2
+    ],
+    [
+     24,
+     7.8
+    ],
+    [
+     7,
+     7.8
+    ],
+    [
+     3,
+     6.8
+    ]
+   ],
+   "bulwark": 0.9,
+   "waterline": -2.4
+  },
+  {
+   "kind": "raised-deck",
+   "id": "tombadilho",
+   "x0": 18,
+   "x1": 24,
+   "y0": 0.3,
+   "y1": 7.7,
+   "h": 1.8,
+   "gap": [
+    0.6,
+    1.6
+   ]
+  },
+  {
+   "kind": "stairs",
+   "id": "escada-tombadilho",
+   "x0": 16.2,
+   "x1": 18.0,
+   "y": 1.1,
+   "w": 1.0,
+   "h": 1.8
+  },
+  {
+   "kind": "door",
+   "id": "porta-camarotes",
+   "x": 18.0,
+   "y": 4.6
+  },
+  {
+   "kind": "wheel",
+   "id": "leme",
+   "x": 21.6,
+   "y": 4.0,
+   "floor": 1.8
+  },
+  {
+   "kind": "lantern-post",
+   "x": 23.2,
+   "y": 4.0,
+   "floor": 1.8,
+   "h": 1.6
+  },
+  {
+   "kind": "mast",
+   "id": "mastro",
+   "x": 10,
+   "y": 4,
+   "h": 9.0,
+   "r": 0.35
+  },
+  {
+   "kind": "rigging",
+   "top": [
+    10,
+    4,
+    8.6
+   ],
+   "anchors": [
+    [
+     8.3,
+     0.3,
+     0.95
+    ],
+    [
+     10,
+     0.25,
+     0.95
+    ],
+    [
+     11.7,
+     0.25,
+     0.95
+    ],
+    [
+     8.3,
+     7.7,
+     0.95
+    ],
+    [
+     10,
+     7.75,
+     0.95
+    ],
+    [
+     11.7,
+     7.75,
+     0.95
+    ]
+   ],
+   "yard": {
+    "x": 10.0,
+    "y0": 0.4,
+    "y1": 7.6,
+    "z": 6.6
+   }
+  },
+  {
+   "kind": "grating-hatch",
+   "id": "alcapao",
+   "x": 13.6,
+   "y": 4.0
+  },
+  {
+   "kind": "capstan",
+   "id": "cabrestante",
+   "x": 6.4,
+   "y": 4.0
+  },
+  {
+   "kind": "crate",
+   "x": 4.4,
+   "y": 2.7
+  },
+  {
+   "kind": "crate",
+   "x": 4.6,
+   "y": 5.4,
+   "s": 0.9,
+   "turn": 12
+  },
+  {
+   "kind": "bale",
+   "x": 4.4,
+   "y": 2.7,
+   "z": 1.0,
+   "turn": -8
+  },
+  {
+   "kind": "barrel",
+   "x": 15.6,
+   "y": 6.9
+  },
+  {
+   "kind": "barrel",
+   "x": 16.3,
+   "y": 7.1
+  },
+  {
+   "kind": "barrel",
+   "x": 15.9,
+   "y": 6.3,
+   "lying": true,
+   "turn": 30
+  },
+  {
+   "kind": "rope-coil",
+   "x": 8.0,
+   "y": 1.0
+  },
+  {
+   "kind": "rope-coil",
+   "x": 12.4,
+   "y": 7.0,
+   "r": 0.4
+  },
+  {
+   "kind": "lantern-post",
+   "x": 7.6,
+   "y": 6.9
+  },
+  {
+   "kind": "lantern-post",
+   "x": 15.0,
+   "y": 1.0
+  },
+  {
+   "kind": "rope-ladder",
+   "id": "escada-de-corda",
+   "x": 12.0,
+   "y": 0.13,
+   "from_z": -2.15,
+   "reach": 0.6,
+   "onto": 0.6,
+   "out": 0.35,
+   "half": 0.3,
+   "climb_half": 1.6
+  },
+  {
+   "kind": "rowboat",
+   "id": "barco",
+   "x": 12.4,
+   "y": -1.25,
+   "length": 6.0,
+   "beam": 2.0,
+   "floor": -2.15,
+   "turn": 0
+  },
+  {
+   "kind": "rigging",
+   "top": [
+    9.7,
+    -1.25,
+    -1.75
+   ],
+   "anchors": [
+    [
+     11.0,
+     0.15,
+     0.9
+    ]
+   ]
+  },
+  {
+   "kind": "boarding-net",
+   "id": "rede-esq",
+   "x": 11.0,
+   "y": 0.15,
+   "w": 1.2,
+   "top": 0.95,
+   "bottom": -2.2,
+   "out": 0.4,
+   "ropes": [
+    -0.6
+   ]
+  },
+  {
+   "kind": "boarding-net",
+   "id": "rede-dir",
+   "x": 13.0,
+   "y": 0.15,
+   "w": 1.2,
+   "top": 0.95,
+   "bottom": -2.2,
+   "out": 0.4,
+   "ropes": [
+    0.6
+   ]
+  }
+ ],
+ "lights": [
+  {
+   "kind": "sun",
+   "angle": [
+    55,
+    0,
+    -30
+   ],
+   "energy": 1.1,
+   "rgb": [
+    0.55,
+    0.65,
+    0.95
+   ],
+   "soft": 3
+  },
+  {
+   "kind": "point",
+   "at": [
+    8.0,
+    6.9,
+    2.0
+   ],
+   "energy": 220,
+   "rgb": [
+    1.0,
+    0.66,
+    0.36
+   ],
+   "radius": 0.2
+  },
+  {
+   "kind": "point",
+   "at": [
+    15.4,
+    1.0,
+    2.0
+   ],
+   "energy": 220,
+   "rgb": [
+    1.0,
+    0.66,
+    0.36
+   ],
+   "radius": 0.2
+  },
+  {
+   "kind": "point",
+   "at": [
+    23.6,
+    4.0,
+    3.0
+   ],
+   "energy": 180,
+   "rgb": [
+    1.0,
+    0.66,
+    0.36
+   ],
+   "radius": 0.2
+  },
+  {
+   "kind": "point",
+   "at": [
+    17.4,
+    4.6,
+    2.2
+   ],
+   "energy": 60,
+   "rgb": [
+    1.0,
+    0.66,
+    0.36
+   ],
+   "radius": 0.4
+  }
+ ],
+ "markers": [
+  {
+   "id": "barco",
+   "x": 13.2,
+   "y": -1.25,
+   "z": -2.15,
+   "facing": 8
+  },
+  {
+   "id": "escada-de-corda",
+   "x": 12.0,
+   "y": 0.9,
+   "facing": 8
+  },
+  {
+   "id": "alcapao",
+   "x": 12.4,
+   "y": 4.0,
+   "facing": 12
+  },
+  {
+   "id": "porta-camarotes",
+   "x": 17.3,
+   "y": 4.6,
+   "facing": 12
+  },
+  {
+   "id": "leme",
+   "x": 20.8,
+   "y": 4.0,
+   "z": 1.8,
+   "facing": 12
+  }
+ ],
+ "open_sight": true
+}

@@ -172,3 +172,9 @@ O diálogo é só escrito, sem voz sintetizada (ADR-0129). O microfone continua 
 3. **Verificar:** `python tools/area-author/check_area.py knowledge/areas/ia0004-porao.json --png`. A prévia mostra em vermelho o que não se anda e em amarelo as paredes.
 4. **Gerar e instalar:** `build_new_area.py --recipe … [--apply]`, como no anexo da ADR-0149. O manifesto guarda também o `sha256` da cena e do desenho.
 5. **Câmera do jogo:** ortográfica, a 45° acima do horizonte, com as salas giradas 45° e 40 px por metro (ADR-0150).
+
+## Anexo — ADR-0151: o navio inteiro
+
+1. **As quatro áreas do navio:** `knowledge/areas/ia0002-conves-superior.json`, `ia0003-conves-do-meio.json`, `ia0004-porao.json` e `ia0005-camarotes.json`. Para cada uma, `render_area.py`, depois `build_new_area.py --apply`, com o jogo fechado.
+2. **O convés superior** tem 2560 × 1920 e é entregue já explorado (`explored: true`). O grupo chega no barco e sobe pela escada de corda ou pelas redes de abordagem.
+3. **Pontos das passagens:** saem dos marcadores das cenas (`parse_scene(...).markers`). Um save que já visitou uma área guarda a cópia antiga dela: depois de mudar uma área, teste a partir de um save de antes da visita.

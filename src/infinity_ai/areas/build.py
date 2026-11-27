@@ -54,7 +54,9 @@ def build_area_files(recipe: Recipe, picture: bytes | None = None) -> dict[str, 
     mw, mh, codes = terrain_codes(recipe)
     files = {
         f'{name}.ARE': build_are(name, recipe.kind, [Entrance(e.point_id, e.x, e.y, e.facing)
-                                                     for e in recipe.entrances]),
+                                                     for e in recipe.entrances],
+                                 explored=((recipe.width_px, recipe.height_px)
+                                           if recipe.explored else None)),
         f'{name}.WED': build_wed(name, recipe.width, recipe.height, walls),
         f'{name}.TIS': tis,
         f'{name}.MOS': build_mos(rgb, recipe.width_px, recipe.height_px),

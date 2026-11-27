@@ -51,7 +51,9 @@ def main() -> int:
     out = args.out / recipe.area
     out.mkdir(parents=True, exist_ok=True)
     png = out / 'picture.png'
-    run = subprocess.run([str(blender), '-b', '--factory-startup', '--python', str(SCRIPT), '--',
+    png.unlink(missing_ok=True)          # a failed render must not leave the old picture
+    run = subprocess.run([str(blender), '-b', '--factory-startup', '--python-exit-code', '1',
+                          '--python', str(SCRIPT), '--',
                           str(recipe.scene_path), str(png)], capture_output=True, text=True)
     if run.returncode != 0 or not png.exists():
         print(run.stdout[-2000:], run.stderr[-2000:])

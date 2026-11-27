@@ -1,0 +1,67 @@
+{
+  "schema": "infinity-ai.area-recipe.v1",
+  "area": "IA0002",
+  "title": "Convés superior da Estrela de Waukeen",
+  "version": 1,
+  "kind": "exterior",
+  "size": {
+    "width": 40,
+    "height": 30
+  },
+  "floor": {
+    "terrain": "water"
+  },
+  "picture": {
+    "kind": "render",
+    "scene": "scenes/ia0002-conves-superior.json"
+  },
+  "entrances": [
+    {
+      "name": "Barco",
+      "marker": "barco"
+    },
+    {
+      "name": "Alcapao",
+      "marker": "alcapao"
+    },
+    {
+      "name": "Porta dos camarotes",
+      "marker": "porta-camarotes"
+    }
+  ],
+  "passages": [
+    {
+      "id": "barco",
+      "marker": "barco"
+    },
+    {
+      "id": "escada-de-corda",
+      "marker": "escada-de-corda"
+    },
+    {
+      "id": "alcapao",
+      "marker": "alcapao"
+    },
+    {
+      "id": "porta-camarotes",
+      "marker": "porta-camarotes"
+    },
+    {
+      "id": "leme",
+      "marker": "leme"
+    }
+  ],
+  "light": {
+    "rgb": [
+      70,
+      80,
+      110
+    ]
+  },
+  "provenance": {
+    "author": "claude-code",
+    "date": "2026-11-27",
+    "decision": "ADR-0151: o convés superior, com o tombadilho, o mar e a noite; área maior que a tela, já explorada e sem obstáculos que tapem a visão (teste no jogo, 2026-11-27)."
+  },
+  "explored": true
+}

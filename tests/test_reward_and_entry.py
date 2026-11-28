@@ -168,8 +168,8 @@ class FlowTests(unittest.TestCase):
     def resolve(self):
         self.say(GIVER, 'tem trabalho?')
         self.say(GIVER, 'aceito')
-        self.say('npc:yarin', 'e o broche furtado?')
-        self.say(GIVER, 'foi o yarin')
+        self.say('npc:scdur', 'e o broche furtado?')
+        self.say(GIVER, 'foi o unger')
         self.assertTrue(state_of(self.store, ROOT_BRANCH, self.q.quest_id).resolved)
 
     def test_start_presence_is_wanted_before_the_offer_and_walks_in(self):

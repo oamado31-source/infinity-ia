@@ -40,7 +40,9 @@ class CaseFileTests(unittest.TestCase):
                      {'checks': {'adivinhar': True}},
                      {'checks': {'uses': ['org:nao-existe']}},
                      {'speaker': {'kind': 'resident', 'npc_id': 'npc:x', 'standing': 'TURISTA'}},
-                     {'question': ''}):
+                     {'question': ''},
+                     {'speaker': {'kind': 'resident', 'npc_id': 'npc:x', 'recall': {'conversations': 0}}},
+                     {'speaker': {'kind': 'resident', 'npc_id': 'npc:x', 'recall': 4}}):
             with self.subTest(over=over), tempfile.TemporaryDirectory() as d:
                 path = Path(d) / 'c.json'
                 path.write_text(json.dumps({'schema': 'infinity-ai.dialogue-eval-cases.v1',
@@ -74,6 +76,13 @@ class CheckerTests(unittest.TestCase):
         ask(case(self.cases, 'conversa-e-quem-e'), PACK, provider)
         self.assertEqual([m['role'] for m in provider.calls[0]],
                          ['system', 'user', 'assistant', 'user'])
+
+    def test_earlier_talks_and_the_quest_state_reach_the_prompt(self):
+        # CR-2026-037: the case of lab S2o, as the service builds it (D2).
+        provider = FakeProvider([reply('Tenho, sim: o broche da minha mãe.')])
+        ask(case(self.cases, 'bernard-oferece-o-broche-com-lembranca'), PACK, provider)
+        prompt = provider.calls[0][0]['content']
+        self.assertIn('(4 vezes, a última há 3 dias), sem nada que tenha ficado marcado.', prompt)
 
     def test_right_answer_passes_and_wrong_answer_fails(self):
         council = case(self.cases, 'habitante-comum-conselho')

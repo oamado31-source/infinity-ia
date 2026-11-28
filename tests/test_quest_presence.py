@@ -21,7 +21,7 @@ from infinity_ai.quests.presence import (  # noqa: E402
 from infinity_ai.quests.narrative import QuestState  # noqa: E402
 from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
 
-BERNARD, YARIN = 'npc:cre-bernard', 'npc:yarin'
+BERNARD, UNGER = 'npc:cre-bernard', 'npc:scdur'
 DOC = json.loads((ROOT / 'knowledge' / 'quests' / 'bernard-brooch.pt_BR.json').read_text())
 VISION = {'presence_id': 'visao', 'cre': 'IATESTE', 'name': 'INFAI_TESTE', 'area': 'AR0406'}
 TEMPLATES = {'IATESTE': 'INFAI_TESTE'}
@@ -64,18 +64,18 @@ class FakeGame:
 class FormatTests(unittest.TestCase):
     def test_presence_is_strict(self):
         quest = quest_with(VISION, {**VISION, 'presence_id': 'outra', 'name': 'INFAI_OUTRA',
-                                    'from': 'ask-yarin', 'x': 500, 'y': 600, 'facing': 4})
+                                    'from': 'ask-unger', 'x': 500, 'y': 600, 'facing': 4})
         first, second = quest.presence
         self.assertEqual((first.start, first.end, first.x), ('ACCEPTED', 'RESOLVED', -1))
         self.assertEqual((second.start, second.x, second.y, second.facing),
-                         ('ask-yarin', 500, 600, 4))
+                         ('ask-unger', 500, 600, 4))
         self.assertEqual(parse_quest(copy.deepcopy(DOC)).presence, ())     # optional
         for bad in ({**VISION, 'cre': 'MTOWN6'},              # not one of our files
                     {**VISION, 'name': 'Tamoko'},              # not one of our names
                     {**VISION, 'area': 'ar 0406'},
                     {**VISION, 'from': 'passo-que-nao-existe'},
                     {**VISION, 'until': 'ACCEPTED'},
-                    {**VISION, 'from': 'ask-yarin', 'until': 'ask-yarin'},
+                    {**VISION, 'from': 'ask-unger', 'until': 'ask-unger'},
                     {**VISION, 'x': 100},                      # half a point
                     {**VISION, 'facing': 16}):
             self.assertIsNone(quest_with(bad), bad)
@@ -83,11 +83,11 @@ class FormatTests(unittest.TestCase):
 
     def test_between_its_two_points(self):
         vision = quest_with(VISION).presence[0]
-        after_step = quest_with({**VISION, 'from': 'ask-yarin'}).presence[0]
-        until_step = quest_with({**VISION, 'until': 'ask-yarin'}).presence[0]
+        after_step = quest_with({**VISION, 'from': 'ask-unger'}).presence[0]
+        until_step = quest_with({**VISION, 'until': 'ask-unger'}).presence[0]
         accepted = QuestState(True, True)
-        stepped = QuestState(True, True, frozenset({'ask-yarin'}))
-        resolved = QuestState(True, True, frozenset({'ask-yarin'}), True)
+        stepped = QuestState(True, True, frozenset({'ask-unger'}))
+        resolved = QuestState(True, True, frozenset({'ask-unger'}), True)
         self.assertEqual([wanted(s, vision) for s in (QuestState(True), accepted, resolved)],
                          [False, True, False])
         self.assertEqual([wanted(s, after_step) for s in (accepted, stepped)], [False, True])
@@ -132,9 +132,9 @@ class DirectorTests(unittest.TestCase):
         self.assertEqual(owned_creatures(self.store, ROOT_BRANCH), {'INFAI_TESTE': 'AR0406'})
         for area in ('AR0406', 'AR0300', 'AR0406'):                # leave and come back
             self.assertEqual(self.tick(game, area=area)[0], None)
-        self.say(YARIN, 'Quem furtou o broche de Bernard?')
+        self.say(UNGER, 'Quem furtou o broche de Bernard?')
         self.assertEqual(self.tick(game)[0], None)                 # still wanted
-        self.say(BERNARD, 'Yarin falou de um novato nas Docas.')
+        self.say(BERNARD, 'Unger falou de um novato nas Docas.')
         decision, state, _ = self.tick(game)
         self.assertEqual((decision.rule, state), (LEAVE, 'HOST_CONFIRMED'))
         self.assertEqual(owned_creatures(self.store, ROOT_BRANCH), {})

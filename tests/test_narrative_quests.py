@@ -24,7 +24,7 @@ from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
 
 QUEST_FILE = ROOT / 'knowledge' / 'quests' / 'bernard-brooch.pt_BR.json'
 DOC = json.loads(QUEST_FILE.read_text(encoding='utf-8'))
-BERNARD, YARIN = 'npc:cre-bernard', 'npc:yarin'
+BERNARD, UNGER = 'npc:cre-bernard', 'npc:scdur'
 
 
 class FormatTests(unittest.TestCase):
@@ -33,7 +33,7 @@ class FormatTests(unittest.TestCase):
         self.assertEqual(sorted(quests), ['bernard-brooch', 'sarevok-diary'])
         quest = quests['bernard-brooch']
         self.assertEqual((quest.giver, [s.npc_id for s in quest.steps], quest.milestone),
-                         (BERNARD, [YARIN], 'quest:bernard-brooch:RESOLVED'))
+                         (BERNARD, [UNGER], 'quest:bernard-brooch:RESOLVED'))
 
     def test_anything_odd_drops_the_quest(self):
         def broken(change):
@@ -75,22 +75,22 @@ class FlowTests(unittest.TestCase):
     def test_the_whole_quest_and_its_milestone(self):
         quest = self.quests['bernard-brooch']
         self.assertEqual(self.say(BERNARD, 'Boa noite, Bernard.').facts, ())
-        self.assertEqual(self.say(YARIN, 'Sabe do broche de Bernard?').facts, ())   # not yet
+        self.assertEqual(self.say(UNGER, 'Sabe do broche de Bernard?').facts, ())   # not yet
         offer = self.say(BERNARD, 'Você tem algum trabalho para nós?')
         self.assertEqual((offer.facts, offer.changes),
                          ((quest.offer_fact,), (f'bernard-brooch:{OFFERED}',)))
-        self.assertEqual(self.say(YARIN, 'Sabe do broche de Bernard?').facts, ())   # REQ-006
+        self.assertEqual(self.say(UNGER, 'Sabe do broche de Bernard?').facts, ())   # REQ-006
         accept = self.say(BERNARD, 'Pode deixar, vamos falar com ele.')
         self.assertEqual(accept.facts, (quest.offer_fact, quest.waiting_fact))
         self.assertEqual(accept.journal, (quest.accept_journal,))
-        early = self.say(BERNARD, 'Foi o Yarin?')                 # step not done: still waiting
+        early = self.say(BERNARD, 'Foi o Unger?')                 # step not done: still waiting
         self.assertEqual((early.facts, early.changes), ((quest.waiting_fact,), ()))
-        self.assertEqual(self.say(YARIN, 'Como vai?').facts, ())  # not about the subject
-        step = self.say(YARIN, 'Bernard disse que furtaram o broche dele. Sabe quem foi?')
+        self.assertEqual(self.say(UNGER, 'Como vai?').facts, ())  # not about the subject
+        step = self.say(UNGER, 'Bernard disse que furtaram o broche dele. Sabe quem foi?')
         self.assertEqual((step.facts, step.journal),
                          ((quest.steps[0].fact,), (quest.steps[0].journal,)))
-        self.assertEqual(self.say(YARIN, 'E mais alguma coisa?').facts, (quest.steps[0].fact,))
-        done = self.say(BERNARD, 'Yarin disse que foi um novato das Docas.')
+        self.assertEqual(self.say(UNGER, 'E mais alguma coisa?').facts, (quest.steps[0].fact,))
+        done = self.say(BERNARD, 'Unger disse que foi um novato das Docas.')
         self.assertEqual((done.facts, done.milestones),
                          ((quest.turn_in_fact,), ('quest:bernard-brooch:RESOLVED',)))
         self.assertEqual(done.journal, (quest.turn_in_journal,))
@@ -125,7 +125,7 @@ class FlowTests(unittest.TestCase):
                                        fork_epoch=1)
         state = state_of(self.store, older, 'bernard-brooch')
         self.assertEqual((state.offered, state.accepted), (True, False))
-        self.assertEqual(self.say(YARIN, 'Quem roubou o broche?', branch=older).facts, ())
+        self.assertEqual(self.say(UNGER, 'Quem roubou o broche?', branch=older).facts, ())
 
     def test_the_journal_line_goes_after_the_reply(self):
         self.assertEqual(with_journal('Obrigado.', ('Tarefa concluída.',)),
@@ -192,8 +192,8 @@ class TrustTests(unittest.TestCase):
             quests = load_quests()
             for i, (who, text) in enumerate((
                     (BERNARD, 'Tem trabalho?'), (BERNARD, 'Combinado.'),
-                    (YARIN, 'Quem furtou o broche de Bernard?'),
-                    (BERNARD, 'Yarin falou de um novato nas Docas.')), 1):
+                    (UNGER, 'Quem furtou o broche de Bernard?'),
+                    (BERNARD, 'Unger falou de um novato nas Docas.')), 1):
                 advance(store, ROOT_BRANCH, quests, speaker=who, text=text, area='AR0406',
                         game_time=i)
             trust = revise_trust(store, ROOT_BRANCH, BERNARD, game_time=9, effects=effects)
@@ -226,7 +226,7 @@ class BatteryTests(unittest.TestCase):
             (ROOT / 'tests' / 'dialogue_eval' / 'cases.pt_BR.json').read_text())['cases']}
         self.assertEqual(cases['bernard-oferece-o-broche']['speaker']['quest_facts'],
                          [quest.offer_fact])
-        self.assertEqual(cases['yarin-conta-do-batedor']['speaker']['quest_facts'],
+        self.assertEqual(cases['unger-conta-do-batedor']['speaker']['quest_facts'],
                          [quest.steps[0].fact])
         self.assertEqual(cases['bernard-intimo-conta-dos-escravos']['speaker']['quest_facts'],
                          [quest.turn_in_fact])

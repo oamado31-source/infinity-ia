@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 
-from infinity_ai.dialogue.claims import third_party_claim  # noqa: E402
+from infinity_ai.dialogue.claims import past_contact_claim, third_party_claim  # noqa: E402
 from infinity_ai.dialogue.context import DialogueContext, Fact, Persona  # noqa: E402
 from infinity_ai.dialogue.validate import retry_hint, validate_reply  # noqa: E402
 
@@ -198,3 +198,42 @@ class RetryHintTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+OFFER = ('Você tem um trabalho para oferecer ao grupo: descobrir quem furtou do seu balcão um '
+         'broche que era da sua mãe. Você desconfia de um batedor de carteiras novato e quer que o '
+         'grupo pergunte a Yarin, um ladrão aposentado que está aqui na taverna e conhece o ofício.')
+
+
+class PastContactTests(unittest.TestCase):
+    """CR-2026-037: "Já falei com Yarin, mas ele não quer falar" (qwen3:30b-a3b, dialogue cases)."""
+
+    def test_an_invented_contact_is_refused(self):
+        ctx = context(facts=(OFFER,), name='Bernard')
+        for speech in ('Já falei com Yarin, mas ele não quer falar.',
+                       'Alguém roubou meu broche. Já perguntei ao Yarin, mas ele não sabe.',
+                       'Eu já conversei com o Yarin sobre isso.'):
+            with self.subTest(speech=speech):
+                self.assertEqual(past_contact_claim(speech, ctx), ('Yarin',))
+        verdict = validate_reply(json.dumps({'speech': 'Já falei com Yarin, mas ele não quer '
+                                             'falar.', 'used_facts': ['F1'], 'unknown': False}),
+                                 ctx)
+        self.assertIn('PAST_CONTACT:Yarin', verdict.reasons)
+        self.assertIn('já falou ou tratou com Yarin', retry_hint(verdict.reasons))
+
+    def test_what_the_offer_asks_passes(self):
+        ctx = context(facts=(OFFER,), name='Bernard')
+        for speech in ('Perguntem a Yarin, ele conhece o ofício.',
+                       'Tenho um trabalho: falem com Yarin, o ladrão aposentado.',
+                       'Já falei com vocês antes sobre o broche.',
+                       'Já disse que quero o broche de volta.',
+                       'Já falei de Yarin, não sei mais nada.'):        # about, not with
+            with self.subTest(speech=speech):
+                self.assertEqual(past_contact_claim(speech, ctx), ())
+
+    def test_a_contact_in_the_facts_passes(self):
+        told = 'Você já falou com Yarin sobre o broche, e ele prometeu perguntar por aí.'
+        ctx = context(facts=(OFFER, told), name='Bernard')
+        self.assertEqual(past_contact_claim('Já falei com Yarin, ele vai perguntar por aí.', ctx),
+                         ())
+        self.assertEqual(past_contact_claim('Já falei com Bernard.', ctx), ())   # oneself

@@ -191,15 +191,22 @@ class ConcurrencyTests(unittest.TestCase):
                 b.fork_branch(parent_branch_id=ROOT_BRANCH, fork_game_time=1, fork_epoch=0)
                 cur.fetchall()
                 # a writer holding the lock for a while: the other waits instead of failing
-                done = []
+                done, held = [], threading.Event()
 
                 def hold():
-                    with a.transaction():
-                        _time.sleep(1.0)
+                    # its own connection: an SQLite connection stays in the thread that opened it
+                    c = CampaignStore.open(path, 'lab')
+                    try:
+                        with c.transaction():
+                            held.set()
+                            _time.sleep(1.0)
+                    finally:
+                        c.close()
 
                 t = threading.Thread(target=hold)
                 t.start()
-                _time.sleep(0.2)
+                self.assertTrue(held.wait(5))           # the lock is really held now
+                start = _time.monotonic()
                 try:
                     b.fork_branch(parent_branch_id=ROOT_BRANCH, fork_game_time=2, fork_epoch=0)
                     done.append(True)
@@ -207,6 +214,7 @@ class ConcurrencyTests(unittest.TestCase):
                     done.append(False)
                 t.join()
                 self.assertEqual(done, [True])
+                self.assertGreater(_time.monotonic() - start, 0.5)   # it waited for the lock
             finally:
                 a.close()
                 b.close()

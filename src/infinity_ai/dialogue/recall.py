@@ -94,6 +94,7 @@ def days_ago(last_game_time: int | None, now: int | None) -> int | None:
 
 
 TOPICS_PREFIX, TOPICS_SUFFIX = 'Vocês falaram sobre: ', ':assuntos'
+NOTHING_MARKED = ', sem nada que tenha ficado marcado.'
 
 
 def recall_lines(rec: Recall, titles: dict[str, str], now: int | None) -> tuple[tuple[str, str], ...]:
@@ -105,8 +106,10 @@ def recall_lines(rec: Recall, titles: dict[str, str], now: int | None) -> tuple[
                                     f', a última há {days} dia' + ('s' if days > 1 else ''))
     times = 'uma vez' if rec.conversations == 1 else f'{rec.conversations} vezes'
     anchor = rec.event_ids[-1]
-    lines = [(f'recall:{anchor}', f'Você já conversou com o jogador antes ({times}{when}).')]
     named = [titles[e] for e in rec.subjects if titles.get(e)]
+    # CR-2026-037: without a subject, say so; "4 vezes" alone led a model to invent what was said.
+    tail = '.' if named else NOTHING_MARKED
+    lines = [(f'recall:{anchor}', f'Você já conversou com o jogador antes ({times}{when}){tail}')]
     if named:
         lines.append((f'recall:{anchor}{TOPICS_SUFFIX}', TOPICS_PREFIX + ', '.join(named) + '.'))
     return tuple(lines)

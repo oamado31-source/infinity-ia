@@ -43,6 +43,7 @@ from ..personality.identity import (
 from ..state.recorder import ObservationRecorder
 from ..state.store import ROOT_BRANCH, CampaignStore
 from .context import Catalog
+from .recall import DAY, Recall, recall_lines
 from .engine import DialogueEngine, DialogueRequest, DialogueResponse, ResidentRequest
 from .llm import LlmProvider
 
@@ -145,6 +146,11 @@ def _check_case(case: Case, pack: CanonPack) -> None:
     if s.get('quest_facts') is not None and (not isinstance(s['quest_facts'], list) or not all(
             isinstance(f, str) and f for f in s['quest_facts'])):
         raise CaseError(f'{where}: quest_facts must be a list of sentences (SPEC-011)')
+    r = s.get('recall')
+    if r is not None and (not isinstance(r, dict) or not isinstance(r.get('conversations'), int)
+                          or isinstance(r.get('conversations'), bool) or r['conversations'] < 1
+                          or not isinstance(r.get('days', 0), int) or r.get('days', 0) < 0):
+        raise CaseError(f'{where}: recall needs conversations >= 1 and days >= 0 (ADR-0124)')
     if s.get('quest_told') is not None and not isinstance(s['quest_told'], bool):
         raise CaseError(f'{where}: quest_told must be true or false (CR-2026-033)')
     if s.get('speech') is not None and (not isinstance(s['speech'], str)
@@ -272,10 +278,19 @@ def _ask_resident(case, pack, provider, catalog, store, layers=None) -> Dialogue
         trust=s.get('trust', 'NEUTRO'), trust_own_only=bool(s.get('trust_own_only')),   # ADR-0133
         quest_facts=tuple(s.get('quest_facts') or ()),                                   # SPEC-011
         quest_now=() if s.get('quest_told') else tuple(s.get('quest_facts') or ()),  # CR-2026-033
+        recall_lines=_recall(s.get('recall')),                                        # ADR-0124
         order=tuple(context_order(pack, known, npc_id=npc_id, area=area,
                                   home_region=identity.home_region,
                                   named=named_in(pack, known, case.question,
                                                  local_aliases(pack, area)))))
+
+
+def _recall(raw: dict | None) -> tuple[tuple[str, str], ...]:
+    """ADR-0124: earlier conversations without subjects, as the service gives them."""
+    if not raw:
+        return ()
+    last = GAME_TIME - raw.get('days', 0) * DAY
+    return recall_lines(Recall(raw['conversations'], last, (), ('eval-recall',)), {}, GAME_TIME)
 
 
 def _envelope(field_name: str, value: str) -> ObservationEnvelope:

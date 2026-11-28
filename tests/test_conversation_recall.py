@@ -53,6 +53,15 @@ class RecallTests(unittest.TestCase):
         self.assertEqual(only.conversations, 1)
         self.assertEqual(recall_lines(NO_RECALL, TITLES, 0), ())
 
+    def test_earlier_talks_without_a_subject_say_so(self):
+        # CR-2026-037 (lab S2o): "4 vezes" alone led the model to invent what was talked about.
+        for i in range(4):
+            self.turn(f'0-{i}', f'r{i}', [], t=100)
+        rec = recall(self.store, ROOT_BRANCH, 'npc:cre-bernard', at_game_time=100 + 3 * DAY)
+        self.assertEqual(recall_lines(rec, TITLES, 100 + 3 * DAY),
+                         ((f'recall:{rec.event_ids[-1]}', 'Você já conversou com o jogador antes '
+                           '(4 vezes, a última há 3 dias), sem nada que tenha ficado marcado.'),))
+
     def test_a_branch_forked_before_the_talk_does_not_remember_it(self):
         self.turn('0-1', 'r1', ['org:council-of-six'], t=500)
         earlier = self.store.fork_branch(parent_branch_id=ROOT_BRANCH, fork_game_time=100,

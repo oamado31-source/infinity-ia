@@ -164,7 +164,7 @@ class CountTests(unittest.TestCase):
         self.game.here['INFAI_GUARDA'] = 1                               # one lost, no defeat step
         self.enter_area()
         self.assertEqual(self.rules(), [VERIFY, ENTER])                 # made whole again
-        self.say('Yarin falou de um novato nas Docas.')                  # not resolved: Yarin
+        self.say('Unger falou de um novato nas Docas.')                  # not resolved: Unger
         state = state_of(self.store, ROOT_BRANCH, self.qid)
         self.assertFalse(state.resolved)
 
@@ -189,11 +189,11 @@ class CountTests(unittest.TestCase):
         self.assertEqual(self.game.writes, [(SPAWN, 'INFAI_GUARDA')])   # one request, two
 
     def test_the_quest_removing_them_is_not_a_defeat(self):
-        self.use({**GUARDS, 'until': 'ask-yarin'}, steps=[FELL])
+        self.use({**GUARDS, 'until': 'ask-unger'}, steps=[FELL])
         self.say('Tem trabalho?')
         self.say('Aceito.')
         self.rules()
-        advance(self.store, ROOT_BRANCH, self.quests, speaker='npc:yarin',
+        advance(self.store, ROOT_BRANCH, self.quests, speaker='npc:scdur',
                 text='Quem furtou o broche?', area='AR0406', game_time=self.t + 1)
         self.assertEqual(self.rules(), [LEAVE])
         self.assertEqual(self.game.writes[-1], (DESPAWN, 'INFAI_GUARDA'))

@@ -19,7 +19,7 @@ from infinity_ai.quests.narrative import (  # noqa: E402
 from infinity_ai.quests.presence import COUNT_RULES, ENTER, LEAVE, decide, dispatch  # noqa: E402
 from infinity_ai.state.store import ROOT_BRANCH, CampaignStore  # noqa: E402
 
-BERNARD, YARIN = 'npc:cre-bernard', 'npc:yarin'
+BERNARD, UNGER = 'npc:cre-bernard', 'npc:scdur'
 DOC = json.loads((ROOT / 'knowledge' / 'quests' / 'bernard-brooch.pt_BR.json').read_text())
 HOUR = UNITS_PER_HOUR
 DAY = 24 * HOUR
@@ -38,7 +38,7 @@ def quest(steps=None, presence=None, **change):
     return parse_quest(doc)
 
 
-YARIN_STEP = dict(DOC['steps'][0], area='AR0406')
+UNGER_STEP = dict(DOC['steps'][0], area='AR0406')
 STREET = {'step_id': 'ir-a-rua', 'arrive': {'area': 'AR0400'}, 'journal': 'Você chegou às Favelas.'}
 NIGHT_STREET = {'step_id': 'rua-a-noite', 'arrive': {'area': 'AR0400', 'night': True},
                 'journal': 'De noite, nas Favelas.'}
@@ -57,20 +57,20 @@ class ClockTests(unittest.TestCase):
 
 class FormatTests(unittest.TestCase):
     def test_arrival_steps_and_order_are_strict(self):
-        q = quest([YARIN_STEP, dict(STREET, after=['ask-yarin']), NIGHT_STREET])
-        yarin, street, night = q.steps
-        self.assertEqual((yarin.kind, yarin.area), (TALK, 'AR0406'))
+        q = quest([UNGER_STEP, dict(STREET, after=['ask-unger']), NIGHT_STREET])
+        unger, street, night = q.steps
+        self.assertEqual((unger.kind, unger.area), (TALK, 'AR0406'))
         self.assertEqual((street.kind, street.area, street.night, street.after, street.npc_id),
-                         (ARRIVE, 'AR0400', False, ('ask-yarin',), None))
+                         (ARRIVE, 'AR0400', False, ('ask-unger',), None))
         self.assertTrue(night.night)
         for bad in ([dict(STREET, after=['depois'])],                    # only earlier steps
                     [STREET, dict(NIGHT_STREET, after=['rua-a-noite'])],  # not itself
                     [dict(STREET, arrive={'area': 'ar 0400'})],
                     [dict(STREET, arrive={'area': 'AR0400', 'night': 'sim'})],
                     [dict(STREET, arrive={'area': 'AR0400', 'hora': 3})],
-                    [dict(STREET, npc_id=YARIN)],                          # arrival has no person
-                    [dict(YARIN_STEP, area='x y')],
-                    [YARIN_STEP, dict(YARIN_STEP, step_id='outra')]):      # one step per person
+                    [dict(STREET, npc_id=UNGER)],                          # arrival has no person
+                    [dict(UNGER_STEP, area='x y')],
+                    [UNGER_STEP, dict(UNGER_STEP, step_id='outra')]):      # one step per person
             self.assertIsNone(quest(bad), bad)
         self.assertEqual(quest(presence=[{'presence_id': 'v', 'cre': 'IATESTE',
                                           'name': 'INFAI_TESTE', 'area': 'AR0406',
@@ -118,27 +118,27 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(pending, ((self.qid, 'ir-a-rua', 'Você chegou às Favelas.'),))
         mark_journal_shown(self.store, ROOT_BRANCH, pending, game_time=self.t)
         self.assertEqual(pending_journal(self.store, ROOT_BRANCH, self.quests), ())
-        turn_in = self.say(BERNARD, 'Yarin falou de um novato nas Docas.')
+        turn_in = self.say(BERNARD, 'Unger falou de um novato nas Docas.')
         self.assertTrue(state_of(self.store, ROOT_BRANCH, self.qid).resolved, turn_in)
         self.assertEqual(self.reach('AR0400'), ())                      # resolved: nothing
 
     def test_night_arrival_and_order(self):
-        self.use(quest([YARIN_STEP, dict(NIGHT_STREET, after=['ask-yarin'])]))
+        self.use(quest([UNGER_STEP, dict(NIGHT_STREET, after=['ask-unger'])]))
         self.accept()
-        self.assertEqual(self.reach('AR0400', at=MIDNIGHT), ())         # Yarin first
-        self.assertEqual(self.say(YARIN, 'Quem furtou o broche?', area='AR0300').changes, ())
-        self.assertNotEqual(self.say(YARIN, 'Quem furtou o broche?').changes, ())
+        self.assertEqual(self.reach('AR0400', at=MIDNIGHT), ())         # Unger first
+        self.assertEqual(self.say(UNGER, 'Quem furtou o broche?', area='AR0300').changes, ())
+        self.assertNotEqual(self.say(UNGER, 'Quem furtou o broche?').changes, ())
         self.assertEqual(self.reach('AR0400', at=MIDNIGHT + DAY - 6 * HOUR), ())   # 18:00
         self.assertEqual(self.reach('AR0400', at=MIDNIGHT + DAY + HOUR),           # 01:00
                          (f'{self.qid}:rua-a-noite',))
 
     def test_a_talk_step_waits_for_its_order(self):
         street_first = {'step_id': 'ir-a-rua', 'arrive': {'area': 'AR0400'}, 'journal': 'Rua.'}
-        self.use(quest([street_first, dict(YARIN_STEP, after=['ir-a-rua'])]))
+        self.use(quest([street_first, dict(UNGER_STEP, after=['ir-a-rua'])]))
         self.accept()
-        self.assertEqual(self.say(YARIN, 'Quem furtou o broche?').changes, ())
+        self.assertEqual(self.say(UNGER, 'Quem furtou o broche?').changes, ())
         self.reach('AR0400')
-        self.assertNotEqual(self.say(YARIN, 'Quem furtou o broche?').changes, ())
+        self.assertNotEqual(self.say(UNGER, 'Quem furtou o broche?').changes, ())
 
 
 class NightPresenceTests(unittest.TestCase):

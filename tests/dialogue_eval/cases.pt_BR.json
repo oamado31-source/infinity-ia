@@ -1711,7 +1711,7 @@
     },
     {
       "id": "bernard-oferece-o-broche",
-      "description": "SPEC-011: pedido de trabalho; o código põe a oferta curada no prompt e Bernard pede ajuda com o broche e manda falar com Yarin.",
+      "description": "SPEC-011: pedido de trabalho; o código põe a oferta curada no prompt e Bernard pede ajuda com o broche e manda falar com Unger.",
       "speaker": {
         "kind": "resident",
         "npc_id": "npc:cre-bernard",
@@ -1726,7 +1726,7 @@
           "Você serve bebida no balcão da Coroa de Cobre e conhece bem a freguesia da casa."
         ],
         "quest_facts": [
-          "Você tem um trabalho para oferecer ao grupo: descobrir quem furtou do seu balcão um broche que era da sua mãe. Você desconfia de um batedor de carteiras novato e quer que o grupo pergunte a Yarin, um ladrão aposentado que está aqui na taverna e conhece o ofício."
+          "Você tem um trabalho para oferecer ao grupo: descobrir quem furtou do seu balcão um broche que era da sua mãe. O ladrão você não sabe quem é; desconfia de algum batedor de carteiras novato. Quem pode ter visto é Unger, um freguês antigo e honesto que bebe sempre ao lado do balcão e não perde nada: você quer que o grupo pergunte a ele."
         ]
       },
       "question": "Você tem algum trabalho para nós?",
@@ -1738,31 +1738,77 @@
           "broche"
         ],
         "matches_none": [
-          "(?i)n[ãa]o tenho (?:nenhum )?trabalho"
+          "(?i)n[ãa]o tenho (?:nenhum )?trabalho",
+          "(?i)\\bUnger\\b[^.!?]{0,40}\\b(batedor|ladr[ãa]o|novato|quem (roubou|furtou))"
         ]
       }
     },
     {
-      "id": "yarin-conta-do-batedor",
-      "description": "SPEC-011: com a quest aceita, Yarin recebe o fato do passo e conta do batedor novato das Docas.",
+      "id": "bernard-oferece-o-broche-com-lembranca",
+      "description": "CR-2026-037: broche oferecido num save antigo (fato já contado) e 4 conversas anteriores sem assunto; Bernard oferece o trabalho e não diz que o broche já foi resolvido (lab, S2o, 2026-11-27). Na medição, o passado inventado era \"Já falei com Yarin\"; Yarin foi trocado por Unger no mesmo dia. No jogo (2026-11-27), Bernard chamou Unger de \"o batedor de carteiras novato\": a oferta passou a separar o ladrão da testemunha.",
       "speaker": {
         "kind": "resident",
-        "npc_id": "npc:yarin",
-        "name": "Yarin",
-        "wis": 12,
-        "int": 12,
-        "occupation": "ladrão aposentado",
+        "npc_id": "npc:cre-bernard",
+        "name": "Bernard",
+        "wis": 11,
+        "int": 10,
+        "occupation": "taverneiro da Coroa de Cobre",
+        "affiliations": [
+          "place:copper-coronet:STAFF"
+        ],
+        "self_facts": [
+          "Você serve bebida no balcão da Coroa de Cobre e conhece bem a freguesia da casa."
+        ],
+        "quest_facts": [
+          "Você tem um trabalho para oferecer ao grupo: descobrir quem furtou do seu balcão um broche que era da sua mãe. O ladrão você não sabe quem é; desconfia de algum batedor de carteiras novato. Quem pode ter visto é Unger, um freguês antigo e honesto que bebe sempre ao lado do balcão e não perde nada: você quer que o grupo pergunte a ele."
+        ],
+        "recall": {
+          "conversations": 4,
+          "days": 3
+        },
+        "quest_told": true,
+        "origin": "region:tethyr",
+        "persona": "Taverneiro ocupado e prático, sem paciência para conversa fiada. Quer o balcão em ordem e a conta paga. Com estranhos, é direto: pergunta logo o que vão beber.",
+        "disposition": "FRIENDLY"
+      },
+      "question": "Tem trabalho para nós?",
+      "checks": {
+        "status": [
+          "OK"
+        ],
+        "mentions_any": [
+          "broche"
+        ],
+        "matches_none": [
+          "(?i)n[ãa]o tenho (?:nenhum )?trabalho",
+          "(?i)\\b(j[áa]|tinha|foi|est[áa]|ficou)\\s+(?:\\w+\\s+){0,3}(resolvid|encontrad|recuperad|achad|devolvid)",
+          "(?i)\\b(resolvemos|resolveram|recuperamos|recuperaram|encontramos|encontraram|acharam|achamos|devolveram)\\b",
+          "(?i)\\bj[áa]\\s+(?:\\w+\\s+){0,2}(falei|perguntei|mandei|procurei|fui)\\s+(com|a|ao|à|atr[áa]s)\\b",
+          "(?i)\\bUnger\\b[^.!?]{0,40}\\b(batedor|ladr[ãa]o|novato|quem (roubou|furtou))"
+        ]
+      }
+    },
+    {
+      "id": "unger-conta-do-batedor",
+      "description": "SPEC-011: com a quest aceita, Unger recebe o fato do passo e conta do batedor novato das Docas (Yarin trocado por Unger, CR-2026-037).",
+      "speaker": {
+        "kind": "resident",
+        "npc_id": "npc:scdur",
+        "name": "Unger Colinaescura",
+        "wis": 11,
+        "int": 10,
         "affiliations": [
           "place:copper-coronet:REGULAR"
         ],
         "self_facts": [
-          "Você é um ladrão aposentado e já foi o melhor batedor de carteiras da cidade."
+          "Você é frequentador da Coroa de Cobre."
         ],
         "quest_facts": [
-          "Você ouviu do grupo que furtaram o broche de Bernard, o taverneiro da Coroa de Cobre. Pelo jeito do furto, você reconhece um rapaz novato que vende o que rouba a um receptador nas Docas."
-        ]
+          "Você ouviu do grupo que furtaram o broche de Bernard, o taverneiro da Coroa de Cobre. Do seu canto ao lado do balcão você viu tudo: um rapaz novato pegou o broche e, pelo jeito, vende o que rouba a um receptador nas Docas."
+        ],
+        "persona": "Desconfiado e de poucas palavras, prefere observar a falar. Quer beber sossegado. Com estranhos, é reservado."
       },
-      "question": "Bernard disse que roubaram o broche dele do balcão. Você sabe quem foi?",
+      "question": "Bernard disse que roubaram o broche dele do balcão. Você viu quem foi?",
       "checks": {
         "status": [
           "OK"
@@ -1792,7 +1838,7 @@
         "trust": "INTIMO",
         "trust_own_only": false,
         "quest_facts": [
-          "O grupo voltou com a resposta de Yarin, o ladrão aposentado: quem furtou o broche foi um batedor de carteiras novato, que vende o que rouba a um receptador nas Docas. Você agradece de coração e vai mandar alguém de confiança às Docas."
+          "O grupo voltou com o que Unger, o frequentador do balcão, viu: quem furtou o broche foi um batedor de carteiras novato, que vende o que rouba a um receptador nas Docas. Você agradece de coração e vai mandar alguém de confiança às Docas."
         ],
         "quest_told": true
       },

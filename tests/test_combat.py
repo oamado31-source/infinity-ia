@@ -111,7 +111,7 @@ class SoundsTests(unittest.TestCase):
 
 DOC = json.loads((ROOT / 'knowledge' / 'quests' / 'bernard-brooch.pt_BR.json').read_text())
 CELL = {'presence_id': 'celula', 'cre': 'IATESTE', 'name': 'INFAI_TESTE', 'area': 'AR0406',
-        'copies': 2, 'hostile_from': 'ask-yarin'}
+        'copies': 2, 'hostile_from': 'ask-unger'}
 
 
 class Game:
@@ -168,7 +168,7 @@ class HostileFromTests(unittest.TestCase):
         self.say('npc:cre-bernard', 'Aceito.')
         self.assertEqual(self.rules(), [VERIFY, ENTER])                 # both, neutral for now
         self.assertEqual(self.game.hostile, 0)
-        self.say('npc:yarin', 'Quem furtou o broche de Bernard?')        # the step is done
+        self.say('npc:scdur', 'Quem furtou o broche de Bernard?')        # the step is done
         self.assertEqual(self.rules(), [HOSTILE])
         self.assertEqual(self.game.hostile, 2)
         self.assertEqual(self.rules(), [])                              # never twice
@@ -198,9 +198,9 @@ class Many:
 
 
 LEADER = {'presence_id': 'lider', 'cre': 'IALIDER', 'name': 'INFAI_LIDER', 'area': 'AR0406',
-          'hostile_from': 'ask-yarin'}
+          'hostile_from': 'ask-unger'}
 GUARDS = {'presence_id': 'guardas', 'cre': 'IAGUARDA', 'name': 'INFAI_GUARDA', 'area': 'AR0406',
-          'copies': 3, 'hostile_from': 'ask-yarin'}
+          'copies': 3, 'hostile_from': 'ask-unger'}
 FALLS = [{'step_id': 'lider-caiu', 'defeated': {'presence': 'lider'}, 'journal': 'O líder caiu.'},
          {'step_id': 'guardas-cairam', 'defeated': {'presence': 'guardas'},
           'journal': 'Os guardas caíram.'}]
@@ -247,7 +247,7 @@ class TogetherTests(unittest.TestCase):
         self.rules(limit=8)
         self.assertIn((SPAWN, 'INFAI_GUARDA', 3), self.game.writes)    # all three at once
         self.assertEqual(self.game.here, {'INFAI_LIDER': 1, 'INFAI_GUARDA': 3})
-        self.say('npc:yarin', 'Quem furtou o broche de Bernard?')
+        self.say('npc:scdur', 'Quem furtou o broche de Bernard?')
         self.t += WATCH_EVERY                                          # both watches are due
         self.assertEqual(self.rules(), [(HOSTILE, 'lider'), (HOSTILE, 'guardas'),
                                         (DEFEAT_WATCH, 'lider')])

@@ -261,3 +261,35 @@ def third_party_claim(speech: str, context: DialogueContext,
             if words and not any(_backed(w, everything) for w in words):
                 return 'GENERAL'
     return None
+
+
+# CR-2026-037 (lab S2o and the dialogue cases): with an offer that asks the group to talk to
+# someone ("quer que o grupo pergunte a Yarin"), a local model said it had already done so ("Já
+# falei com Yarin, mas ele não quer falar"). A contact of the speaker with a named person, said
+# in the past, needs a text it knows that names the person with a contact verb.
+_CONTACT_VERBS = ('falei', 'conversei', 'perguntei', 'pedi', 'mandei', 'contei', 'avisei',
+                  'procurei', 'chamei', 'encontrei', 'disse', 'mostrei', 'paguei')
+_PAST_CONTACT = re.compile(
+    r"\b[Jj][áa]\s+(?:" + _LOW + r"\s+){0,2}?(?:" + '|'.join(_CONTACT_VERBS) + r")\s+"
+    r"(?:(?:com|a|ao|à|aos|às|para|pra|pro)\s+)?(?:(?:o|a|os|as|seu|sua)\s+)?"
+    r"(?P<name>" + _CAP + r")")
+_CONTACT_BACKING = re.compile(
+    r"\b(?:falou|falei|conversou|conversei|perguntou|perguntei|pediu|pedi|mandou|mandei|"
+    r"contou|contei|avisou|avisei|procurou|procurei|chamou|chamei|disse|encontrou|encontrei|"
+    r"mostrou|mostrei|pagou|paguei)\b")
+
+
+def past_contact_claim(speech: str, context: DialogueContext) -> tuple[str, ...]:
+    """Names the speaker says it already contacted ("já falei com Yarin") without a known text
+    that names them with a contact verb. Not caught: the same claim without "já", or with a
+    pronoun."""
+    s = _Speech(speech, context)
+    own = {w.lower() for w in context.persona.display_name.split()}
+    out: list[str] = []
+    for m in _PAST_CONTACT.finditer(speech):
+        name = m.group('name')
+        if name.lower() in own or name in out:
+            continue
+        if not _CONTACT_BACKING.search(s.base([name])):
+            out.append(name)
+    return tuple(out)

@@ -12,7 +12,7 @@ import json
 import re
 from dataclasses import dataclass
 
-from .claims import third_party_claim
+from .claims import past_contact_claim, third_party_claim
 from .offers import denied_offer
 from .context import DialogueContext
 
@@ -189,6 +189,8 @@ _RETRY_HINTS = (
     ('THIRD_PARTY:STRANGER', 'você falou de alguém que não está no que você sabe como se o '
                              'conhecesse; diga que não conhece essa pessoa, sem inventar nada sobre '
                              'ela'),
+    ('PAST_CONTACT', 'você disse que já falou ou tratou com {names}, e isso não está no que você '
+                     'sabe; não diga o que já fez com alguém se não estiver nas seções'),
     ('UNKNOWN_NAMES', 'você citou nomes que não estão no que você sabe ({names}); não os use, ou '
                       'diga que não os conhece'),
     ('UNBACKED_DETAIL:PRICE', 'você deu um preço com números que não estão no que você sabe; '
@@ -259,7 +261,8 @@ def retry_hint(reasons: tuple[str, ...]) -> str:
     for reason in reasons:
         for code, text in _RETRY_HINTS:
             if reason == code or reason.startswith(code + ':') or (
-                    code in ('UNKNOWN_FACT_IDS', 'UNKNOWN_NAMES') and reason.startswith(code)):
+                    code in ('UNKNOWN_FACT_IDS', 'UNKNOWN_NAMES', 'PAST_CONTACT')
+                    and reason.startswith(code)):
                 names = reason.split(':', 1)[1].replace(',', ', ') if ':' in reason else ''
                 hint = text.format(names=names)
                 if hint not in hints:
@@ -328,6 +331,9 @@ def validate_reply(raw: str, context: DialogueContext, player_text: str | None =
     other = third_party_claim(speech, context, asked)   # ADR-0121: facts about someone else
     if other:
         reasons.append(f'THIRD_PARTY:{other}')
+    contacted = past_contact_claim(speech, context)    # CR-2026-037
+    if contacted:
+        reasons.append('PAST_CONTACT:' + ','.join(contacted))
     metals = _unbacked_metals(speech, context, player_text if isinstance(player_text, str) else '')
     if metals:
         reasons.append('UNBACKED_DETAIL:' + ','.join(metals))
